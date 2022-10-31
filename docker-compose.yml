@@ -1,0 +1,171 @@
+version: "3.8"
+#
+# This compose file requires a co-located .env file
+# containing the app passwords, jupyter token
+# and github deploy key location
+#
+# Published ports for containers
+x-ext-postgresql-port:     &pub_postgresql_port     5433
+x-ext-postgrest-port:      &pub_postgrest_port      3000
+x-ext-jupyter_port:        &pub_jupyter_port        8888
+x-ext-nginx-port:          &pub_nginx_port          8080
+#
+# Location of the PostgreSQL database
+# Alterable if using an external database
+x-postgresql-db:           &postgresql_db           cip20
+x-postgresql-host:         &postgresql_host         cip_pg
+x-postgresql-port:         &postgresql_port         5432
+#
+# target 96GB of memory, 16 cores
+x-pg-shm-size:             &pg_shm_size             96gb
+x-pg-max-connections:      &pg_max_connections      20
+x-pg-shared-buffers:       &pg_shared_buffers       24GB
+x-pg-effective-cache-size: &pg_effective_cache_size 72GB
+x-pg-maintenance-work-mem: &pg_maintenance_work_mem 2GB
+x-pg-checkpoint-comp-targ: &pg_checkpoint_comp_targ 0.9
+x-pg-wal-buffers:          &pg_wal_buffers          16MB
+x-pg-def-statistics-targ:  &pg_def_statistics_targ  100
+x-pg-random-page-cost:     &pg_random_page_cost     1.1
+x-pg-effective-io-conc:    &pg_effective_io_conc    200
+x-pg-work-mem:             &pg_work_mem             157286kB
+x-pg-min-wal-size:         &pg_min_wal_size         1GB
+x-pg-max-wal-size:         &pg_max_wal_size         4GB
+x-pg-max-worker-processes: &pg_max_worker_processes 16
+x-pg-max-par-work-per-gat: &pg_max_par_work_per_gat 4
+x-pg-max-par-workers:      &pg_max_par_workers      16
+x-pg-max-par-maint-work:   &pg_max_par_maint_work   4
+#
+# target 16GB of memory, 4 cores
+#x-pg-shm-size:             &pg_shm_size             16gb
+#x-pg-max-connections:      &pg_max_connections      20
+#x-pg-shared-buffers:       &pg_shared_buffers       4GB
+#x-pg-effective-cache-size: &pg_effective_cache_size 12GB
+#x-pg-maintenance-work-mem: &pg_maintenance_work_mem 1GB
+#x-pg-checkpoint-comp-targ: &pg_checkpoint_comp_targ 0.9
+#x-pg-wal-buffers:          &pg_wal_buffers          16MB
+#x-pg-def-statistics-targ:  &pg_def_statistics_targ  100
+#x-pg-random-page-cost:     &pg_random_page_cost     1.1
+#x-pg-effective-io-conc:    &pg_effective_io_conc    200
+#x-pg-work-mem:             &pg_work_mem             52428kB
+#x-pg-min-wal-size:         &pg_min_wal_size         1GB
+#x-pg-max-wal-size:         &pg_max_wal_size         4GB
+#x-pg-max-worker-processes: &pg_max_worker_processes 4
+#x-pg-max-par-work-per-gat: &pg_max_par_work_per_gat 2
+#x-pg-max-par-workers:      &pg_max_par_workers      4
+#x-pg-max-par-maint-work:   &pg_max_par_maint_work   2
+#
+services:
+    cip_pg:
+        build:
+            context: .
+            dockerfile: Dockerfile.pg
+            shm_size: '2gb' 
+        shm_size: *pg_shm_size
+        hostname: cip_pg
+        environment:
+            POSTGRES_DB:             *postgresql_db
+            POSTGRES_PASSWORD:       ${POSTGRESQL_SU_PASS}
+            POSTGRES_CIP_PASS:       ${POSTGRESQL_CIP_PASS}
+            POSTGRES_USR_PASS:       ${POSTGRESQL_USR_PASS}
+            POSTGRES_UPL_PASS:       ${POSTGRESQL_UPL_PASS}
+            POSTGREST_PASS:          ${POSTGREST_PASS}
+            PG_MAX_CONNECTIONS:      *pg_max_connections     
+            PG_SHARED_BUFFERS:       *pg_shared_buffers      
+            PG_EFFECTIVE_CACHE_SIZE: *pg_effective_cache_size
+            PG_MAINTENANCE_WORK_MEM: *pg_maintenance_work_mem
+            PG_CHECKPOINT_COMP_TARG: *pg_checkpoint_comp_targ
+            PG_WAL_BUFFERS:          *pg_wal_buffers         
+            PG_DEF_STATISTICS_TARG:  *pg_def_statistics_targ 
+            PG_RANDOM_PAGE_COST:     *pg_random_page_cost    
+            PG_EFFECTIVE_IO_CONC:    *pg_effective_io_conc   
+            PG_WORK_MEM:             *pg_work_mem            
+            PG_MIN_WAL_SIZE:         *pg_min_wal_size        
+            PG_MAX_WAL_SIZE:         *pg_max_wal_size        
+            PG_MAX_WORKER_PROCESSES: *pg_max_worker_processes
+            PG_MAX_PAR_WORK_PER_GAT: *pg_max_par_work_per_gat
+            PG_MAX_PAR_WORKERS:      *pg_max_par_workers     
+            PG_MAX_PAR_MAINT_WORK:   *pg_max_par_maint_work  
+        ports:
+            - target: 5432
+              published: *pub_postgresql_port
+        networks:
+            - cip
+        volumes:
+            - type: volume
+              source: pgdata
+              target: /var/lib/postgresql/data
+            - type: volume
+              source: tblspdata
+              target: /tblspdata
+    cip_pr:
+        build:
+            context: .
+            dockerfile: Dockerfile.pr
+            args:
+                ARG_POSTGRES_DB:    *postgresql_db
+                ARG_POSTGRES_HOST:  *postgresql_host
+                ARG_POSTGRES_PORT:  *postgresql_port
+                ARG_POSTGREST_PASS: ${POSTGREST_PASS}
+        shm_size: '1gb' 
+        hostname: cip_pr
+        environment:
+            PGRST_SERVER_HOST:  cip_pr
+            PGRST_SERVER_PORT:  3000
+            PGRST_DB_SCHEMA:    cip20_pgrest
+            PGRST_DB_ANON_ROLE: cip20_pgrest        
+        ports:
+            - target: 3000
+              published: *pub_postgrest_port
+        networks:
+            - cip
+    cip_jp:
+        build:
+            context: .
+            dockerfile: Dockerfile.jp
+            args:
+                ARG_CIP20_DEPLOYKEY: ${CIP20_DEPLOYKEY}
+                ARG_JUPYTER_TOKEN:   ${JUPYTER_TOKEN}
+        shm_size: '1gb' 
+        hostname: cip_jp
+        environment:
+            POSTGRES_DB:       *postgresql_db
+            POSTGRES_HOST:     *postgresql_host
+            POSTGRES_PORT:     *postgresql_port
+            POSTGRES_CIP_PASS: ${POSTGRESQL_CIP_PASS}
+            POSTGREST_PASS:    ${POSTGREST_PASS}
+        ports:
+            - target: 8888
+              published: *pub_jupyter_port
+        networks:
+            - cip
+        volumes:
+            - type: volume
+              source: jupyter
+              target: /opt/conda/etc/jupyter
+            - type: volume
+              source: home-jovyan
+              target: /home/jovyan
+    cip_ng:
+        build:
+            context: .
+            dockerfile: Dockerfile.ng
+        shm_size: '1gb' 
+        hostname: cip_ng
+        environment:
+            POSTGRES_DB:       *postgresql_db
+            POSTGRES_HOST:     *postgresql_host
+            POSTGRES_PORT:     *postgresql_port
+            POSTGRES_UPL_PASS: ${POSTGRESQL_UPL_PASS}
+        ports:
+            - target: 80
+              published: *pub_nginx_port
+        networks:
+            - cip
+networks:
+    cip:
+        driver: bridge
+volumes:
+    tblspdata:
+    pgdata:
+    jupyter:
+    home-jovyan:

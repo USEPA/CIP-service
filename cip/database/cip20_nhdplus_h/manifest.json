@@ -1,0 +1,78 @@
+{
+    "constants": [
+       {
+          "key": "GITRELEASE"
+         ,"cmd": "git describe --tags"
+       }
+      ,{
+          "key": "GITCOMMIT"
+         ,"cmd": "git rev-parse HEAD"
+       }
+      ,{
+          "key": "GITCOMMITDATE"
+         ,"cmd": "git show -s --format=%cd"
+       }
+      ,{
+          "key": "GITCOMMITAUTH"
+         ,"cmd": "git show -s --format=%an"
+       }
+    ]
+   ,"tasks": [
+       {
+          "id": "concatenate"
+         ,"output": "cip20_nhdplus_h_deploy.sql"
+         ,"includes": [
+             "materialized views/nhdplusflowlinevaa_catnodes.sql"
+            ,"materialized views/nhdplusflowlinevaa_levelpathi.sql"
+            ,"materialized views/catchment_3338.sql"
+            ,"materialized views/catchment_5070.sql"
+            ,"materialized views/catchment_26904.sql"
+            ,"materialized views/catchment_32161.sql"
+            ,"materialized views/catchment_32655.sql"
+            ,"materialized views/catchment_32702.sql"
+            ,"functions/generic_common_mbr.sql"
+            ,"functions/query_generic_common_mbr.sql"
+            ,"functions/determine_grid_srid.sql"
+            ,"functions/temp_table_exists.sql"
+            ,"functions/create_linear_temp_tables.sql"
+            ,"functions/index_point.sql"
+            ,"functions/index_linear.sql"
+            ,"functions/index_area_simple.sql"
+            ,"functions/index_area_centroid.sql"
+            ,"functions/index_area_artpath.sql"
+          ]
+         ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
+         ,"configurations": [
+            {
+                "id": 1
+               ,"file": "*/*.sql"
+               ,"replacements": [
+                   {
+                      "string": "c_gitrelease    CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitrelease    CONSTANT VARCHAR(255) := '%GITRELEASE%';"
+                   }
+                  ,{
+                      "string": "c_gitcommit     CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitcommit     CONSTANT VARCHAR(255) := '%GITCOMMIT%';"
+                   }
+                  ,{
+                      "string": "c_gitcommitdate CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitcommitdate CONSTANT VARCHAR(255) := '%GITCOMMITDATE%';"
+                   }
+                  ,{
+                      "string": "c_gitcommitauth CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitcommitauth CONSTANT VARCHAR(255) := '%GITCOMMITAUTH%';"
+                   }
+                ]
+            }
+          ]
+       }
+      ,{
+          "id": "artifacts"
+         ,"targets": [
+             "cip20_nhdplus_h_deploy.sql"
+         ]
+       }
+   ]
+}
+

@@ -1,0 +1,26 @@
+FROM postgis/postgis:14-3.3
+
+LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update                                       &&\
+    apt-get install -y --no-install-recommends             \
+       wget                                                \
+       dos2unix                                            \
+       openssh-client                                      \
+       sshpass                                             \
+       parallel                                            \
+       unzip                                               \
+       vim                                                 \
+       postgresql-14-pgrouting*                          &&\ 
+    rm -rf /var/lib/apt/lists/*
+    
+COPY ./postgresql/init-pg.sh /docker-entrypoint-initdb.d/init.sh
+COPY ./postgresql/pgrst_watch.sql /home/postgres/pgrst_watch.sql
+RUN dos2unix --quiet /docker-entrypoint-initdb.d/init.sh &&\
+    chmod 755 /docker-entrypoint-initdb.d/init.sh        &&\
+    mkdir -p /home/postgres/.ssh                         &&\
+    chown -R postgres:postgres /home/postgres            &&\
+    mkdir -p /tblspdata                                  &&\
+    chown -R postgres:postgres /tblspdata

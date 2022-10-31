@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" >
+   <head>
+      <meta charset="UTF-8">
+      <title>CIP20 Indexing</title>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.7.1/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <style>
+         #busy {
+           position: absolute;
+           top: 15%;
+           left: 820px;
+           z-index: 100;
+         }
+      </style>
+   </head>
+   <body>
+      <div id="busy">
+         <svg width="57" height="57" viewBox="0 0 57 57" xmlns="http://www.w3.org/2000/svg" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+               <g transform="translate(1 1)" stroke-width="2">
+                  <circle cx="5" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;5;50;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" values="5;27;49;5" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="27" cy="5" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" from="5" to="5" values="5;50;50;5" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" from="27" to="27" values="27;49;5;27" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="49" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;50;5;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" from="49" to="49" begin="0s" dur="2.2s" values="49;5;27;49" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+               </g>
+            </g>
+         </svg>
+      </div>
+      <div id="container" style="width: 1400px;">
+         <div id="map" class="map" style="height: 700px; width: 800px; float: left;">
+         </div>
+         <div id="righty" style="width: 600px; float: left;">
+            <div id="top" style="text-align: center;">
+               <h2>&nbsp;</h2>
+               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP20 Test Indexing Harness</h2>
+               <span style="font-family: Arial; font-size: 11px;">Sketch a geometry or paste in GeoJSON:</span>
+               <br/>
+               <textarea name="dzGeometry" id="dzGeometry" type="text" class="textbox" style="width: 500px;" rows="3"></textarea>
+               <br/>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <select name="dzNHDPlusVersion" id="dzNHDPlusVersion" style="width:170px">
+                  <option value="nhdplus_m" SELECTED>Medium Resolution</option>
+                  <option value="nhdplus_h">High Resolution</option>
+               </select>
+               <br/>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">State Filter:&nbsp;</span>
+               <select name="dzStateFilter" id="dzStateFilter" style="width:170px">
+                  <option value="" SELECTED></option>
+                  <option value="AL">Alabama</option>
+                  <option value="AK">Alaska</option>
+                  <option value="AS">American Samoa</option>
+                  <option value="AZ">Arizona</option>
+                  <option value="AR">Arkansas</option>
+                  <option value="CA">California</option>
+                  <option value="CO">Colorado</option>
+                  <option value="CT">Connecticut</option>
+                  <option value="DE">Delaware</option>
+                  <option value="DC">District Of Columbia</option>
+                  <option value="FL">Florida</option>
+                  <option value="GA">Georgia</option>
+                  <option value="GU">Guam</option>
+                  <option value="HI">Hawaii</option>
+                  <option value="ID">Idaho</option>
+                  <option value="IL">Illinois</option>
+                  <option value="IN">Indiana</option>
+                  <option value="IA">Iowa</option>
+                  <option value="KS">Kansas</option>
+                  <option value="KY">Kentucky</option>
+                  <option value="LA">Louisiana</option>
+                  <option value="ME">Maine</option>
+                  <option value="MD">Maryland</option>
+                  <option value="MA">Massachusetts</option>
+                  <option value="MI">Michigan</option>
+                  <option value="MN">Minnesota</option>
+                  <option value="MS">Mississippi</option>
+                  <option value="MO">Missouri</option>
+                  <option value="MT">Montana</option>
+                  <option value="NE">Nebraska</option>
+                  <option value="NV">Nevada</option>
+                  <option value="NH">New Hampshire</option>
+                  <option value="NJ">New Jersey</option>
+                  <option value="NM">New Mexico</option>
+                  <option value="NY">New York</option>
+                  <option value="NC">North Carolina</option>
+                  <option value="ND">North Dakota</option>
+                  <option value="MP">Northern Mariana Islands</option>
+                  <option value="OH">Ohio</option>
+                  <option value="OK">Oklahoma</option>
+                  <option value="OR">Oregon</option>
+                  <option value="PA">Pennsylvania</option>
+                  <option value="PR">Puerto Rico</option>
+                  <option value="RI">Rhode Island</option>
+                  <option value="SC">South Carolina</option>
+                  <option value="SD">South Dakota</option>
+                  <option value="TN">Tennessee</option>
+                  <option value="TX">Texas</option>
+                  <option value="UT">Utah</option>
+                  <option value="VT">Vermont</option>
+                  <option value="VI">Virgin Islands</option>
+                  <option value="VA">Virginia</option>
+                  <option value="WA">Washington</option>
+                  <option value="WV">West Virginia</option>
+                  <option value="WI">Wisconsin</option>
+                  <option value="WY">Wyoming</option>
+               </select>
+               <br/>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">CIP Indexing Method:&nbsp;</span>
+               <select name="dzCIPIndexingMethod" id="dzCIPIndexingMethod" style="width:170px">
+                  <option value="point" SELECTED>Point</option>
+                  <option value="line">Line</option>
+                  <option value="area_simple">Area - Simple</option>
+                  <option value="area_centroid">Area - Centroid</option>
+                  <option value="area_artpath">Area - Artifical Paths</option>
+               </select>
+               <br/>
+               <br/>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Linear Thold:</span>
+               <input name="dzLinearThreasholdPerc" id="dzLinearThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="10" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
+               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Event Thold:</span>
+               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <br/>
+               <br/>
+               <span style="font-family: Arial; font-size: 11px;">Show Catchments:</span>
+               <input name="dzShowCatchments" id="dzShowCatchments" type="checkbox" CHECKED>
+               &nbsp;&nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 11px;">Show Flowlines:</span>
+               <input name="dzShowFlowlines" id="dzShowFlowlines" type="checkbox" CHECKED>
+               &nbsp;&nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 11px;">Show HUC12s:</span>
+               <input name="dzShowHUC12s" id="dzShowHUC12s" type="checkbox" DISABLED>
+               <br/>
+               <br/>               
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input type="button" onclick="dz_clear();" value="Clear" name="dz_clear" id="dz_clear" />&nbsp;
+            </div>
+            <br/>
+            <br/>
+            <div id="output" style="text-align: center"></div>
+         </div>
+      </div>
+      <script src='https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.8/dist/esri-leaflet.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script>
+         document.getElementById("dz_run_service").disabled = true;
+         document.getElementById("busy").style.visibility = "hidden";
+         var zoom_cache = {};
+
+         var map = L.map("map").setView([46.874626,-96.782341],12);
+         mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+         basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "Map data &copy; " + mapLink,
+            maxZoom: 18
+         });
+         basemap.addTo(map);
+         
+         var drawnItems = new L.FeatureGroup().addTo(map);
+         var drawControl = new L.Control.Draw({
+            draw: {
+               polygon: true,
+               polyline: true,
+               rectangle: false,
+               circle: false,
+               marker: true,
+               circlemarker: false
+            },
+            edit: {
+               featureGroup: drawnItems,
+               edit: false,
+               remove: true
+            }
+         });
+         map.addControl(drawControl);
+         
+         map.on(L.Draw.Event.CREATED, function(e) {
+            var type = e.layerType;
+            var layer = e.layer;
+            drawnItems.clearLayers();       
+            document.getElementById("dzGeometry").value = JSON.stringify(e.layer.toGeoJSON().geometry);
+            drawnItems.addLayer(layer);
+            document.getElementById("dz_run_service").disabled = false;
+            
+         });
+         
+         map.on(L.Draw.Event.DELETED, function(e) {
+            document.getElementById("dzGeometry").value = "";
+            document.getElementById("dz_run_service").disabled = true;
+            
+         });
+         
+         var indexed_event = L.geoJson(null,{
+            onEachFeature: function (f,l) {
+               l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+            }
+         }).addTo(map);
+         
+         var indexed_catchments = L.geoJson(null,{
+            onEachFeature: function (f,l) {
+               l.bindPopup('<b>Indexed Catchment</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+            }
+         }).addTo(map);
+         
+         var catchment_flowlines = L.geoJson(null,{
+            onEachFeature: function (f,l) {
+               l.bindPopup('<b>NHD Flowline</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+            }
+         }).addTo(map);
+         
+         var xwalked_huc12s = L.geoJson(null,{
+            onEachFeature: function (f,l) {
+               l.bindPopup('<b>Indexed HUC12s</b><br/><<pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+            }
+         }).addTo(map);
+         
+         var dummy_zoomer = L.geoJson().addTo(map);
+         
+         var layer_items = {
+             "Sketched Items":      drawnItems
+            ,"Indexed Event":       indexed_event
+            ,"Indexed Catchments":  indexed_catchments
+            ,"Catchment Flowlines": catchment_flowlines
+            ,"XWalked HUC12s":      xwalked_huc12s
+         };
+         L.control.layers(null, layer_items).addTo(map);
+         
+         function run_service() {
+            dz_clear();
+            busy_on();
+
+            var pnhdv = document.getElementById("dzNHDPlusVersion");
+            var pstat = document.getElementById("dzStateFilter");
+            var pcipm = document.getElementById("dzCIPIndexingMethod");
+            
+            var geom  = JSON.parse(document.getElementById("dzGeometry").value);
+
+            var data = {
+                "p_geometry":                  geom  
+               ,"p_nhdplus_version":           pnhdv.options[pnhdv.selectedIndex].value
+               ,"p_state_filter":              pstat.options[pstat.selectedIndex].value
+               ,"p_cip_indexing_method":       pcipm.options[pcipm.selectedIndex].value
+               ,"p_linear_threashold_perc":    document.getElementById("dzLinearThreasholdPerc").value
+               ,"p_cat_threashold_perc":       document.getElementById("dzCatThreasholdPerc").value
+               ,"p_evt_threashold_perc":       document.getElementById("dzEvtThreasholdPerc").value
+               ,"p_return_catchment_geometry": document.getElementById("dzShowCatchments").checked
+               ,"p_return_flowlines":          document.getElementById("dzShowFlowlines").checked
+               ,"p_return_flowline_geometry":  true
+               ,"p_return_huc12s":             document.getElementById("dzShowHUC12s").checked
+            };
+            
+            httpPost("http://" + window.location.hostname + ":3000/rpc/cip20_index",data,get_response);
+           
+         }
+         
+         function httpPost(url,data,callback) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open("POST",url,true);
+            xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
+            xmlHttp.responseType = 'json';
+            xmlHttp.onreadystatechange = function() {
+               if(xmlHttp.readyState === 4) {
+                  if(xmlHttp.status === 200) {
+                     response = xmlHttp.response;
+                     callback(null,response);
+                  } else {
+                     callback(xmlHttp.statusText,null);
+                  }
+               }
+            };
+            xmlHttp.send(JSON.stringify(data));
+         }
+         
+         function get_response(error,response) {
+            busy_off();
+   
+            if (error) {
+               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+               return false;
+            } else if (response == null) {
+               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+               return false;
+            } else if (response.p_return_code != 0) {
+               document.getElementById("output").innerHTML = "<P>" + response.p_status_message + "</P>";
+               return false;
+            } else if (response.p_catchment_count == 0) {
+               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+               return false;
+            }
+            
+            if (response.p_indexed_geometry !== null && response.p_indexed_geometry.geometry.type !== null) {
+               indexed_event.addData(response.p_indexed_geometry).setStyle({
+                   "color":       "#808080"
+                  ,"opacity":     .80
+                  ,"fillColor":   "#808080"
+                  ,"fillOpacity": .10
+               });
+            }
+            
+            if (response.p_catchments !== null && response.p_catchments.features[0].geometry.type !== null) {
+               indexed_catchments.addData(response.p_catchments).setStyle({
+                   "color":       "#FF6600"
+                  ,"fillColor":   "#FF6600"
+               });
+               
+            }
+            
+            if (response.p_flowlines !== null && response.p_flowlines.features[0].geometry.type !== null) {
+               catchment_flowlines.addData(response.p_flowlines).setStyle({
+                   "color":       "#003399"
+                  ,"opacity":     .80
+               });
+            }
+            
+            if (response.p_huc12s !== null && response.p_huc12s.features[0].geometry.type !== null) {
+               xwalked_huc12s.addData(response.p_huc12s).setStyle({
+                   "color":       "#CC33FF"
+                  ,"fillColor":   "#CC33FF"
+               });
+            }
+            
+            if (response.p_huc12s !== null && response.p_huc12s.features[0].geometry.type !== null) {
+               map.fitBounds(indexed_huc12s.getBounds(), {
+                  maxZoom: 16
+               });
+               
+            } else if (response.p_catchments !== null && response.p_catchments.features[0].geometry.type !== null) {
+               map.fitBounds(indexed_catchments.getBounds(), {
+                  maxZoom: 16
+               });
+            }            
+            
+            zoom_cache = {};
+
+            tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
+                    + '<TR>'
+                    + '<TH colspan="4" style="font-family: Arial; font-size: 14px;">' + response.p_catchment_count + ' Catchments Indexed - ' + response.p_catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
+                    + '<TR>'
+                    + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
+                    + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
+                    + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
+                    + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
+                    + '</TR>';
+            tbl_end = '</TABLE>';
+
+            tbl_cnt = '';
+            for (var i = 0; i < response.p_catchments.features.length; i++) {
+               tbl_cnt += '<TR>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">';
+                       
+               if (response.p_catchments.features[0].geometry.type !== null) {
+                  tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.p_catchments.features[i].properties.catchmentstatecode + response.p_catchments.features[i].properties.nhdplusid + '\');"/>';
+                  zoom_cache[response.p_catchments.features[i].properties.catchmentstatecode + response.p_catchments.features[i].properties.nhdplusid] = response.p_catchments.features[i].geometry;
+               } else {
+                  tbl_cnt += '&nbsp;';
+               }
+               
+               tbl_cnt += '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.catchmentstatecode + '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.nhdplusid + '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.catchmentareasqkm + '</TD>'
+                       +  '</TR>';
+               }       
+            
+            document.getElementById("output").innerHTML = tbl_beg + tbl_cnt + tbl_end;
+            
+         }
+         
+         function zoom_to_catchment(id) {
+            dummy_zoomer.clearLayers();
+            dummy_zoomer.addData(zoom_cache[id]).setStyle({
+                "opacity":     0
+               ,"fillOpacity": 0
+            });
+            map.fitBounds(dummy_zoomer.getBounds(), {
+               maxZoom: 16
+            });
+            return true;
+         }
+         
+         function dz_clear() {
+            document.getElementById("output").innerHTML = "";
+            indexed_event.clearLayers();
+            indexed_catchments.clearLayers();
+            catchment_flowlines.clearLayers();
+            xwalked_huc12s.clearLayers();
+            busy_off();
+         }
+
+         function busy_on() {
+            document.getElementById("busy").style.visibility = "visible";
+            document.body.style.cursor = "wait";
+            document.getElementById("dz_run_service").disabled = true;
+         }
+
+         function busy_off() {
+            document.getElementById("busy").style.visibility = "hidden";
+            document.body.style.cursor = "auto";
+            document.getElementById("dz_run_service").disabled = false;
+         }
+         
+      </script>
+   </body>
+</html>
