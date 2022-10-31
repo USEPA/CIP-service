@@ -320,6 +320,7 @@ DECLARE
    int_meassrid        INTEGER;
    int_gridsize        INTEGER;
    sdo_input           GEOMETRY;
+   sdo_state_clipped   GEOMETRY;
    ary_idx_geom_meas   NUMERIC[];
    boo_return_geometry BOOLEAN;
    str_state_filter    VARCHAR(2);
@@ -401,30 +402,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 40
-   -- Clip by state if requested
-   ----------------------------------------------------------------------------
-   IF p_state_filter IS NOT NULL
-   THEN
-      rec := cip20_support.clip_by_state(
-          p_geometry     := p_indexed_geometry
-         ,p_known_region := str_known_region
-         ,p_state_filter := p_state_filter
-      );
-      p_indexed_geometry := rec.p_clipped_geometry;
-      p_return_code      := rec.p_return_code;
-      p_status_message   := rec.p_status_message;
-      
-      IF p_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;
-   
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 50
-   -- Determine the proper measurement SRID
+   -- Determine the known region to get measure srid
    ----------------------------------------------------------------------------
    rec := cip20_engine.determine_grid_srid(
        p_geometry        := p_indexed_geometry
@@ -443,10 +421,10 @@ BEGIN
    END IF;
    
    str_known_region := int_meassrid::VARCHAR;
-   
+
    ----------------------------------------------------------------------------
-   -- Step 60
-   -- Measure the geometry
+   -- Step 50
+   -- Measure the geometry, note this measurement is not state-clipped
    ----------------------------------------------------------------------------
    rec := cip20_engine.measure_geometry(
        p_geometry        := p_indexed_geometry
@@ -466,7 +444,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 60
    -- Determine the catchments
    ----------------------------------------------------------------------------
    FOR i IN 1 .. ST_NumGeometries(p_indexed_geometry)
@@ -619,8 +597,8 @@ BEGIN
    END LOOP;
 
    ----------------------------------------------------------------------------
-   -- Step 80
-   -- Return we got
+   -- Step 70
+   -- Return the full state-clipped catchment results
    ----------------------------------------------------------------------------
    IF p_nhdplus_version = 'nhdplus_m'
    THEN
@@ -649,6 +627,36 @@ BEGIN
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (str_state_filter IS NULL OR a.catchmentstatecode = str_state_filter);
    
+   ELSIF p_nhdplus_version = 'nhdplus_h'
+   THEN
+      INSERT INTO tmp_cip_out(
+          nhdplusid
+         ,catchmentstatecode
+         ,xwalk_huc12
+         ,areasqkm
+         ,shape
+      )
+      SELECT
+       a.nhdplusid
+      ,a.catchmentstatecode
+      ,a.xwalk_huc12
+      ,a.areasqkm
+      ,CASE
+       WHEN boo_return_geometry
+       THEN
+         a.shape
+       ELSE
+         CAST(NULL AS GEOMETRY)       
+       END AS shape
+      FROM
+      cip20_nhdplus_h.catchment_fabric a
+      WHERE
+      EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+      AND (str_state_filter IS NULL OR a.catchmentstatecode = str_state_filter);
+   
+   ELSE
+      RAISE EXCEPTION 'err';
+   
    END IF;
    
    SELECT
@@ -658,7 +666,48 @@ BEGIN
     p_catchment_count
    ,p_catchment_areasqkm
    FROM
-   tmp_cip_out a; 
+   tmp_cip_out a;
+
+   ----------------------------------------------------------------------------
+   -- Step 80
+   -- Clip by state if requested and remeasure for results
+   ----------------------------------------------------------------------------
+   IF p_state_filter IS NOT NULL
+   AND p_state_filter NOT IN ('AK','HI','AS')
+   THEN
+      rec := cip20_support.clip_by_state(
+          p_geometry     := p_indexed_geometry
+         ,p_known_region := str_known_region
+         ,p_state_filter := p_state_filter
+      );
+      p_indexed_geometry := rec.p_clipped_geometry;
+      p_return_code      := rec.p_return_code;
+      p_status_message   := rec.p_status_message;
+      
+      IF p_return_code != 0
+      THEN
+         RETURN;
+         
+      END IF;
+      
+      rec := cip20_engine.measure_geometry(
+          p_geometry        := p_indexed_geometry
+         ,p_nhdplus_version := p_nhdplus_version
+         ,p_known_region    := str_known_region
+      );
+      p_indexed_geom_measure   := rec.p_measurement;
+      p_indexed_geom_meas_unit := rec.p_unit;
+      ary_idx_geom_meas        := rec.p_sub_meas;
+      p_return_code            := rec.p_return_code;
+      p_status_message         := rec.p_status_message;
+      
+      IF p_return_code != 0
+      THEN
+         RETURN;
+         
+      END IF;
+      
+   END IF;   
    
 END;
 $BODY$

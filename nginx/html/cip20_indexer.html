@@ -304,7 +304,7 @@
                return false;
             }
             
-            if (response.p_indexed_geometry !== null && response.p_indexed_geometry.geometry.type !== null) {
+            if (response.p_indexed_geometry !== null && response.p_indexed_geometry.features[0].geometry.type !== null) {
                indexed_event.addData(response.p_indexed_geometry).setStyle({
                    "color":       "#808080"
                   ,"opacity":     .80
@@ -374,7 +374,7 @@
                tbl_cnt += '</TD>'
                        +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.catchmentstatecode + '</TD>'
                        +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.nhdplusid + '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.catchmentareasqkm + '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.areasqkm + '</TD>'
                        +  '</TR>';
                }       
             

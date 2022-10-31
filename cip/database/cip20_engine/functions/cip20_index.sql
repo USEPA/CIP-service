@@ -332,6 +332,36 @@ BEGIN
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (str_state_filter IS NULL OR a.catchmentstatecode = str_state_filter);
    
+   ELSIF p_nhdplus_version = 'nhdplus_h'
+   THEN
+      INSERT INTO tmp_cip_out(
+          nhdplusid
+         ,catchmentstatecode
+         ,xwalk_huc12
+         ,areasqkm
+         ,shape
+      )
+      SELECT
+       a.nhdplusid
+      ,a.catchmentstatecode
+      ,a.xwalk_huc12
+      ,a.areasqkm
+      ,CASE
+       WHEN boo_return_geometry
+       THEN
+         a.shape
+       ELSE
+         CAST(NULL AS GEOMETRY)       
+       END AS shape
+      FROM
+      cip20_nhdplus_h.catchment_fabric a
+      WHERE
+      EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+      AND (str_state_filter IS NULL OR a.catchmentstatecode = str_state_filter);
+   
+   ELSE
+      RAISE EXCEPTION 'err';
+   
    END IF;
    
    SELECT
