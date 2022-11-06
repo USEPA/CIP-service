@@ -38,6 +38,7 @@
 #
 #
 {%- endif +%}
+name: cip20-docker-compose
 services:
 {%- if 'location' in containers.cip_pg and containers.cip_pg.location == "containerpg" -%}
 {%- set configval = cip_pg.containerpg.config +%}
@@ -98,10 +99,10 @@ services:
       shm_size: '1gb' 
       hostname: cip_pr
       environment:
-         PGRST_SERVER_HOST:  cip_pr
-         PGRST_SERVER_PORT:  3000
-         PGRST_DB_SCHEMA:    cip20_pgrest
-         PGRST_DB_ANON_ROLE: cip20_pgrest        
+         PGRST_SERVER_HOST:       cip_pr
+         PGRST_SERVER_PORT:       3000
+         PGRST_DB_SCHEMA:         cip20_pgrest
+         PGRST_DB_ANON_ROLE:      cip20_pgrest        
 {%- if 'external_port' in containers.cip_pr and containers.cip_pr.external_port is not none +%}
       ports:
          - target: 3000
@@ -127,16 +128,16 @@ services:
       shm_size: '1gb' 
       hostname: cip_jp
       environment:
-         POSTGRES_DB:           {{ containers.cip_pg.db }}
-         POSTGRES_HOST:         {{ containers.cip_pg.host }}
-         POSTGRES_PORT:         {{ containers.cip_pg.port }}
-         POSTGRES_CIP_PASS:     ${POSTGRESQL_CIP_PASS}
-         POSTGREST_PASS:        ${POSTGREST_PASS}    
-         GITHUB_REPO_URL:       {{ github_repo[ghrep].url }}
-         GITHUB_DEFAULT_BRANCH: {{ github_repo[ghrep].default_branch }}
+         POSTGRES_DB:             {{ containers.cip_pg.db }}
+         POSTGRES_HOST:           {{ containers.cip_pg.host }}
+         POSTGRES_PORT:           {{ containers.cip_pg.port }}
+         POSTGRES_CIP_PASS:       ${POSTGRESQL_CIP_PASS}
+         POSTGREST_PASS:          ${POSTGREST_PASS}    
+         GITHUB_REPO_URL:         {{ github_repo[ghrep].url }}
+         GITHUB_DEFAULT_BRANCH:   {{ github_repo[ghrep].default_branch }}
 {%- set s3buc = containers.cip_jp.dump_s3 -%}
 {%- set s3url = s3_bucket[s3buc].url +%}
-         S3_BUCKET:             {{ s3url }}
+         S3_BUCKET:               {{ s3url }}
 {%- if 'external_port' in containers.cip_jp and containers.cip_jp.external_port is not none +%}
       ports:
          - target: 8888
@@ -162,10 +163,10 @@ services:
       shm_size: '1gb' 
       hostname: cip_ng
       environment:
-         POSTGRES_DB:       {{ containers.cip_pg.db }}
-         POSTGRES_HOST:     {{ containers.cip_pg.host }}
-         POSTGRES_PORT:     {{ containers.cip_pg.port }}
-         POSTGRES_UPL_PASS: ${POSTGRESQL_UPL_PASS}
+         POSTGRES_DB:             {{ containers.cip_pg.db }}
+         POSTGRES_HOST:           {{ containers.cip_pg.host }}
+         POSTGRES_PORT:           {{ containers.cip_pg.port }}
+         POSTGRES_UPL_PASS:       ${POSTGRESQL_UPL_PASS}
 {%- if 'external_port' in containers.cip_ng and containers.cip_ng.external_port is not none +%}
       ports:
          - target: 80

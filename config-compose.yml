@@ -1,3 +1,4 @@
+name: cip20-config-compose
 services:
    quickpython:
       build:
