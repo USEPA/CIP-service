@@ -1,0 +1,110 @@
+FROM osgeo/gdal:ubuntu-full-3.5.3
+
+LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
+
+ARG ARG_JUPYTER_TOKEN
+ENV JUPYTER_TOKEN=$ARG_JUPYTER_TOKEN
+
+ENV NB_USER=jovyan
+ENV GRANT_SUDO=yes
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update                                       &&\
+    apt-get install -y --no-install-recommends             \
+       awscli                                              \
+       wget                                                \
+       dos2unix                                            \
+       openssh-client                                      \
+       sshpass                                             \
+       parallel                                            \
+       unzip                                               \
+       zip                                                 \
+       git                                                 \
+       build-essential                                     \
+       vim                                                 \
+       epiphany                                            \
+       python3-pip                                         \
+       python3-dev                                         \
+       libspatialindex-dev                                 \
+       jupyter-notebook                                  &&\ 
+    rm -rf /var/lib/apt/lists/*
+
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list &&\
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
+RUN apt-get update                              &&\
+    apt-get install -y --no-install-recommends    \
+       postgresql-client                        &&\
+    apt-get clean                               &&\
+    rm -rf /var/lib/apt/lists/*                 &&\
+    rm -rf /var/cache/apt/*
+
+RUN useradd -m -s /bin/bash -N -u 1000 ${NB_USER}        &&\
+    mkdir /home/${NB_USER}/notebooks                     &&\
+    mkdir /home/${NB_USER}/loading_dock
+
+{%- set ghrep = containers.cip_jp.github_repo -%}
+{%- set ghkey = github_repo[ghrep].add_deploy_key -%}
+{%- if ghkey == true +%}
+ARG ARG_CIP20_DEPLOYKEY
+RUN mkdir -p /home/${NB_USER}/.ssh
+COPY ${ARG_CIP20_DEPLOYKEY}.ppk /home/${NB_USER}/.ssh/id_rsa
+COPY ${ARG_CIP20_DEPLOYKEY}.pub /home/${NB_USER}/.ssh/id_rsa.pub
+RUN chown -R ${NB_USER}:users /home/${NB_USER}/.ssh      &&\
+    chmod 0400 /home/${NB_USER}/.ssh/id_rsa              &&\
+    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub
+{%- endif +%}
+
+USER ${NB_USER}
+
+RUN ssh-keyscan github.com > /home/${NB_USER}/.ssh/known_hosts
+{%- if ghkey == true +%}
+RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
+{%- endif +%}
+RUN pip3 install --upgrade numpy
+
+RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels           \
+      fiona                                                \
+      folium                                               \
+      geocoder                                             \
+      geopandas                                            \
+      geopy                                                \
+      psycopg2-binary                                      \
+      ipywidgets                                           \
+      pyproj                                               \
+      pysal                                                \
+      rtree                                                \
+      shapely                                              \
+      wget                                                 \
+      openpyxl
+
+RUN pip3 install fiona                                     \
+      folium                                               \
+      boto3                                                \
+      geocoder                                             \
+      geopandas                                            \
+      geopy                                                \
+      gitpython                                            \
+      psycopg2-binary                                      \
+      ipywidgets                                           \
+      pyproj                                               \
+      pysal                                                \
+      rtree                                                \
+      shapely                                              \
+      wget                                                 \
+      openpyxl
+
+USER root
+
+COPY ./jupyter/notebooks /home/${NB_USER}/notebooks
+RUN  chown -R ${NB_USER}:users /home/${NB_USER}/notebooks &&\
+     chown -R ${NB_USER}:users /home/${NB_USER}/loading_dock
+
+COPY ./jupyter/notebook.json /opt/conda/etc/jupyter/nbconfig/notebook.json
+
+EXPOSE 8888
+
+USER ${NB_USER}
+
+CMD ["sh", "-c", "jupyter notebook --port=8888 --no-browser --ip=* --notebook-dir=/home/${NB_USER}/notebooks"]

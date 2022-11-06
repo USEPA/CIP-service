@@ -1,7 +1,7 @@
 --******************************--
 ----- materialized views/nhdplusflowlinevaa_catnodes.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_catnodes;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(
     nhdplusid
@@ -90,7 +90,7 @@ ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes;
 --******************************--
 ----- materialized views/nhdplusflowlinevaa_levelpathi.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(
     levelpathi
@@ -144,7 +144,7 @@ ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi;
 --******************************--
 ----- materialized views/catchment_3338.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_3338;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_3338 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_3338(
     nhdplusid
@@ -229,7 +229,7 @@ ANALYZE cip20_nhdplus_m.catchment_3338;
 --******************************--
 ----- materialized views/catchment_5070.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_5070;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_5070 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_5070(
     nhdplusid
@@ -314,7 +314,7 @@ ANALYZE cip20_nhdplus_m.catchment_5070;
 --******************************--
 ----- materialized views/catchment_26904.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_26904;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_26904 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_26904(
     nhdplusid
@@ -399,7 +399,7 @@ ANALYZE cip20_nhdplus_m.catchment_26904;
 --******************************--
 ----- materialized views/catchment_32161.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32161;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32161 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32161(
     nhdplusid
@@ -484,7 +484,7 @@ ANALYZE cip20_nhdplus_m.catchment_32161;
 --******************************--
 ----- materialized views/catchment_32655.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32655;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32655 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32655(
     nhdplusid
@@ -569,7 +569,7 @@ ANALYZE cip20_nhdplus_m.catchment_32655;
 --******************************--
 ----- materialized views/catchment_32702.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32702;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32702 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32702(
     nhdplusid

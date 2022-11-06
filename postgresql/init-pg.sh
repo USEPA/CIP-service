@@ -38,7 +38,9 @@ psql -c "CREATE EXTENSION IF NOT EXISTS pgrouting;"     ${POSTGRES_DB}
 
 psql -c "ALTER DATABASE ${POSTGRES_DB} OWNER TO cip20;"
 psql -c "GRANT CREATE ON DATABASE ${POSTGRES_DB} TO cip20_user;"
-psql -d ${POSTGRES_DB} -a -f /home/postgres/pgrst_watch.sql
+if [ -e "/home/postgres/pgrst_watch.sql" ]; then
+   psql -d ${POSTGRES_DB} -a -f /home/postgres/pgrst_watch.sql
+fi
 
 echo "creating schemas"
 psql -c "GRANT ALL ON TABLE public.spatial_ref_sys TO cip20_user;" ${POSTGRES_DB}

@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_h.catchment_32655;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_h.catchment_32655 CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_h.catchment_32655(
     nhdplusid

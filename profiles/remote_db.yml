@@ -1,0 +1,34 @@
+profile_name: remote_db 
+#
+# Example profile where the cip_pg database
+# is external and not part of the docker-compose 
+# environment
+#
+last updated: 20221105
+containers:
+   cip_pg:
+      # note all db credentials are still 
+      # provided via the .env file
+      location:         remotepg
+      host:             192.168.1.107
+      port:             5433
+      db:               cip20
+      external_port:    null
+   cip_pr:
+      external_port:    3000
+      add_host_gateway: false
+   cip_jp:
+      github_repo:      erg
+      dump_s3:          ows3
+      external_port:    8888
+      add_pgrst_watch:  true
+      add_host_gateway: false
+   cip_ng:
+      external_port:    8080
+      add_host_gateway: false
+#      
+cip_pg:
+   containerpg:
+      config: server
+   remotepg:
+      config: null

@@ -1,0 +1,14 @@
+FROM postgrest/postgrest:v10.1.0
+
+LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
+
+ARG ARG_POSTGRES_DB
+ARG ARG_POSTGRES_HOST
+ARG ARG_POSTGRES_PORT
+ARG ARG_POSTGREST_PASS
+
+ENV PGRST_DB_URI postgres://cip20_pgrest:${ARG_POSTGREST_PASS}@${ARG_POSTGRES_HOST}:${ARG_POSTGRES_PORT}/${ARG_POSTGRES_DB}  
+
+EXPOSE 3000
+
+CMD ["/bin/postgrest"]

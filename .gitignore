@@ -3,3 +3,9 @@
 *.pub
 *.dmp
 .env
+*.pyc
+docker-compose.yml
+Dockerfile.jp
+Dockerfile.ng
+Dockerfile.pg
+Dockerfile.pr

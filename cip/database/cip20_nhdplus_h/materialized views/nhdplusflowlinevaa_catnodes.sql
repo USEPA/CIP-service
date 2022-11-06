@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_h.nhdplusflowlinevaa_catnodes;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_h.nhdplusflowlinevaa_catnodes CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_h.nhdplusflowlinevaa_catnodes(
     nhdplusid

@@ -1,0 +1,189 @@
+{%- if 1 == 2 -%}
+#
+#
+# This docker-compose file is a jinja2 template.
+# Before utilizing, use an appropriate configuration
+# settings file to generate the compose and dockerfiles
+#
+# If you have python on your host system, execute the config
+# script directly: 
+# python config-compose.py --profile desktop.yml
+#
+# If you don't have python handy, then whip up a quick container.
+# Power Shell: ./config-compose.ps1 desktop.yml
+# Linux:       ./config-compose.sh  desktop.yml
+#   
+#
+{%- endif -%}
+{%- if 1 == 1 -%}
+#
+#
+# profile:   {{ profile_name }}
+# generated: {{ now }} 
+#
+# This docker-compose and daughter Dockerfiles were generated from the source
+# template using the config-compose.py script.  The script applies a predefined profile
+# to a jinja2 template located in the templates directory.
+#
+# Aside from the configuration step all secrets must be provided via the usual .env file.
+# 
+# POSTGRESQL_SU_PASS: super or privledged user for container database
+# POSTGRES_CIP_PASS : cip20 user password
+# POSTGRES_USR_PASS : cip20_user user password
+# POSTGRES_UPL_PASS : cip20_upload user password
+# POSTGREST_PASS    : cip20_pgrest user password
+# JUPYTER_TOKEN     : jupyter server token, a value of "easy" will forgo this
+# CIP20_DEPLOYKEY   : if the github repository requires a deploy key, provide here
+#                     example: ./mydeploykey for mydeploykey.ppk and mydeploykey.pub
+#
+#
+{%- endif +%}
+services:
+{%- if 'location' in containers.cip_pg and containers.cip_pg.location == "containerpg" -%}
+{%- set configval = cip_pg.containerpg.config +%}
+   cip_pg:
+      build:
+         context: .
+         dockerfile: Dockerfile.pg
+         shm_size: '2gb' 
+      shm_size: {{ container_postgresql_config[configval].shm_size }}
+      hostname: cip_pg
+      environment:
+         POSTGRES_DB:             {{ containers.cip_pg.db }}
+         POSTGRES_PASSWORD:       ${POSTGRESQL_SU_PASS}
+         POSTGRES_CIP_PASS:       ${POSTGRESQL_CIP_PASS}
+         POSTGRES_USR_PASS:       ${POSTGRESQL_USR_PASS}
+         POSTGRES_UPL_PASS:       ${POSTGRESQL_UPL_PASS}
+         POSTGREST_PASS:          ${POSTGREST_PASS}
+         PG_MAX_CONNECTIONS:      {{ container_postgresql_config[configval].max_connections }}   
+         PG_SHARED_BUFFERS:       {{ container_postgresql_config[configval].shared_buffers }}      
+         PG_EFFECTIVE_CACHE_SIZE: {{ container_postgresql_config[configval].effective_cache_size }}
+         PG_MAINTENANCE_WORK_MEM: {{ container_postgresql_config[configval].maintenance_work_mem }}
+         PG_CHECKPOINT_COMP_TARG: {{ container_postgresql_config[configval].checkpoint_comp_targ }}
+         PG_WAL_BUFFERS:          {{ container_postgresql_config[configval].wal_buffers }}         
+         PG_DEF_STATISTICS_TARG:  {{ container_postgresql_config[configval].def_statistics_targ }} 
+         PG_RANDOM_PAGE_COST:     {{ container_postgresql_config[configval].random_page_cost }}     
+         PG_EFFECTIVE_IO_CONC:    {{ container_postgresql_config[configval].effective_io_conc }}     
+         PG_WORK_MEM:             {{ container_postgresql_config[configval].work_mem }}             
+         PG_MIN_WAL_SIZE:         {{ container_postgresql_config[configval].min_wal_size }}        
+         PG_MAX_WAL_SIZE:         {{ container_postgresql_config[configval].max_wal_size }}         
+         PG_MAX_WORKER_PROCESSES: {{ container_postgresql_config[configval].max_worker_processes }} 
+         PG_MAX_PAR_WORK_PER_GAT: {{ container_postgresql_config[configval].max_par_work_per_gat }} 
+         PG_MAX_PAR_WORKERS:      {{ container_postgresql_config[configval].max_par_workers }}      
+         PG_MAX_PAR_MAINT_WORK:   {{ container_postgresql_config[configval].max_par_maint_work  }}  
+{%- if 'external_port' in containers.cip_pg and containers.cip_pg.external_port is not none +%}
+      ports:
+         - target: 5432
+           published: {{ containers.cip_pg.external_port }}
+{%- endif +%}
+      networks:
+         - cip
+      volumes:
+         - type: volume
+           source: pgdata
+           target: /var/lib/postgresql/data
+         - type: volume
+           source: tblspdata
+           target: /tblspdata
+{%- endif +%}
+   cip_pr:
+      build:
+         context: .
+         dockerfile: Dockerfile.pr
+         args:
+            ARG_POSTGRES_DB:    {{ containers.cip_pg.db }}
+            ARG_POSTGRES_HOST:  {{ containers.cip_pg.host }}
+            ARG_POSTGRES_PORT:  {{ containers.cip_pg.port }}
+            ARG_POSTGREST_PASS: ${POSTGREST_PASS}
+      shm_size: '1gb' 
+      hostname: cip_pr
+      environment:
+         PGRST_SERVER_HOST:  cip_pr
+         PGRST_SERVER_PORT:  3000
+         PGRST_DB_SCHEMA:    cip20_pgrest
+         PGRST_DB_ANON_ROLE: cip20_pgrest        
+{%- if 'external_port' in containers.cip_pr and containers.cip_pr.external_port is not none +%}
+      ports:
+         - target: 3000
+           published: {{ containers.cip_pr.external_port }}
+{%- endif +%}
+      networks:
+         - cip
+{%- if 'add_host_gateway' in containers.cip_pr and containers.cip_pr.add_host_gateway == true +%}
+      extra_hosts:
+         - host.docker.internal:host-gateway
+{%- endif +%}
+{%- set ghrep = containers.cip_jp.github_repo -%}
+{%- set ghkey = github_repo[ghrep].add_deploy_key +%}
+   cip_jp:
+      build:
+         context: .
+         dockerfile: Dockerfile.jp
+         args:
+{%- if ghkey == true +%}
+            ARG_CIP20_DEPLOYKEY: ${CIP20_DEPLOYKEY}
+{%- endif +%}
+            ARG_JUPYTER_TOKEN:   ${JUPYTER_TOKEN}
+      shm_size: '1gb' 
+      hostname: cip_jp
+      environment:
+         POSTGRES_DB:           {{ containers.cip_pg.db }}
+         POSTGRES_HOST:         {{ containers.cip_pg.host }}
+         POSTGRES_PORT:         {{ containers.cip_pg.port }}
+         POSTGRES_CIP_PASS:     ${POSTGRESQL_CIP_PASS}
+         POSTGREST_PASS:        ${POSTGREST_PASS}    
+         GITHUB_REPO_URL:       {{ github_repo[ghrep].url }}
+         GITHUB_DEFAULT_BRANCH: {{ github_repo[ghrep].default_branch }}
+{%- set s3buc = containers.cip_jp.dump_s3 -%}
+{%- set s3url = s3_bucket[s3buc].url +%}
+         S3_BUCKET:             {{ s3url }}
+{%- if 'external_port' in containers.cip_jp and containers.cip_jp.external_port is not none +%}
+      ports:
+         - target: 8888
+           published: {{ containers.cip_jp.external_port }}
+{%- endif +%}
+      networks:
+         - cip
+{%- if 'add_host_gateway' in containers.cip_jp and containers.cip_jp.add_host_gateway == true +%}
+      extra_hosts:
+         - host.docker.internal:host-gateway
+{%- endif +%}
+      volumes:
+         - type: volume
+           source: jupyter
+           target: /opt/conda/etc/jupyter
+         - type: volume
+           source: home-jovyan
+           target: /home/jovyan
+   cip_ng:
+      build:
+         context: .
+         dockerfile: Dockerfile.ng
+      shm_size: '1gb' 
+      hostname: cip_ng
+      environment:
+         POSTGRES_DB:       {{ containers.cip_pg.db }}
+         POSTGRES_HOST:     {{ containers.cip_pg.host }}
+         POSTGRES_PORT:     {{ containers.cip_pg.port }}
+         POSTGRES_UPL_PASS: ${POSTGRESQL_UPL_PASS}
+{%- if 'external_port' in containers.cip_ng and containers.cip_ng.external_port is not none +%}
+      ports:
+         - target: 80
+           published: {{ containers.cip_ng.external_port }}
+{%- endif +%}
+      networks:
+         - cip
+{%- if 'add_host_gateway' in containers.cip_ng and containers.cip_ng.add_host_gateway == true +%}
+      extra_hosts:
+         - host.docker.internal:host-gateway
+{%- endif +%}
+networks:
+   cip:
+      driver: bridge
+volumes:
+{%- if 'location' in containers.cip_pg and containers.cip_pg.location == "containerpg" +%}
+   tblspdata:
+   pgdata:
+{%- endif +%}
+   jupyter:
+   home-jovyan:

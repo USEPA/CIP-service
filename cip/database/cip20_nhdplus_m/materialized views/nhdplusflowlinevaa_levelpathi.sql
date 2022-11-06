@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi;
+DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi CASCADE;
 
 CREATE MATERIALIZED VIEW cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(
     levelpathi
