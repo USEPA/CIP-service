@@ -1,11 +1,13 @@
 #
 github_repo:
+   # Note use the https port 443 endpoints
+   # as most GFEs and VDIs block port 22 by default
    epa:
-      url: "git@github.com:USEPA/CIPv2.git"
+      url: "ssh://git@ssh.github.com:443/USEPA/CIPv2.git"
       default_branch: main
       add_deploy_key: false
    erg:
-      url: "git@github.com:Eastern-Research-Group/EPA-OW-CIP20.git"
+      url: "ssh://git@ssh.github.com:443/Eastern-Research-Group/EPA-OW-CIP20.git"
       default_branch: main
       add_deploy_key: true
 #
@@ -13,7 +15,7 @@ s3_bucket:
    ows3: 
       url: "https://edap-ow-data-commons.s3.amazonaws.com/data/"
 #
-container_postgresql_config:
+postgresql_config:
    server:
       shm_size:             96gb
       max_connections:      20

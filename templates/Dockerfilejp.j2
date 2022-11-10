@@ -42,9 +42,10 @@ RUN apt-get update                              &&\
 
 RUN useradd -m -s /bin/bash -N -u 1000 ${NB_USER}        &&\
     mkdir /home/${NB_USER}/notebooks                     &&\
+    mkdir /home/${NB_USER}/notebooks/sql                 &&\
     mkdir /home/${NB_USER}/loading_dock
 
-{%- set ghrep = containers.cip_jp.github_repo -%}
+{%- set ghrep = components.cip_jp.github_repo -%}
 {%- set ghkey = github_repo[ghrep].add_deploy_key -%}
 {%- if ghkey == true +%}
 ARG ARG_CIP20_DEPLOYKEY
@@ -58,7 +59,7 @@ RUN chown -R ${NB_USER}:users /home/${NB_USER}/.ssh      &&\
 
 USER ${NB_USER}
 
-RUN ssh-keyscan github.com > /home/${NB_USER}/.ssh/known_hosts
+RUN ssh-keyscan -p 443 ssh.github.com > /home/${NB_USER}/.ssh/known_hosts
 {%- if ghkey == true +%}
 RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
 {%- endif +%}
@@ -98,6 +99,11 @@ RUN pip3 install fiona                                     \
 USER root
 
 COPY ./jupyter/notebooks /home/${NB_USER}/notebooks
+COPY ./postgresql/user_creation.sql /home/${NB_USER}/notebooks/sql
+COPY ./postgresql/db_creation.sql   /home/${NB_USER}/notebooks/sql
+COPY ./postgresql/db_config.sql     /home/${NB_USER}/notebooks/sql
+COPY ./postgresql/schema_config.sql /home/${NB_USER}/notebooks/sql
+
 RUN  chown -R ${NB_USER}:users /home/${NB_USER}/notebooks &&\
      chown -R ${NB_USER}:users /home/${NB_USER}/loading_dock
 

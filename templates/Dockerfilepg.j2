@@ -10,15 +10,21 @@ RUN apt-get update                                       &&\
        dos2unix                                            \
        openssh-client                                      \
        sshpass                                             \
+       gettext-base                                        \
        parallel                                            \
        unzip                                               \
        vim                                                 \
        postgresql-14-pgrouting*                          &&\ 
     rm -rf /var/lib/apt/lists/*
     
-COPY ./postgresql/init-pg.sh /docker-entrypoint-initdb.d/init.sh
+COPY ./postgresql/init-pg.sh        /docker-entrypoint-initdb.d/init.sh
+COPY ./postgresql/alter_pg.sed      /home/postgres/alter_pg.sed
+COPY ./postgresql/user_creation.sql /home/postgres/user_creation.sql
+COPY ./postgresql/db_creation.sql   /home/postgres/db_creation.sql
+COPY ./postgresql/db_config.sql     /home/postgres/db_config.sql
+COPY ./postgresql/schema_config.sql /home/postgres/schema_config.sql
 
-{%- if 'add_pgrst_watch' in containers.cip_jp and containers.cip_jp.add_pgrst_watch == true +%}
+{%- if 'add_pgrst_watch' in components.cip_pg and components.cip_pg.add_pgrst_watch == true +%}
 COPY ./postgresql/pgrst_watch.sql /home/postgres/pgrst_watch.sql
 {%- endif +%}
 
