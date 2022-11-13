@@ -2,9 +2,9 @@ CREATE OR REPLACE FUNCTION cip20_support.clip_by_state(
     IN  p_geometry             GEOMETRY
    ,IN  p_known_region         VARCHAR
    ,IN  p_state_filter         VARCHAR
-   ,OUT p_clipped_geometry     GEOMETRY
-   ,OUT p_return_code          INTEGER
-   ,OUT p_status_message       VARCHAR
+   ,OUT out_clipped_geometry   GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
 ) 
 STABLE
 AS $BODY$
@@ -25,7 +25,7 @@ DECLARE
 
 BEGIN
 
-   p_return_code := 0;
+   out_return_code := 0;
    
    ----------------------------------------------------------------------------
    -- Step 10
@@ -35,12 +35,12 @@ BEGIN
        p_geometry        := p_geometry
       ,p_known_region    := p_known_region
    );
-   int_srid         := rec.p_srid;
-   int_gridsize     := rec.p_grid_size;
-   p_return_code    := rec.p_return_code;
-   p_status_message := rec.p_status_message;
+   int_srid           := rec.out_srid;
+   int_gridsize       := rec.out_grid_size;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
    
-   IF p_return_code != 0
+   IF out_return_code != 0
    THEN
       RETURN;
       
@@ -81,9 +81,9 @@ BEGIN
    
    IF sdo_state_geom IS NULL
    THEN
-      p_return_code      := -20;
-      p_status_message   := 'Unknown US state code <' || p_state_filter || '>.';
-      p_clipped_geometry := p_geometry;
+      out_return_code      := -20;
+      out_status_message   := 'Unknown US state code <' || p_state_filter || '>.';
+      out_clipped_geometry := p_geometry;
       RETURN;
       
    END IF;
@@ -92,7 +92,7 @@ BEGIN
    -- Step 30
    -- Return the intersection
    ----------------------------------------------------------------------------
-   p_clipped_geometry := ST_CollectionExtract(
+   out_clipped_geometry := ST_CollectionExtract(
        ST_Intersection(
           sdo_state_geom
          ,sdo_input_geom
@@ -100,10 +100,11 @@ BEGIN
       ,int_gtype
    );
    
-   IF ST_IsEmpty(p_clipped_geometry)
+   IF ST_IsEmpty(out_clipped_geometry)
    THEN
-      p_return_code      := -30;
-      p_status_message   := 'No results returned from clipping input event by state.';
+      out_clipped_geometry := NULL;
+      out_return_code      := 0;
+      out_status_message   := 'No results returned from clipping input geometry by state.';
       RETURN;
       
    END IF;

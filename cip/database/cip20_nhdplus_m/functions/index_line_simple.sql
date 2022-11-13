@@ -1,11 +1,10 @@
-CREATE OR REPLACE FUNCTION cip20_nhdplus_m.index_area_artpath(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_geometry_areasqkm    NUMERIC
-   ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threashold_perc  NUMERIC
-   ,IN  p_evt_threashold_perc  NUMERIC
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+CREATE OR REPLACE FUNCTION cip20_nhdplus_m.index_line_simple(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_geometry_lengthkm       NUMERIC
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_line_threashold_perc    NUMERIC
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -14,26 +13,17 @@ DECLARE
    str_known_region    VARCHAR;
    int_srid            INTEGER;
    geom_input          GEOMETRY;
-   num_cat_threshold   NUMERIC;
-   num_evt_threshold   NUMERIC;
+   num_lin_threshold   NUMERIC;
+   int_count           INTEGER;
 
 BEGIN
 
-   IF p_cat_threashold_perc IS NULL
+   IF p_line_threashold_perc IS NULL
    THEN
-      num_cat_threshold := 0;
+      num_lin_threshold := 0;
    
    ELSE
-      num_cat_threshold := p_cat_threashold_perc / 100;
-      
-   END IF;
-   
-   IF p_evt_threashold_perc IS NULL
-   THEN
-      num_evt_threshold := 0;
-   
-   ELSE
-      num_evt_threshold := p_evt_threashold_perc / 100;
+      num_lin_threshold := p_line_threashold_perc / 100;
       
    END IF;
 
@@ -54,7 +44,7 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
-      
+
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);
@@ -68,19 +58,29 @@ BEGIN
          SELECT
           aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          THEN
+            1
+          WHEN p_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.nhdplusid
@@ -90,26 +90,23 @@ BEGIN
                       aaaa.shape
                      ,geom_input
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cip20_nhdplus_m.catchment_5070 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
             ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
       ON CONFLICT DO NOTHING;
-   
+
    ELSIF str_known_region = '3338'
    THEN
       geom_input := ST_Transform(p_geometry,3338);
@@ -123,19 +120,29 @@ BEGIN
          SELECT
           aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          THEN
+            1
+          WHEN p_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.nhdplusid
@@ -145,24 +152,21 @@ BEGIN
                       aaaa.shape
                      ,geom_input
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cip20_nhdplus_m.catchment_3338 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
             ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
       ON CONFLICT DO NOTHING;
    
    ELSIF str_known_region = '26904'
@@ -178,19 +182,29 @@ BEGIN
          SELECT
           aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          THEN
+            1
+          WHEN p_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.nhdplusid
@@ -200,24 +214,21 @@ BEGIN
                       aaaa.shape
                      ,geom_input
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cip20_nhdplus_m.catchment_26904 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
             ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32161'
@@ -233,19 +244,29 @@ BEGIN
          SELECT
           aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          THEN
+            1
+          WHEN p_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.nhdplusid
@@ -255,24 +276,21 @@ BEGIN
                       aaaa.shape
                      ,geom_input
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cip20_nhdplus_m.catchment_32161 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
             ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32655'
@@ -288,19 +306,29 @@ BEGIN
          SELECT
           aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          THEN
+            1
+          WHEN p_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.nhdplusid
@@ -310,24 +338,21 @@ BEGIN
                       aaaa.shape
                      ,geom_input
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cip20_nhdplus_m.catchment_32655 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
             ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32702'
@@ -343,19 +368,29 @@ BEGIN
          SELECT
           aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          THEN
+            1
+          WHEN p_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.nhdplusid
@@ -365,24 +400,21 @@ BEGIN
                       aaaa.shape
                      ,geom_input
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cip20_nhdplus_m.catchment_32702 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
             ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
       ON CONFLICT DO NOTHING;
    
    ELSE
@@ -391,25 +423,25 @@ BEGIN
       
    END IF;
    
+   GET DIAGNOSTICS int_count = ROW_COUNT;
+
    RETURN;
    
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cip20_nhdplus_m.index_area_artpath(
+ALTER FUNCTION cip20_nhdplus_m.index_line_simple(
     GEOMETRY
    ,NUMERIC
    ,VARCHAR
-   ,NUMERIC
    ,NUMERIC
 ) OWNER TO cip20;
 
-GRANT EXECUTE ON FUNCTION cip20_nhdplus_m.index_area_artpath(
+GRANT EXECUTE ON FUNCTION cip20_nhdplus_m.index_line_simple(
     GEOMETRY
    ,NUMERIC
    ,VARCHAR
-   ,NUMERIC
    ,NUMERIC
 ) TO PUBLIC;
 

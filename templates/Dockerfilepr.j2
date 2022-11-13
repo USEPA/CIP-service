@@ -7,6 +7,10 @@ ARG ARG_POSTGRES_HOST
 ARG ARG_POSTGRES_PORT
 ARG ARG_POSTGREST_PASS
 
+{%- if 'log_level' in components.cip_pr +%}
+ENV PGRST_LOG_LEVEL {{ components.cip_pr.log_level }}
+{%- endif +%}
+
 ENV PGRST_DB_URI postgres://cip20_pgrest:${ARG_POSTGREST_PASS}@${ARG_POSTGRES_HOST}:${ARG_POSTGRES_PORT}/${ARG_POSTGRES_DB}  
 
 EXPOSE 3000

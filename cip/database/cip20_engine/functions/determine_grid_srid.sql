@@ -2,10 +2,10 @@ CREATE OR REPLACE FUNCTION cip20_engine.determine_grid_srid(
     IN  p_geometry             GEOMETRY
    ,IN  p_nhdplus_version      VARCHAR
    ,IN  p_known_region         VARCHAR
-   ,OUT p_srid                 INTEGER
-   ,OUT p_grid_size            NUMERIC
-   ,OUT p_return_code          INTEGER
-   ,OUT p_status_message       VARCHAR
+   ,OUT out_srid               INTEGER
+   ,OUT out_grid_size          NUMERIC
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -20,10 +20,10 @@ BEGIN
           p_geometry          := p_geometry
          ,p_known_region      := p_known_region
       );
-      p_srid           := rec.p_srid;
-      p_grid_size      := rec.p_grid_size;
-      p_return_code    := rec.p_return_code;
-      p_status_message := rec.p_status_message;
+      out_srid           := rec.out_srid;
+      out_grid_size      := rec.out_grid_size;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
    
    ELSIF p_nhdplus_version = 'nhdplus_h'
    THEN
@@ -31,10 +31,10 @@ BEGIN
           p_geometry          := p_geometry
          ,p_known_region      := p_known_region
       );
-      p_srid           := rec.p_srid;
-      p_grid_size      := rec.p_grid_size;
-      p_return_code    := rec.p_return_code;
-      p_status_message := rec.p_status_message;
+      out_srid           := rec.out_srid;
+      out_grid_size      := rec.out_grid_size;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
 
    ELSE
       RAISE EXCEPTION 'err %',p_nhdplus_version;

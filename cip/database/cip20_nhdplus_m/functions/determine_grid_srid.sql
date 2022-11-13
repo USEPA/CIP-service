@@ -1,10 +1,10 @@
 CREATE OR REPLACE FUNCTION cip20_nhdplus_m.determine_grid_srid(
     IN  p_geometry          GEOMETRY
    ,IN  p_known_region      VARCHAR
-   ,OUT p_srid              INTEGER
-   ,OUT p_grid_size         NUMERIC
-   ,OUT p_return_code       INTEGER
-   ,OUT p_status_message    VARCHAR
+   ,OUT out_srid            INTEGER
+   ,OUT out_grid_size       NUMERIC
+   ,OUT out_return_code     INTEGER
+   ,OUT out_status_message  VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -43,8 +43,8 @@ BEGIN
    ----------------------------------------------------------------------------
    IF str_region IS NULL
    THEN
-      p_return_code    := -1;
-      p_status_message := 'Geometry is outside nhdplus_h coverage.';
+      out_return_code    := -1;
+      out_status_message := 'Geometry is outside nhdplus_h coverage.';
       RETURN;
 
    ELSIF str_region IN ('5070','CONUS','USA',
@@ -54,33 +54,33 @@ BEGIN
    'NM','NV','NY','OH','OK','OR','PA','RI','SC','SD',
    'TN','TX','UT','VA','VT','WA','WI','WV','WY')
    THEN
-      p_srid       := 5070;
-      p_grid_size   := 30;
+      out_srid       := 5070;
+      out_grid_size  := 30;
       
    ELSIF str_region IN ('3338','AK')
    THEN  
-      p_srid       := 3338;
-      p_grid_size   := NULL;
+      out_srid       := 3338;
+      out_grid_size  := NULL;
    
    ELSIF str_region IN ('32702','SAMOA','AS')
    THEN
-      p_srid       := 32702;
-      p_grid_size   := 10;
+      out_srid       := 32702;
+      out_grid_size  := 10;
       
    ELSIF str_region IN ('32655','GUMP','GU','MP')
    THEN
-      p_srid       := 32655;
-      p_grid_size   := 10;
+      out_srid       := 32655;
+      out_grid_size  := 10;
       
    ELSIF str_region IN ('26904','HI')
    THEN
-      p_srid       := 26904;
-      p_grid_size   := 10;
+      out_srid       := 26904;
+      out_grid_size  := 10;
       
    ELSIF str_region IN ('32161','PRVI','PR','VI')
    THEN
-      p_srid       := 32161;
-      p_grid_size   := 10;
+      out_srid       := 32161;
+      out_grid_size  := 10;
       
    END IF;
    
@@ -88,7 +88,7 @@ BEGIN
    -- Step 40
    -- Return what we got
    ----------------------------------------------------------------------------
-   p_return_code := 0;
+   out_return_code := 0;
    
 END;
 $BODY$

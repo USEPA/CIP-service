@@ -8,13 +8,14 @@ last updated: 20221109
 components:
    cip_pg:
       type:             external
-      host:             192.168.1.107
-      port:             5433
-      db:               cip20
+      host:             env.POSTGRESQL_HOST
+      port:             env.POSTGRESQL_PORT
+      db:               env.POSTGRESQL_DB
       external_port:    null
    cip_pr:
       type:             container
       external_port:    3000
+      log_level:        info
       add_host_gateway: false
    cip_jp:
       type:             container

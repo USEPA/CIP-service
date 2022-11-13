@@ -1,8 +1,8 @@
-CREATE OR REPLACE FUNCTION cip20_nhdplus_m.index_point(
+CREATE OR REPLACE FUNCTION cip20_nhdplus_m.index_point_simple(
     IN  p_geometry             GEOMETRY
    ,IN  p_known_region         VARCHAR
-   ,OUT p_return_code          INTEGER
-   ,OUT p_status_message       VARCHAR
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -20,11 +20,11 @@ BEGIN
        p_geometry      := p_geometry
       ,p_known_region  := p_known_region
    );
-   int_srid         := rec.p_srid;
-   p_return_code    := rec.p_return_code;
-   p_status_message := rec.p_status_message;
+   int_srid           := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
    
-   IF p_return_code != 0
+   IF out_return_code != 0
    THEN
       RETURN;
       
@@ -141,8 +141,8 @@ BEGIN
       ON CONFLICT DO NOTHING;
    
    ELSE
-      p_return_code    := -10;
-      p_status_message := 'err ' || str_known_region;
+      out_return_code    := -10;
+      out_status_message := 'err ' || str_known_region;
       
    END IF;
    
@@ -152,12 +152,12 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cip20_nhdplus_m.index_point(
+ALTER FUNCTION cip20_nhdplus_m.index_point_simple(
     GEOMETRY
    ,VARCHAR
 ) OWNER TO cip20;
 
-GRANT EXECUTE ON FUNCTION cip20_nhdplus_m.index_point(
+GRANT EXECUTE ON FUNCTION cip20_nhdplus_m.index_point_simple(
     GEOMETRY
    ,VARCHAR
 ) TO PUBLIC;

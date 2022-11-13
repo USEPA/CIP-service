@@ -116,24 +116,31 @@
                </select>
                <br/>
                <br/>
-               <span style="font-family: Arial; font-size: 12px;">CIP Indexing Method:&nbsp;</span>
-               <select name="dzCIPIndexingMethod" id="dzCIPIndexingMethod" style="width:170px">
-                  <option value="point" SELECTED>Point</option>
-                  <option value="line">Line</option>
-                  <option value="area_simple">Area - Simple</option>
+               <span style="font-family: Arial; font-size: 11px;">Indexing Methods&nbsp;&nbsp;</span>
+               <select name="dzPointIndexingMethod" id="dzPointIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+                  <option value="point_simple" SELECTED>Point - Simple</option>
+               </select>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;</span>
+               <select name="dzLineIndexingMethod" id="dzLineIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+                  <option value="line_simple">Line - Simple</option>
+                  <option value="line_levelpath" SELECTED>Line - LevelPath</option>
+               </select>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;</span>
+               <select name="dzAreaIndexingMethod" id="dzAreaIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+                  <option value="area_simple" SELECTED>Area - Simple</option>
                   <option value="area_centroid">Area - Centroid</option>
                   <option value="area_artpath">Area - Artifical Paths</option>
                </select>
                <br/>
                <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Linear Thold:</span>
-               <input name="dzLinearThreasholdPerc" id="dzLinearThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="10" />
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
+               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
-               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="50" />
+               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Event Thold:</span>
-               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="1" />
+               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <br/>
                <br/>
@@ -206,7 +213,19 @@
             
          });
          
-         var indexed_event = L.geoJson(null,{
+         var indexed_points = L.geoJson(null,{
+            onEachFeature: function (f,l) {
+               l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+            }
+         }).addTo(map);
+         
+         var indexed_lines = L.geoJson(null,{
+            onEachFeature: function (f,l) {
+               l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+            }
+         }).addTo(map);
+         
+         var indexed_areas = L.geoJson(null,{
             onEachFeature: function (f,l) {
                l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
             }
@@ -234,7 +253,9 @@
          
          var layer_items = {
              "Sketched Items":      drawnItems
-            ,"Indexed Event":       indexed_event
+            ,"Indexed Points":      indexed_points
+            ,"Indexed Lines":       indexed_lines
+            ,"Indexed Areas":       indexed_areas
             ,"Indexed Catchments":  indexed_catchments
             ,"Catchment Flowlines": catchment_flowlines
             ,"XWalked HUC12s":      xwalked_huc12s
@@ -245,24 +266,28 @@
             dz_clear();
             busy_on();
 
-            var pnhdv = document.getElementById("dzNHDPlusVersion");
-            var pstat = document.getElementById("dzStateFilter");
-            var pcipm = document.getElementById("dzCIPIndexingMethod");
+            var pnhdv  = document.getElementById("dzNHDPlusVersion");
+            var pstat  = document.getElementById("dzStateFilter");
+            var pointm = document.getElementById("dzPointIndexingMethod");
+            var linem  = document.getElementById("dzLineIndexingMethod");
+            var aream  = document.getElementById("dzAreaIndexingMethod");
             
             var geom  = JSON.parse(document.getElementById("dzGeometry").value);
 
             var data = {
-                "p_geometry":                  geom  
-               ,"p_nhdplus_version":           pnhdv.options[pnhdv.selectedIndex].value
-               ,"p_state_filter":              pstat.options[pstat.selectedIndex].value
-               ,"p_cip_indexing_method":       pcipm.options[pcipm.selectedIndex].value
-               ,"p_linear_threashold_perc":    document.getElementById("dzLinearThreasholdPerc").value
-               ,"p_cat_threashold_perc":       document.getElementById("dzCatThreasholdPerc").value
-               ,"p_evt_threashold_perc":       document.getElementById("dzEvtThreasholdPerc").value
-               ,"p_return_catchment_geometry": document.getElementById("dzShowCatchments").checked
-               ,"p_return_flowlines":          document.getElementById("dzShowFlowlines").checked
-               ,"p_return_flowline_geometry":  true
-               ,"p_return_huc12s":             document.getElementById("dzShowHUC12s").checked
+                "geometry":                    geom  
+               ,"nhdplus_version":             pnhdv.options[pnhdv.selectedIndex].value
+               ,"state_filter":                pstat.options[pstat.selectedIndex].value
+               ,"default_point_method":        pointm.options[pointm.selectedIndex].value
+               ,"default_line_method":         linem.options[linem.selectedIndex].value
+               ,"default_area_method":         aream.options[aream.selectedIndex].value
+               ,"default_line_threshold":      document.getElementById("dzLineThreasholdPerc").value
+               ,"default_areacat_threshold":   document.getElementById("dzCatThreasholdPerc").value
+               ,"default_areaevt_threshold":   document.getElementById("dzEvtThreasholdPerc").value
+               ,"return_catchment_geometry":   document.getElementById("dzShowCatchments").checked
+               ,"return_flowlines":            document.getElementById("dzShowFlowlines").checked
+               ,"return_flowline_geometry":    true
+               ,"return_huc12s":               document.getElementById("dzShowHUC12s").checked
             };
             
             httpPost("http://" + window.location.hostname + ":3000/rpc/cip20_index",data,get_response);
@@ -296,16 +321,16 @@
             } else if (response == null) {
                document.getElementById("output").innerHTML = "<P>No response from service.</P>";
                return false;
-            } else if (response.p_return_code != 0) {
-               document.getElementById("output").innerHTML = "<P>" + response.p_status_message + "</P>";
+            } else if (response.return_code != 0) {
+               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
                return false;
-            } else if (response.p_catchment_count == 0) {
+            } else if (response.catchment_count == 0) {
                document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
                return false;
             }
             
-            if (response.p_indexed_geometry !== null && response.p_indexed_geometry.features[0].geometry.type !== null) {
-               indexed_event.addData(response.p_indexed_geometry).setStyle({
+            if (response.indexed_points !== null && response.indexed_points.features[0].geometry.type !== null) {
+               indexed_points.addData(response.indexed_points).setStyle({
                    "color":       "#808080"
                   ,"opacity":     .80
                   ,"fillColor":   "#808080"
@@ -313,34 +338,52 @@
                });
             }
             
-            if (response.p_catchments !== null && response.p_catchments.features[0].geometry.type !== null) {
-               indexed_catchments.addData(response.p_catchments).setStyle({
+            if (response.indexed_lines !== null && response.indexed_lines.features[0].geometry.type !== null) {
+               indexed_lines.addData(response.indexed_lines).setStyle({
+                   "color":       "#808080"
+                  ,"opacity":     .80
+                  ,"fillColor":   "#808080"
+                  ,"fillOpacity": .10
+               });
+            }
+            
+            if (response.indexed_areas !== null && response.indexed_areas.features[0].geometry.type !== null) {
+               indexed_areas.addData(response.indexed_areas).setStyle({
+                   "color":       "#808080"
+                  ,"opacity":     .80
+                  ,"fillColor":   "#808080"
+                  ,"fillOpacity": .10
+               });
+            }
+            
+            if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
+               indexed_catchments.addData(response.catchments).setStyle({
                    "color":       "#FF6600"
                   ,"fillColor":   "#FF6600"
                });
                
             }
             
-            if (response.p_flowlines !== null && response.p_flowlines.features[0].geometry.type !== null) {
-               catchment_flowlines.addData(response.p_flowlines).setStyle({
+            if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
+               catchment_flowlines.addData(response.flowlines).setStyle({
                    "color":       "#003399"
                   ,"opacity":     .80
                });
             }
             
-            if (response.p_huc12s !== null && response.p_huc12s.features[0].geometry.type !== null) {
-               xwalked_huc12s.addData(response.p_huc12s).setStyle({
+            if (response.huc12s !== null && response.huc12s.features[0].geometry.type !== null) {
+               xwalked_huc12s.addData(response.huc12s).setStyle({
                    "color":       "#CC33FF"
                   ,"fillColor":   "#CC33FF"
                });
             }
             
-            if (response.p_huc12s !== null && response.p_huc12s.features[0].geometry.type !== null) {
+            if (response.huc12s !== null && response.huc12s.features[0].geometry.type !== null) {
                map.fitBounds(indexed_huc12s.getBounds(), {
                   maxZoom: 16
                });
                
-            } else if (response.p_catchments !== null && response.p_catchments.features[0].geometry.type !== null) {
+            } else if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
                map.fitBounds(indexed_catchments.getBounds(), {
                   maxZoom: 16
                });
@@ -350,7 +393,7 @@
 
             tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
                     + '<TR>'
-                    + '<TH colspan="4" style="font-family: Arial; font-size: 14px;">' + response.p_catchment_count + ' Catchments Indexed - ' + response.p_catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
+                    + '<TH colspan="4" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
                     + '<TR>'
                     + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                     + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
@@ -360,21 +403,21 @@
             tbl_end = '</TABLE>';
 
             tbl_cnt = '';
-            for (var i = 0; i < response.p_catchments.features.length; i++) {
+            for (var i = 0; i < response.catchments.features.length; i++) {
                tbl_cnt += '<TR>'
                        +  '<TD style="font-family: Arial; font-size: 14px;">';
                        
-               if (response.p_catchments.features[0].geometry.type !== null) {
-                  tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.p_catchments.features[i].properties.catchmentstatecode + response.p_catchments.features[i].properties.nhdplusid + '\');"/>';
-                  zoom_cache[response.p_catchments.features[i].properties.catchmentstatecode + response.p_catchments.features[i].properties.nhdplusid] = response.p_catchments.features[i].geometry;
+               if (response.catchments.features[0].geometry.type !== null) {
+                  tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
+                  zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
                } else {
                   tbl_cnt += '&nbsp;';
                }
                
                tbl_cnt += '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.catchmentstatecode + '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.nhdplusid + '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.p_catchments.features[i].properties.areasqkm + '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
+                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
                        +  '</TR>';
                }       
             
@@ -396,7 +439,9 @@
          
          function dz_clear() {
             document.getElementById("output").innerHTML = "";
-            indexed_event.clearLayers();
+            indexed_points.clearLayers();
+            indexed_lines.clearLayers();
+            indexed_areas.clearLayers();
             indexed_catchments.clearLayers();
             catchment_flowlines.clearLayers();
             xwalked_huc12s.clearLayers();
