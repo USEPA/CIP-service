@@ -1,4 +1,4 @@
-# cip20
+# CIP (Catchment Index Processing) Service
 
 ![architecture.drawio.png](docs/architecture.drawio.png)
 
