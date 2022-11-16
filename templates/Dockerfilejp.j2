@@ -40,21 +40,24 @@ RUN apt-get update                              &&\
     rm -rf /var/lib/apt/lists/*                 &&\
     rm -rf /var/cache/apt/*
 
-RUN useradd -m -s /bin/bash -N -u 1000 ${NB_USER}        &&\
-    mkdir /home/${NB_USER}/notebooks                     &&\
-    mkdir /home/${NB_USER}/notebooks/sql                 &&\
-    mkdir /home/${NB_USER}/loading_dock
+RUN useradd -m -s /bin/bash -N -u 1000 ${NB_USER}           &&\
+    mkdir /home/${NB_USER}/notebooks                        &&\
+    mkdir /home/${NB_USER}/notebooks/sql                    &&\
+    mkdir /home/${NB_USER}/loading_dock                     &&\
+    mkdir -p /home/${NB_USER}/.ssh                          &&\
+    chown -R ${NB_USER}:users /home/${NB_USER}/notebooks    &&\
+    chown -R ${NB_USER}:users /home/${NB_USER}/loading_dock &&\
+    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
 
 {%- set ghrep = components.cip_jp.github_repo -%}
 {%- set ghkey = github_repo[ghrep].add_deploy_key -%}
 {%- if ghkey == true +%}
-ARG ARG_CIP20_DEPLOYKEY
-RUN mkdir -p /home/${NB_USER}/.ssh
-COPY ${ARG_CIP20_DEPLOYKEY}.ppk /home/${NB_USER}/.ssh/id_rsa
-COPY ${ARG_CIP20_DEPLOYKEY}.pub /home/${NB_USER}/.ssh/id_rsa.pub
-RUN chown -R ${NB_USER}:users /home/${NB_USER}/.ssh      &&\
-    chmod 0400 /home/${NB_USER}/.ssh/id_rsa              &&\
-    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub
+ARG ARG_CIPSRV_DEPLOYKEY
+COPY ${ARG_CIPSRV_DEPLOYKEY}.ppk /home/${NB_USER}/.ssh/id_rsa
+COPY ${ARG_CIPSRV_DEPLOYKEY}.pub /home/${NB_USER}/.ssh/id_rsa.pub
+RUN chmod 0400 /home/${NB_USER}/.ssh/id_rsa                 &&\
+    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub             &&\
+    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
 {%- endif +%}
 
 USER ${NB_USER}

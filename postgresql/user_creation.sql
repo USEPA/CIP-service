@@ -1,10 +1,10 @@
-CREATE USER cip20         WITH PASSWORD '${POSTGRES_CIP_PASS}';
+CREATE USER cipsrv         WITH PASSWORD '${POSTGRES_CIP_PASS}';
 
-CREATE USER cip20_user    WITH PASSWORD '${POSTGRES_USR_PASS}';
-GRANT cip20_user TO cip20;
+CREATE USER cipsrv_user    WITH PASSWORD '${POSTGRES_USR_PASS}';
+GRANT cipsrv_user TO cipsrv;
 
-CREATE USER cip20_upload  WITH PASSWORD '${POSTGRES_UPL_PASS}';
-GRANT cip20_upload TO cip20;
+CREATE USER cipsrv_upload  WITH PASSWORD '${POSTGRES_UPL_PASS}';
+GRANT cipsrv_upload TO cipsrv;
 
-CREATE USER cip20_pgrest  WITH PASSWORD '${POSTGREST_PASS}';
-GRANT cip20_pgrest TO cip20;
+CREATE USER cipsrv_pgrest  WITH PASSWORD '${POSTGREST_PASS}';
+GRANT cipsrv_pgrest TO cipsrv;

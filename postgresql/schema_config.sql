@@ -1,16 +1,16 @@
-GRANT CREATE ON DATABASE ${POSTGRES_DB} TO cip20_user,cip20_upload,cip20_pgrest;
+GRANT CREATE ON DATABASE ${POSTGRES_DB} TO cipsrv_user,cipsrv_upload,cipsrv_pgrest;
 
-CREATE SCHEMA cip20           AUTHORIZATION cip20;
-CREATE SCHEMA cip20_engine    AUTHORIZATION cip20;
-CREATE SCHEMA cip20_nhdplus_m AUTHORIZATION cip20;
-CREATE SCHEMA cip20_nhdplus_h AUTHORIZATION cip20;
-CREATE SCHEMA cip20_support   AUTHORIZATION cip20;
-CREATE SCHEMA cip20_pgrest    AUTHORIZATION cip20_pgrest;
+CREATE SCHEMA cipsrv           AUTHORIZATION cipsrv;
+CREATE SCHEMA cipsrv_engine    AUTHORIZATION cipsrv;
+CREATE SCHEMA cipsrv_nhdplus_m AUTHORIZATION cipsrv;
+CREATE SCHEMA cipsrv_nhdplus_h AUTHORIZATION cipsrv;
+CREATE SCHEMA cipsrv_support   AUTHORIZATION cipsrv;
+CREATE SCHEMA cipsrv_pgrest    AUTHORIZATION cipsrv_pgrest;
 
-GRANT  USAGE ON SCHEMA cip20_engine    TO cip20_pgrest;
-GRANT  USAGE ON SCHEMA cip20_support   TO cip20_pgrest;
-GRANT  USAGE ON SCHEMA cip20_nhdplus_m TO cip20_pgrest;
-GRANT  USAGE ON SCHEMA cip20_nhdplus_h TO cip20_pgrest;
+GRANT  USAGE ON SCHEMA cipsrv_engine    TO cipsrv_pgrest;
+GRANT  USAGE ON SCHEMA cipsrv_support   TO cipsrv_pgrest;
+GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m TO cipsrv_pgrest;
+GRANT  USAGE ON SCHEMA cipsrv_nhdplus_h TO cipsrv_pgrest;
 
-CREATE FUNCTION cip20_pgrest.test() RETURNS JSON AS $$ BEGIN RETURN json_object_agg('works',TRUE); END; $$ LANGUAGE 'plpgsql';
-ALTER  FUNCTION cip20_pgrest.test() OWNER TO cip20_pgrest;
+CREATE FUNCTION cipsrv_pgrest.test() RETURNS JSON AS $$ BEGIN RETURN json_object_agg('works',TRUE); END; $$ LANGUAGE 'plpgsql';
+ALTER  FUNCTION cipsrv_pgrest.test() OWNER TO cipsrv_pgrest;
