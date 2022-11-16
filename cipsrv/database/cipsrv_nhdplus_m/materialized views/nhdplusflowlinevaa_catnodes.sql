@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(
     nhdplusid
    ,hydroseq
    ,levelpathi
@@ -22,9 +22,9 @@ WITH cat AS (
     ,aa.tonode
     ,aa.lengthkm
     FROM
-    cip20_nhdplus_m.nhdplusflowlinevaa aa
+    cipsrv_nhdplus_m.nhdplusflowlinevaa aa
     WHERE 
-    EXISTS (SELECT 1 FROM cip20_nhdplus_m.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
+    EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
 )
 ,nocat AS (
    SELECT
@@ -33,9 +33,9 @@ WITH cat AS (
    ,cc.fromnode
    ,cc.tonode
    FROM
-   cip20_nhdplus_m.nhdplusflowlinevaa cc
+   cipsrv_nhdplus_m.nhdplusflowlinevaa cc
    WHERE 
-   NOT EXISTS (SELECT 1 FROM cip20_nhdplus_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
+   NOT EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
 ) 
 SELECT
  a.nhdplusid
@@ -57,30 +57,30 @@ nocat c
 ON
 c.hydroseq = a.dnhydroseq;
 
-ALTER TABLE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes TO public;
+ALTER TABLE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes TO public;
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_catnodes_01u
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(nhdplusid);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(nhdplusid);
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_catnodes_02u
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(hydroseq);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_01i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(levelpathi);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(levelpathi);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_02i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(fromnode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(fromnode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_03i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(tonode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(tonode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_04i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_fromnode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_fromnode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_05i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_tonode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_tonode);
 
-ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes;
+ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes;

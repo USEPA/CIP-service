@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32161 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32161 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32161(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
     nhdplusid
    ,areasqkm
    ---
@@ -40,43 +40,43 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('PR','VI')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_32161 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_32161 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_32161 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32161 TO public;
 
 CREATE UNIQUE INDEX catchment_32161_01u
-ON cip20_nhdplus_m.catchment_32161(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32161(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32161_02u
-ON cip20_nhdplus_m.catchment_32161(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32161(hydroseq);
 
 CREATE INDEX catchment_32161_01i
-ON cip20_nhdplus_m.catchment_32161(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32161(levelpathi);
 
 CREATE INDEX catchment_32161_02i
-ON cip20_nhdplus_m.catchment_32161(fcode);
+ON cipsrv_nhdplus_m.catchment_32161(fcode);
 
 CREATE INDEX catchment_32161_spx
-ON cip20_nhdplus_m.catchment_32161 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape);
 
 CREATE INDEX catchment_32161_spx2
-ON cip20_nhdplus_m.catchment_32161 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_32161;
+ANALYZE cipsrv_nhdplus_m.catchment_32161;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_32161;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_32161;
 

@@ -1,9 +1,9 @@
 --******************************--
 ----- materialized views/nhdplusflowlinevaa_catnodes.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(
     nhdplusid
    ,hydroseq
    ,levelpathi
@@ -25,9 +25,9 @@ WITH cat AS (
     ,aa.tonode
     ,aa.lengthkm
     FROM
-    cip20_nhdplus_m.nhdplusflowlinevaa aa
+    cipsrv_nhdplus_m.nhdplusflowlinevaa aa
     WHERE 
-    EXISTS (SELECT 1 FROM cip20_nhdplus_m.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
+    EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
 )
 ,nocat AS (
    SELECT
@@ -36,9 +36,9 @@ WITH cat AS (
    ,cc.fromnode
    ,cc.tonode
    FROM
-   cip20_nhdplus_m.nhdplusflowlinevaa cc
+   cipsrv_nhdplus_m.nhdplusflowlinevaa cc
    WHERE 
-   NOT EXISTS (SELECT 1 FROM cip20_nhdplus_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
+   NOT EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
 ) 
 SELECT
  a.nhdplusid
@@ -60,39 +60,39 @@ nocat c
 ON
 c.hydroseq = a.dnhydroseq;
 
-ALTER TABLE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes TO public;
+ALTER TABLE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes TO public;
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_catnodes_01u
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(nhdplusid);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(nhdplusid);
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_catnodes_02u
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(hydroseq);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_01i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(levelpathi);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(levelpathi);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_02i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(fromnode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(fromnode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_03i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(tonode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(tonode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_04i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_fromnode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_fromnode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_05i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_tonode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_tonode);
 
-ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes;
+ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_catnodes;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes;
 --******************************--
 ----- materialized views/nhdplusflowlinevaa_levelpathi.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi(
     levelpathi
    ,max_hydroseq
    ,min_hydroseq
@@ -105,8 +105,8 @@ SELECT
  a.levelpathi
 ,a.max_hydroseq
 ,a.min_hydroseq
-,(SELECT c.fromnode FROM cip20_nhdplus_m.nhdplusflowlinevaa c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
-,(SELECT d.tonode   FROM cip20_nhdplus_m.nhdplusflowlinevaa d WHERE d.hydroseq = a.min_hydroseq) AS tonode
+,(SELECT c.fromnode FROM cipsrv_nhdplus_m.nhdplusflowlinevaa c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
+,(SELECT d.tonode   FROM cipsrv_nhdplus_m.nhdplusflowlinevaa d WHERE d.hydroseq = a.min_hydroseq) AS tonode
 ,a.levelpathilengthkm 
 FROM (
    SELECT
@@ -115,38 +115,38 @@ FROM (
    ,MIN(aa.hydroseq) AS min_hydroseq
    ,SUM(aa.lengthkm) AS levelpathilengthkm
    FROM
-   cip20_nhdplus_m.nhdplusflowlinevaa aa
+   cipsrv_nhdplus_m.nhdplusflowlinevaa aa
    GROUP BY
    aa.levelpathi
 ) a;
 
-ALTER TABLE cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi TO public;
+ALTER TABLE cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi TO public;
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_levelpathi_01u
-ON cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(levelpathi);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi(levelpathi);
 
 CREATE INDEX nhdplusflowlinevaa_levelpathi_01i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(max_hydroseq);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi(max_hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_levelpathi_02i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(min_hydroseq);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi(min_hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_levelpathi_03i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(fromnode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi(fromnode);
 
 CREATE INDEX nhdplusflowlinevaa_levelpathi_04i
-ON cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi(tonode);
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi(tonode);
 
-ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_levelpathi;
+ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_levelpathi;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.nhdplusflowlinevaa_nocat;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_nocat;
 --******************************--
 ----- materialized views/catchment_3338.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_3338 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_3338 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_3338(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
     nhdplusid
    ,areasqkm
    ---
@@ -186,52 +186,52 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,3338)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('AK')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_3338 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_3338 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_3338 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_3338 TO public;
 
 CREATE UNIQUE INDEX catchment_3338_01u
-ON cip20_nhdplus_m.catchment_3338(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_3338(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_3338_02u
-ON cip20_nhdplus_m.catchment_3338(hydroseq);
+ON cipsrv_nhdplus_m.catchment_3338(hydroseq);
 
 CREATE INDEX catchment_3338_01i
-ON cip20_nhdplus_m.catchment_3338(levelpathi);
+ON cipsrv_nhdplus_m.catchment_3338(levelpathi);
 
 CREATE INDEX catchment_3338_02i
-ON cip20_nhdplus_m.catchment_3338(fcode);
+ON cipsrv_nhdplus_m.catchment_3338(fcode);
 
 CREATE INDEX catchment_3338_spx
-ON cip20_nhdplus_m.catchment_3338 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_3338 USING GIST(shape);
 
 CREATE INDEX catchment_3338_spx2
-ON cip20_nhdplus_m.catchment_3338 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_3338 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_3338;
+ANALYZE cipsrv_nhdplus_m.catchment_3338;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_3338;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_3338;
 
 --******************************--
 ----- materialized views/catchment_5070.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_5070 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_5070 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_5070(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
     nhdplusid
    ,areasqkm
    ---
@@ -271,52 +271,52 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,5070)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_5070 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_5070 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_5070 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_5070 TO public;
 
 CREATE UNIQUE INDEX catchment_5070_01u
-ON cip20_nhdplus_m.catchment_5070(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_5070(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_5070_02u
-ON cip20_nhdplus_m.catchment_5070(hydroseq);
+ON cipsrv_nhdplus_m.catchment_5070(hydroseq);
 
 CREATE INDEX catchment_5070_01i
-ON cip20_nhdplus_m.catchment_5070(levelpathi);
+ON cipsrv_nhdplus_m.catchment_5070(levelpathi);
 
 CREATE INDEX catchment_5070_02i
-ON cip20_nhdplus_m.catchment_5070(fcode);
+ON cipsrv_nhdplus_m.catchment_5070(fcode);
 
 CREATE INDEX catchment_5070_spx
-ON cip20_nhdplus_m.catchment_5070 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_5070 USING GIST(shape);
 
 CREATE INDEX catchment_5070_spx2
-ON cip20_nhdplus_m.catchment_5070 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_5070 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_5070;
+ANALYZE cipsrv_nhdplus_m.catchment_5070;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_5070;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_5070;
 
 --******************************--
 ----- materialized views/catchment_26904.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_26904 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_26904 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_26904(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_26904(
     nhdplusid
    ,areasqkm
    ---
@@ -356,52 +356,52 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,26904)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('HI')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_26904 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_26904 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_26904 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_26904 TO public;
 
 CREATE UNIQUE INDEX catchment_26904_01u
-ON cip20_nhdplus_m.catchment_26904(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_26904(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_26904_02u
-ON cip20_nhdplus_m.catchment_26904(hydroseq);
+ON cipsrv_nhdplus_m.catchment_26904(hydroseq);
 
 CREATE INDEX catchment_26904_01i
-ON cip20_nhdplus_m.catchment_26904(levelpathi);
+ON cipsrv_nhdplus_m.catchment_26904(levelpathi);
 
 CREATE INDEX catchment_26904_02i
-ON cip20_nhdplus_m.catchment_26904(fcode);
+ON cipsrv_nhdplus_m.catchment_26904(fcode);
 
 CREATE INDEX catchment_26904_spx
-ON cip20_nhdplus_m.catchment_26904 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_26904 USING GIST(shape);
 
 CREATE INDEX catchment_26904_spx2
-ON cip20_nhdplus_m.catchment_26904 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_26904 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_26904;
+ANALYZE cipsrv_nhdplus_m.catchment_26904;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_26904;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_26904;
 
 --******************************--
 ----- materialized views/catchment_32161.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32161 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32161 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32161(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
     nhdplusid
    ,areasqkm
    ---
@@ -441,52 +441,52 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('PR','VI')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_32161 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_32161 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_32161 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32161 TO public;
 
 CREATE UNIQUE INDEX catchment_32161_01u
-ON cip20_nhdplus_m.catchment_32161(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32161(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32161_02u
-ON cip20_nhdplus_m.catchment_32161(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32161(hydroseq);
 
 CREATE INDEX catchment_32161_01i
-ON cip20_nhdplus_m.catchment_32161(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32161(levelpathi);
 
 CREATE INDEX catchment_32161_02i
-ON cip20_nhdplus_m.catchment_32161(fcode);
+ON cipsrv_nhdplus_m.catchment_32161(fcode);
 
 CREATE INDEX catchment_32161_spx
-ON cip20_nhdplus_m.catchment_32161 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape);
 
 CREATE INDEX catchment_32161_spx2
-ON cip20_nhdplus_m.catchment_32161 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_32161;
+ANALYZE cipsrv_nhdplus_m.catchment_32161;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_32161;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_32161;
 
 --******************************--
 ----- materialized views/catchment_32655.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32655 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32655 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32655(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32655(
     nhdplusid
    ,areasqkm
    ---
@@ -526,52 +526,52 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32655)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('GU','MP')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_32655 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_32655 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_32655 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32655 TO public;
 
 CREATE UNIQUE INDEX catchment_32655_01u
-ON cip20_nhdplus_m.catchment_32655(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32655(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32655_02u
-ON cip20_nhdplus_m.catchment_32655(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32655(hydroseq);
 
 CREATE INDEX catchment_32655_01i
-ON cip20_nhdplus_m.catchment_32655(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32655(levelpathi);
 
 CREATE INDEX catchment_32655_02i
-ON cip20_nhdplus_m.catchment_32655(fcode);
+ON cipsrv_nhdplus_m.catchment_32655(fcode);
 
 CREATE INDEX catchment_32655_spx
-ON cip20_nhdplus_m.catchment_32655 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_32655 USING GIST(shape);
 
 CREATE INDEX catchment_32655_spx2
-ON cip20_nhdplus_m.catchment_32655 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_32655 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_32655;
+ANALYZE cipsrv_nhdplus_m.catchment_32655;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_32655;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_32655;
 
 --******************************--
 ----- materialized views/catchment_32702.sql 
 
-DROP MATERIALIZED VIEW IF EXISTS cip20_nhdplus_m.catchment_32702 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32702 CASCADE;
 
-CREATE MATERIALIZED VIEW cip20_nhdplus_m.catchment_32702(
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
     nhdplusid
    ,areasqkm
    ---
@@ -611,45 +611,45 @@ FROM (
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32702)) AS shape
    FROM
-   cip20_nhdplus_m.catchment_fabric aa
+   cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('AS')
    GROUP BY
    aa.nhdplusid::BIGINT
 ) a
 LEFT JOIN
-cip20_nhdplus_m.nhdplusflowlinevaa_catnodes b
+cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
 a.nhdplusid = b.nhdplusid
 LEFT JOIN
-cip20_nhdplus_m.nhdflowline c
+cipsrv_nhdplus_m.nhdflowline c
 ON
 a.nhdplusid = c.nhdplusid;
 
-ALTER TABLE cip20_nhdplus_m.catchment_32702 OWNER TO cip20;
-GRANT SELECT ON cip20_nhdplus_m.catchment_32702 TO public;
+ALTER TABLE cipsrv_nhdplus_m.catchment_32702 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32702 TO public;
 
 CREATE UNIQUE INDEX catchment_32702_01u
-ON cip20_nhdplus_m.catchment_32702(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32702(nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32702_02u
-ON cip20_nhdplus_m.catchment_32702(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32702(hydroseq);
 
 CREATE INDEX catchment_32702_01i
-ON cip20_nhdplus_m.catchment_32702(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32702(levelpathi);
 
 CREATE INDEX catchment_32702_02i
-ON cip20_nhdplus_m.catchment_32702(fcode);
+ON cipsrv_nhdplus_m.catchment_32702(fcode);
 
 CREATE INDEX catchment_32702_spx
-ON cip20_nhdplus_m.catchment_32702 USING GIST(shape);
+ON cipsrv_nhdplus_m.catchment_32702 USING GIST(shape);
 
 CREATE INDEX catchment_32702_spx2
-ON cip20_nhdplus_m.catchment_32702 USING GIST(shape_centroid);
+ON cipsrv_nhdplus_m.catchment_32702 USING GIST(shape_centroid);
 
-ANALYZE cip20_nhdplus_m.catchment_32702;
+ANALYZE cipsrv_nhdplus_m.catchment_32702;
 
---VACUUM FREEZE ANALYZE cip20_nhdplus_m.catchment_32702;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_32702;
 
 --******************************--
 ----- functions/generic_common_mbr.sql 

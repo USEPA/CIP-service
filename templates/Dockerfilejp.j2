@@ -56,7 +56,8 @@ ARG ARG_CIPSRV_DEPLOYKEY
 COPY ${ARG_CIPSRV_DEPLOYKEY}.ppk /home/${NB_USER}/.ssh/id_rsa
 COPY ${ARG_CIPSRV_DEPLOYKEY}.pub /home/${NB_USER}/.ssh/id_rsa.pub
 RUN chmod 0400 /home/${NB_USER}/.ssh/id_rsa                 &&\
-    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub
+    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub             &&\
+    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
 {%- endif +%}
 
 USER ${NB_USER}
