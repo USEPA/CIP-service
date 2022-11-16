@@ -3,12 +3,12 @@ github_repo:
    # Note use the https port 443 endpoints
    # as most GFEs and VDIs block port 22 by default
    epa:
-      url: "ssh://git@ssh.github.com:443/USEPA/CIPv2.git"
+      url: "ssh://git@ssh.github.com:443/USEPA/CIP-service.git"
       default_branch: main
       add_deploy_key: false
    erg:
-      url: "ssh://git@ssh.github.com:443/Eastern-Research-Group/EPA-OW-CIP20.git"
-      default_branch: main
+      url: "ssh://git@ssh.github.com:443/Eastern-Research-Group/CIP-service.git"
+      default_branch: develop
       add_deploy_key: true
 #
 s3_bucket:

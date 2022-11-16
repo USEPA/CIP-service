@@ -1,7 +1,7 @@
 import os,sys,jinja2,yaml,argparse,datetime;
 
 script_root = os.path.realpath(os.path.dirname(__file__));
-parser = argparse.ArgumentParser(description='configuration script for cip20');
+parser = argparse.ArgumentParser(description='configuration script for cipsrv');
 parser.add_argument("--profile");
 parser.add_argument("--templates");
 parser.add_argument("--output");

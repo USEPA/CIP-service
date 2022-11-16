@@ -2,7 +2,7 @@
 
 ![architecture.drawio.png](docs/architecture.drawio.png)
 
-Note the cip20 project entails several functionality layers of which only the first is presented here.  For the moment those layers might be explained as:
+Note the CIP Service project entails several functionality layers of which only the first is presented here.  For the moment those layers might be explained as:
 
 1. **Engine** to do one-by-one event indexing and proof/document the process.
 2. **Batch** to process entire GIS files through event indexing returning results as file downloads.
@@ -10,7 +10,7 @@ Note the cip20 project entails several functionality layers of which only the fi
 
 ### Overview
 
-At this time project requirements for hosting cip20 are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single docker-compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combine with a specific profile to dynamically generate the needed compose artifacts.  
+At this time project requirements for hosting CIP Service are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single docker-compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combine with a specific profile to dynamically generate the needed compose artifacts.  
 
 ### Prerequisites
 
@@ -18,7 +18,7 @@ At this time project requirements for hosting cip20 are quite varied ranging fro
 - docker-compose (usually bundled nowadays with docker)
 - at least 16 GB of memory
 - at least 80 GB of free disk
-- access to a public or deploy-key secured cip20 code repository
+- access to a public or deploy-key secured CIP Service code repository
 
 ### Containers Utilized
 
@@ -55,10 +55,10 @@ The project uses the following containers which are standard, stable, trusted do
 
 6. for a straightforward load of the medium resolution NHDPlus, choose the **recipe_quick_setup_medonly** notebook and execute all cells.  This will download and stage the data and logic required.  Alternatively the **recipe_quick_setup_all** notebook will load the same plus the high resolution NHDPlus.  Note the high resolution datasets will require significant disk to stage and load.
 
-After completion of the steps, point your browser to the nginx server, probably at http://localhost:8080/cip20_indexer.html
+After completion of the steps, point your browser to the nginx server, probably at http://localhost:8080/cipsrv_indexer.html
 The indexer application should load up and allow you to draw a point, line or polygon and submit it for indexing.  That is all the project does at the moment.  Note the high resolution NHDPlus option will only work if the high resolution NHDPlus data and code was loaded.
 
-Alternatively, try the ATTAINS comparison application, probably at http://localhost:8080/cip2_attains.html.  This web app is meant to show the results of cip20 indexing against indexing previous done by ATTAINS.
+Alternatively, try the ATTAINS comparison application, probably at http://localhost:8080/cipsrv_attains.html.  This web app is meant to show the results of CIP Service indexing against indexing previous done by ATTAINS.
 
 ### Disclaimer
 

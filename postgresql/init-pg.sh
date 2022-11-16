@@ -16,7 +16,7 @@ echo "configuring database"
 envsubst < /home/postgres/db_config.sql     | psql -d ${POSTGRES_DB}
 
 echo "configuring schemas"
-envsubst < /home/postgres/schema_config.sql | psql -d ${POSTGRES_DB} -U cip20
+envsubst < /home/postgres/schema_config.sql | psql -d ${POSTGRES_DB} -U cipsrv
 
 if [ -e "/home/postgres/pgrst_watch.sql" ]; then
    psql -d ${POSTGRES_DB} -f /home/postgres/pgrst_watch.sql

@@ -1,0 +1,70 @@
+{
+    "constants": [
+       {
+          "key": "GITRELEASE"
+         ,"cmd": "git describe --tags"
+       }
+      ,{
+          "key": "GITCOMMIT"
+         ,"cmd": "git rev-parse HEAD"
+       }
+      ,{
+          "key": "GITCOMMITDATE"
+         ,"cmd": "git show -s --format=%cd"
+       }
+      ,{
+          "key": "GITCOMMITAUTH"
+         ,"cmd": "git show -s --format=%an"
+       }
+    ]
+   ,"tasks": [
+       {
+          "id": "concatenate"
+         ,"output": "cipsrv_engine_deploy.sql"
+         ,"includes": [
+             "functions/temp_table_exists.sql"
+            ,"functions/create_cip_temp_tables.sql"
+            ,"functions/append_feature.sql"
+            ,"functions/json2geometry.sql"
+            ,"functions/json2numeric.sql"
+            ,"functions/sample_geometry.sql"
+            ,"functions/determine_grid_srid.sql"
+            ,"functions/validate_feature.sql"
+            ,"functions/validate_feature_collection.sql"
+            ,"functions/cipsrv_index.sql"
+          ]
+         ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
+         ,"configurations": [
+            {
+                "id": 1
+               ,"file": "*/*.sql"
+               ,"replacements": [
+                   {
+                      "string": "c_gitrelease    CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitrelease    CONSTANT VARCHAR(255) := '%GITRELEASE%';"
+                   }
+                  ,{
+                      "string": "c_gitcommit     CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitcommit     CONSTANT VARCHAR(255) := '%GITCOMMIT%';"
+                   }
+                  ,{
+                      "string": "c_gitcommitdate CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitcommitdate CONSTANT VARCHAR(255) := '%GITCOMMITDATE%';"
+                   }
+                  ,{
+                      "string": "c_gitcommitauth CONSTANT VARCHAR(255) := 'NULL';"
+                     ,"value":  "c_gitcommitauth CONSTANT VARCHAR(255) := '%GITCOMMITAUTH%';"
+                   }
+                ]
+            }
+          ]
+       }
+      ,{
+          "id": "artifacts"
+         ,"targets": [
+             "cipsrv_engine_deploy.sql"
+         ]
+       }
+   ]
+}
+

@@ -3,14 +3,14 @@ profile_name: desktop
 # Example profile to utilize a modest
 # desktop host with 16GB of memory
 #
-last updated: 20221109
+last updated: 20221115
 components:
    cip_pg:
       type:             container
       config:           desktop
       host:             cip_pg
       port:             5432
-      db:               cip20
+      db:               cipsrv
       add_pgrst_watch:  true
       external_port:    5433
    cip_pr:
@@ -18,7 +18,7 @@ components:
       external_port:    3000
    cip_jp:
       type:             container
-      github_repo:      erg
+      github_repo:      epa
       dump_s3:          ows3
       external_port:    8888   
    cip_ng:
