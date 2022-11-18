@@ -18,7 +18,7 @@ components:
       add_host_gateway: false
    cip_jp:
       type:             container
-      github_repo:      erg
+      github_repo:      epa
       dump_s3:          ows3
       external_port:    8888
       add_host_gateway: false
