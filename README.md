@@ -15,6 +15,7 @@ Generally, the primary two forms would be local desktop and cloud-hosted options
 
 ![Local Desktop](docs/architecture_local.drawio.png)
 
+
 ![Cloud-Hosted](docs/architecture_cloud.drawio.png)
 
 ### Prerequisites
