@@ -1,7 +1,5 @@
 # CIP (Catchment Index Processing) Service
 
-![architecture.drawio.png](docs/architecture.drawio.png)
-
 Note the CIP Service project entails several functionality layers of which only the first is presented here.  For the moment those layers might be explained as:
 
 1. **Engine** to do one-by-one event indexing and proof/document the process.
@@ -10,7 +8,14 @@ Note the CIP Service project entails several functionality layers of which only 
 
 ### Overview
 
-At this time hosting options for deploying the CIP-service project are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single docker-compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combined with a specific profile inputs to dynamically generate the needed compose artifacts.  
+At this time hosting options for deploying the CIP-service project are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single docker-compose environment is challenging to present.  
+To accommodate this the project uses a jinja2 template combined with a specific profile configuration to dynamically generate the needed compose and dockerfile artifacts.  
+
+Generally, the primary two forms would be local desktop and cloud-hosted options
+
+![Local Desktop](docs/architecture_local.drawio.png)
+
+![Cloud-Hosted](docs/architecture_cloud.drawio.png)
 
 ### Prerequisites
 

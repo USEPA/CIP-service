@@ -1,4 +1,4 @@
-FROM osgeo/gdal:ubuntu-full-3.5.3
+FROM osgeo/gdal:ubuntu-full-3.6.0
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -49,23 +49,23 @@ RUN useradd -m -s /bin/bash -N -u 1000 ${NB_USER}           &&\
     chown -R ${NB_USER}:users /home/${NB_USER}/loading_dock &&\
     chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
 
-{%- set ghrep = components.cip_jp.github_repo -%}
-{%- set ghkey = github_repo[ghrep].add_deploy_key -%}
-{%- if ghkey == true +%}
+{%- set ghrep = components.cip_jp.github_repo %}
+{%- set ghkey = github_repo[ghrep].add_deploy_key %}
+{%- if ghkey == true %}
 ARG ARG_CIPSRV_DEPLOYKEY
 COPY ${ARG_CIPSRV_DEPLOYKEY}.ppk /home/${NB_USER}/.ssh/id_rsa
 COPY ${ARG_CIPSRV_DEPLOYKEY}.pub /home/${NB_USER}/.ssh/id_rsa.pub
 RUN chmod 0400 /home/${NB_USER}/.ssh/id_rsa                 &&\
     chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub             &&\
     chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
-{%- endif +%}
+{%- endif %}
 
 USER ${NB_USER}
 
 RUN ssh-keyscan -p 443 ssh.github.com > /home/${NB_USER}/.ssh/known_hosts
-{%- if ghkey == true +%}
+{%- if ghkey == true %}
 RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
-{%- endif +%}
+{%- endif %}
 RUN pip3 install --upgrade numpy
 
 RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels           \

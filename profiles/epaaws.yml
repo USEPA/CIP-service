@@ -1,27 +1,34 @@
 profile_name: awsrds 
 #
-# Example profile where the cip_pg database
-# is external and not part of the docker-compose 
+# Example profile where the cip_pg database and cip_pr API
+# are external and not part of the docker-compose 
 # environment
 #
-last updated: 20221109
+last updated: 20221204
 components:
+#
+# Core CIP Components
+#  PostgreSQL Database
    cip_pg:
       type:             external
       host:             env.POSTGRESQL_HOST
       port:             env.POSTGRESQL_PORT
-      rds_master_user:  env.RDS_MASTER_USER
       db:               env.POSTGRESQL_DB
+#  PostgREST API
    cip_pr:
-      type:             container
-      external_port:    3000
-      add_host_gateway: false
+      type:             external
+      host:             env.POSTGREST_HOST
+      port:             env.POSTGREST_PORT
+#  Maintenance Jupyter Notebook
    cip_jp:
       type:             container
       github_repo:      epa
       dump_s3:          ows3
       external_port:    8888
       add_host_gateway: false
+#   
+# Optional Test Harnesses
+#  Nginx Web Server
    cip_ng:
       type:             container
       external_port:    8080

@@ -24,9 +24,9 @@ COPY ./postgresql/db_creation.sql   /home/postgres/db_creation.sql
 COPY ./postgresql/db_config.sql     /home/postgres/db_config.sql
 COPY ./postgresql/schema_config.sql /home/postgres/schema_config.sql
 
-{%- if 'add_pgrst_watch' in components.cip_pg and components.cip_pg.add_pgrst_watch == true +%}
+{%- if 'add_pgrst_watch' in components.cip_pg and components.cip_pg.add_pgrst_watch == true %}
 COPY ./postgresql/pgrst_watch.sql /home/postgres/pgrst_watch.sql
-{%- endif +%}
+{%- endif %}
 
 RUN dos2unix --quiet /docker-entrypoint-initdb.d/init.sh &&\
     chmod 755 /docker-entrypoint-initdb.d/init.sh        &&\
