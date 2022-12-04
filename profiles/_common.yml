@@ -9,7 +9,7 @@ github_repo:
    erg:
       url: "ssh://git@ssh.github.com:443/Eastern-Research-Group/CIP-service.git"
       default_branch: develop
-      add_deploy_key: true
+      add_deploy_key: false
 #
 s3_bucket:
    ows3: 

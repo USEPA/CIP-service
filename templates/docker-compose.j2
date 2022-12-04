@@ -1,21 +1,20 @@
-{%- if 1 == 2 -%}
-#
-#
-# This docker-compose file is a jinja2 template.
-# Before utilizing, use an appropriate configuration
-# settings file to generate the compose and dockerfiles
-#
-# If you have python on your host system, execute the config
-# script directly: 
-# python config-compose.py --profile desktop.yml
-#
-# If you don't have python handy, then whip up a quick container.
-# Power Shell: ./config-compose.ps1 desktop.yml
-# Linux:       ./config-compose.sh  desktop.yml
-#   
-#
-{%- endif -%}
-{%- if 1 == 1 -%}
+{#
+
+
+ This docker-compose file is a jinja2 template.
+ Before utilizing, use an appropriate configuration
+ settings file to generate the compose and dockerfiles
+
+ If you have python on your host system, execute the config
+ script directly: 
+ python config-compose.py --profile desktop.yml
+
+ If you don't have python handy, then whip up a quick container.
+ Power Shell: ./config-compose.ps1 desktop.yml
+ Linux:       ./config-compose.sh  desktop.yml
+   
+
+-#}
 #
 #
 # profile:   {{ profile_name }}
@@ -37,11 +36,10 @@
 #                     example: ./mydeploykey for mydeploykey.ppk and mydeploykey.pub
 #
 #
-{%- endif +%}
 name: cipsrv-docker-compose
 services:
-{%- if 'type' in components.cip_pg and components.cip_pg.type == "container" -%}
-{%- set configval = components.cip_pg.config +%}
+{%- if 'cip_pg' in components and 'type' in components.cip_pg and components.cip_pg.type == "container" %}
+{%-    set configval = components.cip_pg.config %}
    cip_pg:
       build:
          context: .
@@ -50,11 +48,11 @@ services:
       shm_size: {{ postgresql_config[configval].shm_size }}
       hostname: cip_pg
       environment:
-{%- if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" +%}
+{%-   if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" %}
          POSTGRES_DB:             ${POSTGRESQL_DB}
-{%- else +%}
+{%-   else %}
          POSTGRES_DB:             {{ components.cip_pg.db }}
-{%- endif +%}
+{%-   endif %}
          POSTGRES_PASSWORD:       ${POSTGRESQL_SU_PASS}
          POSTGRES_CIP_PASS:       ${POSTGRESQL_CIP_PASS}
          POSTGRES_USR_PASS:       ${POSTGRESQL_USR_PASS}
@@ -76,11 +74,11 @@ services:
          PG_MAX_PAR_WORK_PER_GAT: {{ postgresql_config[configval].max_par_work_per_gat }} 
          PG_MAX_PAR_WORKERS:      {{ postgresql_config[configval].max_par_workers }}      
          PG_MAX_PAR_MAINT_WORK:   {{ postgresql_config[configval].max_par_maint_work  }}  
-{%- if 'external_port' in components.cip_pg and components.cip_pg.external_port is not none +%}
+{%-    if 'external_port' in components.cip_pg and components.cip_pg.external_port is not none %}
       ports:
          - target: 5432
            published: {{ components.cip_pg.external_port }}
-{%- endif +%}
+{%-    endif %}
       networks:
          - cip
       volumes:
@@ -90,27 +88,28 @@ services:
          - type: volume
            source: tblspdata
            target: /tblspdata
-{%- endif +%}
+{%- endif %}
+{%- if 'cip_pr' in components and 'type' in components.cip_pr and components.cip_pr.type == "container" %}
    cip_pr:
       build:
          context: .
          dockerfile: Dockerfile.pr
          args:
-{%- if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" +%}
+{%-    if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" %}
             ARG_POSTGRES_DB:    ${POSTGRESQL_DB}
-{%- else +%}
+{%-    else %}
             ARG_POSTGRES_DB:    {{ components.cip_pg.db }}
-{%- endif +%}
-{%- if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" +%}
+{%-    endif %}
+{%-    if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" %}
             ARG_POSTGRES_HOST:  ${POSTGRESQL_HOST}
-{%- else +%}
+{%-    else %}
             ARG_POSTGRES_HOST:  {{ components.cip_pg.host }}
-{%- endif +%}
-{%- if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" +%}
+{%-    endif %}
+{%-    if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" %}
             ARG_POSTGRES_PORT:  ${POSTGRESQL_PORT}
-{%- else +%}
+{%-    else %}
             ARG_POSTGRES_PORT:  {{ components.cip_pg.port }}
-{%- endif +%}
+{%-    endif %}
             ARG_POSTGREST_PASS: ${POSTGREST_PASS}
       shm_size: '1gb' 
       hostname: cip_pr
@@ -119,68 +118,71 @@ services:
          PGRST_SERVER_PORT:       3000
          PGRST_DB_SCHEMA:         cipsrv_pgrest
          PGRST_DB_ANON_ROLE:      cipsrv_pgrest        
-{%- if 'external_port' in components.cip_pr and components.cip_pr.external_port is not none +%}
+{%-    if 'external_port' in components.cip_pr and components.cip_pr.external_port is not none %}
       ports:
          - target: 3000
            published: {{ components.cip_pr.external_port }}
-{%- endif +%}
+{%-    endif %}
       networks:
          - cip
-{%- if 'add_host_gateway' in components.cip_pr and components.cip_pr.add_host_gateway == true +%}
+{%-    if 'add_host_gateway' in components.cip_pr and components.cip_pr.add_host_gateway == true %}
       extra_hosts:
          - host.docker.internal:host-gateway
-{%- endif +%}
-{%- set ghrep = components.cip_jp.github_repo -%}
-{%- set ghkey = github_repo[ghrep].add_deploy_key +%}
+{%-    endif %}
+
+{%- endif %}
+{%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}
    cip_jp:
       build:
          context: .
          dockerfile: Dockerfile.jp
          args:
-{%- if ghkey == true +%}
+{%-    set ghrep = components.cip_jp.github_repo %}
+{%-    set ghkey = github_repo[components.cip_jp.github_repo].add_deploy_key %}
+{%-    if 'github_repo' in components.cip_jp and components.cip_jp.github_repo == true %}
             ARG_CIPSRV_DEPLOYKEY: ${CIPSRV_DEPLOYKEY}
-{%- endif +%}
+{%-    endif %}
             ARG_JUPYTER_TOKEN:   ${JUPYTER_TOKEN}
       shm_size: '1gb' 
       hostname: cip_jp
       environment:
-{%- if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" +%}
+{%-    if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" %}
          POSTGRES_DB:             ${POSTGRESQL_DB}
-{%- else +%}
+{%-    else %}
          POSTGRES_DB:             {{ components.cip_pg.db }}
-{%- endif +%}
-{%- if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" +%}
+{%-    endif %}
+{%-    if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" %}
          POSTGRES_HOST:           ${POSTGRESQL_HOST}
-{%- else +%}
+{%-    else %}
          POSTGRES_HOST:           {{ components.cip_pg.host }}
-{%- endif +%}
-{%- if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" +%}
+{%-    endif %}
+{%-    if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" %}
          POSTGRES_PORT:           ${POSTGRESQL_PORT}
-{%- else +%}
+{%-    else %}
          POSTGRES_PORT:           {{ components.cip_pg.port }}
-{%- endif +%}
-{%- if 'rds_master_user' in components.cip_pg and components.cip_pg.rds_master_user == "env.RDS_MASTER_USER" +%}
+{%-    endif %}
+{%-    if 'rds_master_user' in components.cip_pg and components.cip_pg.rds_master_user == "env.RDS_MASTER_USER" %}
          RDS_MASTER_USER:         ${RDS_MASTER_USER}
-{%- endif +%}
+{%-    endif %}
          POSTGRES_CIP_PASS:       ${POSTGRESQL_CIP_PASS}
          POSTGRES_USR_PASS:       ${POSTGRESQL_USR_PASS}
          POSTGREST_PASS:          ${POSTGREST_PASS}    
          GITHUB_REPO_URL:         {{ github_repo[ghrep].url }}
          GITHUB_DEFAULT_BRANCH:   {{ github_repo[ghrep].default_branch }}
-{%- set s3buc = components.cip_jp.dump_s3 -%}
-{%- set s3url = s3_bucket[s3buc].url +%}
+{%-    set s3buc = components.cip_jp.dump_s3 %}
+{%-    set s3url = s3_bucket[s3buc].url %}
          S3_BUCKET:               {{ s3url }}
-{%- if 'external_port' in components.cip_jp and components.cip_jp.external_port is not none +%}
+{%-    if 'external_port' in components.cip_jp and components.cip_jp.external_port is not none %}
       ports:
          - target: 8888
            published: {{ components.cip_jp.external_port }}
-{%- endif +%}
+{%-    endif %}
       networks:
          - cip
-{%- if 'add_host_gateway' in components.cip_jp and components.cip_jp.add_host_gateway == true +%}
+{%-    if 'add_host_gateway' in components.cip_jp and components.cip_jp.add_host_gateway == true %}
       extra_hosts:
          - host.docker.internal:host-gateway
-{%- endif +%}
+{%-    endif %}
       volumes:
          - type: volume
            source: jupyter
@@ -188,6 +190,8 @@ services:
          - type: volume
            source: home-jovyan
            target: /home/jovyan
+{%- endif %}
+{%- if 'cip_ng' in components and 'type' in components.cip_ng and components.cip_ng.type == "container" %}
    cip_ng:
       build:
          context: .
@@ -195,40 +199,41 @@ services:
       shm_size: '1gb' 
       hostname: cip_ng
       environment:
-{%- if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" +%}
+{%-    if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" %}
          POSTGRES_DB:             ${POSTGRESQL_DB}
-{%- else +%}
+{%-    else %}
          POSTGRES_DB:             {{ components.cip_pg.db }}
-{%- endif +%}
-{%- if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" +%}
+{%-    endif %}
+{%-    if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" %}
          POSTGRES_HOST:           ${POSTGRESQL_HOST}
-{%- else +%}
+{%-    else %}
          POSTGRES_HOST:           {{ components.cip_pg.host }}
-{%- endif +%}
-{%- if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" +%}
+{%-    endif %}
+{%-    if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" %}
          POSTGRES_PORT:           ${POSTGRESQL_PORT}
-{%- else +%}
+{%-    else %}
          POSTGRES_PORT:           {{ components.cip_pg.port }}
-{%- endif +%}
+{%-    endif %}
          POSTGRES_UPL_PASS:       ${POSTGRESQL_UPL_PASS}
-{%- if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none +%}
+{%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}
       ports:
          - target: 80
            published: {{ components.cip_ng.external_port }}
-{%- endif +%}
+{%-    endif %}
       networks:
          - cip
-{%- if 'add_host_gateway' in components.cip_ng and components.cip_ng.add_host_gateway == true +%}
+{%-    if 'add_host_gateway' in components.cip_ng and components.cip_ng.add_host_gateway == true %}
       extra_hosts:
          - host.docker.internal:host-gateway
-{%- endif +%}
+{%-    endif %}
+{%- endif %}
 networks:
    cip:
       driver: bridge
 volumes:
-{%- if 'type' in components.cip_pg and components.cip_pg.type == "container" +%}
+{%- if 'type' in components.cip_pg and components.cip_pg.type == "container" %}
    tblspdata:
    pgdata:
-{%- endif +%}
+{%- endif %}
    jupyter:
    home-jovyan:

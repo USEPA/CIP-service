@@ -646,13 +646,25 @@
             var def_point;
             var def_line;
             var def_area;
+            var def_line_threshold;
+            var def_areaevt_threshold;
+            var def_areacat_threshold;
             if (val == "AKDECWQ" ) {
                state = "AK";
                def_point = "point_simple";
                def_line  = "line_simple";
                def_area  = "area_simple";
+               def_line_threshold = "";
+               def_areaevt_threshold = "1";
+               def_areacat_threshold = "50";
             } else if (val == "21AWIC") {
                state = "AL";
+               def_point = "point_simple";
+               def_line  = "line_levelpath";
+               def_area  = "area_artpath";
+               def_line_threshold = "10";
+               def_areaevt_threshold = "1";
+               def_areacat_threshold = "50";
             } else if (val == "ARDEQH2O") {
                state = "AR";
             } else if (val == "21AS") {
@@ -793,6 +805,12 @@
                state = "WV";
             } else if (val == "WIDNR") {
                state = "WI";
+               def_point = "point_simple";
+               def_line  = "line_levelpath";
+               def_area  = "area_simple";
+               def_line_threshold = "10";
+               def_areaevt_threshold = "1";
+               def_areacat_threshold = "10";
             } else if (val == "WYDEQ") {
                state = "WY";
             }
@@ -812,7 +830,19 @@
             if (def_area !== null && def_area !== undefined) {
                document.getElementById("dzAreaIndexingMethod").value = def_area;
             }
-
+            
+            if (def_line_threshold !== null && def_line_threshold !== undefined) {
+               document.getElementById("dzLineThreasholdPerc").value = def_line_threshold;
+            }
+            
+            if (def_areaevt_threshold !== null && def_areaevt_threshold !== undefined) {
+               document.getElementById("dzEvtThreasholdPerc").value = def_areaevt_threshold;
+            }
+            
+            if (def_areacat_threshold !== null && def_areacat_threshold !== undefined) {
+               document.getElementById("dzCatThreasholdPerc").value = def_areacat_threshold;
+            }
+            
             busy_on();
             lazy_org = val;
             
