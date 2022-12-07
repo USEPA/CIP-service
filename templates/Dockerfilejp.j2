@@ -56,13 +56,15 @@ ARG ARG_CIPSRV_DEPLOYKEY
 COPY ${ARG_CIPSRV_DEPLOYKEY}.ppk /home/${NB_USER}/.ssh/id_rsa
 COPY ${ARG_CIPSRV_DEPLOYKEY}.pub /home/${NB_USER}/.ssh/id_rsa.pub
 RUN chmod 0400 /home/${NB_USER}/.ssh/id_rsa                 &&\
-    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub             &&\
-    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
+    chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub
 {%- endif %}
+
+COPY /jupyter/known_hosts.txt /home/${NB_USER}/.ssh/known_hosts
+RUN chmod 0644 /home/${NB_USER}/.ssh/known_hosts            &&\
+    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
 
 USER ${NB_USER}
 
-RUN ssh-keyscan -p 443 ssh.github.com > /home/${NB_USER}/.ssh/known_hosts
 {%- if ghkey == true %}
 RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
 {%- endif %}

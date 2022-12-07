@@ -13,6 +13,7 @@
            z-index: 100;
          }
       </style>
+      <script src="/config.js"></script>
    </head>
    <body>
       <div id="busy">
@@ -290,7 +291,11 @@
                ,"return_huc12s":               document.getElementById("dzShowHUC12s").checked
             };
             
-            httpPost("http://" + window.location.hostname + ":3000/rpc/cipsrv_index",data,get_response);
+            var http = "http";
+            if (postgrest_port == "443" ) {
+               http = "https";
+            }
+            httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_index",data,get_response);
            
          }
          

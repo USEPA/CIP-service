@@ -196,25 +196,18 @@ services:
       build:
          context: .
          dockerfile: Dockerfile.ng
-      shm_size: '1gb' 
+         args:
+{%-    if 'host' in components.cip_pr and components.cip_pr.host == "env.POSTGREST_HOST" %}
+            ARG_POSTGREST_HOST: ${POSTGREST_HOST}
+{%-    endif %}
+{%-    if 'port' in components.cip_pr and components.cip_pr.port == "env.POSTGREST_PORT" %}
+            ARG_POSTGREST_PORT: ${POSTGREST_PORT}
+{%-    else %}
+{%-       if 'remote_port' in components.cip_pr and components.cip_pr.remote_port == "env.POSTGREST_PORT" %}
+            ARG_POSTGREST_PORT: ${POSTGREST_PORT}
+{%-       endif %}
+{%-    endif %}
       hostname: cip_ng
-      environment:
-{%-    if 'db' in components.cip_pg and components.cip_pg.db == "env.POSTGRESQL_DB" %}
-         POSTGRES_DB:             ${POSTGRESQL_DB}
-{%-    else %}
-         POSTGRES_DB:             {{ components.cip_pg.db }}
-{%-    endif %}
-{%-    if 'host' in components.cip_pg and components.cip_pg.host == "env.POSTGRESQL_HOST" %}
-         POSTGRES_HOST:           ${POSTGRESQL_HOST}
-{%-    else %}
-         POSTGRES_HOST:           {{ components.cip_pg.host }}
-{%-    endif %}
-{%-    if 'port' in components.cip_pg and components.cip_pg.port == "env.POSTGRESQL_PORT" %}
-         POSTGRES_PORT:           ${POSTGRESQL_PORT}
-{%-    else %}
-         POSTGRES_PORT:           {{ components.cip_pg.port }}
-{%-    endif %}
-         POSTGRES_UPL_PASS:       ${POSTGRESQL_UPL_PASS}
 {%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}
       ports:
          - target: 80
