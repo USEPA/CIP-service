@@ -1,0 +1,23 @@
+profile_name: external_dbapi 
+#
+# Non-functional profile provided for completeness
+# where the database and API are both hosted elsewhere
+# Generates an empty compose file
+#
+last updated: 20221212
+#
+components:
+# Core CIP Engine components
+#  PostgreSQL Database
+   cip_pg:
+      type:             external
+#     connection details are stored in the user's .env file
+      host:             env.POSTGRESQL_HOST
+      port:             env.POSTGRESQL_PORT
+      db:               env.POSTGRESQL_DB
+#  PostgREST API
+   cip_pr:
+      type:             external
+      host:             env.POSTGREST_HOST
+      external_port:    env.POSTGREST_PORT
+#

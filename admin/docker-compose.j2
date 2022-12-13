@@ -1,0 +1,113 @@
+{#
+
+
+ This docker-compose file is a jinja2 template.
+ Before utilizing, use an appropriate profile
+ settings file to generate the compose and dockerfiles.
+
+ If you have python on your host system, execute the config
+ script directly: 
+ python config-compose.py --bundle admin --bprofile admin_local
+
+ If you don't have python handy, then whip up a quick container.
+ Power Shell: ./config/config-compose.ps1 admin admin_local
+ Linux:       ./config/config-compose.sh  admin admin_local
+   
+
+-#}
+#
+#
+# profile:   {{ profile_name }}
+# generated: {{ now }} 
+#
+# This docker-compose and daughter Dockerfiles were generated from the source
+# template using the config-compose.py script.  The script applies a predefined profile
+# to a jinja2 template located in the templates directory.
+#
+# Aside from the configuration step all secrets must be provided via the usual .env file.
+#
+# POSTGRESQL_DB      : database name
+# POSTGRESQL_HOST    : database host
+# POSTGRESQL_PORT    : database port
+# POSTGRESQL_CIP_PASS: cipsrv user password
+# JUPYTER_TOKEN      : jupyter server token, a value of "easy" will forgo this
+#
+#
+name: admin
+services:
+{%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}
+   cip_jp:
+      build:
+         context: .
+         dockerfile: Dockerfile.jp
+         args:
+{%-   set ghrep = components.cip_jp.github_repo %}
+{%-   set ghkey = github_repo[components.cip_jp.github_repo].add_deploy_key %}
+{%-   if 'github_repo' in components.cip_jp and components.cip_jp.github_repo == true %}
+            ARG_CIPSRV_DEPLOYKEY: ${CIPSRV_DEPLOYKEY}
+{%-   endif %}
+            ARG_JUPYTER_TOKEN:   ${JUPYTER_TOKEN}
+      shm_size: '1gb' 
+      hostname: cip_jp
+      environment:
+{%-   if cip_pg_db == "env.POSTGRESQL_DB"  %}
+         POSTGRESQL_DB:           $POSTGRESQL_DB
+{%-   else %}
+         POSTGRESQL_DB:           {{ cip_pg_db   }}
+{%-   endif %}
+{%-   if cip_pg_host == "env.POSTGRESQL_HOST"  %}
+         POSTGRESQL_HOST:         $POSTGRESQL_HOST
+{%-   else %}
+         POSTGRESQL_HOST:         {{ cip_pg_host }}
+{%-   endif %}
+{%-   if cip_pg_port == "env.POSTGRESQL_PORT"  %}
+         POSTGRESQL_PORT:         $POSTGRESQL_PORT
+{%-   else %}
+         POSTGRESQL_PORT:         {{ cip_pg_port }}
+{%-   endif %}
+{%-   if cip_pg_cip_pass == "env.POSTGRESQL_CIP_PASS"  %}
+         POSTGRESQL_CIP_PASS:     $POSTGRESQL_CIP_PASS
+{%-   else %}
+         POSTGRESQL_CIP_PASS:     {{ cip_pg_cip_pass }}
+{%-   endif %}
+         GITHUB_REPO_URL:         {{ github_repo[ghrep].url }}
+         GITHUB_DEFAULT_BRANCH:   {{ github_repo[ghrep].default_branch }}
+{%-   set s3buc = components.cip_jp.dump_s3 %}
+{%-   set s3url = s3_bucket[s3buc].url %}
+         S3_BUCKET:               {{ s3url }}
+{%-   if 'external_port' in components.cip_jp and components.cip_jp.external_port is not none %}
+      ports:
+         - target: 8888
+           published: {{ components.cip_jp.external_port }}
+{%-   endif %}
+      networks:
+{%- if join_existing_network == true %}
+         - {{ existing_network_name }}
+{%- else %}
+         - cip
+{%- endif %}
+{%-   if 'add_host_gateway' in components.cip_jp and components.cip_jp.add_host_gateway == true %}
+      extra_hosts:
+         - host.docker.internal:host-gateway
+{%-   endif %}
+      volumes:
+         - type: volume
+           source: jupyter
+           target: /opt/conda/etc/jupyter
+         - type: volume
+           source: home-jovyan
+           target: /home/jovyan
+{%- endif %}
+networks:
+{%- if join_existing_network == true %}
+   {{ existing_network_name }}:
+      external: true
+{%- else %}
+   cip:
+      driver: bridge
+{%- endif %}
+{%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}
+volumes:
+   jupyter:
+   home-jovyan:
+{%- endif %}
