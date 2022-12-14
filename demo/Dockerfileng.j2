@@ -2,27 +2,17 @@ FROM nginx:1.22
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
-{%- if 'host' in components.cip_pr %}
-{%-    set postgrest_host = components.cip_pr.host %}
-{%- else %}
-{%-    set postgrest_host = 'cip_pr' %}
-{%- endif %}
-{%- if 'port' in components.cip_pr %}
-{%-    set postgrest_port = components.cip_pr.port %}
-{%- else %}
-{%-    if 'remote_port' in components.cip_pr %}
-{%-       set postgrest_port = components.cip_pr.remote_port %}
-{%-    else %}
-{%-       set postgrest_port = '3000' %}
-{%-    endif %}
-{%- endif %}
-{%- if postgrest_host == 'env.POSTGREST_HOST' %}
+{%- if cip_pr_host == 'env.POSTGREST_HOST' %}
 {%-    set postgrest_host = '${ARG_POSTGREST_HOST}' %}
 ARG ARG_POSTGREST_HOST
+{%- else %}
+{%-    set postgrest_host = cip_pr_host %}
 {%- endif %}
-{%- if postgrest_port == 'env.POSTGREST_PORT' %}
+{%- if cip_pr_port == 'env.POSTGREST_PORT' %}
 {%-    set postgrest_port = '${ARG_POSTGREST_PORT}' %}
 ARG ARG_POSTGREST_PORT
+{%- else %}
+{%-    set postgrest_port = cip_pr_port %}
 {%- endif %}
 
 COPY ./nginx/html       /usr/share/nginx/html
