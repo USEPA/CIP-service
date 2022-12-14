@@ -18,6 +18,8 @@ components:
       port:             5432
       db:               cipsrv
 #     passwords used in the database setup
+      su_user:          postgres
+      su_pass:          env.POSTGRESQL_SU_PASS
       cip_pass:         env.POSTGRESQL_CIP_PASS
       usr_pass:         env.POSTGRESQL_USR_PASS
       upl_pass:         env.POSTGRESQL_UPL_PASS
