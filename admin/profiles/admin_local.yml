@@ -1,0 +1,29 @@
+profile_name: admin 
+#
+# Example profile to create a jupyter notebook
+# server to administer a CIP engine in the same
+# docker network
+#
+last updated: 20221212
+#
+cip_pg_host:     cip_pg
+cip_pg_port:     5432
+cip_pg_db:       cipsrv
+cip_pg_is_rds:   false
+cip_pg_cip_pass: env.POSTGRESQL_CIP_PASS
+join_existing_network: true
+existing_network_name: engine_cip
+#
+components:
+#  Maintenance Jupyter Notebook
+   cip_jp:
+      type:             container
+      github_repo:      epa_https
+      dump_s3:          ows3
+#     admin servers should never be exposed on the internet
+#     and should ideally be only accesible via local resources   
+      external_port:    8888
+#     further lock down Jupyter with a security token
+#     use a value of "easy" to skip this security step      
+      jupyter_token:    env.JUPYTER_TOKEN      
+#

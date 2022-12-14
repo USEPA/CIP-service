@@ -1,0 +1,18 @@
+name: config
+services:
+   quickpython:
+      build:
+         context: .
+         dockerfile: config-compose.df
+      hostname: quickpython
+      environment:
+         BUNDLE: ${BUNDLE:-engine}
+         BPROFILE: ${BPROFILE:-desktop}
+      volumes:
+         - type:   bind
+           source: ./
+           target: /home/ubuntu/config
+         - type:   bind
+           source: ../${BUNDLE:-engine}
+           target: /home/ubuntu/output
+           

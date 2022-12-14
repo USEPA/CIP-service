@@ -1,0 +1,39 @@
+profile_name: server 
+#
+# Example profile to create a host bundle
+# having enterprise server-level resources
+#
+last updated: 20221212
+#
+components:
+# Core CIP Engine components
+#  PostgreSQL Database
+   cip_pg:
+      type:             container
+#     config references predetermined configuration in the _common.yml file
+      config:           server
+#     host, port and db determine how the API component accesses the database
+#     in a full container profile this is usually the internal network address
+      host:             cip_pg
+      port:             5432
+      db:               cipsrv
+#     passwords used in the database setup
+      su_user:          postgres
+      su_pass:          env.POSTGRESQL_SU_PASS
+      cip_pass:         env.POSTGRESQL_CIP_PASS
+      usr_pass:         env.POSTGRESQL_USR_PASS
+      upl_pass:         env.POSTGRESQL_UPL_PASS
+      prst_pass:        env.POSTGREST_PASS
+#     development option to add pgrst watch code to renew the cip_pr cache on code change
+      add_pgrst_watch:  true
+#     adding the external port option will make the database accessible on the docker host
+      external_port:    5433
+#  PostgREST API
+   cip_pr:
+      type:             container
+#     the external port on a containerize PostgREST is the exposed port used to access the API
+      external_port:    3000
+      log_level:        info
+      add_host_gateway: false
+
+
