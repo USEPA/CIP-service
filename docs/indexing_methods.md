@@ -1,11 +1,11 @@
 ## Current Indexing Methods:
 
-1. [Point Simple](#point-simple) ([code](../cipsrv/database/cipsrv_engine/functions/point_simple.sql))
-2. [Line Simple](#line-sSimple) ([code](../cipsrv/database/cipsrv_engine/functions/line_simple.sql))
-3. [Line LevelPath](#line-levelpath) ([code](../cipsrv/database/cipsrv_engine/functions/line_levelpath.sql))
-4. [Area Simple](#area-simple) ([code](../cipsrv/database/cipsrv_engine/functions/area_simple.sql))
-5. [Area Centroid](#area-centroid) ([code](../cipsrv/database/cipsrv_engine/functions/area_centroid.sql))
-6. [Area ArtPath](#area-artpath) ([code](../cipsrv/database/cipsrv_engine/functions/area_artpath.sql))
+1. [Point Simple](#point-simple) ([code](../src/database/cipsrv_engine/functions/point_simple.sql))
+2. [Line Simple](#line-sSimple) ([code](../src/database/cipsrv_engine/functions/line_simple.sql))
+3. [Line LevelPath](#line-levelpath) ([code](../src/database/cipsrv_engine/functions/line_levelpath.sql))
+4. [Area Simple](#area-simple) ([code](../src/database/cipsrv_engine/functions/area_simple.sql))
+5. [Area Centroid](#area-centroid) ([code](../src/database/cipsrv_engine/functions/area_centroid.sql))
+6. [Area ArtPath](#area-artpath) ([code](../src/database/cipsrv_engine/functions/area_artpath.sql))
 
 ### Point Simple
 
