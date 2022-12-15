@@ -16,4 +16,4 @@
 ### FedStateWaters Tables
 
 - __tiger_fedstatewaters__: Feature class combining US Census Tiger 2021 state boundaries with the 2020 NOAA Federal and State Waters coverage.
-
+- __tribal_crosswalk__: table linking tiger 2021 American Indian/Alaska Native/Native Hawaiian tribal boundaries with known US EPA Tribal ids, Bureau of Indian Affairs ids and EPA ATTAINS tribal organization ids.
