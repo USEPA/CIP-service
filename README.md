@@ -69,6 +69,8 @@ __Engine__
 
 3. next type **docker ps** to make sure the engine containers are up and running as expected.  You should see cip_pg and cip_pr containers running.
 
+4. At this point the engine API endpoint should be available.  For information on how to use the API, see the [OpenAPI specification here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/develop/docs/openapi.yml)
+
 __Admin__
 
 1. in the admin directory, type **docker-compose -p admin build**.  The admin_local profile will attach o the engine_cip network created above.  
