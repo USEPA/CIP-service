@@ -14,6 +14,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32655(
    ---
    ,fcode
    ---
+   ,tribal
+   ---
    ,shape
    ,shape_centroid
 )
@@ -31,6 +33,16 @@ SELECT
 ,b.connector_fromnode
 ---
 ,c.fcode::INTEGER           AS fcode
+---
+,COALESCE((
+ SELECT 
+ TRUE
+ FROM
+ cipsrv_support.tiger_aiannha_32655 d
+ WHERE
+ ST_Intersects(d.shape,a.shape)
+ LIMIT 1
+ ),FALSE) AS tribal
 ---
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid

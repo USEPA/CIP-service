@@ -2,13 +2,16 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
     IN  p_points                    JSONB
    ,IN  p_lines                     JSONB
    ,IN  p_areas                     JSONB
-   ,IN  p_geometry                  GEOMETRY
-   ,IN  p_state_filter              VARCHAR
+   ,IN  p_geometry                  GEOMETRY  
+   ,IN  p_geometry_clip             VARCHAR[]
+   ,IN  p_geometry_clip_stage       VARCHAR
+   ,IN  p_catchment_filter          VARCHAR[]
    ,IN  p_nhdplus_version           VARCHAR
    ,IN  p_wbd_version               VARCHAR
    ,IN  p_default_point_method      VARCHAR
    ,IN  p_default_line_method       VARCHAR
    ,IN  p_default_area_method       VARCHAR
+   ,IN  p_default_ring_method       VARCHAR
    ,IN  p_default_line_threshold    NUMERIC
    ,IN  p_default_areacat_threshold NUMERIC
    ,IN  p_default_areaevt_threshold NUMERIC

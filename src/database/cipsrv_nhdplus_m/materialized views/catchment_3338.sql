@@ -14,6 +14,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
    ---
    ,fcode
    ---
+   ,tribal
+   ---
    ,shape
    ,shape_centroid
 )
@@ -31,6 +33,16 @@ SELECT
 ,b.connector_fromnode
 ---
 ,c.fcode::INTEGER           AS fcode
+---
+,COALESCE((
+ SELECT 
+ TRUE
+ FROM
+ cipsrv_support.tiger_aiannha_3338 d
+ WHERE
+ ST_Intersects(d.shape,a.shape)
+ LIMIT 1
+ ),FALSE) AS tribal
 ---
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
@@ -69,6 +81,9 @@ ON cipsrv_nhdplus_m.catchment_3338(levelpathi);
 
 CREATE INDEX catchment_3338_02i
 ON cipsrv_nhdplus_m.catchment_3338(fcode);
+
+CREATE INDEX catchment_3338_03i
+ON cipsrv_nhdplus_m.catchment_3338(tribal);
 
 CREATE INDEX catchment_3338_spx
 ON cipsrv_nhdplus_m.catchment_3338 USING GIST(shape);

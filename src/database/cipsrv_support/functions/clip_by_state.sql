@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_state(
     IN  p_geometry             GEOMETRY
    ,IN  p_known_region         VARCHAR
-   ,IN  p_state_filter         VARCHAR
+   ,IN  p_state_clip           VARCHAR
    ,OUT out_clipped_geometry   GEOMETRY
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
@@ -31,22 +31,29 @@ BEGIN
    -- Step 10
    -- Determine the proper SRID
    ----------------------------------------------------------------------------
-   rec := cipsrv_support.determine_grid_srid(
-       p_geometry        := p_geometry
-      ,p_known_region    := p_known_region
-   );
-   int_srid           := rec.out_srid;
-   int_gridsize       := rec.out_grid_size;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
-   
-   IF out_return_code != 0
+   IF p_known_region IS NULL
    THEN
-      RETURN;
+      rec := cipsrv_support.determine_grid_srid(
+          p_geometry        := p_geometry
+         ,p_known_region    := p_known_region
+      );
+      int_srid           := rec.out_srid;
+      int_gridsize       := rec.out_grid_size;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      
+      IF out_return_code != 0
+      THEN
+         RETURN;
+         
+      END IF;
+      
+      str_known_region := int_srid::VARCHAR;
+      
+   ELSE
+      str_known_region := p_known_region;
       
    END IF;
-   
-   str_known_region := int_srid::VARCHAR;
    
    str_gtype := ST_GeometryType(p_geometry);
    
@@ -77,12 +84,12 @@ BEGIN
    FROM
    cipsrv_support.tiger_fedstatewaters a
    WHERE
-   a.stusps = p_state_filter;
+   a.stusps = p_state_clip;
    
    IF sdo_state_geom IS NULL
    THEN
       out_return_code      := -20;
-      out_status_message   := 'Unknown US state code <' || p_state_filter || '>.';
+      out_status_message   := 'Unknown US state code <' || p_state_clip || '>.';
       out_clipped_geometry := p_geometry;
       RETURN;
       
