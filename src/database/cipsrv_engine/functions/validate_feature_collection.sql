@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.validate_feature_collection(
    ,IN  p_default_point_method         VARCHAR
    ,IN  p_default_line_method          VARCHAR
    ,IN  p_default_area_method          VARCHAR
+   ,IN  p_default_ring_method          VARCHAR
    ,IN  p_default_line_threshold       NUMERIC
    ,IN  p_default_areacat_threshold    NUMERIC
    ,IN  p_default_areaevt_threshold    NUMERIC
@@ -72,6 +73,7 @@ BEGIN
                   ,p_default_point_method      := p_default_point_method
                   ,p_default_line_method       := p_default_line_method
                   ,p_default_area_method       := p_default_area_method
+                  ,p_default_ring_method       := p_default_ring_method
                   ,p_default_line_threshold    := p_default_line_threshold
                   ,p_default_areacat_threshold := p_default_areacat_threshold
                   ,p_default_areaevt_threshold := p_default_areaevt_threshold 
@@ -89,8 +91,9 @@ BEGIN
                
                IF p_test_type IS NOT NULL
                THEN
+                  -- Note this needs to be loose enough to allow ring polygons
                   IF (p_test_type = 'Point'      AND str_feature_type NOT IN ('Point','MultiPoint'))
-                  OR (p_test_type = 'LineString' AND str_feature_type NOT IN ('LineString','MultiLineString'))
+                  OR (p_test_type = 'LineString' AND str_feature_type NOT IN ('LineString','MultiLineString','ST_Polygon'))
                   OR (p_test_type = 'Polygon'    AND str_feature_type NOT IN ('Polygon','MultiPolygon'))
                   THEN
                      out_return_code    := -30;
@@ -154,6 +157,7 @@ ALTER FUNCTION cipsrv_engine.validate_feature_collection(
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
    ,NUMERIC
@@ -164,6 +168,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.validate_feature_collection(
    ,VARCHAR
    ,VARCHAR
    ,INTEGER
+   ,VARCHAR
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR

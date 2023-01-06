@@ -34,21 +34,14 @@ SELECT
 ---
 ,c.fcode::INTEGER           AS fcode
 ---
-,COALESCE((
- SELECT 
- TRUE
- FROM
- cipsrv_support.tiger_aiannha_32655 d
- WHERE
- ST_Intersects(d.shape,a.shape)
- LIMIT 1
- ),FALSE) AS tribal
+,a.tribal
 ---
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
     aa.nhdplusid::BIGINT
+   ,bool_or(aa.tribal) AS tribal
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32655)) AS shape
    FROM
@@ -81,6 +74,9 @@ ON cipsrv_nhdplus_h.catchment_32655(levelpathi);
 
 CREATE INDEX catchment_32655_02i
 ON cipsrv_nhdplus_h.catchment_32655(fcode);
+
+CREATE INDEX catchment_32655_03i
+ON cipsrv_nhdplus_h.catchment_32655(tribal);
 
 CREATE INDEX catchment_32655_spx
 ON cipsrv_nhdplus_h.catchment_32655 USING GIST(shape);

@@ -34,21 +34,14 @@ SELECT
 ---
 ,c.fcode::INTEGER           AS fcode
 ---
-,COALESCE((
- SELECT 
- TRUE
- FROM
- cipsrv_support.tiger_aiannha_5070 d
- WHERE
- ST_Intersects(d.shape,a.shape)
- LIMIT 1
- ),FALSE) AS tribal
+,a.tribal
 ---
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
     aa.nhdplusid::BIGINT
+   ,bool_or(aa.tribal) AS tribal
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,5070)) AS shape
    FROM

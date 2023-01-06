@@ -39,20 +39,23 @@ DECLARE
    json_lines                    JSONB;
    json_areas                    JSONB;
    json_features                 JSONB;
+   json_features2                JSONB;
    json_feature                  JSONB;
    
    sdo_input                     GEOMETRY;
+   sdo_output                    GEOMETRY;
    sdo_sampler                   GEOMETRY;
    sdo_state_clipped             GEOMETRY;
    boo_return_geometry           BOOLEAN;
-   str_state_filter              VARCHAR(2);
    
    str_default_point_method      VARCHAR;
    str_default_line_method       VARCHAR;
    str_default_area_method       VARCHAR;
+   str_default_ring_method       VARCHAR;
    num_default_line_threshold    NUMERIC;
    num_default_areacat_threshold NUMERIC;
    num_default_areaevt_threshold NUMERIC;
+   
    str_known_region              VARCHAR;
    str_geometry_type             VARCHAR;
    int_feature_count             INTEGER;
@@ -64,6 +67,11 @@ DECLARE
    num_areaevt_threshold         NUMERIC;
    str_category                  VARCHAR;
    boo_check                     BOOLEAN;
+   
+   str_geometry_clip_stage       VARCHAR;
+   boo_filter_by_state           BOOLEAN;
+   ary_state_filters             VARCHAR[];
+   boo_filter_by_tribal          BOOLEAN;
    
 BEGIN
 
@@ -85,6 +93,23 @@ BEGIN
    
    END IF;
    
+   IF p_geometry_clip_stage IS NULL
+   THEN
+      str_geometry_clip_stage := 'AFTER';
+      
+   ELSIF UPPER(p_geometry_clip_stage) IN ('BEFORE','AFTER')
+   THEN
+      str_geometry_clip_stage := UPPER(p_geometry_clip_stage);
+   
+   END IF;
+   
+   rec := cipsrv_engine.parse_catchment_filter(
+      p_catchment_filter := p_catchment_filter
+   );
+   boo_filter_by_state  := rec.out_filter_by_state;
+   ary_state_filters    := rec.out_state_filters;
+   boo_filter_by_tribal := rec.out_filter_by_tribal;
+   
    IF p_nhdplus_version IS NULL
    THEN
       out_return_code    := -10;
@@ -98,8 +123,6 @@ BEGIN
       RETURN;
    
    END IF;
-   
-   str_state_filter := UPPER(p_state_filter);
    
    str_default_point_method  := p_default_point_method;
    IF str_default_point_method IS NULL
@@ -136,6 +159,19 @@ BEGIN
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP area indexing method';
+      RETURN;
+    
+   END IF;
+   
+   str_default_ring_method  := p_default_ring_method;
+   IF str_default_ring_method IS NULL
+   THEN
+      str_default_ring_method := 'area_simple';
+      
+   ELSIF str_default_ring_method NOT IN ('area_simple','area_centroid','area_artpath')
+   THEN
+      out_return_code    := -10;
+      out_status_message := 'unknown CIP ring indexing method';
       RETURN;
     
    END IF;
@@ -315,12 +351,12 @@ BEGIN
          ,p_test_type                 := 'Point'
          ,p_category                  := 'points'
          ,p_known_region_srid         := int_meassrid
-         ,p_default_point_method      := p_default_point_method
-         ,p_default_line_method       := p_default_line_method
-         ,p_default_area_method       := p_default_area_method
-         ,p_default_line_threshold    := p_default_line_threshold
-         ,p_default_areacat_threshold := p_default_areacat_threshold
-         ,p_default_areaevt_threshold := p_default_areaevt_threshold 
+         ,p_default_point_method      := str_default_point_method
+         ,p_default_line_method       := str_default_line_method
+         ,p_default_area_method       := str_default_area_method
+         ,p_default_line_threshold    := str_default_line_threshold
+         ,p_default_areacat_threshold := str_default_areacat_threshold
+         ,p_default_areaevt_threshold := str_default_areaevt_threshold 
       );
       json_points        := rec.out_cleaned_feature_collection;
       out_return_code    := rec.out_return_code;
@@ -385,10 +421,10 @@ BEGIN
       END IF;
       
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 40
-   -- Index the catchments
+   -- Load incoming geometry events into features
    ----------------------------------------------------------------------------
    out_return_code := cipsrv_engine.create_cip_temp_tables();
    json_features := NULL;   
@@ -434,7 +470,72 @@ BEGIN
       END IF;
       
    END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Before Clip over each feature
+   ----------------------------------------------------------------------------
+   IF str_geometry_clip_stage = 'BEFORE'
+   AND p_geometry_clip IS NOT NULL
+   AND array_length(p_geometry_clip,1) > 0
+   THEN
+      json_features2 := NULL;
+      int_feature_count := JSONB_ARRAY_LENGTH(json_features);
 
+      FOR i IN 0 .. int_feature_count - 1
+      LOOP
+         sdo_input := ST_GeomFromGeoJSON(json_features->i->'geometry');
+         
+         rec := cipsrv_support.geometry_clip(
+             p_geometry      := sdo_input
+            ,p_clippers      := p_geometry_clip
+            ,p_known_region  := str_known_region
+         );
+         sdo_output      := rec.out_clipped_geometry;
+         out_return_code := rec.out_return_code;
+         out_status_message := rec.out_status_message;
+         
+         IF out_return_code != 0
+         THEN
+            RETURN;
+            
+         END IF;
+         
+         IF sdo_output IS NOT NULL
+         THEN
+            json_features->i->'geometry' := ST_AsGeoJSON(sdo_output);
+            
+            IF json_features2 IS NULL
+            OR JSONB_ARRAY_LENGTH(json_features2) = 0
+            THEN
+               json_features2 := '[]'::JSONB;
+               
+            END IF;
+            
+            json_features2 := json_features2 || json_features->i;
+            
+         END IF;         
+      
+      END LOOP;
+      
+      IF json_features2 IS NULL
+      OR JSONB_ARRAY_LENGTH(json_features2) = 0
+      THEN
+         out_return_code    := 0;
+         out_status_message := 'No results from clipping';
+         RETURN;
+         
+      END IF;
+      
+      json_features  := json_features2;
+      json_features2 := NULL;
+   
+   END IF:
+   
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Loop over and index each feature
+   ----------------------------------------------------------------------------
    int_feature_count := JSONB_ARRAY_LENGTH(json_features);
 
    FOR i IN 0 .. int_feature_count - 1
@@ -446,7 +547,7 @@ BEGIN
       num_line_threshold    := json_features->i->'properties'->>'line_threshold';
       num_areacat_threshold := json_features->i->'properties'->>'areacat_threshold';
       num_areaevt_threshold := json_features->i->'properties'->>'areaevt_threshold';
- 
+
       IF str_indexing_method = 'point_simple'
       THEN
          IF p_nhdplus_version = 'nhdplus_m'
@@ -617,10 +718,71 @@ BEGIN
       END IF;      
       
    END LOOP;
+   
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Clip AFTER indexing if requested
+   ----------------------------------------------------------------------------
+   IF str_geometry_clip_stage = 'AFTER'
+   AND p_geometry_clip IS NOT NULL
+   AND array_length(p_geometry_clip,1) > 0
+   THEN
+      json_features2 := NULL;
+      int_feature_count := JSONB_ARRAY_LENGTH(json_features);
+
+      FOR i IN 0 .. int_feature_count - 1
+      LOOP
+         sdo_input := ST_GeomFromGeoJSON(json_features->i->'geometry');
+         
+         rec := cipsrv_support.geometry_clip(
+             p_geometry      := sdo_input
+            ,p_clippers      := p_geometry_clip
+            ,p_known_region  := str_known_region
+         );
+         sdo_output      := rec.out_clipped_geometry;
+         out_return_code := rec.out_return_code;
+         out_status_message := rec.out_status_message;
+         
+         IF out_return_code != 0
+         THEN
+            RETURN;
+            
+         END IF;
+         
+         IF sdo_output IS NOT NULL
+         THEN
+            json_features->i->'geometry' := ST_AsGeoJSON(sdo_output);
+            
+            IF json_features2 IS NULL
+            OR JSONB_ARRAY_LENGTH(json_features2) = 0
+            THEN
+               json_features2 := '[]'::JSONB;
+               
+            END IF;
+            
+            json_features2 := json_features2 || json_features->i;
+            
+         END IF;         
+      
+      END LOOP;
+      
+      IF json_features2 IS NULL
+      OR JSONB_ARRAY_LENGTH(json_features2) = 0
+      THEN
+         out_return_code    := 0;
+         out_status_message := 'No results from clipping';
+         RETURN;
+         
+      END IF;
+      
+      json_features  := json_features2;
+      json_features2 := NULL;
+   
+   END IF:
 
    ----------------------------------------------------------------------------
    -- Step 50
-   -- Return the full state-clipped catchment results
+   -- Return filtered catchment results
    ----------------------------------------------------------------------------
    IF p_nhdplus_version = 'nhdplus_m'
    THEN
@@ -647,7 +809,8 @@ BEGIN
       cipsrv_nhdplus_m.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (str_state_filter IS NULL OR a.catchmentstatecode = str_state_filter);
+      AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
+      AND (NOT boo_filter_by_tribal OR ;
    
    ELSIF p_nhdplus_version = 'nhdplus_h'
    THEN
@@ -802,6 +965,9 @@ ALTER FUNCTION cipsrv_engine.cipsrv_index(
    ,JSONB
    ,JSONB
    ,GEOMETRY
+   ,VARCHAR[]
+   ,VARCHAR
+   ,VARCHAR[]
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
@@ -820,6 +986,9 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_index(
    ,JSONB
    ,JSONB
    ,GEOMETRY
+   ,VARCHAR[]
+   ,VARCHAR
+   ,VARCHAR[]
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR

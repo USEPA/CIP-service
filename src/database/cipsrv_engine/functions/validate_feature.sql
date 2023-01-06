@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.validate_feature(
    ,IN  p_default_point_method         VARCHAR
    ,IN  p_default_line_method          VARCHAR
    ,IN  p_default_area_method          VARCHAR
+   ,IN  p_default_ring_method          VARCHAR
    ,IN  p_default_line_threshold       NUMERIC
    ,IN  p_default_areacat_threshold    NUMERIC
    ,IN  p_default_areaevt_threshold    NUMERIC
@@ -34,6 +35,20 @@ BEGIN
    THEN
       IF out_cleaned_feature->>'type' = 'Feature' 
       THEN
+         IF NOT JSONB_PATH_EXISTS(
+             target := out_cleaned_feature
+            ,path   := '$.properties'
+         )
+         THEN
+            out_cleaned_feature := JSONB_SET(
+                jsonb_in          := out_cleaned_feature
+               ,path              := ARRAY['properties']
+               ,replacement       := JSONB_BUILD_OBJECT()
+               ,create_if_missing := TRUE
+            );
+         
+         END IF;
+         
          IF JSONB_PATH_EXISTS(
              target := out_cleaned_feature
             ,path   := '$.geometry'
@@ -55,6 +70,35 @@ BEGIN
                
             END IF;
             
+            IF  ST_GeometryType(sdo_geom) = 'ST_LineString'
+            AND ST_IsRing(sdo_geom)
+            THEN
+               sdo_geom := ST_MakePolygon(sdo_geom);
+               
+               out_cleaned_feature := JSONB_SET(
+                   jsonb_in          := out_cleaned_feature
+                  ,path              := ARRAY['geometry']
+                  ,replacement       := ST_AsGeoJSON(sdo_geom)::JSONB
+                  ,create_if_missing := FALSE
+               );
+               
+               IF NOT JSONB_PATH_EXISTS(
+                   target := out_cleaned_feature
+                  ,path   := '$.properties.indexing_method'
+               )
+               OR UPPER(SUBSTR(out_cleaned_feature->'properties'->>'indexing_method',1,4)) != 'AREA'
+               THEN
+                  out_cleaned_feature := JSONB_SET(
+                      jsonb_in          := out_cleaned_feature
+                     ,path              := ARRAY['properties','indexing_method']
+                     ,replacement       := TO_JSONB(p_default_ring_method)
+                     ,create_if_missing := TRUE
+                  );
+                  
+               END IF;
+            
+            END IF;
+            
          ELSE
             out_return_code    := -20;
             out_status_message := 'no geometry included in feature record';
@@ -62,20 +106,6 @@ BEGIN
             
          END IF;
          
-         IF NOT JSONB_PATH_EXISTS(
-             target := out_cleaned_feature
-            ,path   := '$.properties'
-         )
-         THEN
-            out_cleaned_feature := JSONB_SET(
-                jsonb_in          := out_cleaned_feature
-               ,path              := ARRAY['properties']
-               ,replacement       := JSONB_BUILD_OBJECT()
-               ,create_if_missing := TRUE
-            );
-         
-         END IF;
-
          IF NOT JSONB_PATH_EXISTS(
              target := out_cleaned_feature
             ,path   := '$.properties.globalid'
@@ -232,6 +262,7 @@ ALTER FUNCTION cipsrv_engine.validate_feature(
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
    ,NUMERIC
@@ -241,6 +272,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.validate_feature(
     JSONB
    ,VARCHAR
    ,INTEGER
+   ,VARCHAR
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
