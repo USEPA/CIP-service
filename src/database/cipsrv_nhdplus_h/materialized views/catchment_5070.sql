@@ -41,7 +41,7 @@ SELECT
 FROM (
    SELECT
     aa.nhdplusid::BIGINT
-   ,CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END AS istribal
+   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,5070)) AS shape
    FROM
