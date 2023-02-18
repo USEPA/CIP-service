@@ -65,7 +65,7 @@ __Engine__
 
 1. in the engine directory, type **docker-compose -p engine build**.  This will download and configure the engine containers.  It may take a while.
 
-2. next type **docker-compose - p engine up --detach**.  This will spin up the engine containers.  Note the cip_pr container will spin up fast and throw errors while it waits for the cip_pg database to come up.  These errors can be ignored.
+2. next type **docker-compose -p engine up --detach**.  This will spin up the engine containers.  Note the cip_pr container will spin up fast and throw errors while it waits for the cip_pg database to come up.  These errors can be ignored.
 
 3. next type **docker ps** to make sure the engine containers are up and running as expected.  You should see cip_pg and cip_pr containers running.
 
