@@ -35,8 +35,16 @@ services:
          context: .
          dockerfile: Dockerfile.ng
          args:
+{%-      if cip_pr_host == "env.POSTGREST_HOST" %}
+            ARG_POSTGREST_HOST: ${POSTGREST_HOST}
+{%-      else %}
             ARG_POSTGREST_HOST: {{ cip_pr_host }}
+{%-      endif %}
+{%-      if cip_pr_port == "env.POSTGREST_PORT" %}
+            ARG_POSTGREST_PORT: ${POSTGREST_PORT}
+{%-      else %}
             ARG_POSTGREST_PORT: {{ cip_pr_port }}
+{%-      endif %}
       hostname: cip_ng
       container_name: cip-service-demo-cip_ng
 {%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}
