@@ -33,27 +33,27 @@ BEGIN
       ,'WY'
    ];
    
-   IF p_catchment_filter IS NULL
-   OR array_length(p_catchment_filter,1) = 0
+   IF p_catchment_filter IS NOT NULL
+   AND array_length(p_catchment_filter,1) > 0
    THEN
-      RETURN;
-
-   END IF;
-
-   FOR i IN 1 .. array_length(p_catchment_filter,1)
-   LOOP
-      IF UPPER(p_catchment_filter[i]) IN ('ALLTRIBES','TRIBAL')
-      THEN
-         out_filter_by_tribal := TRUE;
+      FOR i IN 1 .. array_length(p_catchment_filter,1)
+      LOOP
+         IF UPPER(p_catchment_filter[i]) IN ('ALLTRIBES','TRIBAL')
+         THEN
+            out_filter_by_tribal := TRUE;
+            
+         ELSIF UPPER(p_catchment_filter[i]) = ANY(ary_states)
+         THEN
+            out_filter_by_state := TRUE;
+            out_state_filters := array_append(out_state_filters,UPPER(p_catchment_filter[i]));
          
-      ELSIF UPPER(p_catchment_filter[i]) = ANY(ary_states)
-      THEN
-         out_filter_by_state := TRUE;
-         out_state_filters := array_append(out_state_filters,UPPER(p_catchment_filter[i]));
+         END IF;
+         
+      END LOOP;
       
-      END IF;
-      
-   END LOOP;
+   END IF;
+   
+   RETURN;
 
 END;
 $BODY$

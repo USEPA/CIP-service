@@ -9,6 +9,17 @@ info:
 servers:
 - url: https://localhost:3000
 paths:
+  /rpc/cipsrv_domains:
+    get:
+      summary: CIP-service Domains Endpoint
+      description: CIP-service Domains Endpoint
+      responses:
+        '200':
+          description: states and tribes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cipsrv_domains' 
   /rpc/cipsrv_index:
     post:
       summary: CIP-service Indexing Endpoint
@@ -28,6 +39,43 @@ paths:
                 $ref: '#/components/schemas/cipsrv_index_resp'
 components:
   schemas:
+    cipsrv_domains:
+      type: object
+      properties:
+         states:
+           $ref: '#/components/schemas/cipsrv_domains_states'
+         tribes:
+           $ref: '#/components/schemas/cipsrv_domains_tribes'
+    cipsrv_domains_states:
+      type: array
+      items:
+        $ref: '#/components/schemas/cipsrv_domains_state'
+    cipsrv_domains_state:
+      type: object
+      properties:
+         geoid:
+           type: string
+         stusps:
+           type: string
+         name:
+           type: string
+    cipsrv_domains_tribes:
+      type: array
+      items:
+        $ref: '#/components/schemas/cipsrv_domains_tribe'
+    cipsrv_domains_tribe:
+      type: object
+      properties:
+         aiannhns_stem:
+           type: string
+         aiannhns_namelsad:
+           type: string
+         has_reservation_lands:
+           type: boolean
+         has_trust_lands:
+           type: boolean
+    cipsrv_domains_tribe:
+      type: object
     cipsrv_index_rb:
       type: object
       properties:
@@ -47,19 +95,17 @@ components:
           oneOf:
           - $ref: '#/components/schemas/geojson_featurecollection'
           - $ref: '#/components/schemas/geojson_feature'
-          - $ref: '#/components/schemas/geojson_geometry'
-        nhdplus_version:
-          type: string
-          example: "nhdplus_m"
-        wbd_version:
-          type: string
+          - $ref: '#/components/schemas/geojson_geometry'  
         geometry_clip:
           type: string
         geometry_clip_stage:
           type: string
         catchment_filter:
           type: string
-        known_region:
+        nhdplus_version:
+          type: string
+          example: "nhdplus_m"
+        wbd_version:
           type: string
         default_point_method:
           type: string
@@ -72,6 +118,8 @@ components:
         default_areacat_threshold:
           type: string
         default_areaevt_threshold:
+          type: string
+        known_region:
           type: string
         return_catchment_geometry:
           type: string

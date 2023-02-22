@@ -10,8 +10,8 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
    ,IN  p_wbd_version               VARCHAR
    ,IN  p_default_point_method      VARCHAR
    ,IN  p_default_line_method       VARCHAR
-   ,IN  p_default_area_method       VARCHAR
    ,IN  p_default_ring_method       VARCHAR
+   ,IN  p_default_area_method       VARCHAR
    ,IN  p_default_line_threshold    NUMERIC
    ,IN  p_default_areacat_threshold NUMERIC
    ,IN  p_default_areaevt_threshold NUMERIC
@@ -50,8 +50,8 @@ DECLARE
    
    str_default_point_method      VARCHAR;
    str_default_line_method       VARCHAR;
-   str_default_area_method       VARCHAR;
    str_default_ring_method       VARCHAR;
+   str_default_area_method       VARCHAR;
    num_default_line_threshold    NUMERIC;
    num_default_areacat_threshold NUMERIC;
    num_default_areaevt_threshold NUMERIC;
@@ -353,10 +353,11 @@ BEGIN
          ,p_known_region_srid         := int_meassrid
          ,p_default_point_method      := str_default_point_method
          ,p_default_line_method       := str_default_line_method
+         ,p_default_ring_method       := str_default_ring_method
          ,p_default_area_method       := str_default_area_method
-         ,p_default_line_threshold    := str_default_line_threshold
-         ,p_default_areacat_threshold := str_default_areacat_threshold
-         ,p_default_areaevt_threshold := str_default_areaevt_threshold 
+         ,p_default_line_threshold    := num_default_line_threshold
+         ,p_default_areacat_threshold := num_default_areacat_threshold
+         ,p_default_areaevt_threshold := num_default_areaevt_threshold 
       );
       json_points        := rec.out_cleaned_feature_collection;
       out_return_code    := rec.out_return_code;
@@ -377,12 +378,13 @@ BEGIN
          ,p_test_type                 := 'LineString'
          ,p_category                  := 'lines'
          ,p_known_region_srid         := int_meassrid
-         ,p_default_point_method      := p_default_point_method
-         ,p_default_line_method       := p_default_line_method
-         ,p_default_area_method       := p_default_area_method
-         ,p_default_line_threshold    := p_default_line_threshold
-         ,p_default_areacat_threshold := p_default_areacat_threshold
-         ,p_default_areaevt_threshold := p_default_areaevt_threshold 
+         ,p_default_point_method      := str_default_point_method
+         ,p_default_line_method       := str_default_line_method
+         ,p_default_ring_method       := str_default_ring_method
+         ,p_default_area_method       := str_default_area_method
+         ,p_default_line_threshold    := num_default_line_threshold
+         ,p_default_areacat_threshold := num_default_areacat_threshold
+         ,p_default_areaevt_threshold := num_default_areaevt_threshold 
       );
       json_lines         := rec.out_cleaned_feature_collection;
       out_return_code    := rec.out_return_code;
@@ -403,12 +405,13 @@ BEGIN
          ,p_test_type                 := 'Polygon'
          ,p_category                  := 'areas'
          ,p_known_region_srid         := int_meassrid
-         ,p_default_point_method      := p_default_point_method
-         ,p_default_line_method       := p_default_line_method
-         ,p_default_area_method       := p_default_area_method
-         ,p_default_line_threshold    := p_default_line_threshold
-         ,p_default_areacat_threshold := p_default_areacat_threshold
-         ,p_default_areaevt_threshold := p_default_areaevt_threshold 
+         ,p_default_point_method      := str_default_point_method
+         ,p_default_line_method       := str_default_line_method
+         ,p_default_ring_method       := str_default_ring_method
+         ,p_default_area_method       := str_default_area_method
+         ,p_default_line_threshold    := num_default_line_threshold
+         ,p_default_areacat_threshold := num_default_areacat_threshold
+         ,p_default_areaevt_threshold := num_default_areaevt_threshold 
       );
       json_areas         := rec.out_cleaned_feature_collection;
       out_return_code    := rec.out_return_code;
@@ -503,7 +506,7 @@ BEGIN
          
          IF sdo_output IS NOT NULL
          THEN
-            json_features->i->'geometry' := ST_AsGeoJSON(sdo_output);
+            json_features[i]['geometry'] := ST_AsGeoJSON(sdo_output);
             
             IF json_features2 IS NULL
             OR JSONB_ARRAY_LENGTH(json_features2) = 0
@@ -530,7 +533,7 @@ BEGIN
       json_features  := json_features2;
       json_features2 := NULL;
    
-   END IF:
+   END IF;
    
    ----------------------------------------------------------------------------
    -- Step 60
@@ -751,7 +754,7 @@ BEGIN
          
          IF sdo_output IS NOT NULL
          THEN
-            json_features->i->'geometry' := ST_AsGeoJSON(sdo_output);
+            json_features[i]['geometry'] := ST_AsGeoJSON(sdo_output);
             
             IF json_features2 IS NULL
             OR JSONB_ARRAY_LENGTH(json_features2) = 0
@@ -778,10 +781,10 @@ BEGIN
       json_features  := json_features2;
       json_features2 := NULL;
    
-   END IF:
+   END IF;
 
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 80
    -- Return filtered catchment results
    ----------------------------------------------------------------------------
    IF p_nhdplus_version = 'nhdplus_m'
@@ -796,7 +799,7 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.catchmentstatecode
-      ,a.xwalk_huc12
+      ,a.xwalk_huc12_mr
       ,a.areasqkm
       ,CASE
        WHEN boo_return_geometry
@@ -810,7 +813,7 @@ BEGIN
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal OR ;
+      AND (NOT boo_filter_by_tribal OR a.istribal = 'Y');
    
    ELSIF p_nhdplus_version = 'nhdplus_h'
    THEN
@@ -824,7 +827,7 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.catchmentstatecode
-      ,a.xwalk_huc12
+      ,a.xwalk_huc12_mr
       ,a.areasqkm
       ,CASE
        WHEN boo_return_geometry
@@ -837,7 +840,8 @@ BEGIN
       cipsrv_nhdplus_h.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (str_state_filter IS NULL OR a.catchmentstatecode = str_state_filter);
+      AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
+      AND (NOT boo_filter_by_tribal OR a.istribal = 'Y');
    
    ELSE
       RAISE EXCEPTION 'err';
@@ -861,97 +865,40 @@ BEGIN
       
    FOR i IN 0 .. int_feature_count - 1
    LOOP
-      boo_check := TRUE;
       json_feature := json_features->i;
       str_category := json_feature->'properties'->>'category';
 
-      IF str_state_filter IS NOT NULL
-      AND str_state_filter NOT IN ('AK','HI','AS')
-      THEN
-         sdo_input := ST_GeomFromGeoJSON(json_feature->'geometry');
-         str_geometry_type := ST_GeometryType(sdo_input);
-         
-         rec := cipsrv_support.clip_by_state(
-             p_geometry     := sdo_input
-            ,p_known_region := str_known_region
-            ,p_state_filter := p_state_filter
-         );
-         sdo_input          := rec.out_clipped_geometry;
-         out_return_code    := rec.out_return_code;
-         out_status_message := rec.out_status_message;
-         
-         IF out_return_code != 0
-         THEN
-            RETURN;
-            
-         END IF;
-         
-         IF sdo_input IS NULL
-         THEN
-            boo_check := FALSE;
-            
-         ELSE
-            IF str_category = 'lines'
-            THEN
-               num_lengthkm := ROUND(ST_Length(ST_Transform(sdo_input,int_meassrid))::NUMERIC * 0.001,8);
-               json_feature := JSONB_SET(
-                   jsonb_in          := json_feature
-                  ,path              := ARRAY['properties','lengthkm']
-                  ,replacement       := TO_JSONB(num_lengthkm)
-                  ,create_if_missing := TRUE
-               );
-            
-            ELSIF str_category = 'areas'
-            THEN
-               num_areasqkm := ROUND(ST_Area(ST_Transform(sdo_input,int_meassrid))::NUMERIC / 1000000,8);
-               json_feature := JSONB_SET(
-                   jsonb_in          := json_feature
-                  ,path              := ARRAY['properties','areasqkm']
-                  ,replacement       := TO_JSONB(num_areasqkm)
-                  ,create_if_missing := TRUE
-               );
-            
-            END IF;
-         
-         END IF;
+      json_feature := JSONB_SET(
+          jsonb_in          := json_feature
+         ,path              := ARRAY['geometry']
+         ,replacement       := ST_AsGeoJSON(ST_Transform(sdo_input,4326))::JSONB
+         ,create_if_missing := TRUE
+      );
       
-      END IF;
-      
-      IF boo_check
+      IF str_category = 'points'
       THEN
-         json_feature := JSONB_SET(
-             jsonb_in          := json_feature
-            ,path              := ARRAY['geometry']
-            ,replacement       := ST_AsGeoJSON(ST_Transform(sdo_input,4326))::JSONB
-            ,create_if_missing := TRUE
+         out_indexed_points := cipsrv_engine.append_feature(
+             p_in        := out_indexed_points
+            ,p_feature   := json_feature
+            ,p_geometry  := NULL
          );
          
-         IF str_category = 'points'
-         THEN
-            out_indexed_points := cipsrv_engine.append_feature(
-                p_in        := out_indexed_points
-               ,p_feature   := json_feature
-               ,p_geometry  := NULL
-            );
-            
-         ELSIF str_category = 'lines'
-         THEN
-            out_indexed_lines := cipsrv_engine.append_feature(
-                p_in        := out_indexed_lines
-               ,p_feature   := json_feature
-               ,p_geometry  := NULL
-            );
-         
-         ELSIF str_category = 'areas'
-         THEN
-            out_indexed_areas := cipsrv_engine.append_feature(
-                p_in        := out_indexed_areas
-               ,p_feature   := json_feature
-               ,p_geometry  := NULL
-            );
+      ELSIF str_category = 'lines'
+      THEN
+         out_indexed_lines := cipsrv_engine.append_feature(
+             p_in        := out_indexed_lines
+            ,p_feature   := json_feature
+            ,p_geometry  := NULL
+         );
       
-         END IF;
-         
+      ELSIF str_category = 'areas'
+      THEN
+         out_indexed_areas := cipsrv_engine.append_feature(
+             p_in        := out_indexed_areas
+            ,p_feature   := json_feature
+            ,p_geometry  := NULL
+         );
+   
       END IF;
 
    END LOOP;  

@@ -16,9 +16,9 @@ try {
 }
 
 $env:CURRENT_UID='1000:1000' 
-$env:COMPOSE_PROJECT_NAME="config"
+$env:COMPOSE_PROJECT_NAME="cip-service-config"
 $env:SCRIPT_PATH=$scriptPath
 $env:BUNDLE=$args[0]
 $env:BPROFILE=$args[1]
 
-& 'docker-compose' '-f' (Join-Path $scriptPath 'config-compose.yml') 'up'
+& 'docker' 'compose' '-f' (Join-Path $scriptPath 'config-compose.yml') 'up'

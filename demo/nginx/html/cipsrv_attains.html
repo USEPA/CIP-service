@@ -3,7 +3,7 @@
    <head>
       <meta charset="UTF-8">
       <title>CIP Service vs ATTAINS</title>
-      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.7.1/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.3/dist/leaflet.css'>
       <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
       <style>
          #busy {
@@ -122,30 +122,39 @@
                   <option value="WIDNR">WI WIDNR</option>
                   <option value="WYDEQ">WY WYDEQ</option>
                </select>
+               
                <span style="font-family: Arial; font-size: 10px;">&nbsp;&nbsp;Assmnt Count:</span>
                <input name="dzCount" id="dzCount" value="" style="font-family: Arial; font-size: 12px; width: 30px;" disabled/>
                <br/>
                <br/>
+               
                <span style="font-family: Arial; font-size: 12px;">Then choose an assessment identifier:</span>
                <br/>
+               
                <select name="dzATTAINSAssessment" id="dzATTAINSAssessment" style="width:250px; font-family: Arial; font-size: 12px;">
                   <option value=" " SELECTED></option>
                </select>
+               
                <span style="font-family: Arial; font-size: 10px;">&nbsp;&nbsp;Offset:&nbsp;</span>
                <select name="dzAssessmentOffset" id="dzAssessmentOffset" style="width:60px; font-family: Arial; font-size: 12px;">
                   <option value="0" SELECTED>0</option>
                </select>
+               
                <span style="font-family: Arial; font-size: 10px;">&nbsp;&nbsp;</span>
                <input name="dzToggle" id="dzToggle" type="button" value=" " style="font-family: Arial; font-size: 12px;"/>
                <br/>
                <input name="dzBack" id="dzBack" type="button" value="<" style="font-family: Arial; font-size: 12px;"/>
+               
                <span style="font-family: Arial; font-size: 10px;">&nbsp;&nbsp;Catchment Count:</span>
                <input name="dzCatCount" id="dzCatCount" value="" style="font-family: Arial; font-size: 10px; width: 30px;" disabled/>
+               
                <span style="font-family: Arial; font-size: 10px;">&nbsp;&nbsp;&nbsp;Catchment Area:</span>
                <input name="dzMeas" id="dzMeas" value="" style="font-family: Arial; font-size: 10px; width: 30px;" disabled/>
+               
                <span style="font-family: Arial; font-size: 10px;">SqKm&nbsp;&nbsp;</span>
                <input name="dzForward" id="dzForward" type="button" value=">" style="font-family: Arial; font-size: 12px;"/>
                <br/>
+               
                <textarea name="dzATTAINSPoints" id="dzATTAINSPoints" style="width: 500px; margin-left: auto; display: none;" rows="3"></textarea>
                <textarea name="dzATTAINSLines"  id="dzATTAINSLines"  style="width: 500px; margin-left: auto; display: none;" rows="3"></textarea>
                <textarea name="dzATTAINSAreas"  id="dzATTAINSAreas"  style="width: 500px; margin-left: auto; display: none;" rows="3"></textarea>
@@ -162,6 +171,7 @@
                   </tbody>
                </table>
                <br/>
+               
                <span style="font-family: Arial; font-size: 11px;">NHDPlus Version:&nbsp;</span>
                <select name="dzNHDPlusVersion" id="dzNHDPlusVersion" style="width:170px; font-family: Arial; font-size: 12px;">
                   <option value="nhdplus_m" SELECTED>Medium Resolution</option>
@@ -169,84 +179,77 @@
                </select>
                <br/>
                <br/>
-               <span style="font-family: Arial; font-size: 11px;">State Filter:&nbsp;</span>
-               <select name="dzStateFilter" id="dzStateFilter" style="width:170px; font-family: Arial; font-size: 12px;">
-                  <option value="" SELECTED></option>
-                  <option value="AL">Alabama</option>
-                  <option value="AK">Alaska</option>
-                  <option value="AS">American Samoa</option>
-                  <option value="AZ">Arizona</option>
-                  <option value="AR">Arkansas</option>
-                  <option value="CA">California</option>
-                  <option value="CO">Colorado</option>
-                  <option value="CT">Connecticut</option>
-                  <option value="DE">Delaware</option>
-                  <option value="DC">District Of Columbia</option>
-                  <option value="FL">Florida</option>
-                  <option value="GA">Georgia</option>
-                  <option value="GU">Guam</option>
-                  <option value="HI">Hawaii</option>
-                  <option value="ID">Idaho</option>
-                  <option value="IL">Illinois</option>
-                  <option value="IN">Indiana</option>
-                  <option value="IA">Iowa</option>
-                  <option value="KS">Kansas</option>
-                  <option value="KY">Kentucky</option>
-                  <option value="LA">Louisiana</option>
-                  <option value="ME">Maine</option>
-                  <option value="MD">Maryland</option>
-                  <option value="MA">Massachusetts</option>
-                  <option value="MI">Michigan</option>
-                  <option value="MN">Minnesota</option>
-                  <option value="MS">Mississippi</option>
-                  <option value="MO">Missouri</option>
-                  <option value="MT">Montana</option>
-                  <option value="NE">Nebraska</option>
-                  <option value="NV">Nevada</option>
-                  <option value="NH">New Hampshire</option>
-                  <option value="NJ">New Jersey</option>
-                  <option value="NM">New Mexico</option>
-                  <option value="NY">New York</option>
-                  <option value="NC">North Carolina</option>
-                  <option value="ND">North Dakota</option>
-                  <option value="MP">Northern Mariana Islands</option>
-                  <option value="OH">Ohio</option>
-                  <option value="OK">Oklahoma</option>
-                  <option value="OR">Oregon</option>
-                  <option value="PA">Pennsylvania</option>
-                  <option value="PR">Puerto Rico</option>
-                  <option value="RI">Rhode Island</option>
-                  <option value="SC">South Carolina</option>
-                  <option value="SD">South Dakota</option>
-                  <option value="TN">Tennessee</option>
-                  <option value="TX">Texas</option>
-                  <option value="UT">Utah</option>
-                  <option value="VT">Vermont</option>
-                  <option value="VI">Virgin Islands</option>
-                  <option value="VA">Virginia</option>
-                  <option value="WA">Washington</option>
-                  <option value="WV">West Virginia</option>
-                  <option value="WI">Wisconsin</option>
-                  <option value="WY">Wyoming</option>
+               
+               <table border="0" align="center">
+               <tr>
+               <td valign="top">
+               <span style="font-family: Arial; font-size: 12px;">Clip Geometry By:&nbsp;</span>
+               </td>
+               <td>
+                  <select name="dzClipGeometry" id="dzClipGeometry" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
+                  </select>
+               </td>
+               <td>
+                  <select name="dzClipGeometryStage" id="dzClipGeometryStage" style="font-family: Arial; font-size: 11px;">
+                     <option value="BEFORE" SELECTED>Before</option>
+                     <option value="AFTER">After</option>
+                  </select>
+               </td>
+               </tr>
+               </table>
+               
+               <table border="0" align="center">
+               <tr>
+               <td valign="top">
+               <span style="font-family: Arial; font-size: 12px;">Catchment Filters:&nbsp;</span>
+               </td>
+               <td>
+               <select name="dzCatchmentFilters" id="dzCatchmentFilters" style="font-family: Arial; font-size: 11px; width:200px" multiple="multiple" size="4"> 
                </select>
-               <br/>
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">Indexing Methods&nbsp;&nbsp;</span>
-               <select name="dzPointIndexingMethod" id="dzPointIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+               <td/>
+               <tr/>
+               </table>
+               
+               <table border="0" align="center">
+               <tr>
+               <td valign="top" rowspan="2">
+               <span style="font-family: Arial; font-size: 11px;">Default Indexing Methods:&nbsp;</span>
+               </td>
+               <td>
+               <span style="font-family: Arial; font-size: 11px;">Points:</span><br/>
+               <select name="dzDefaultPointIndexingMethod" id="dzDefaultPointIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="point_simple" SELECTED>Point - Simple</option>
                </select>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;</span>
-               <select name="dzLineIndexingMethod" id="dzLineIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+               </td>
+               <td width="150px;">
+               <span style="font-family: Arial; font-size: 11px;">Lines:</span><br/>
+               <select name="dzDefaultLineIndexingMethod" id="dzDefaultLineIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="line_simple">Line - Simple</option>
                   <option value="line_levelpath" SELECTED>Line - LevelPath</option>
                </select>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;</span>
-               <select name="dzAreaIndexingMethod" id="dzAreaIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+               </td>
+               </tr>
+               <tr>
+               <td>
+               <span style="font-family: Arial; font-size: 11px;">Rings:</span><br/>
+               <select name="dzDefaultRingIndexingMethod" id="dzDefaultRingIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
+                  <option value="area_simple" SELECTED>Area - Simple</option>
+                  <option value="area_centroid">Area - Centroid</option>
+                  <option value="area_artpath">Area - Artifical Paths</option>
+                  <option value="treat_as_lines">Treat Rings as Lines</option>
+               </select>
+               </td>
+               <td>
+               <span style="font-family: Arial; font-size: 11px;">Areas:</span><br/>
+               <select name="dzDefaultAreaIndexingMethod" id="dzDefaultAreaIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="area_simple" SELECTED>Area - Simple</option>
                   <option value="area_centroid">Area - Centroid</option>
                   <option value="area_artpath">Area - Artifical Paths</option>
                </select>
-               <br/>
+               </td>
+               </tr>
+               </table>
+               
                <br/>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
                <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="10" />
@@ -277,8 +280,8 @@
             <div id="output" style="text-align: center"></div>
          </div>
       </div>
-      <script src='https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'></script>
-      <script src='https://unpkg.com/esri-leaflet@3.0.8/dist/esri-leaflet.js'></script>
+      <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
          document.getElementById("dz_run_service").disabled = true;
@@ -297,6 +300,10 @@
          z6.onclick = function(){select_back();};
 
          var zoom_cache = {};
+         
+         // Load the domains, this will often fail with some setups
+         var domains = getDomains();
+         
          var lazy_org;
          var lazy_auid;
          var nochange = false;
@@ -389,12 +396,6 @@
             dz_clear();
             busy_on();
 
-            var pnhdv   = document.getElementById("dzNHDPlusVersion");
-            var pstat   = document.getElementById("dzStateFilter");
-            var pointm  = document.getElementById("dzPointIndexingMethod");
-            var linem   = document.getElementById("dzLineIndexingMethod");
-            var aream   = document.getElementById("dzAreaIndexingMethod");
-
             var jpoints = null;
             var points  = document.getElementById("dzATTAINSPoints").value;
             if (points == null || points == "" || points == " " ) {
@@ -419,18 +420,35 @@
                jareas = JSON.parse(areas);
             }
             
+            var geomc  = document.getElementById("dzGeometryClip");
+            var geoms  = document.getElementById("dzGeometryClipStage");
+            var catfl  = document.getElementById("dzCatchmentFilters");
+            
+            var pnhdv  = document.getElementById("dzNHDPlusVersion");
+            var pointm = document.getElementById("dzDefaultPointIndexingMethod");
+            var linem  = document.getElementById("dzDefaultLineIndexingMethod");
+            var ringm  = document.getElementById("dzDefaultRingIndexingMethod");
+            var aream  = document.getElementById("dzDefaultAreaIndexingMethod");
+            
             var data = {
                 "points":                      jpoints
                ,"lines":                       jlines
                ,"areas":                       jareas
-               ,"nhdplus_version":             pnhdv.options[pnhdv.selectedIndex].value
-               ,"state_filter":                pstat.options[pstat.selectedIndex].value
-               ,"default_point_method":        pointm.options[pointm.selectedIndex].value
-               ,"default_line_method":         linem.options[linem.selectedIndex].value
-               ,"default_area_method":         aream.options[aream.selectedIndex].value
+               
+               ,"geometry_clip":               get_mselect_values(geomc)
+               ,"geometry_clip_stage":         get_select_values(geoms)
+               ,"catchment_filter":            get_mselect_values(catfl)
+               ,"nhdplus_version":             get_select_values(pnhdv)
+               ,"wbd_version":                 null
+               
+               ,"default_point_method":        get_select_values(pointm)
+               ,"default_line_method":         get_select_values(linem)
+               ,"default_ring_method":         get_select_values(ringm)
+               ,"default_area_method":         get_select_values(aream)
                ,"default_line_threshold":      document.getElementById("dzLineThreasholdPerc").value
                ,"default_areacat_threshold":   document.getElementById("dzCatThreasholdPerc").value
                ,"default_areaevt_threshold":   document.getElementById("dzEvtThreasholdPerc").value
+               
                ,"return_catchment_geometry":   document.getElementById("dzShowCatchments").checked
                ,"return_flowlines":            document.getElementById("dzShowFlowlines").checked
                ,"return_flowline_geometry":    true
@@ -461,6 +479,89 @@
                }
             };
             xmlHttp.send(JSON.stringify(data));
+         }
+         
+         function getDomains() {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+               if (xmlHttp.readyState === 4) { // request is done
+                  if (xmlHttp.status === 200) { // successfully
+                     var obj = JSON.parse(xmlHttp.responseText);
+                     var states = obj["states"];
+                     var tribes = obj["tribes"];
+                     
+                     var catfilter = document.getElementById("dzCatchmentFilters");
+                     var load = '<option value="TRIBES">Tribes</option>';
+                     for (let i=0; i < states.length; i++) {
+                        load += '<option value="' + states[i].stusps + '">' + states[i].name + '</option>';
+                     }
+                     catfilter.innerHTML = load;
+                     var clipgeo = document.getElementById("dzClipGeometry");
+                     load = '';
+                     for (let i=0; i < states.length; i++) {
+                        load += '<option value="USPS:' + states[i].stusps + '">' + states[i].name + '</option>';
+                     }
+                     for (let i=0; i < tribes.length; i++) {
+                        if (tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
+                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + '">' + tribes[i].aiannhns_namelsad + '</option>';
+                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
+                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
+                        } else if (tribes[i].has_reservation_lands && ! tribes[i].has_trust_lands) {
+                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
+                        } else if (! tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
+                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
+                        }
+                     }
+                     clipgeo.innerHTML = load;
+                     return obj;
+                  }
+               }
+            };
+            var http = "http";
+            if (postgrest_port == "443" ) {
+               http = "https";
+            }
+            var url = http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_domains"
+            xmlHttp.open('GET',url);
+            xmlHttp.send();
+         }      
+         
+         function get_select_values(select){
+            var result = null;
+            
+            if ( select == null ) {
+               return result;
+            }
+            
+            if ( select.options == null ) {
+               return result;
+            }
+            
+            if ( select.selectedIndex == null ) {
+               return result;
+            }
+            
+            return select.options[select.selectedIndex].value;
+         
+         }
+         
+         function get_mselect_values(select){
+            var result = [];
+            var options = select && select.options;
+            var opt;
+            
+            if ( options == null ) {
+               return result;
+            }
+
+            for (var i=0, iLen=options.length; i<iLen; i++) {
+               opt = options[i];
+
+               if (opt.selected) {
+                  result.push(opt.value || opt.text);
+               }
+            }
+            return result;
          }
 
          function get_response(error,response) {
@@ -821,19 +922,19 @@
             }
             
             if (state !== null && state !== undefined) {
-               document.getElementById("dzStateFilter").value = state;
+               document.getElementById("dzCatchmentFilters").value = state;
             }
             
             if (def_point !== null && def_point !== undefined) {
-               document.getElementById("dzPointIndexingMethod").value = def_point;
+               document.getElementById("dzDefaultPointIndexingMethod").value = def_point;
             }
             
             if (def_line !== null && def_line !== undefined) {
-               document.getElementById("dzLineIndexingMethod").value = def_line;
+               document.getElementById("dzDefaultLineIndexingMethod").value = def_line;
             }
             
             if (def_area !== null && def_area !== undefined) {
-               document.getElementById("dzAreaIndexingMethod").value = def_area;
+               document.getElementById("dzDefaultAreaIndexingMethod").value = def_area;
             }
             
             if (def_line_threshold !== null && def_line_threshold !== undefined) {

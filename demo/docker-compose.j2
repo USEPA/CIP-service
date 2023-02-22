@@ -27,7 +27,7 @@
 # Aside from the configuration step all secrets must be provided via the usual .env file.
 # 
 #
-name: demo
+name: cip-service-demo
 services:
 {%- if 'cip_ng' in components and 'type' in components.cip_ng and components.cip_ng.type == "container" %}
    cip_ng:
@@ -38,6 +38,7 @@ services:
             ARG_POSTGREST_HOST: {{ cip_pr_host }}
             ARG_POSTGREST_PORT: {{ cip_pr_port }}
       hostname: cip_ng
+      container_name: cip-service-demo-cip_ng
 {%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}
       ports:
          - target: 80

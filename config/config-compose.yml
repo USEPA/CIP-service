@@ -1,10 +1,11 @@
-name: config
+name: cip-service-config
 services:
    quickpython:
       build:
          context: .
          dockerfile: config-compose.df
       hostname: quickpython
+      container_name: cip-service-config-quickpython
       environment:
          BUNDLE: ${BUNDLE:-engine}
          BPROFILE: ${BPROFILE:-desktop}

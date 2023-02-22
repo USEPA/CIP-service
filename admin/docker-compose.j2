@@ -33,7 +33,7 @@
 # JUPYTER_TOKEN      : jupyter server token, a value of "easy" will forgo this
 #
 #
-name: admin
+name: cip-service-admin
 services:
 {%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}
    cip_jp:
@@ -49,6 +49,7 @@ services:
             ARG_JUPYTER_TOKEN:   ${JUPYTER_TOKEN}
       shm_size: '1gb' 
       hostname: cip_jp
+      container_name: cip-service-admin-cip_jp
       environment:
 {%-   if cip_pg_db == "env.POSTGRESQL_DB"  %}
          POSTGRESQL_DB:           $POSTGRESQL_DB

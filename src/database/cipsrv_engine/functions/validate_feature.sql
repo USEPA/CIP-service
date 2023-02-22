@@ -4,8 +4,8 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.validate_feature(
    ,IN  p_known_region_srid            INTEGER
    ,IN  p_default_point_method         VARCHAR
    ,IN  p_default_line_method          VARCHAR
-   ,IN  p_default_area_method          VARCHAR
    ,IN  p_default_ring_method          VARCHAR
+   ,IN  p_default_area_method          VARCHAR
    ,IN  p_default_line_threshold       NUMERIC
    ,IN  p_default_areacat_threshold    NUMERIC
    ,IN  p_default_areaevt_threshold    NUMERIC
