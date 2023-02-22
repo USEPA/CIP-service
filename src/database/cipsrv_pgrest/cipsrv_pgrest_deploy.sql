@@ -14,16 +14,19 @@ DECLARE
    json_lines                    JSONB;
    json_areas                    JSONB;
    sdo_geometry                  GEOMETRY;
+   ary_geometry_clip             VARCHAR[];
+   str_geometry_clip_stage       VARCHAR;
+   ary_catchment_filter          VARCHAR[];
    str_nhdplus_version           VARCHAR;
    str_wbd_version               VARCHAR;
-   str_state_filter              VARCHAR;
-   str_known_region              VARCHAR;
    str_default_point_method      VARCHAR;
    str_default_line_method       VARCHAR;
+   str_default_ring_method       VARCHAR;
    str_default_area_method       VARCHAR;
    num_default_line_threshold    NUMERIC;
    num_default_areacat_threshold NUMERIC;
    num_default_areaevt_threshold NUMERIC;
+   str_known_region              VARCHAR;
    boo_return_catchment_geometry BOOLEAN;
    boo_return_flowlines          BOOLEAN;
    boo_return_huc12s             BOOLEAN;
@@ -90,6 +93,45 @@ BEGIN
             
    END IF;
    
+   IF jsonb_path_exists(json_input,'$.geometry_clip')
+   THEN
+      IF jsonb_typeof(json_input->'geometry_clip') = 'array'
+      THEN
+         ary_geometry_clip := ARRAY(
+            SELECT jsonb_array_elements_text(json_input->'geometry_clip')
+         );
+         
+      END IF;
+      
+   END IF;
+
+   IF jsonb_path_exists(json_input,'$.geometry_clip_stage')
+   AND json_input->>'geometry_clip_stage' IS NOT NULL
+   THEN
+      IF json_input->>'geometry_clip_stage' = ''
+      OR json_input->>'geometry_clip_stage' = ' '
+      THEN
+         str_geometry_clip_stage := NULL;
+         
+      ELSE
+         str_geometry_clip_stage := json_input->>'geometry_clip_stage';
+         
+      END IF;
+      
+   END IF;
+   
+   IF jsonb_path_exists(json_input,'$.catchment_filter')
+   THEN
+      IF jsonb_typeof(json_input->'catchment_filter') = 'array'
+      THEN
+         ary_catchment_filter := ARRAY(
+            SELECT jsonb_array_elements_text(json_input->'catchment_filter')
+         );
+         
+      END IF;
+      
+   END IF;
+   
    IF jsonb_path_exists(json_input,'$.nhdplus_version')
    AND json_input->>'nhdplus_version' IS NOT NULL
    THEN
@@ -107,31 +149,6 @@ BEGIN
    AND json_input->>'wbd_version' IS NOT NULL
    THEN
       str_wbd_version := json_input->>'wbd_version';
-      
-   END IF;
-
-   IF jsonb_path_exists(json_input,'$.state_filter')
-   AND json_input->>'state_filter' IS NOT NULL
-   THEN
-      IF json_input->>'state_filter' = ''
-      OR json_input->>'state_filter' = ' '
-      THEN
-         str_state_filter := NULL;
-         str_known_region := NULL;
-         
-      ELSE
-         str_state_filter := json_input->>'state_filter';
-         str_known_region := json_input->>'state_filter';
-         
-      END IF;
-      
-   END IF;
-   
-   -- Allow known region override
-   IF jsonb_path_exists(json_input,'$.known_region')
-   AND json_input->>'known_region' IS NOT NULL
-   THEN
-      str_known_region := json_input->>'known_region';
       
    END IF;
    
@@ -155,13 +172,23 @@ BEGIN
       
    END IF;
    
+   IF jsonb_path_exists(json_input,'$.default_ring_method')
+   AND json_input->>'default_ring_method' IS NOT NULL
+   THEN
+      str_default_ring_method := json_input->>'default_ring_method';
+      
+   ELSE
+      str_default_ring_method := 'area_simple';
+      
+   END IF;
+   
    IF jsonb_path_exists(json_input,'$.default_area_method')
    AND json_input->>'default_area_method' IS NOT NULL
    THEN
       str_default_area_method := json_input->>'default_area_method';
       
    ELSE
-      str_default_area_method := 'area-simple';
+      str_default_area_method := 'area_simple';
       
    END IF;
    
@@ -192,6 +219,14 @@ BEGIN
       
    ELSE
       num_default_areaevt_threshold := 10;
+      
+   END IF;
+   
+   -- Allow known region override
+   IF jsonb_path_exists(json_input,'$.known_region')
+   AND json_input->>'known_region' IS NOT NULL
+   THEN
+      str_known_region := json_input->>'known_region';
       
    END IF;
    
@@ -254,11 +289,14 @@ BEGIN
       ,p_lines                     := json_lines
       ,p_areas                     := json_areas
       ,p_geometry                  := sdo_geometry
-      ,p_state_filter              := str_state_filter
+      ,p_geometry_clip             := ary_geometry_clip
+      ,p_geometry_clip_stage       := str_geometry_clip_stage
+      ,p_catchment_filter          := ary_catchment_filter
       ,p_nhdplus_version           := str_nhdplus_version
       ,p_wbd_version               := str_wbd_version
       ,p_default_point_method      := str_default_point_method
       ,p_default_line_method       := str_default_line_method
+      ,p_default_ring_method       := str_default_ring_method
       ,p_default_area_method       := str_default_area_method
       ,p_default_line_threshold    := num_default_line_threshold
       ,p_default_areacat_threshold := num_default_areacat_threshold
