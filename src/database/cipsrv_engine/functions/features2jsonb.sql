@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION cipsrv_engine.features2jsonb(
-    IN  p_features      cipsrv_engine.cip_feature[]
-   ,IN  p_geometry_type VARCHAR DEFAULT NULL
-   ,IN  p_empty_array   BOOLEAN DEFAULT FALSE
+    IN  p_features           cipsrv_engine.cip_feature[]
+   ,IN  p_geometry_type      VARCHAR DEFAULT NULL
+   ,IN  p_empty_collection   BOOLEAN DEFAULT FALSE
 ) RETURNS JSONB
 IMMUTABLE
 AS $BODY$ 
@@ -14,9 +14,12 @@ BEGIN
    IF p_features IS NULL
    OR array_length(p_features,1) = 0
    THEN
-      IF p_empty_array
+      IF p_empty_collection
       THEN
-         RETURN '[]'::JSONB;
+         RETURN JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', '[]'::JSONB
+         );
       
       ELSE
          RETURN NULL;
@@ -55,7 +58,28 @@ BEGIN
    
    END LOOP;
    
-   RETURN ary_rez;  
+   IF ary_rez IS NULL
+   OR JSONB_ARRAY_LENGTH(ary_rez) = 0
+   THEN
+      IF p_empty_collection
+      THEN
+         RETURN JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', '[]'::JSONB
+         );
+      
+      ELSE
+         RETURN NULL;
+         
+      END IF;
+      
+   ELSE
+      RETURN JSON_BUILD_OBJECT(
+          'type'    , 'FeatureCollection'
+         ,'features', ary_rez
+      );      
+   
+   END IF;
 
 END;
 $BODY$

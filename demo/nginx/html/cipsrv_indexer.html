@@ -304,26 +304,26 @@
             var geom  = JSON.parse(document.getElementById("dzGeometry").value);
 
             var data = {
-                "geometry":                    geom
+                "geometry":                      geom
                 
-               ,"geometry_clip":               get_mselect_values(geomc)
-               ,"geometry_clip_stage":         get_select_values(geoms)
-               ,"catchment_filter":            get_mselect_values(catfl)
-               ,"nhdplus_version":             get_select_values(pnhdv)
-               ,"wbd_version":                 null
+               ,"geometry_clip":                 get_mselect_values(geomc)
+               ,"geometry_clip_stage":           get_select_values(geoms)
+               ,"catchment_filter":              get_mselect_values(catfl)
+               ,"nhdplus_version":               get_select_values(pnhdv)
+               ,"wbd_version":                   null
                
-               ,"default_point_method":        get_select_values(pointm)
-               ,"default_line_method":         get_select_values(linem)
-               ,"default_ring_method":         get_select_values(ringm)
-               ,"default_area_method":         get_select_values(aream)
-               ,"default_line_threshold":      document.getElementById("dzLineThreasholdPerc").value
-               ,"default_areacat_threshold":   document.getElementById("dzCatThreasholdPerc").value
-               ,"default_areaevt_threshold":   document.getElementById("dzEvtThreasholdPerc").value
+               ,"default_point_indexing_method": get_select_values(pointm)
+               ,"default_line_indexing_method":  get_select_values(linem)
+               ,"default_ring_indexing_method":  get_select_values(ringm)
+               ,"default_area_indexing_method":  get_select_values(aream)
+               ,"default_line_threshold":        document.getElementById("dzLineThreasholdPerc").value
+               ,"default_areacat_threshold":     document.getElementById("dzCatThreasholdPerc").value
+               ,"default_areaevt_threshold":     document.getElementById("dzEvtThreasholdPerc").value
                
-               ,"return_catchment_geometry":   document.getElementById("dzShowCatchments").checked
-               ,"return_flowlines":            document.getElementById("dzShowFlowlines").checked
-               ,"return_flowline_geometry":    true
-               ,"return_huc12s":               document.getElementById("dzShowHUC12s").checked
+               ,"return_catchment_geometry":     document.getElementById("dzShowCatchments").checked
+               ,"return_flowlines":              document.getElementById("dzShowFlowlines").checked
+               ,"return_flowline_geometry":      true
+               ,"return_huc12s":                 document.getElementById("dzShowHUC12s").checked
             };
             
             var http = "http";

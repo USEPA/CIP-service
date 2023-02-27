@@ -534,21 +534,21 @@ BEGIN
    IF array_length(ary_features,1) > 0
    THEN
       out_indexed_points := cipsrv_engine.features2jsonb(
-          p_features      := ary_features
-         ,p_geometry_type := 'P'
-         ,p_empty_array   := FALSE
+          p_features         := ary_features
+         ,p_geometry_type    := 'P'
+         ,p_empty_collection := FALSE
       );
          
       out_indexed_lines := cipsrv_engine.features2jsonb(
-          p_features      := ary_features
-         ,p_geometry_type := 'L'
-         ,p_empty_array   := FALSE
+          p_features         := ary_features
+         ,p_geometry_type    := 'L'
+         ,p_empty_collection := FALSE
       );
       
       out_indexed_areas := cipsrv_engine.features2jsonb(
-          p_features      := ary_features
-         ,p_geometry_type := 'A'
-         ,p_empty_array   := FALSE
+          p_features         := ary_features
+         ,p_geometry_type    := 'A'
+         ,p_empty_collection := FALSE
       );
 
    END IF;  
