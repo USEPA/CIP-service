@@ -1,4 +1,33 @@
 --******************************--
+----- types/cip_feature.sql 
+
+DROP TYPE IF EXISTS cipsrv_engine.cip_feature CASCADE;
+
+CREATE TYPE cipsrv_engine.cip_feature
+AS (
+    globalid              VARCHAR
+   ,gtype                 VARCHAR
+   ,geometry              GEOMETRY
+   ,lengthkm              NUMERIC
+   ,areasqkm              NUMERIC
+   ,isring                BOOLEAN
+   ,properties            JSONB
+   ,source_featureid      VARCHAR
+   ,nhdplus_version       VARCHAR
+   ,known_region          VARCHAR
+   ,int_srid              INTEGER
+   ,point_indexing_method VARCHAR
+   ,line_indexing_method  VARCHAR
+   ,ring_indexing_method  VARCHAR
+   ,area_indexing_method  VARCHAR
+   ,line_threshold        NUMERIC
+   ,areacat_threshold     NUMERIC
+   ,areaevt_threshold     NUMERIC
+);
+
+GRANT usage ON TYPE cipsrv_engine.cip_feature TO public;
+
+--******************************--
 ----- functions/temp_table_exists.sql 
 
 CREATE or REPLACE FUNCTION cipsrv_engine.temp_table_exists(
@@ -119,73 +148,1166 @@ ALTER FUNCTION cipsrv_engine.create_cip_temp_tables() OWNER TO cipsrv;
 GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_temp_tables() TO PUBLIC;
 
 --******************************--
------ functions/append_feature.sql 
+----- functions/jsonb2feature.sql 
 
-CREATE OR REPLACE FUNCTION cipsrv_engine.append_feature(
-    IN  p_in                         JSONB
-   ,IN  p_feature                    JSONB
-   ,IN  p_geometry                   GEOMETRY
-) RETURNS JSONB
+CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
+    IN  p_feature               JSONB
+   ,IN  p_geometry_override     GEOMETRY DEFAULT NULL
+   ,IN  p_globalid              VARCHAR  DEFAULT NULL
+   ,IN  p_source_featureid      VARCHAR  DEFAULT NULL
+   ,IN  p_nhdplus_version       VARCHAR  DEFAULT NULL
+   ,IN  p_known_region          VARCHAR  DEFAULT NULL
+   ,IN  p_int_srid              INTEGER  DEFAULT NULL
+   ,IN  p_point_indexing_method VARCHAR  DEFAULT NULL
+   ,IN  p_line_indexing_method  VARCHAR  DEFAULT NULL
+   ,IN  p_ring_indexing_method  VARCHAR  DEFAULT NULL
+   ,IN  p_area_indexing_method  VARCHAR  DEFAULT NULL
+   ,IN  p_line_threshold        NUMERIC  DEFAULT NULL
+   ,IN  p_areacat_threshold     NUMERIC  DEFAULT NULL
+   ,IN  p_areaevt_threshold     NUMERIC  DEFAULT NULL
+) RETURNS cipsrv_engine.cip_feature[]
 IMMUTABLE
 AS $BODY$ 
-DECLARE 
-   json_result      JSONB;
-   int_count        INTEGER;
+DECLARE
+   rec                       RECORD;
+   obj_rez cipsrv_engine.cip_feature;
+   ary_rez cipsrv_engine.cip_feature[];
+   has_properties            BOOLEAN;
+   boo_isring                BOOLEAN;
+   str_globalid              VARCHAR;
+   str_nhdplus_version       VARCHAR;
+   str_known_region          VARCHAR;
+   int_srid                  INTEGER;
+   str_point_indexing_method VARCHAR;
+   str_line_indexing_method  VARCHAR;
+   str_ring_indexing_method  VARCHAR;
+   str_area_indexing_method  VARCHAR;
+   str_source_featureid      VARCHAR;
+   num_line_threshold        NUMERIC;
+   num_areacat_threshold     NUMERIC;
+   num_areaevt_threshold     NUMERIC;
+   sdo_geometry              GEOMETRY;
+   sdo_geometry2             GEOMETRY;
+   json_feature              JSONB := p_feature;
+   num_line_lengthkm         NUMERIC;
+   num_area_areasqkm         NUMERIC;
    
 BEGIN
 
-   json_result := p_in;
-   
-   IF json_result IS NULL
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF json_feature IS NULL
    THEN
-      json_result := JSONB_BUILD_OBJECT(
-          'type',    'FeatureCollection'
-         ,'features', JSONB_BUILD_ARRAY()
-      );
+      RETURN ARRAY[obj_rez];
+      
+   ELSIF JSONB_TYPEOF(json_feature) != 'object'
+   OR json_feature->'type' IS NULL
+   THEN
+      RAISE EXCEPTION 'input jsonb is not geojson feature';
+   
+   ELSE
+      IF p_geometry_override IS NOT NULL
+      THEN
+         json_feature := JSONB_BUILD_OBJECT(
+             'type'       ,'Feature'
+            ,'geometry'   ,ST_AsGeoJSON(ST_Transform(p_geometry_override,4326))::JSONB
+            ,'properties' ,json_feature->'properties'
+         );
+      
+      ELSIF json_feature->>'type' IN (
+          'Point'
+         ,'LineString'
+         ,'Polygon'
+         ,'MultiPoint'
+         ,'MultiLineString'
+         ,'MultiPolygon'
+         ,'GeometryCollection'
+      )
+      THEN
+         -- If naked geometry, repack into feature
+         json_feature := JSONB_BUILD_OBJECT(
+             'type'       ,'Feature'
+            ,'geometry'   ,json_feature
+         );
+         
+      END IF;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Get quick boolean if original properties exist
+   ----------------------------------------------------------------------------
+   IF json_feature->'properties' IS NULL
+   THEN
+      has_properties := FALSE;
+
+   ELSE
+      has_properties := TRUE;
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Extract the geometry
+   ----------------------------------------------------------------------------
+   IF json_feature->'geometry' IS NOT NULL
+   THEN
+      sdo_geometry := ST_GeomFromGeoJSON(json_feature->'geometry')::JSONB;
+      
+      -- Break up geometry collections and multilinestrings
+      IF ST_GeometryType(sdo_geometry) IN (
+          'ST_MultiLineString'
+         ,'ST_GeometryCollection'   
+      )
+      THEN
+         FOR i IN 1 .. ST_NumGeometries(sdo_geometry)
+         LOOP
+            sdo_geometry2 := ST_GeometryN(sdo_geometry,i);
+            
+            ary_rez := array_cat(ary_rez,
+               cipsrv_engine.jsonb2feature(
+                   p_feature               := json_feature
+                  ,p_geometry_override     := sdo_geometry2
+                  ,p_nhdplus_version       := p_nhdplus_version
+                  ,p_known_region          := p_known_region
+                  ,p_int_srid              := p_int_srid
+                  ,p_point_indexing_method := p_point_indexing_method
+                  ,p_line_indexing_method  := p_line_indexing_method
+                  ,p_ring_indexing_method  := p_ring_indexing_method
+                  ,p_area_indexing_method  := p_area_indexing_method
+                  ,p_line_threshold        := p_line_threshold
+                  ,p_areacat_threshold     := p_areacat_threshold
+                  ,p_areaevt_threshold     := p_areaevt_threshold
+               )
+            );
+            
+         END LOOP;
+         
+         RETURN ary_rez;
+ 
+      END IF;
+      
+      IF NOT ST_IsValid(sdo_geometry)
+      THEN
+         sdo_geometry := ST_MakeValid(sdo_geometry);
+         
+      END IF;
+
+      IF ST_GeometryType(sdo_geometry) = 'ST_LineString'
+      THEN
+         boo_isring := ST_IsRing(sdo_geometry);
+      
+      ELSE
+         boo_isring := FALSE;
+         
+      END IF;   
       
    END IF;
    
-   int_count := JSONB_ARRAY_LENGTH(json_result->'features');
-   
-   IF p_feature IS NOT NULL
+   ----------------------------------------------------------------------------
+   -- Test for globalid override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'globalid' IS NOT NULL
    THEN
-      json_result := JSONB_SET(
-          jsonb_in          := json_result
-         ,path              := ARRAY['features',int_count::VARCHAR]
-         ,replacement       := p_feature 
-         ,create_if_missing := TRUE
-      );   
-   
-   ELSIF p_geometry IS NOT NULL
+      str_globalid := json_feature->'properties'->>'globalid';
+      
+   ELSIF p_globalid IS NOT NULL
    THEN
-      json_result := JSONB_SET(
-          jsonb_in          := json_result
-         ,path              := ARRAY['features',int_count::VARCHAR]
-         ,replacement       := JSONB_BUILD_OBJECT(
-             'type',      'Feature'
-            ,'geometry',  ST_AsGeoJSON(p_geometry)::JSONB
-          ) 
-         ,create_if_missing := TRUE
+      str_globalid := p_globalid;
+      
+   ELSE
+      str_globalid := '{' || uuid_generate_v1() || '}';
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for source_featureid override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'source_featureid' IS NOT NULL
+   THEN
+      str_source_featureid := json_feature->'properties'->>'source_featureid';
+      
+   ELSIF p_source_featureid IS NOT NULL
+   THEN
+      str_source_featureid := p_source_featureid;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for nhdplus_version override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'nhdplus_version' IS NOT NULL
+   THEN
+      str_nhdplus_version := json_feature->'properties'->>'nhdplus_version';
+      
+   ELSIF p_nhdplus_version IS NOT NULL
+   THEN
+      str_nhdplus_version := p_nhdplus_version;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for known_region override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'known_region' IS NOT NULL
+   THEN
+      str_known_region := json_feature->'properties'->>'known_region';
+      
+   ELSIF p_known_region IS NOT NULL
+   THEN
+      str_known_region := p_known_region;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for int_srid override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'int_srid' IS NOT NULL
+   THEN
+      int_srid := json_feature->'properties'->'int_srid';
+      
+   ELSIF p_int_srid IS NOT NULL
+   THEN
+      int_srid := p_int_srid;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Try to sort out int_srid with overrides
+   ----------------------------------------------------------------------------
+   IF  int_srid IS NULL
+   AND str_nhdplus_version IS NOT NULL
+   AND str_known_region IS NOT NULL
+   THEN
+      rec := cipsrv_engine.determine_grid_srid(
+          p_geometry        := NULL
+         ,p_nhdplus_version := str_nhdplus_version
+         ,p_known_region    := str_known_region
       );
+      int_srid := rec.out_srid;
+      
+   ELSIF int_srid IS NULL
+   AND str_nhdplus_version IS NOT NULL
+   AND str_known_region IS NULL
+   AND sdo_geometry IS NOT NULL
+   THEN
+      rec := cipsrv_engine.determine_grid_srid(
+          p_geometry        := sdo_geometry
+         ,p_nhdplus_version := str_nhdplus_version
+         ,p_known_region    := NULL
+      );
+      int_srid := rec.out_srid;
+      str_known_region := rec.out_srid::VARCHAR;
    
    END IF;
    
-   RETURN json_result;
+   ----------------------------------------------------------------------------
+   -- Test for point indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'point_indexing_method' IS NOT NULL
+   THEN
+      str_point_indexing_method := json_feature->'properties'->>'point_indexing_method';
+      
+   ELSIF p_point_indexing_method IS NOT NULL
+   THEN
+      str_point_indexing_method := p_point_indexing_method;
+
+   END IF;
    
+   ----------------------------------------------------------------------------
+   -- Test for line indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'line_indexing_method' IS NOT NULL
+   THEN
+      str_line_indexing_method := json_feature->'properties'->>'line_indexing_method';
+      
+   ELSIF p_line_indexing_method IS NOT NULL
+   THEN
+      str_line_indexing_method := p_line_indexing_method;
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for ring indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'ring_indexing_method' IS NOT NULL
+   THEN
+      str_ring_indexing_method := json_feature->'properties'->>'ring_indexing_method';
+      
+   ELSIF p_ring_indexing_method IS NOT NULL
+   THEN
+      str_ring_indexing_method := p_ring_indexing_method;
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for area indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'area_indexing_method' IS NOT NULL
+   THEN
+      str_area_indexing_method := json_feature->'properties'->>'area_indexing_method';
+      
+   ELSIF p_area_indexing_method IS NOT NULL
+   THEN
+      str_area_indexing_method := p_area_indexing_method;
+
+   END IF;
+      
+   ----------------------------------------------------------------------------
+   -- Test for line_threshold override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'line_threshold' IS NOT NULL
+   THEN
+      num_line_threshold := json_feature->'properties'->'line_threshold';
+      
+   ELSIF p_line_threshold IS NOT NULL
+   THEN
+      num_line_threshold := p_line_threshold;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for areacat_threshold override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'areacat_threshold' IS NOT NULL
+   THEN
+      num_areacat_threshold := json_feature->'properties'->'areacat_threshold';
+      
+   ELSIF p_areacat_threshold IS NOT NULL
+   THEN
+      num_areacat_threshold := p_areacat_threshold;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for areaevt_threshold override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'areaevt_threshold' IS NOT NULL
+   THEN
+      num_areaevt_threshold := json_feature->'properties'->'areaevt_threshold';
+      
+   ELSIF p_areaevt_threshold IS NOT NULL
+   THEN
+      num_areaevt_threshold := p_areaevt_threshold;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Measure geometry size
+   ----------------------------------------------------------------------------
+   IF int_srid IS NOT NULL
+   AND ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
+   THEN
+      IF boo_isring
+      THEN
+         num_area_areasqkm := ROUND(ST_Area(ST_Transform(
+             ST_MakePolygon(sdo_geometry)
+            ,int_srid
+         ))::NUMERIC / 1000000,8);
+         
+      END IF;
+      
+      num_line_lengthkm := ROUND(ST_Length(ST_Transform(
+          sdo_geometry
+         ,int_srid
+      ))::NUMERIC * 0.001,8);
+               
+   ELSIF int_srid IS NOT NULL
+   AND ST_GeometryType(sdo_geometry) IN ('ST_Polygon','ST_MultiPolygon')
+   THEN
+      num_area_areasqkm := ROUND(ST_Area(ST_Transform(
+          sdo_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Create the object
+   ----------------------------------------------------------------------------
+   obj_rez := (
+       str_globalid
+      ,ST_GeometryType(sdo_geometry)
+      ,sdo_geometry
+      ,num_line_lengthkm
+      ,num_area_areasqkm
+      ,boo_isring
+      ,json_feature->'properties'
+      ,str_source_featureid
+      ,str_nhdplus_version
+      ,str_known_region
+      ,int_srid
+      ,str_point_indexing_method
+      ,str_line_indexing_method
+      ,str_ring_indexing_method
+      ,str_area_indexing_method
+      ,num_line_threshold
+      ,num_areacat_threshold
+      ,num_areaevt_threshold
+   )::cipsrv_engine.cip_feature;
+
+   RETURN ARRAY[obj_rez];   
+
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_engine.append_feature(
+ALTER FUNCTION cipsrv_engine.jsonb2feature(
     JSONB
-   ,JSONB
    ,GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_engine.append_feature(
+GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
+    JSONB
+   ,GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
+----- functions/jsonb2features.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2features(
+    IN  p_features                      JSONB
+   ,IN  p_nhdplus_version               VARCHAR DEFAULT NULL
+   ,IN  p_known_region                  VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                      INTEGER DEFAULT NULL
+   ,IN  p_default_point_indexing_method VARCHAR DEFAULT NULL
+   ,IN  p_default_line_indexing_method  VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_indexing_method  VARCHAR DEFAULT NULL
+   ,IN  p_default_area_indexing_method  VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold        NUMERIC DEFAULT NULL
+   ,IN  p_default_areacat_threshold     NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold     NUMERIC DEFAULT NULL
+) RETURNS cipsrv_engine.cip_feature[]
+VOLATILE
+AS $BODY$ 
+DECLARE
+   obj_rez cipsrv_engine.cip_feature[];
+   ary_rez cipsrv_engine.cip_feature[];
+   str_nhdplus_version               VARCHAR;
+   str_known_region                  VARCHAR;
+   int_srid                          INTEGER;
+   str_default_point_indexing_method VARCHAR;
+   str_default_line_indexing_method  VARCHAR;
+   str_default_ring_indexing_method  VARCHAR;
+   str_default_area_indexing_method  VARCHAR;
+   num_default_line_threshold        NUMERIC;
+   num_default_areacat_threshold     NUMERIC;
+   num_default_areaevt_threshold     NUMERIC;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_features IS NULL
+   OR ( JSONB_TYPEOF(p_features) = 'array'
+   AND JSONB_ARRAY_LENGTH(p_features) = 0 )
+   THEN
+      RETURN ary_rez;
+      
+   END IF;
+   
+   str_nhdplus_version               := p_nhdplus_version;
+   str_known_region                  := p_known_region;
+   int_srid                          := p_int_srid;
+   str_default_point_indexing_method := p_default_point_indexing_method;
+   str_default_line_indexing_method  := p_default_line_indexing_method;
+   str_default_ring_indexing_method  := p_default_ring_indexing_method;
+   str_default_area_indexing_method  := p_default_area_indexing_method;
+   num_default_line_threshold        := p_default_line_threshold;
+   num_default_areacat_threshold     := p_default_areacat_threshold;
+   num_default_areaevt_threshold     := p_default_areaevt_threshold;
+   
+   ----------------------------------------------------------------------------
+   -- Build the features
+   ----------------------------------------------------------------------------
+   IF JSONB_TYPEOF(p_features) = 'object'
+   AND p_features->>'type' = 'Feature'
+   THEN
+      obj_rez := cipsrv_engine.jsonb2feature(
+          p_feature               := p_features
+         ,p_nhdplus_version       := str_nhdplus_version
+         ,p_known_region          := str_known_region
+         ,p_int_srid              := int_srid
+         ,p_point_indexing_method := str_default_point_indexing_method
+         ,p_line_indexing_method  := str_default_line_indexing_method
+         ,p_ring_indexing_method  := str_default_ring_indexing_method
+         ,p_area_indexing_method  := str_default_area_indexing_method
+         ,p_line_threshold        := num_default_line_threshold
+         ,p_areacat_threshold     := num_default_areacat_threshold
+         ,p_areaevt_threshold     := num_default_areaevt_threshold
+      );
+      
+      ary_rez := array_cat(ary_rez,obj_rez);
+   
+   ELSIF JSONB_TYPEOF(p_features) = 'array'
+   AND p_features->>'type' = 'FeatureCollection'
+   THEN
+      FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features)
+      LOOP
+         obj_rez := cipsrv_engine.jsonb2feature(
+             p_feature               := p_features->i-1
+            ,p_nhdplus_version       := str_nhdplus_version
+            ,p_known_region          := str_known_region
+            ,p_int_srid              := int_srid
+            ,p_point_indexing_method := str_default_point_indexing_method
+            ,p_line_indexing_method  := str_default_line_indexing_method
+            ,p_ring_indexing_method  := str_default_ring_indexing_method
+            ,p_area_indexing_method  := str_default_area_indexing_method
+            ,p_line_threshold        := num_default_line_threshold
+            ,p_areacat_threshold     := num_default_areacat_threshold
+            ,p_areaevt_threshold     := num_default_areaevt_threshold
+         );
+      
+         ary_rez := array_cat(ary_rez,obj_rez);
+   
+      END LOOP;
+      
+   ELSE
+      RAISE EXCEPTION 'input jsonb is not geojson';
+   
+   END IF;
+   
+   RETURN ary_rez;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.jsonb2features(
+    JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2features(
+    JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
+----- functions/feature2jsonb.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.feature2jsonb(
+   IN  p_feature      cipsrv_engine.cip_feature
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   json_rez        JSONB;
+   json_properties JSONB;
+   
+BEGIN
+
+   IF p_feature IS NULL
+   THEN
+      RETURN json_rez;
+      
+   END IF;
+   
+   json_properties := (p_feature).properties;
+   
+   IF (p_feature).globalid IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['globalid']
+         ,replacement       := TO_JSONB((p_feature).globalid)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).gtype IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['gtype']
+         ,replacement       := TO_JSONB((p_feature).gtype)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).lengthkm IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['lengthkm']
+         ,replacement       := TO_JSONB((p_feature).lengthkm)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).areasqkm IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['areasqkm']
+         ,replacement       := TO_JSONB((p_feature).areasqkm)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).isring IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['isring']
+         ,replacement       := TO_JSONB((p_feature).isring)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).nhdplus_version IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['nhdplus_version']
+         ,replacement       := TO_JSONB((p_feature).nhdplus_version)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).known_region IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['known_region']
+         ,replacement       := TO_JSONB((p_feature).known_region)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).int_srid IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['int_srid']
+         ,replacement       := TO_JSONB((p_feature).int_srid)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).point_indexing_method IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['point_indexing_method']
+         ,replacement       := TO_JSONB((p_feature).point_indexing_method)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).line_indexing_method IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['line_indexing_method']
+         ,replacement       := TO_JSONB((p_feature).line_indexing_method)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).ring_indexing_method IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_indexing_method']
+         ,replacement       := TO_JSONB((p_feature).ring_indexing_method)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).area_indexing_method IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['area_indexing_method']
+         ,replacement       := TO_JSONB((p_feature).area_indexing_method)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).line_threshold IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['line_threshold']
+         ,replacement       := TO_JSONB((p_feature).line_threshold)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).areacat_threshold IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['areacat_threshold']
+         ,replacement       := TO_JSONB((p_feature).areacat_threshold)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).areaevt_threshold IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['areaevt_threshold']
+         ,replacement       := TO_JSONB((p_feature).areaevt_threshold)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   json_rez := JSONB_BUILD_OBJECT(
+       'type'       ,'Feature'
+      ,'geometry'   ,ST_AsGeoJSON(ST_Transform((p_feature).geometry,4326))::JSONB
+      ,'properties' ,json_properties
+   );
+
+   RETURN json_rez;   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.feature2jsonb(
+   cipsrv_engine.cip_feature
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.feature2jsonb(
+   cipsrv_engine.cip_feature
+) TO PUBLIC;
+
+--******************************--
+----- functions/features2jsonb.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.features2jsonb(
+    IN  p_features           cipsrv_engine.cip_feature[]
+   ,IN  p_geometry_type      VARCHAR DEFAULT NULL
+   ,IN  p_empty_collection   BOOLEAN DEFAULT FALSE
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   obj_rez JSONB;
+   ary_rez JSONB;
+   
+BEGIN
+
+   IF p_features IS NULL
+   OR array_length(p_features,1) = 0
+   THEN
+      IF p_empty_collection
+      THEN
+         RETURN JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', '[]'::JSONB
+         );
+      
+      ELSE
+         RETURN NULL;
+         
+      END IF;
+      
+   END IF;
+   
+   FOR i IN 1 .. array_length(p_features,1)
+   LOOP
+      IF p_geometry_type IS NULL
+      OR ( p_geometry_type IN ('P')
+         AND p_features[i].gtype IN ('ST_Point','ST_MultiPoint')
+      ) 
+      OR ( p_geometry_type IN ('L')
+         AND p_features[i].gtype IN ('ST_LineString','ST_MultiLineString')
+      ) 
+      OR ( p_geometry_type IN ('A')
+         AND p_features[i].gtype IN ('ST_Polygon','ST_MultiPolygon')
+      )
+      THEN
+         obj_rez := cipsrv_engine.feature2jsonb(
+            p_feature := p_features[i]
+         );
+         
+         IF ary_rez IS NULL
+         THEN
+            ary_rez := JSON_BUILD_ARRAY(obj_rez);
+            
+         ELSE
+            ary_rez := ary_rez || obj_rez;
+         
+         END IF;
+         
+      END IF;
+   
+   END LOOP;
+   
+   IF ary_rez IS NULL
+   OR JSONB_ARRAY_LENGTH(ary_rez) = 0
+   THEN
+      IF p_empty_collection
+      THEN
+         RETURN JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', '[]'::JSONB
+         );
+      
+      ELSE
+         RETURN NULL;
+         
+      END IF;
+      
+   ELSE
+      RETURN JSON_BUILD_OBJECT(
+          'type'    , 'FeatureCollection'
+         ,'features', ary_rez
+      );      
+   
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.features2jsonb(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.features2jsonb(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/unpackjsonb.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
+    IN  p_points                        JSONB
+   ,IN  p_lines                         JSONB
+   ,IN  p_areas                         JSONB
+   ,IN  p_geometry                      JSONB 
+   ,IN  p_nhdplus_version               VARCHAR
+   ,IN  p_known_region                  VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                      INTEGER DEFAULT NULL
+   ,IN  p_default_point_indexing_method VARCHAR DEFAULT NULL
+   ,IN  p_default_line_indexing_method  VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_indexing_method  VARCHAR DEFAULT NULL
+   ,IN  p_default_area_indexing_method  VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold        NUMERIC DEFAULT NULL
+   ,IN  p_default_areacat_threshold     NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold     NUMERIC DEFAULT NULL
+   ,OUT out_return_code                 INTEGER
+   ,OUT out_status_message              VARCHAR
+   ,OUT out_features                    cipsrv_engine.cip_feature[]
+)
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+   rec              RECORD;
+   ary_points       cipsrv_engine.cip_feature[];
+   ary_lines        cipsrv_engine.cip_feature[];
+   ary_areas        cipsrv_engine.cip_feature[];
+   str_known_region VARCHAR := p_known_region;
+   int_srid         INTEGER := p_int_srid;
+   
+BEGIN
+
+   out_return_code := 0;
+   
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF  p_points   IS NULL
+   AND p_lines    IS NULL
+   AND p_areas    IS NULL
+   AND p_geometry IS NULL
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Branch when geometry is provided
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NOT NULL
+   THEN
+      out_features := cipsrv_engine.jsonb2feature(
+          p_feature               := p_geometry
+         ,p_geometry_override     := NULL
+         ,p_globalid              := NULL
+         ,p_source_featureid      := NULL
+         ,p_nhdplus_version       := p_nhdplus_version
+         ,p_known_region          := str_known_region
+         ,p_int_srid              := int_srid
+         ,p_point_indexing_method := p_default_point_indexing_method
+         ,p_line_indexing_method  := p_default_line_indexing_method
+         ,p_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_area_indexing_method  := p_default_area_indexing_method
+         ,p_line_threshold        := p_default_line_threshold
+         ,p_areacat_threshold     := p_default_areacat_threshold
+         ,p_areaevt_threshold     := p_default_areaevt_threshold
+      );
+   
+   ELSE
+      ary_points := cipsrv_engine.jsonb2feature(
+          p_feature               := p_points
+         ,p_geometry_override     := NULL
+         ,p_globalid              := NULL
+         ,p_source_featureid      := NULL
+         ,p_nhdplus_version       := p_nhdplus_version
+         ,p_known_region          := str_known_region
+         ,p_int_srid              := int_srid
+         ,p_point_indexing_method := p_default_point_indexing_method
+         ,p_line_indexing_method  := p_default_line_indexing_method
+         ,p_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_area_indexing_method  := p_default_area_indexing_method
+         ,p_line_threshold        := p_default_line_threshold
+         ,p_areacat_threshold     := p_default_areacat_threshold
+         ,p_areaevt_threshold     := p_default_areaevt_threshold
+      );
+      
+      ary_lines := cipsrv_engine.jsonb2feature(
+          p_feature               := p_lines
+         ,p_geometry_override     := NULL
+         ,p_globalid              := NULL
+         ,p_source_featureid      := NULL
+         ,p_nhdplus_version       := p_nhdplus_version
+         ,p_known_region          := str_known_region
+         ,p_int_srid              := int_srid
+         ,p_point_indexing_method := p_default_point_indexing_method
+         ,p_line_indexing_method  := p_default_line_indexing_method
+         ,p_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_area_indexing_method  := p_default_area_indexing_method
+         ,p_line_threshold        := p_default_line_threshold
+         ,p_areacat_threshold     := p_default_areacat_threshold
+         ,p_areaevt_threshold     := p_default_areaevt_threshold
+      );
+      
+      ary_areas := cipsrv_engine.jsonb2feature(
+          p_feature               := p_areas
+         ,p_geometry_override     := NULL
+         ,p_globalid              := NULL
+         ,p_source_featureid      := NULL
+         ,p_nhdplus_version       := p_nhdplus_version
+         ,p_known_region          := str_known_region
+         ,p_int_srid              := int_srid
+         ,p_point_indexing_method := p_default_point_indexing_method
+         ,p_line_indexing_method  := p_default_line_indexing_method
+         ,p_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_area_indexing_method  := p_default_area_indexing_method
+         ,p_line_threshold        := p_default_line_threshold
+         ,p_areacat_threshold     := p_default_areacat_threshold
+         ,p_areaevt_threshold     := p_default_areaevt_threshold
+      );
+      
+      -- Add ring handling here
+      
+      out_features := array_cat(out_features,ary_points);
+      out_features := array_cat(out_features,ary_lines);
+      out_features := array_cat(out_features,ary_areas);
+   
+   END IF;
+ 
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.unpackjsonb(
     JSONB
    ,JSONB
-   ,GEOMETRY
+   ,JSONB
+   ,JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.unpackjsonb(
+    JSONB
+   ,JSONB
+   ,JSONB
+   ,JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
+----- functions/feature_clip.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.feature_clip(
+    IN  p_features                      cipsrv_engine.cip_feature[]
+   ,IN  p_clippers                      VARCHAR[]
+   ,IN  p_known_region                  VARCHAR
+   ,OUT out_return_code                 INTEGER
+   ,OUT out_status_message              VARCHAR
+   ,OUT out_features                    cipsrv_engine.cip_feature[]
+)
+VOLATILE
+AS $BODY$ 
+DECLARE
+   rec                  RECORD;
+   obj_rez cipsrv_engine.cip_feature;
+   ary_rez cipsrv_engine.cip_feature[];
+   str_known_region     VARCHAR := p_known_region;
+   sdo_output           GEOMETRY;
+   
+BEGIN
+
+   out_return_code := 0;
+   
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_features IS NULL
+   OR array_length(p_features,1) = 0
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   IF p_clippers IS NULL
+   OR array_length(p_clippers,1) = 0
+   THEN
+      out_features := p_features;
+      RETURN;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Loop over the features
+   ----------------------------------------------------------------------------
+   FOR i IN 1 .. array_length(p_features,1)
+   LOOP
+      obj_rez := p_features[i];
+      
+      rec := cipsrv_support.geometry_clip(
+          p_geometry      := (obj_rez).geometry
+         ,p_clippers      := p_clippers
+         ,p_known_region  := str_known_region
+      );
+      sdo_output         := rec.out_clipped_geometry;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      
+      IF out_return_code != 0
+      THEN
+         RETURN;
+         
+      END IF;
+      
+      IF sdo_output IS NULL
+      OR ST_IsEmpty(sdo_output)
+      THEN
+         NULL;
+         
+      ELSE
+         obj_rez.geometry := sdo_output;
+         out_features     := array_append(out_features,obj_rez);
+         
+      END IF;
+         
+   END LOOP;
+   
+   RETURN;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.feature_clip(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR[]
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_clip(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR[]
+   ,VARCHAR
 ) TO PUBLIC;
 
 --******************************--
@@ -313,89 +1435,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.json2numeric(
 ) TO PUBLIC;
 
 --******************************--
------ functions/sample_geometry.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.sample_geometry(
-    IN  p_in                         GEOMETRY
-) RETURNS GEOMETRY
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-   str_geometry_type VARCHAR;
-   sdo_first_geom    GEOMETRY;
-   
-BEGIN
-
-   IF p_in IS NULL
-   OR ST_IsEmpty(p_in)
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   str_geometry_type := ST_GeometryType(p_in);
-   
-   IF str_geometry_type = 'ST_Point'
-   THEN
-      RETURN p_in;
-      
-   ELSIF str_geometry_type = 'ST_LineString'
-   THEN
-      RETURN ST_PointN(p_in,1);
-      
-   ELSIF str_geometry_type = 'ST_Polygon'
-   THEN
-      RETURN ST_PointN(ST_ExteriorRing(p_in),1);
-      
-   ELSIF str_geometry_type = 'ST_MultiPoint'
-   THEN
-      RETURN ST_GeometryN(p_in,1);
-      
-   ELSIF str_geometry_type = 'ST_MultiLineString'
-   THEN
-      RETURN ST_PointN(ST_GeometryN(p_in,1),1);
-      
-   ELSIF str_geometry_type = 'ST_MultiPolygon'
-   THEN
-      RETURN ST_PointN(ST_ExteriorRing(ST_GeometryN(p_in,1)),1);
-      
-   ELSIF str_geometry_type = 'ST_MultiPolygon'
-   THEN
-      sdo_first_geom := ST_GeometryN(p_in,1);
-      str_geometry_type := ST_GeometryType(sdo_first_geom);
-   
-      IF str_geometry_type = 'ST_Point'
-      THEN
-         RETURN sdo_first_geom;
-         
-      ELSIF str_geometry_type = 'ST_LineString'
-      THEN
-         RETURN ST_PointN(sdo_first_geom,1);
-         
-      ELSIF str_geometry_type = 'ST_Polygon'
-      THEN
-         RETURN ST_PointN(ST_ExteriorRing(sdo_first_geom),1);
-         
-      END IF;
-   
-   ELSE
-      RAISE EXCEPTION 'err %',str_geometry_type;
-      
-   END IF;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.sample_geometry(
-   GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.sample_geometry(
-   GEOMETRY
-) TO PUBLIC;
-
---******************************--
 ----- functions/determine_grid_srid.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.determine_grid_srid(
@@ -455,474 +1494,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.determine_grid_srid(
     GEOMETRY
    ,VARCHAR
    ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/validate_feature.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.validate_feature(
-    IN  p_in                           JSONB
-   ,IN  p_category                     VARCHAR
-   ,IN  p_known_region_srid            INTEGER
-   ,IN  p_default_point_method         VARCHAR
-   ,IN  p_default_line_method          VARCHAR
-   ,IN  p_default_ring_method          VARCHAR
-   ,IN  p_default_area_method          VARCHAR
-   ,IN  p_default_line_threshold       NUMERIC
-   ,IN  p_default_areacat_threshold    NUMERIC
-   ,IN  p_default_areaevt_threshold    NUMERIC
-   ,OUT out_cleaned_feature            JSONB
-   ,OUT out_property_count             INTEGER
-   ,OUT out_geometry_type              VARCHAR
-   ,OUT out_return_code                INTEGER
-   ,OUT out_status_message             VARCHAR
-)
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-   rec           RECORD;
-   sdo_geom      GEOMETRY;
-   num_lengthkm  NUMERIC;
-   num_areasqkm  NUMERIC;
-   
-BEGIN
-
-   out_return_code := 0;
-   out_cleaned_feature := p_in;
-
-   IF JSONB_PATH_EXISTS(
-       target := out_cleaned_feature
-      ,path   := '$.type'
-   )
-   THEN
-      IF out_cleaned_feature->>'type' = 'Feature' 
-      THEN
-         IF NOT JSONB_PATH_EXISTS(
-             target := out_cleaned_feature
-            ,path   := '$.properties'
-         )
-         THEN
-            out_cleaned_feature := JSONB_SET(
-                jsonb_in          := out_cleaned_feature
-               ,path              := ARRAY['properties']
-               ,replacement       := JSONB_BUILD_OBJECT()
-               ,create_if_missing := TRUE
-            );
-         
-         END IF;
-         
-         IF JSONB_PATH_EXISTS(
-             target := out_cleaned_feature
-            ,path   := '$.geometry'
-         )
-         THEN
-            sdo_geom := ST_GeomFromGeoJSON(out_cleaned_feature->'geometry');
-            out_geometry_type := out_cleaned_feature->'geometry'->>'type';
-            
-            IF NOT ST_IsValid(sdo_geom)
-            THEN
-               sdo_geom := ST_MakeValid(sdo_geom);
-               
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['geometry']
-                  ,replacement       := ST_AsGeoJSON(sdo_geom)::JSONB
-                  ,create_if_missing := FALSE
-               );
-               
-            END IF;
-            
-            IF  ST_GeometryType(sdo_geom) = 'ST_LineString'
-            AND ST_IsRing(sdo_geom)
-            THEN
-               sdo_geom := ST_MakePolygon(sdo_geom);
-               
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['geometry']
-                  ,replacement       := ST_AsGeoJSON(sdo_geom)::JSONB
-                  ,create_if_missing := FALSE
-               );
-               
-               IF NOT JSONB_PATH_EXISTS(
-                   target := out_cleaned_feature
-                  ,path   := '$.properties.indexing_method'
-               )
-               OR UPPER(SUBSTR(out_cleaned_feature->'properties'->>'indexing_method',1,4)) != 'AREA'
-               THEN
-                  out_cleaned_feature := JSONB_SET(
-                      jsonb_in          := out_cleaned_feature
-                     ,path              := ARRAY['properties','indexing_method']
-                     ,replacement       := TO_JSONB(p_default_ring_method)
-                     ,create_if_missing := TRUE
-                  );
-                  
-               END IF;
-            
-            END IF;
-            
-         ELSE
-            out_return_code    := -20;
-            out_status_message := 'no geometry included in feature record';
-            RETURN;
-            
-         END IF;
-         
-         IF NOT JSONB_PATH_EXISTS(
-             target := out_cleaned_feature
-            ,path   := '$.properties.globalid'
-         )
-         THEN
-            out_cleaned_feature := JSONB_SET(
-                jsonb_in          := out_cleaned_feature
-               ,path              := ARRAY['properties','globalid']
-               ,replacement       := TO_JSONB('{' || uuid_generate_v1() || '}') 
-               ,create_if_missing := TRUE
-            );
-            
-         END IF;
-           
-         IF NOT JSONB_PATH_EXISTS(
-             target := out_cleaned_feature
-            ,path   := '$.properties.indexing_method'
-         )
-         THEN
-            IF out_geometry_type IN ('Point','MultiPoint')
-            THEN
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['properties','indexing_method']
-                  ,replacement       := TO_JSONB(p_default_point_method)
-                  ,create_if_missing := TRUE
-               );
-               
-            ELSIF out_geometry_type IN ('LineString','MultiLineString')
-            THEN
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['properties','indexing_method']
-                  ,replacement       := TO_JSONB(p_default_line_method) 
-                  ,create_if_missing := TRUE
-               );
-               
-            ELSIF out_geometry_type IN ('Polygon','MultiPolygon')
-            THEN
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['properties','indexing_method']
-                  ,replacement       := TO_JSONB(p_default_area_method) 
-                  ,create_if_missing := TRUE
-               );
-               
-            ELSE
-               RAISE EXCEPTION '%',out_geometry_type;
-            
-            END IF;
-            
-         END IF;
-         
-         IF out_geometry_type IN ('LineString','MultiLineString')
-         THEN
-            IF NOT JSONB_PATH_EXISTS(
-                target := out_cleaned_feature
-               ,path   := '$.properties.line_threshold'
-            ) AND p_default_line_threshold IS NOT NULL
-            THEN
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['properties','line_threshold']
-                  ,replacement       := TO_JSONB(p_default_line_threshold)
-                  ,create_if_missing := TRUE
-               );
-
-            END IF;
-            
-            num_lengthkm := ROUND(ST_Length(ST_Transform(sdo_geom,p_known_region_srid))::NUMERIC * 0.001,8);
-            out_cleaned_feature := JSONB_SET(
-                jsonb_in          := out_cleaned_feature
-               ,path              := ARRAY['properties','lengthkm']
-               ,replacement       := TO_JSONB(num_lengthkm)
-               ,create_if_missing := TRUE
-            );
-            
-         END IF;
-         
-         IF out_geometry_type IN ('Polygon','MultiPolygon')
-         THEN
-            IF NOT JSONB_PATH_EXISTS(
-                target := out_cleaned_feature
-               ,path   := '$.properties.areacat_threshold'
-            ) AND p_default_areacat_threshold IS NOT NULL
-            THEN
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['properties','areacat_threshold']
-                  ,replacement       := TO_JSONB(p_default_areacat_threshold) 
-                  ,create_if_missing := TRUE
-               );
-               
-            END IF;
-         
-            IF NOT JSONB_PATH_EXISTS(
-                target := out_cleaned_feature
-               ,path   := '$.properties.areaevt_threshold'
-            ) AND p_default_areaevt_threshold IS NOT NULL
-            THEN
-               out_cleaned_feature := JSONB_SET(
-                   jsonb_in          := out_cleaned_feature
-                  ,path              := ARRAY['properties','areaevt_threshold']
-                  ,replacement       := TO_JSONB(p_default_areaevt_threshold) 
-                  ,create_if_missing := TRUE
-               );
-               
-            END IF;
-            
-            num_areasqkm := ROUND(ST_Area(ST_Transform(sdo_geom,p_known_region_srid))::NUMERIC / 1000000,8);
-            out_cleaned_feature := JSONB_SET(
-                jsonb_in          := out_cleaned_feature
-               ,path              := ARRAY['properties','areasqkm']
-               ,replacement       := TO_JSONB(num_areasqkm)
-               ,create_if_missing := TRUE
-            );
-            
-         END IF;
-         
-         out_cleaned_feature := JSONB_SET(
-             jsonb_in          := out_cleaned_feature
-            ,path              := ARRAY['properties','category']
-            ,replacement       := TO_JSONB(p_category) 
-            ,create_if_missing := TRUE
-         );
-
-      ELSE
-         out_return_code    := -10;
-         out_status_message := 'invalid GeoJSON feature';
-         RETURN;
-         
-      END IF;
-   
-   ELSE
-      out_return_code    := -10;
-      out_status_message := 'invalid GeoJSON feature';
-      RETURN;
-   
-   END IF;
-
-EXCEPTION
-   WHEN OTHERS
-   THEN
-      RAISE;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.validate_feature(
-    JSONB
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.validate_feature(
-    JSONB
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/validate_feature_collection.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.validate_feature_collection(
-    IN  p_in                           JSONB
-   ,IN  p_test_type                    VARCHAR
-   ,IN  p_category                     VARCHAR
-   ,IN  p_known_region_srid            INTEGER
-   ,IN  p_default_point_method         VARCHAR
-   ,IN  p_default_line_method          VARCHAR
-   ,IN  p_default_ring_method          VARCHAR
-   ,IN  p_default_area_method          VARCHAR
-   ,IN  p_default_line_threshold       NUMERIC
-   ,IN  p_default_areacat_threshold    NUMERIC
-   ,IN  p_default_areaevt_threshold    NUMERIC
-   ,OUT out_cleaned_feature_collection JSONB
-   ,OUT out_feature_count              INTEGER
-   ,OUT out_return_code                INTEGER
-   ,OUT out_status_message             VARCHAR
-)
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-   rec              RECORD;
-   json_feature     JSONB;
-   str_feature_type VARCHAR;
-   
-BEGIN
-
-   out_return_code := 0;
-   out_cleaned_feature_collection := p_in;
-   
-   IF JSONB_PATH_EXISTS(out_cleaned_feature_collection,'$.type')
-   THEN
-      IF out_cleaned_feature_collection->>'type' IN (
-          'Point'
-         ,'LineString'
-         ,'Polygon'
-         ,'MultiPoint'
-         ,'MultiLineString'
-         ,'MultiPolygon'
-         ,'GeometryCollection'
-      )
-      THEN
-         out_cleaned_feature_collection := JSONB_BUILD_OBJECT(
-             'type',     'Feature'
-            ,'geometry', out_cleaned_feature_collection
-         );
-      
-      END IF;
-
-      IF out_cleaned_feature_collection->>'type' = 'Feature'
-      THEN
-         out_cleaned_feature_collection := JSONB_BUILD_OBJECT(
-             'type',     'FeatureCollection'
-            ,'features', JSONB_BUILD_ARRAY(
-               out_cleaned_feature_collection
-             )
-         );
-      
-      END IF;
-
-      IF  out_cleaned_feature_collection->>'type' = 'FeatureCollection' 
-      AND JSONB_PATH_EXISTS(out_cleaned_feature_collection,'$.features')
-      THEN
-         IF JSONB_TYPEOF(out_cleaned_feature_collection->'features') = 'array'
-         THEN
-            out_feature_count := JSONB_ARRAY_LENGTH(out_cleaned_feature_collection->'features');
-
-            FOR i IN 0 .. out_feature_count - 1
-            LOOP
-               rec := cipsrv_engine.validate_feature(
-                   p_in                        := out_cleaned_feature_collection->'features'->i
-                  ,p_category                  := p_category
-                  ,p_known_region_srid         := p_known_region_srid
-                  ,p_default_point_method      := p_default_point_method
-                  ,p_default_line_method       := p_default_line_method
-                  ,p_default_area_method       := p_default_area_method
-                  ,p_default_ring_method       := p_default_ring_method
-                  ,p_default_line_threshold    := p_default_line_threshold
-                  ,p_default_areacat_threshold := p_default_areacat_threshold
-                  ,p_default_areaevt_threshold := p_default_areaevt_threshold 
-               );
-               json_feature       := rec.out_cleaned_feature;
-               out_return_code    := rec.out_return_code;
-               out_status_message := rec.out_status_message;
-               str_feature_type   := rec.out_geometry_type;
-
-               IF out_return_code != 0
-               THEN
-                  RETURN;
-                  
-               END IF;
-               
-               IF p_test_type IS NOT NULL
-               THEN
-                  -- Note this needs to be loose enough to allow ring polygons
-                  IF (p_test_type = 'Point'      AND str_feature_type NOT IN ('Point','MultiPoint'))
-                  OR (p_test_type = 'LineString' AND str_feature_type NOT IN ('LineString','MultiLineString','ST_Polygon'))
-                  OR (p_test_type = 'Polygon'    AND str_feature_type NOT IN ('Polygon','MultiPolygon'))
-                  THEN
-                     out_return_code    := -30;
-                     out_status_message := 'geometry type ' || str_feature_type || ' does not match test type ' || p_test_type;
-                     RETURN;
-                     
-                  END IF;
-               
-               END IF;
-
-               out_cleaned_feature_collection := JSONB_SET(
-                   out_cleaned_feature_collection
-                  ,ARRAY['features',i::VARCHAR]
-                  ,json_feature
-                  ,FALSE
-               );
-
-               IF NOT JSONB_PATH_EXISTS(
-                   target := out_cleaned_feature_collection
-                  ,path   := '$.globalid'
-               )
-               THEN
-                  out_cleaned_feature_collection := JSONB_SET(
-                      out_cleaned_feature_collection
-                     ,ARRAY['globalid']
-                     ,TO_JSONB('{' || uuid_generate_v1() || '}') 
-                     ,TRUE
-                  );
-                  
-               END IF;
-               
-            END LOOP;
-         
-         ELSE
-            out_return_code    := -10;
-            out_status_message := 'invalid GeoJSON feature collection';
-      
-         END IF;
-      
-      ELSE
-         out_return_code    := -10;
-         out_status_message := 'invalid GeoJSON feature collection';
-      
-      END IF;
-   
-   ELSE
-      out_return_code    := -10;
-      out_status_message := 'invalid GeoJSON feature collection';
-   
-   END IF;
- 
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.validate_feature_collection(
-    JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.validate_feature_collection(
-    JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
 ) TO PUBLIC;
 
 --******************************--
@@ -1001,79 +1572,57 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.parse_catchment_filter(
 ----- functions/cipsrv_index.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
-    IN  p_points                    JSONB
-   ,IN  p_lines                     JSONB
-   ,IN  p_areas                     JSONB
-   ,IN  p_geometry                  GEOMETRY  
-   ,IN  p_geometry_clip             VARCHAR[]
-   ,IN  p_geometry_clip_stage       VARCHAR
-   ,IN  p_catchment_filter          VARCHAR[]
-   ,IN  p_nhdplus_version           VARCHAR
-   ,IN  p_wbd_version               VARCHAR
-   ,IN  p_default_point_method      VARCHAR
-   ,IN  p_default_line_method       VARCHAR
-   ,IN  p_default_ring_method       VARCHAR
-   ,IN  p_default_area_method       VARCHAR
-   ,IN  p_default_line_threshold    NUMERIC
-   ,IN  p_default_areacat_threshold NUMERIC
-   ,IN  p_default_areaevt_threshold NUMERIC
-   ,IN  p_known_region              VARCHAR
-   ,IN  p_return_catchment_geometry BOOLEAN
-   ,OUT out_indexed_points          JSONB
-   ,OUT out_indexed_lines           JSONB
-   ,OUT out_indexed_areas           JSONB
-   ,OUT out_indexed_collection      GEOMETRY
-   ,OUT out_indexing_summary        JSONB
-   ,OUT out_catchment_count         INTEGER
-   ,OUT out_catchment_areasqkm      NUMERIC
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_points                        JSONB
+   ,IN  p_lines                         JSONB
+   ,IN  p_areas                         JSONB
+   ,IN  p_geometry                      JSONB 
+   ,IN  p_geometry_clip                 VARCHAR[]
+   ,IN  p_geometry_clip_stage           VARCHAR
+   ,IN  p_catchment_filter              VARCHAR[]
+   ,IN  p_nhdplus_version               VARCHAR
+   ,IN  p_wbd_version                   VARCHAR
+   ,IN  p_default_point_indexing_method VARCHAR
+   ,IN  p_default_line_indexing_method  VARCHAR
+   ,IN  p_default_ring_indexing_method  VARCHAR
+   ,IN  p_default_area_indexing_method  VARCHAR
+   ,IN  p_default_line_threshold        NUMERIC
+   ,IN  p_default_areacat_threshold     NUMERIC
+   ,IN  p_default_areaevt_threshold     NUMERIC
+   ,IN  p_known_region                  VARCHAR
+   ,IN  p_return_catchment_geometry     BOOLEAN
+   ,OUT out_indexed_points              JSONB
+   ,OUT out_indexed_lines               JSONB
+   ,OUT out_indexed_areas               JSONB
+   ,OUT out_indexed_collection          GEOMETRY
+   ,OUT out_indexing_summary            JSONB
+   ,OUT out_catchment_count             INTEGER
+   ,OUT out_catchment_areasqkm          NUMERIC
+   ,OUT out_return_code                 INTEGER
+   ,OUT out_status_message              VARCHAR
 )
 VOLATILE
 AS $BODY$ 
 DECLARE
-   rec                           RECORD;
-   str_gtype                     VARCHAR;
-   int_meassrid                  INTEGER;
-   int_gridsize                  INTEGER;
+   rec                               RECORD;
+   int_srid                          INTEGER;
+   ary_features                      cipsrv_engine.cip_feature[];   
+   boo_return_geometry               BOOLEAN;
    
-   json_points                   JSONB;
-   json_lines                    JSONB;
-   json_areas                    JSONB;
-   json_features                 JSONB;
-   json_features2                JSONB;
-   json_feature                  JSONB;
+   str_default_point_indexing_method VARCHAR;
+   str_default_line_indexing_method  VARCHAR;
+   str_default_ring_indexing_method  VARCHAR;
+   str_default_area_indexing_method  VARCHAR;
+   num_default_line_threshold        NUMERIC;
+   num_default_areacat_threshold     NUMERIC;
+   num_default_areaevt_threshold     NUMERIC;
    
-   sdo_input                     GEOMETRY;
-   sdo_output                    GEOMETRY;
-   sdo_sampler                   GEOMETRY;
-   sdo_state_clipped             GEOMETRY;
-   boo_return_geometry           BOOLEAN;
+   str_known_region                  VARCHAR;
+   str_indexing_method               VARCHAR;
    
-   str_default_point_method      VARCHAR;
-   str_default_line_method       VARCHAR;
-   str_default_ring_method       VARCHAR;
-   str_default_area_method       VARCHAR;
-   num_default_line_threshold    NUMERIC;
-   num_default_areacat_threshold NUMERIC;
-   num_default_areaevt_threshold NUMERIC;
-   
-   str_known_region              VARCHAR;
-   str_geometry_type             VARCHAR;
-   int_feature_count             INTEGER;
-   str_indexing_method           VARCHAR;
-   num_lengthkm                  NUMERIC;
-   num_areasqkm                  NUMERIC;
-   num_line_threshold            NUMERIC;
-   num_areacat_threshold         NUMERIC;
-   num_areaevt_threshold         NUMERIC;
-   str_category                  VARCHAR;
-   boo_check                     BOOLEAN;
-   
-   str_geometry_clip_stage       VARCHAR;
-   boo_filter_by_state           BOOLEAN;
-   ary_state_filters             VARCHAR[];
-   boo_filter_by_tribal          BOOLEAN;
+   str_geometry_clip_stage           VARCHAR;
+   boo_filter_by_state               BOOLEAN;
+   ary_state_filters                 VARCHAR[];
+   boo_filter_by_tribal              BOOLEAN;
    
 BEGIN
 
@@ -1081,12 +1630,9 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
-   json_points := p_points;
-   json_lines  := p_lines;
-   json_areas  := p_areas;
-   IF  json_points   IS NULL
-   AND json_lines    IS NULL
-   AND json_areas    IS NULL
+   IF  p_points    IS NULL
+   AND p_lines     IS NULL
+   AND p_areas     IS NULL
    AND p_geometry    IS NULL
    THEN
       out_return_code    := -10;
@@ -1126,12 +1672,12 @@ BEGIN
    
    END IF;
    
-   str_default_point_method  := p_default_point_method;
-   IF str_default_point_method IS NULL
+   str_default_point_indexing_method  := p_default_point_indexing_method;
+   IF str_default_point_indexing_method IS NULL
    THEN
-      str_default_point_method := 'point_simple';
+      str_default_point_indexing_method := 'point_simple';
       
-   ELSIF str_default_point_method NOT IN ('point_simple')
+   ELSIF str_default_point_indexing_method NOT IN ('point_simple')
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP point indexing method';
@@ -1139,12 +1685,12 @@ BEGIN
     
    END IF;
    
-   str_default_line_method  := p_default_line_method;
-   IF str_default_line_method IS NULL
+   str_default_line_indexing_method  := p_default_line_indexing_method;
+   IF str_default_line_indexing_method IS NULL
    THEN
-      str_default_line_method := 'line_simple';
+      str_default_line_indexing_method := 'line_simple';
       
-   ELSIF str_default_line_method NOT IN ('line_simple','line_levelpath')
+   ELSIF str_default_line_indexing_method NOT IN ('line_simple','line_levelpath')
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP line indexing method';
@@ -1152,12 +1698,12 @@ BEGIN
     
    END IF;
    
-   str_default_area_method  := p_default_area_method;
-   IF str_default_area_method IS NULL
+   str_default_area_indexing_method  := p_default_area_indexing_method;
+   IF str_default_area_indexing_method IS NULL
    THEN
-      str_default_area_method := 'area_simple';
+      str_default_area_indexing_method := 'area_simple';
       
-   ELSIF str_default_area_method NOT IN ('area_simple','area_centroid','area_artpath')
+   ELSIF str_default_area_indexing_method NOT IN ('area_simple','area_centroid','area_artpath')
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP area indexing method';
@@ -1165,12 +1711,12 @@ BEGIN
     
    END IF;
    
-   str_default_ring_method  := p_default_ring_method;
-   IF str_default_ring_method IS NULL
+   str_default_ring_indexing_method  := p_default_ring_indexing_method;
+   IF str_default_ring_indexing_method IS NULL
    THEN
-      str_default_ring_method := 'area_simple';
+      str_default_ring_indexing_method := 'area_simple';
       
-   ELSIF str_default_ring_method NOT IN ('area_simple','area_centroid','area_artpath')
+   ELSIF str_default_ring_indexing_method NOT IN ('area_simple','area_centroid','area_artpath')
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP ring indexing method';
@@ -1206,587 +1752,282 @@ BEGIN
       
    END IF;
    
+   str_known_region := p_known_region;
+   out_return_code := cipsrv_engine.create_cip_temp_tables();
+   
    ----------------------------------------------------------------------------
    -- Step 20
-   -- Determine measurement srid
+   -- Build features from JSONB inputs
    ----------------------------------------------------------------------------
-   str_known_region := p_known_region;
-   
-   IF str_known_region IS NULL
-   THEN
-      IF p_geometry IS NOT NULL
-      THEN
-         sdo_sampler := cipsrv_engine.sample_geometry(p_in := p_geometry);
-
-      ELSE
-         IF json_points IS NOT NULL
-         THEN
-            sdo_sampler := cipsrv_engine.sample_geometry(
-               p_in := ST_GeomFromGeoJSON(json_points->'features'->0->'geometry')
-            );
-            
-         ELSE
-            IF json_lines IS NOT NULL
-            THEN
-               sdo_sampler := cipsrv_engine.sample_geometry(
-                  p_in := ST_GeomFromGeoJSON(json_lines->'features'->0->'geometry')
-               );
-               
-            ELSE
-               sdo_sampler := cipsrv_engine.sample_geometry(
-                  p_in := ST_GeomFromGeoJSON(json_areas->'features'->0->'geometry')
-               );
-               
-            END IF;
-            
-         END IF;
-
-      END IF;
-      
-   END IF;
-
-   rec := cipsrv_engine.determine_grid_srid(
-       p_geometry        := sdo_sampler
-      ,p_nhdplus_version := p_nhdplus_version
-      ,p_known_region    := str_known_region
+   rec := cipsrv_engine.unpackjsonb(
+       p_points                        := p_points
+      ,p_lines                         := p_lines
+      ,p_areas                         := p_areas
+      ,p_geometry                      := p_geometry 
+      ,p_nhdplus_version               := p_nhdplus_version
+      ,p_known_region                  := str_known_region
+      ,p_int_srid                      := NULL
+      ,p_default_point_indexing_method := str_default_point_indexing_method
+      ,p_default_line_indexing_method  := str_default_line_indexing_method
+      ,p_default_ring_indexing_method  := str_default_ring_indexing_method
+      ,p_default_area_indexing_method  := str_default_area_indexing_method
+      ,p_default_line_threshold        := num_default_line_threshold
+      ,p_default_areacat_threshold     := num_default_areacat_threshold
+      ,p_default_areaevt_threshold     := num_default_areaevt_threshold
    );
-   int_meassrid       := rec.out_srid;
-   int_gridsize       := rec.out_grid_size;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
+   out_return_code     := rec.out_return_code;
+   out_status_message  := rec.out_status_message;
+   ary_features        := rec.out_features;
    
    IF out_return_code != 0
    THEN
       RETURN;
       
    END IF;
-   
-   str_known_region := int_meassrid::VARCHAR;
 
    ----------------------------------------------------------------------------
    -- Step 30
-   -- Validate incoming geometry workload
-   ----------------------------------------------------------------------------
-   IF p_geometry IS NOT NULL
-   THEN
-      json_points := NULL;
-      json_lines  := NULL;
-      json_areas  := NULL;
-      
-      str_geometry_type := ST_GeometryType(p_geometry);
-      IF str_geometry_type NOT IN ('GeometryCollection')
-      THEN
-         IF str_geometry_type IN ('ST_Point','ST_MultiPoint')
-         THEN
-            json_points := cipsrv_engine.append_feature(
-                p_in         := json_points
-               ,p_feature    := NULL
-               ,p_geometry   := p_geometry
-            );
-            
-         ELSIF str_geometry_type IN ('ST_LineString','ST_MultiLineString')
-         THEN
-            json_lines := cipsrv_engine.append_feature(
-                p_in         := json_lines
-               ,p_feature    := NULL
-               ,p_geometry   := p_geometry
-            );
-            
-         ELSIF str_geometry_type IN ('ST_Polygon','ST_MultiPolygon')
-         THEN
-            json_areas := cipsrv_engine.append_feature(
-                p_in         := json_areas
-               ,p_feature    := NULL
-               ,p_geometry   := p_geometry
-            );
-         
-         ELSE
-            RAISE EXCEPTION 'err %',str_geometry_type;
-         
-         END IF;
-      
-      ELSE
-         FOR i IN 1 .. ST_NumGeometries(p_geometry)
-         LOOP
-            sdo_input := ST_Transform(ST_GeometryN(p_geometry,i),4326);
-            str_geometry_type := ST_GeometryType(sdo_input);
-    
-            IF str_geometry_type = 'ST_Point'
-            THEN
-               json_points := cipsrv_engine.append_feature(
-                   p_in         := json_points
-                  ,p_feature    := NULL
-                  ,p_geometry   := sdo_input
-               );
-               
-            ELSIF str_geometry_type = 'ST_LineString'
-            THEN
-               json_lines := cipsrv_engine.append_feature(
-                   p_in         := json_lines
-                  ,p_feature    := NULL
-                  ,p_geometry   := sdo_input
-               );
-               
-            ELSIF str_geometry_type = 'ST_Polygon'
-            THEN
-               json_areas := cipsrv_engine.append_feature(
-                   p_in         := json_areas
-                  ,p_feature    := NULL
-                  ,p_geometry   := sdo_input
-               );
-            
-            ELSE
-               RAISE EXCEPTION 'err %',str_geometry_type;
-            
-            END IF;
-            
-         END LOOP;
-         
-      END IF;
-
-   END IF;
-
-   IF json_points IS NOT NULL
-   THEN
-      rec := cipsrv_engine.validate_feature_collection(
-          p_in                        := json_points
-         ,p_test_type                 := 'Point'
-         ,p_category                  := 'points'
-         ,p_known_region_srid         := int_meassrid
-         ,p_default_point_method      := str_default_point_method
-         ,p_default_line_method       := str_default_line_method
-         ,p_default_ring_method       := str_default_ring_method
-         ,p_default_area_method       := str_default_area_method
-         ,p_default_line_threshold    := num_default_line_threshold
-         ,p_default_areacat_threshold := num_default_areacat_threshold
-         ,p_default_areaevt_threshold := num_default_areaevt_threshold 
-      );
-      json_points        := rec.out_cleaned_feature_collection;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-      
-      END IF;         
-      
-   END IF;
-
-   IF json_lines IS NOT NULL
-   THEN
-      rec := cipsrv_engine.validate_feature_collection(
-          p_in                        := json_lines
-         ,p_test_type                 := 'LineString'
-         ,p_category                  := 'lines'
-         ,p_known_region_srid         := int_meassrid
-         ,p_default_point_method      := str_default_point_method
-         ,p_default_line_method       := str_default_line_method
-         ,p_default_ring_method       := str_default_ring_method
-         ,p_default_area_method       := str_default_area_method
-         ,p_default_line_threshold    := num_default_line_threshold
-         ,p_default_areacat_threshold := num_default_areacat_threshold
-         ,p_default_areaevt_threshold := num_default_areaevt_threshold 
-      );
-      json_lines         := rec.out_cleaned_feature_collection;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-
-      IF out_return_code != 0
-      THEN
-         RETURN;
-      
-      END IF;
-      
-   END IF;
-   
-   IF json_areas IS NOT NULL
-   THEN
-      rec := cipsrv_engine.validate_feature_collection(
-          p_in                        := json_areas
-         ,p_test_type                 := 'Polygon'
-         ,p_category                  := 'areas'
-         ,p_known_region_srid         := int_meassrid
-         ,p_default_point_method      := str_default_point_method
-         ,p_default_line_method       := str_default_line_method
-         ,p_default_ring_method       := str_default_ring_method
-         ,p_default_area_method       := str_default_area_method
-         ,p_default_line_threshold    := num_default_line_threshold
-         ,p_default_areacat_threshold := num_default_areacat_threshold
-         ,p_default_areaevt_threshold := num_default_areaevt_threshold 
-      );
-      json_areas         := rec.out_cleaned_feature_collection;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-      
-      END IF;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 40
-   -- Load incoming geometry events into features
-   ----------------------------------------------------------------------------
-   out_return_code := cipsrv_engine.create_cip_temp_tables();
-   json_features := NULL;   
-   
-   IF json_points IS NOT NULL
-   THEN
-      IF json_features IS NULL
-      OR JSONB_ARRAY_LENGTH(json_features) = 0
-      THEN
-         json_features := json_points->'features';
-      
-      ELSE
-         json_features := json_features || (json_points->'features');
-         
-      END IF;
-      
-   END IF;
- 
-   IF json_lines IS NOT NULL
-   THEN
-      IF json_features IS NULL
-      OR JSONB_ARRAY_LENGTH(json_features) = 0
-      THEN
-         json_features := json_lines->'features';
-      
-      ELSE
-         json_features := json_features || (json_lines->'features');
-         
-      END IF;
-      
-   END IF;
-   
-   IF json_areas IS NOT NULL
-   THEN
-      IF json_features IS NULL
-      OR JSONB_ARRAY_LENGTH(json_features) = 0
-      THEN
-         json_features := json_areas->'features';
-      
-      ELSE
-         json_features := json_features || (json_areas->'features');
-         
-      END IF;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 50
    -- Before Clip over each feature
    ----------------------------------------------------------------------------
    IF str_geometry_clip_stage = 'BEFORE'
    AND p_geometry_clip IS NOT NULL
    AND array_length(p_geometry_clip,1) > 0
    THEN
-      json_features2 := NULL;
-      int_feature_count := JSONB_ARRAY_LENGTH(json_features);
+      rec := cipsrv_engine.feature_clip(
+          p_features           := ary_features
+         ,p_clippers           := p_geometry_clip
+         ,p_known_region       := str_known_region
+      );
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      ary_features       := rec.out_features;
 
-      FOR i IN 0 .. int_feature_count - 1
-      LOOP
-         sdo_input := ST_GeomFromGeoJSON(json_features->i->'geometry');
-         
-         rec := cipsrv_support.geometry_clip(
-             p_geometry      := sdo_input
-            ,p_clippers      := p_geometry_clip
-            ,p_known_region  := str_known_region
-         );
-         sdo_output      := rec.out_clipped_geometry;
-         out_return_code := rec.out_return_code;
-         out_status_message := rec.out_status_message;
-         
-         IF out_return_code != 0
-         THEN
-            RETURN;
-            
-         END IF;
-         
-         IF sdo_output IS NOT NULL
-         THEN
-            json_features[i]['geometry'] := ST_AsGeoJSON(sdo_output);
-            
-            IF json_features2 IS NULL
-            OR JSONB_ARRAY_LENGTH(json_features2) = 0
-            THEN
-               json_features2 := '[]'::JSONB;
-               
-            END IF;
-            
-            json_features2 := json_features2 || json_features->i;
-            
-         END IF;         
-      
-      END LOOP;
-      
-      IF json_features2 IS NULL
-      OR JSONB_ARRAY_LENGTH(json_features2) = 0
-      THEN
-         out_return_code    := 0;
-         out_status_message := 'No results from clipping';
-         RETURN;
-         
-      END IF;
-      
-      json_features  := json_features2;
-      json_features2 := NULL;
-   
    END IF;
-   
+
    ----------------------------------------------------------------------------
-   -- Step 60
+   -- Step 40
    -- Loop over and index each feature
    ----------------------------------------------------------------------------
-   int_feature_count := JSONB_ARRAY_LENGTH(json_features);
-
-   FOR i IN 0 .. int_feature_count - 1
-   LOOP
-      str_indexing_method   := json_features->i->'properties'->>'indexing_method';
-      sdo_input             := ST_GeomFromGeoJSON(json_features->i->'geometry');
-      num_lengthkm          := json_features->i->'properties'->>'lengthkm';
-      num_areasqkm          := json_features->i->'properties'->>'areasqkm';
-      num_line_threshold    := json_features->i->'properties'->>'line_threshold';
-      num_areacat_threshold := json_features->i->'properties'->>'areacat_threshold';
-      num_areaevt_threshold := json_features->i->'properties'->>'areaevt_threshold';
-
-      IF str_indexing_method = 'point_simple'
-      THEN
-         IF p_nhdplus_version = 'nhdplus_m'
-         THEN
-            rec := cipsrv_nhdplus_m.index_point_simple(
-                p_geometry               := sdo_input
-               ,p_known_region           := str_known_region
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-                     
-         ELSIF p_nhdplus_version = 'nhdplus_h'
-         THEN
-            rec := cipsrv_nhdplus_h.index_point_simple(
-                p_geometry               := sdo_input
-               ,p_known_region           := str_known_region
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         END IF;
-         
-      ELSIF str_indexing_method = 'line_simple'
-      THEN
-         IF p_nhdplus_version = 'nhdplus_m'
-         THEN
-            rec := cipsrv_nhdplus_m.index_line_simple(
-                p_geometry               := sdo_input
-               ,p_geometry_lengthkm      := num_lengthkm
-               ,p_known_region           := str_known_region
-               ,p_line_threashold_perc   := num_line_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         ELSIF p_nhdplus_version = 'nhdplus_h'
-         THEN
-            rec := cipsrv_nhdplus_h.index_line_simple(
-                p_geometry               := sdo_input
-               ,p_geometry_lengthkm      := num_lengthkm
-               ,p_known_region           := str_known_region
-               ,p_line_threashold_perc   := num_line_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         END IF;
-         
-      ELSIF str_indexing_method = 'line_levelpath'
-      THEN
-         IF p_nhdplus_version = 'nhdplus_m'
-         THEN
-            rec := cipsrv_nhdplus_m.index_line_levelpath(
-                p_geometry               := sdo_input
-               ,p_geometry_lengthkm      := num_lengthkm
-               ,p_known_region           := str_known_region
-               ,p_line_threashold_perc   := num_line_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         ELSIF p_nhdplus_version = 'nhdplus_h'
-         THEN
-            rec := cipsrv_nhdplus_h.index_line_levelpath(
-                p_geometry               := sdo_input
-               ,p_geometry_lengthkm      := num_lengthkm
-               ,p_known_region           := str_known_region
-               ,p_line_threashold_perc   := num_line_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         END IF;
-         
-      ELSIF str_indexing_method = 'area_artpath'
-      THEN
-         IF p_nhdplus_version = 'nhdplus_m'
-         THEN
-            rec := cipsrv_nhdplus_m.index_area_artpath(
-                p_geometry               := sdo_input
-               ,p_geometry_areasqkm      := num_areasqkm
-               ,p_known_region           := str_known_region
-               ,p_cat_threashold_perc    := num_areacat_threshold
-               ,p_evt_threashold_perc    := num_areaevt_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-         
-         ELSIF p_nhdplus_version = 'nhdplus_h'
-         THEN
-            rec := cipsrv_nhdplus_h.index_area_artpath(
-                p_geometry               := sdo_input
-               ,p_geometry_areasqkm      := num_areasqkm
-               ,p_known_region           := str_known_region
-               ,p_cat_threashold_perc    := num_areacat_threshold
-               ,p_evt_threashold_perc    := num_areaevt_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         END IF;
-         
-      ELSIF str_indexing_method = 'area_simple'
-      THEN
-         IF p_nhdplus_version = 'nhdplus_m'
-         THEN
-            rec := cipsrv_nhdplus_m.index_area_simple(
-                p_geometry             := sdo_input
-               ,p_geometry_areasqkm    := num_areasqkm
-               ,p_known_region         := str_known_region
-               ,p_cat_threashold_perc  := num_areacat_threshold
-               ,p_evt_threashold_perc  := num_areaevt_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-
-         ELSIF p_nhdplus_version = 'nhdplus_h'
-         THEN
-            rec := cipsrv_nhdplus_h.index_area_simple(
-                p_geometry             := sdo_input
-               ,p_geometry_areasqkm    := num_areasqkm
-               ,p_known_region         := str_known_region
-               ,p_cat_threashold_perc  := num_areacat_threshold
-               ,p_evt_threashold_perc  := num_areaevt_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         END IF;
-         
-      ELSIF str_indexing_method = 'area_centroid'
-      THEN
-         IF p_nhdplus_version = 'nhdplus_m'
-         THEN
-            rec := cipsrv_nhdplus_m.index_area_centroid(
-                p_geometry             := sdo_input
-               ,p_geometry_areasqkm    := num_areasqkm
-               ,p_known_region         := str_known_region
-               ,p_cat_threashold_perc  := num_areacat_threshold
-               ,p_evt_threashold_perc  := num_areaevt_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         ELSIF p_nhdplus_version = 'nhdplus_h'
-         THEN
-            rec := cipsrv_nhdplus_h.index_area_centroid(
-                p_geometry             := sdo_input
-               ,p_geometry_areasqkm    := num_areasqkm
-               ,p_known_region         := str_known_region
-               ,p_cat_threashold_perc  := num_areacat_threshold
-               ,p_evt_threashold_perc  := num_areaevt_threshold
-            );
-            out_return_code    := rec.out_return_code;
-            out_status_message := rec.out_status_message;
-            
-         END IF;
-      
-      ELSE
-         RAISE EXCEPTION 'err %',str_indexing_method;
-         
-      END IF;
-
-      IF out_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;      
-      
-   END LOOP;
-   
-   ----------------------------------------------------------------------------
-   -- Step 70
-   -- Clip AFTER indexing if requested
-   ----------------------------------------------------------------------------
-   IF str_geometry_clip_stage = 'AFTER'
-   AND p_geometry_clip IS NOT NULL
-   AND array_length(p_geometry_clip,1) > 0
+   IF array_length(ary_features,1) > 0
    THEN
-      json_features2 := NULL;
-      int_feature_count := JSONB_ARRAY_LENGTH(json_features);
-
-      FOR i IN 0 .. int_feature_count - 1
+      FOR i IN 1 .. array_length(ary_features,1)
       LOOP
-         sdo_input := ST_GeomFromGeoJSON(json_features->i->'geometry');
+         IF (ary_features[i]).gtype IN ('ST_Point','ST_MultiPoint')
+         AND (ary_features[i]).point_indexing_method = 'point_simple'
+         THEN
+            str_indexing_method := 'point_simple';
+            
+            IF p_nhdplus_version = 'nhdplus_m'
+            THEN
+               rec := cipsrv_nhdplus_m.index_point_simple(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_known_region           := str_known_region
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+                        
+            ELSIF p_nhdplus_version = 'nhdplus_h'
+            THEN
+               rec := cipsrv_nhdplus_h.index_point_simple(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_known_region           := str_known_region
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            END IF;
+            
+         ELSIF (ary_features[i]).gtype IN ('ST_LineString','ST_MultiLineString')
+         AND (ary_features[i]).line_indexing_method = 'line_simple'
+         THEN
+            str_indexing_method := 'line_simple';
+            
+            IF p_nhdplus_version = 'nhdplus_m'
+            THEN
+               rec := cipsrv_nhdplus_m.index_line_simple(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
+                  ,p_known_region           := str_known_region
+                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            ELSIF p_nhdplus_version = 'nhdplus_h'
+            THEN
+               rec := cipsrv_nhdplus_h.index_line_simple(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
+                  ,p_known_region           := str_known_region
+                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            END IF;
+            
+         ELSIF (ary_features[i]).gtype IN ('ST_LineString','ST_MultiLineString')
+         AND (ary_features[i]).line_indexing_method = 'line_levelpath'
+         THEN
+            str_indexing_method := 'line_levelpath';
+            
+            IF p_nhdplus_version = 'nhdplus_m'
+            THEN
+               rec := cipsrv_nhdplus_m.index_line_levelpath(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
+                  ,p_known_region           := str_known_region
+                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            ELSIF p_nhdplus_version = 'nhdplus_h'
+            THEN
+               rec := cipsrv_nhdplus_h.index_line_levelpath(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
+                  ,p_known_region           := str_known_region
+                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            END IF;
+            
+         ELSIF (ary_features[i]).gtype IN ('ST_Polygon','ST_MultiPolygon')
+         AND (ary_features[i]).area_indexing_method = 'area_artpath'
+         THEN
+            str_indexing_method := 'area_artpath';
+            
+            IF p_nhdplus_version = 'nhdplus_m'
+            THEN
+               rec := cipsrv_nhdplus_m.index_area_artpath(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threashold_perc    := (ary_features[i]).areacat_threshold
+                  ,p_evt_threashold_perc    := (ary_features[i]).areaevt_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+            
+            ELSIF p_nhdplus_version = 'nhdplus_h'
+            THEN
+               rec := cipsrv_nhdplus_h.index_area_artpath(
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threashold_perc    := (ary_features[i]).areacat_threshold
+                  ,p_evt_threashold_perc    := (ary_features[i]).areaevt_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            END IF;
+            
+         ELSIF (ary_features[i]).gtype IN ('ST_Polygon','ST_MultiPolygon')
+         AND (ary_features[i]).area_indexing_method = 'area_simple'
+         THEN
+            str_indexing_method := 'area_simple';
+            
+            IF p_nhdplus_version = 'nhdplus_m'
+            THEN
+               rec := cipsrv_nhdplus_m.index_area_simple(
+                   p_geometry             := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
+                  ,p_known_region         := str_known_region
+                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
+                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+
+            ELSIF p_nhdplus_version = 'nhdplus_h'
+            THEN
+               rec := cipsrv_nhdplus_h.index_area_simple(
+                   p_geometry             := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
+                  ,p_known_region         := str_known_region
+                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
+                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            END IF;
+            
+         ELSIF (ary_features[i]).gtype IN ('ST_Polygon','ST_MultiPolygon')
+         AND (ary_features[i]).area_indexing_method = 'area_centroid'
+         THEN
+            str_indexing_method := 'area_centroid';
+            
+            IF p_nhdplus_version = 'nhdplus_m'
+            THEN
+               rec := cipsrv_nhdplus_m.index_area_centroid(
+                   p_geometry             := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
+                  ,p_known_region         := str_known_region
+                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
+                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            ELSIF p_nhdplus_version = 'nhdplus_h'
+            THEN
+               rec := cipsrv_nhdplus_h.index_area_centroid(
+                   p_geometry             := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
+                  ,p_known_region         := str_known_region
+                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
+                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+               );
+               out_return_code    := rec.out_return_code;
+               out_status_message := rec.out_status_message;
+               
+            END IF;
          
-         rec := cipsrv_support.geometry_clip(
-             p_geometry      := sdo_input
-            ,p_clippers      := p_geometry_clip
-            ,p_known_region  := str_known_region
-         );
-         sdo_output      := rec.out_clipped_geometry;
-         out_return_code := rec.out_return_code;
-         out_status_message := rec.out_status_message;
-         
+         ELSE
+            RAISE EXCEPTION 'err %',(ary_features[i]).gtype;
+            
+         END IF;
+
          IF out_return_code != 0
          THEN
             RETURN;
             
-         END IF;
+         END IF;      
          
-         IF sdo_output IS NOT NULL
-         THEN
-            json_features[i]['geometry'] := ST_AsGeoJSON(sdo_output);
-            
-            IF json_features2 IS NULL
-            OR JSONB_ARRAY_LENGTH(json_features2) = 0
-            THEN
-               json_features2 := '[]'::JSONB;
-               
-            END IF;
-            
-            json_features2 := json_features2 || json_features->i;
-            
-         END IF;         
-      
       END LOOP;
       
-      IF json_features2 IS NULL
-      OR JSONB_ARRAY_LENGTH(json_features2) = 0
-      THEN
-         out_return_code    := 0;
-         out_status_message := 'No results from clipping';
-         RETURN;
-         
-      END IF;
-      
-      json_features  := json_features2;
-      json_features2 := NULL;
-   
    END IF;
 
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 50
+   -- Clip AFTER indexing if requested
+   ----------------------------------------------------------------------------
+   IF array_length(ary_features,1) > 0
+   THEN
+      IF str_geometry_clip_stage = 'AFTER'
+      AND p_geometry_clip IS NOT NULL
+      AND array_length(p_geometry_clip,1) > 0
+      THEN
+         rec := cipsrv_engine.feature_clip(
+             p_features           := ary_features
+            ,p_clippers           := p_geometry_clip
+            ,p_known_region       := str_known_region
+         );
+         out_return_code    := rec.out_return_code;
+         out_status_message := rec.out_status_message;
+         ary_features       := rec.out_features;
+      
+      END IF;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 60
    -- Return filtered catchment results
    ----------------------------------------------------------------------------
    IF p_nhdplus_version = 'nhdplus_m'
@@ -1863,47 +2104,27 @@ BEGIN
    -- Step 80
    -- Build the output results
    ----------------------------------------------------------------------------
-   int_feature_count := JSONB_ARRAY_LENGTH(json_features);
-      
-   FOR i IN 0 .. int_feature_count - 1
-   LOOP
-      json_feature := json_features->i;
-      str_category := json_feature->'properties'->>'category';
-
-      json_feature := JSONB_SET(
-          jsonb_in          := json_feature
-         ,path              := ARRAY['geometry']
-         ,replacement       := ST_AsGeoJSON(ST_Transform(sdo_input,4326))::JSONB
-         ,create_if_missing := TRUE
+   IF array_length(ary_features,1) > 0
+   THEN
+      out_indexed_points := cipsrv_engine.features2jsonb(
+          p_features         := ary_features
+         ,p_geometry_type    := 'P'
+         ,p_empty_collection := FALSE
+      );
+         
+      out_indexed_lines := cipsrv_engine.features2jsonb(
+          p_features         := ary_features
+         ,p_geometry_type    := 'L'
+         ,p_empty_collection := FALSE
       );
       
-      IF str_category = 'points'
-      THEN
-         out_indexed_points := cipsrv_engine.append_feature(
-             p_in        := out_indexed_points
-            ,p_feature   := json_feature
-            ,p_geometry  := NULL
-         );
-         
-      ELSIF str_category = 'lines'
-      THEN
-         out_indexed_lines := cipsrv_engine.append_feature(
-             p_in        := out_indexed_lines
-            ,p_feature   := json_feature
-            ,p_geometry  := NULL
-         );
-      
-      ELSIF str_category = 'areas'
-      THEN
-         out_indexed_areas := cipsrv_engine.append_feature(
-             p_in        := out_indexed_areas
-            ,p_feature   := json_feature
-            ,p_geometry  := NULL
-         );
-   
-      END IF;
+      out_indexed_areas := cipsrv_engine.features2jsonb(
+          p_features         := ary_features
+         ,p_geometry_type    := 'A'
+         ,p_empty_collection := FALSE
+      );
 
-   END LOOP;  
+   END IF;  
    
 END;
 $BODY$
@@ -1913,7 +2134,7 @@ ALTER FUNCTION cipsrv_engine.cipsrv_index(
     JSONB
    ,JSONB
    ,JSONB
-   ,GEOMETRY
+   ,JSONB
    ,VARCHAR[]
    ,VARCHAR
    ,VARCHAR[]
@@ -1934,7 +2155,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_index(
     JSONB
    ,JSONB
    ,JSONB
-   ,GEOMETRY
+   ,JSONB
    ,VARCHAR[]
    ,VARCHAR
    ,VARCHAR[]

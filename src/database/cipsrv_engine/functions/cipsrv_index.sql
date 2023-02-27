@@ -429,7 +429,7 @@ BEGIN
       END LOOP;
       
    END IF;
-   
+
    ----------------------------------------------------------------------------
    -- Step 50
    -- Clip AFTER indexing if requested

@@ -335,7 +335,7 @@ BEGIN
    -- Step 30
    -- Exit if nothing returned from indexer
    ----------------------------------------------------------------------------
-   IF int_catchment_count = 0
+   IF int_catchment_count = 999990
    THEN
       RETURN jsonb_build_object(
           'indexed_points',     NULL
@@ -363,65 +363,85 @@ BEGIN
    THEN
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
-         json_flowlines := JSON_BUILD_OBJECT(
-             'type',    'FeatureCollection'
-            ,'features', (
-               SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
-               FROM (
-                  SELECT
-                   a.nhdplusid
-                  ,a.gnis_id
-                  ,a.gnis_name
-                  ,a.reachcode
-                  ,a.fmeasure
-                  ,a.tmeasure
-                  ,CASE
-                   WHEN boo_return_flowline_geometry
-                   THEN
-                      ST_Transform(a.shape,4326)
-                   ELSE
-                      CAST(NULL AS GEOMETRY)
-                   END AS geom
-                   FROM
-                   cipsrv_nhdplus_m.nhdflowline a
-                   WHERE
-                   EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
-               ) t
-             )
+         json_flowlines := (
+            SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.gnis_id
+               ,a.gnis_name
+               ,a.reachcode
+               ,a.fmeasure
+               ,a.tmeasure
+               ,CASE
+                WHEN boo_return_flowline_geometry
+                THEN
+                   ST_Transform(a.shape,4326)
+                ELSE
+                   CAST(NULL AS GEOMETRY)
+                END AS geom
+                FROM
+                cipsrv_nhdplus_m.nhdflowline a
+                WHERE
+                EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
+                ORDER BY
+                a.nhdplusid
+            ) t
          );
+         
+         IF json_flowlines IS NULL
+         OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+         THEN
+            json_flowlines := NULL;
+            
+         ELSE
+            json_flowlines := JSON_BUILD_OBJECT(
+                'type'    , 'FeatureCollection'
+               ,'features', json_flowlines
+            );
+            
+         END IF;
          
       ELSIF str_nhdplus_version = 'nhdplus_h'
       THEN
-         json_flowlines := JSON_BUILD_OBJECT(
-             'type',    'FeatureCollection'
-            ,'features', (
-               SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
-               FROM (
-                  SELECT
-                   a.nhdplusid
-                  ,a.gnis_id
-                  ,a.gnis_name
-                  ,a.reachcode
-                  ,a.fmeasure
-                  ,a.tmeasure
-                  ,CASE
-                   WHEN boo_return_flowline_geometry
-                   THEN
-                      ST_Transform(a.shape,4326)
-                   ELSE
-                      CAST(NULL AS GEOMETRY)
-                   END AS geom
-                   FROM
-                   cipsrv_nhdplus_h.nhdflowline a
-                   WHERE
-                   EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
-               ) t
-             )
+         json_flowlines := (
+            SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.gnis_id
+               ,a.gnis_name
+               ,a.reachcode
+               ,a.fmeasure
+               ,a.tmeasure
+               ,CASE
+                WHEN boo_return_flowline_geometry
+                THEN
+                   ST_Transform(a.shape,4326)
+                ELSE
+                   CAST(NULL AS GEOMETRY)
+                END AS geom
+                FROM
+                cipsrv_nhdplus_h.nhdflowline a
+                WHERE
+                EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
+                ORDER BY
+                a.nhdplusid
+            ) t
          );
+         
+         IF json_flowlines IS NULL
+         OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+         THEN
+            json_flowlines := NULL;
+            
+         ELSE
+            json_flowlines := JSON_BUILD_OBJECT(
+                'type'    , 'FeatureCollection'
+               ,'features', json_flowlines
+            );
+            
+         END IF;
          
       ELSE
          RAISE EXCEPTION 'err';
@@ -443,30 +463,40 @@ BEGIN
    -- Step 60
    -- Build the catchments featurecollection
    ----------------------------------------------------------------------------
-   json_catchments := JSON_BUILD_OBJECT(
-       'type',    'FeatureCollection'
-      ,'features', (
-         SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)  
-         FROM (
-            SELECT
-             a.nhdplusid
-            ,a.catchmentstatecode
-            ,a.xwalk_huc12
-            ,a.areasqkm
-            ,CASE WHEN boo_return_catchment_geometry
-             THEN
-               ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
-             ELSE
-               NULL::GEOMETRY
-             END AS geom
-            FROM
-            tmp_cip_out a
-            ORDER BY
-             a.catchmentstatecode
-            ,a.nhdplusid
-         ) t
-       )
+   json_catchments := (
+      SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)  
+      FROM (
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         ,a.xwalk_huc12
+         ,a.areasqkm
+         ,CASE WHEN boo_return_catchment_geometry
+          THEN
+            ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
+          ELSE
+            NULL::GEOMETRY
+          END AS geom
+         FROM
+         tmp_cip_out a
+         ORDER BY
+          a.catchmentstatecode
+         ,a.nhdplusid
+      ) t
    );
+   
+   IF json_catchments IS NULL
+   OR JSONB_ARRAY_LENGTH(json_catchments) = 0
+   THEN
+      json_catchments := NULL;
+      
+   ELSE
+      json_catchments := JSON_BUILD_OBJECT(
+          'type'    , 'FeatureCollection'
+         ,'features', json_catchments
+      );
+      
+   END IF;
       
    ----------------------------------------------------------------------------
    -- Step 60

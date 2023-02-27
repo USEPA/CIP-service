@@ -452,7 +452,6 @@
                return false;
             } else if (response.catchment_count == 0) {
                document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
-               return false;
             }
             
             if (response.indexed_points !== null && response.indexed_points.features[0].geometry.type !== null) {
@@ -517,37 +516,39 @@
             
             zoom_cache = {};
 
-            tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
-                    + '<TR>'
-                    + '<TH colspan="4" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
-                    + '<TR>'
-                    + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
-                    + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
-                    + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
-                    + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
-                    + '</TR>';
-            tbl_end = '</TABLE>';
+            if (response.catchments !== null ) {
+               tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
+                       + '<TR>'
+                       + '<TH colspan="4" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
+                       + '<TR>'
+                       + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
+                       + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
+                       + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
+                       + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
+                       + '</TR>';
+               tbl_end = '</TABLE>';
 
-            tbl_cnt = '';
-            for (var i = 0; i < response.catchments.features.length; i++) {
-               tbl_cnt += '<TR>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">';
-                       
-               if (response.catchments.features[0].geometry.type !== null) {
-                  tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
-                  zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
-               } else {
-                  tbl_cnt += '&nbsp;';
-               }
+               tbl_cnt = '';
+               for (var i = 0; i < response.catchments.features.length; i++) {
+                  tbl_cnt += '<TR>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">';
+                          
+                  if (response.catchments.features[0].geometry.type !== null) {
+                     tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
+                     zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
+                  } else {
+                     tbl_cnt += '&nbsp;';
+                  }
+                  
+                  tbl_cnt += '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
+                          +  '</TR>';
+                  }       
                
-               tbl_cnt += '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
-                       +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
-                       +  '</TR>';
-               }       
-            
-            document.getElementById("output").innerHTML = tbl_beg + tbl_cnt + tbl_end;
+               document.getElementById("output").innerHTML = tbl_beg + tbl_cnt + tbl_end;
+            }
             
          }
          
