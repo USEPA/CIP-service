@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_state(
     IN  p_geometry             GEOMETRY
    ,IN  p_known_region         VARCHAR
-   ,IN  p_state_filter         VARCHAR
+   ,IN  p_state_clip           VARCHAR
    ,OUT out_clipped_geometry   GEOMETRY
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
@@ -65,7 +65,7 @@ BEGIN
    END IF;      
    
    sdo_input_geom := ST_Transform(p_geometry,int_srid);
-   
+
    ----------------------------------------------------------------------------
    -- Step 20
    -- Fetch the state clip geometry
@@ -77,12 +77,12 @@ BEGIN
    FROM
    cipsrv_support.tiger_fedstatewaters a
    WHERE
-   a.stusps = p_state_filter;
-   
+   a.stusps = p_state_clip;
+
    IF sdo_state_geom IS NULL
    THEN
       out_return_code      := -20;
-      out_status_message   := 'Unknown US state code <' || p_state_filter || '>.';
+      out_status_message   := 'Unknown US state code <' || p_state_clip || '>.';
       out_clipped_geometry := p_geometry;
       RETURN;
       

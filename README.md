@@ -8,7 +8,7 @@ The Catchment Index Processing Service provides the ability to associate hydrolo
 
 ### Overview
 
-At this time hosting options for deploying the CIP-service bundles are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single docker-compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combined with varied profile configurations to dynamically generate the needed compose and dockerfile artifacts that drive each bundle.  
+At this time hosting options for deploying the CIP-service bundles are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combined with varied profile configurations to dynamically generate the needed compose and dockerfile artifacts that drive each bundle.  
 
 To keep things simple the project promotes two general approaches, a complete local desktop Docker installation and a cloud option where the engine components are hosted in the EPA cloud. 
 
@@ -23,7 +23,7 @@ __Cloud Hosted__
 ### Prerequisites
 
 - docker
-- docker-compose (usually bundled nowadays with docker)
+- [docker compose V2](https://docs.docker.com/compose/)
 - at least 16 GB of memory
 - at least 80 GB of free disk
 - internet access
@@ -63,23 +63,25 @@ these steps will generate the needed docker-compose.yml and Dockerfiles in each 
 
 __Engine__
 
-1. in the engine directory, type **docker-compose -p engine build**.  This will download and configure the engine containers.  It may take a while.
+1. in the engine directory, type **docker compose -p engine build**.  This will download and configure the engine containers.  It may take a while.
 
-2. next type **docker-compose - p engine up --detach**.  This will spin up the engine containers.  Note the cip_pr container will spin up fast and throw errors while it waits for the cip_pg database to come up.  These errors can be ignored.
+2. next type **docker compose -p engine up --detach**.  This will spin up the engine containers.  Note the cip_pr container will spin up fast and throw errors while it waits for the cip_pg database to come up.  These errors can be ignored.
 
 3. next type **docker ps** to make sure the engine containers are up and running as expected.  You should see cip_pg and cip_pr containers running.
 
+4. At this point the engine API endpoint should be available.  For information on how to use the API, see the [OpenAPI specification here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/develop/docs/openapi.yml)
+
 __Admin__
 
-1. in the admin directory, type **docker-compose -p admin build**.  The admin_local profile will attach o the engine_cip network created above.  
+1. in the admin directory, type **docker compose -p admin build**.  The admin_local profile will attach o the engine_cip network created above.  
 
-2. then type **docker-compose - p admin up --detach**.
+2. then type **docker compose - p admin up --detach**.
 
 __Demo__
 
-1. in the demo directory, type **docker-compose -p demo build**. The nginx_demo profile expects to find the engine API at localhost, port 3000.
+1. in the demo directory, type **docker compose -p demo build**. The nginx_demo profile expects to find the engine API at localhost, port 3000.
 
-2. then type **docker-compose - p demo up --detach**. 
+2. then type **docker compose - p demo up --detach**. 
 
 ### Typical Configuration Steps
 

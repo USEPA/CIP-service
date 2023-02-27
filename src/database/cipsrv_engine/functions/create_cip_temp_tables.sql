@@ -37,6 +37,7 @@ BEGIN
          ,catchmentstatecode   VARCHAR(2)
          ,xwalk_huc12          VARCHAR(12)
          ,areasqkm             NUMERIC
+         ,tribal               BOOLEAN
          ,shape                GEOMETRY
       );
 

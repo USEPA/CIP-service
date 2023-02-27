@@ -1,0 +1,253 @@
+openapi: 3.0.1
+info:
+  title: CIP-service Indexing API
+  description: The Catchment Index Processing Service provides the ability to associate hydrologic features with NHDPlus catchments.
+  license:
+    name: Creative Commons Zero Public Domain Dedication
+    url: https://edg.epa.gov/EPA_Data_License.html
+  version: 1.0.0
+servers:
+- url: https://localhost:3000
+paths:
+  /rpc/cipsrv_domains:
+    get:
+      summary: CIP-service Domains Endpoint
+      description: CIP-service Domains Endpoint
+      responses:
+        '200':
+          description: states and tribes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cipsrv_domains' 
+  /rpc/cipsrv_index:
+    post:
+      summary: CIP-service Indexing Endpoint
+      description: CIP-service Indexing Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/cipsrv_index_rb'
+      responses:
+        200:
+          description: CIP-service Indexing Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cipsrv_index_resp'
+components:
+  schemas:
+    cipsrv_domains:
+      type: object
+      properties:
+         states:
+           $ref: '#/components/schemas/cipsrv_domains_states'
+         tribes:
+           $ref: '#/components/schemas/cipsrv_domains_tribes'
+    cipsrv_domains_states:
+      type: array
+      items:
+        $ref: '#/components/schemas/cipsrv_domains_state'
+    cipsrv_domains_state:
+      type: object
+      properties:
+         geoid:
+           type: string
+         stusps:
+           type: string
+         name:
+           type: string
+    cipsrv_domains_tribes:
+      type: array
+      items:
+        $ref: '#/components/schemas/cipsrv_domains_tribe'
+    cipsrv_domains_tribe:
+      type: object
+      properties:
+         aiannhns_stem:
+           type: string
+         aiannhns_namelsad:
+           type: string
+         has_reservation_lands:
+           type: boolean
+         has_trust_lands:
+           type: boolean
+    cipsrv_domains_tribe:
+      type: object
+    cipsrv_index_rb:
+      type: object
+      properties:
+        points:
+          oneOf:
+          - $ref: '#/components/schemas/geojson_featurecollection'
+          - $ref: '#/components/schemas/geojson_feature'
+        lines:
+          oneOf:
+          - $ref: '#/components/schemas/geojson_featurecollection'
+          - $ref: '#/components/schemas/geojson_feature'
+        areas:
+          oneOf:
+          - $ref: '#/components/schemas/geojson_featurecollection'
+          - $ref: '#/components/schemas/geojson_feature'
+        geometry:
+          oneOf:
+          - $ref: '#/components/schemas/geojson_featurecollection'
+          - $ref: '#/components/schemas/geojson_feature'
+          - $ref: '#/components/schemas/geojson_geometry'  
+        geometry_clip:
+          type: string
+        geometry_clip_stage:
+          type: string
+        catchment_filter:
+          type: string
+        nhdplus_version:
+          type: string
+          example: "nhdplus_m"
+        wbd_version:
+          type: string
+        default_point_method:
+          type: string
+        default_line_method:
+          type: string
+        default_area_method:
+          type: string
+        default_line_threshold:
+          type: string
+        default_areacat_threshold:
+          type: string
+        default_areaevt_threshold:
+          type: string
+        known_region:
+          type: string
+        return_catchment_geometry:
+          type: string
+        return_flowlines:
+          type: string
+        return_huc12s:
+          type: string
+        return_flowline_geometry:
+          type: string
+        return_huc12_geometry:
+          type: string
+    cipsrv_index_resp:
+      type: object
+      properties:
+        indexed_points:
+          $ref: '#/components/schemas/geojson_featurecollection'
+        indexed_lines:
+          $ref: '#/components/schemas/geojson_featurecollection'
+        indexed_areas:
+          $ref: '#/components/schemas/geojson_featurecollection'
+        indexed_collection:
+          $ref: '#/components/schemas/geojson_geometry'
+        indexing_summary:
+          $ref: '#/components/schemas/indexing_summary'
+        catchment_count:
+          type: integer
+        catchment_areasqkm:
+          type: number
+        catchments:
+          $ref: '#/components/schemas/geojson_featurecollection'
+        flowlines:
+          $ref: '#/components/schemas/geojson_featurecollection'
+        huc12s:
+          $ref: '#/components/schemas/geojson_featurecollection'
+        return_code:
+          type: integer
+        status_message:
+          type: string
+    ordinate:
+      type: number
+      title: GeoJSON Ordinate
+      example: -89.5327
+    coordinates1:
+      type: array
+      title: GeoJSON Coordinates 1
+      items:
+        "$ref": "#/components/schemas/ordinate"
+    coordinates2:
+      type: array
+      title: GeoJSON Coordinates 2
+      items:
+        "$ref": "#/components/schemas/coordinates1"
+    coordinates3:
+      type: array
+      title: GeoJSON Coordinates 3
+      items:
+        "$ref": "#/components/schemas/coordinates2"
+    geojson_geometry: 
+      type: object
+      title: GeoJSON Geometry
+      nullable: true
+      externalDocs:
+        url: http://geojson.org/geojson-spec.html#geometry-objects
+      properties:
+        coordinates:
+          oneOf:
+            - "$ref": "#/components/schemas/coordinates1"
+            - "$ref": "#/components/schemas/coordinates2"
+            - "$ref": "#/components/schemas/coordinates3"
+            - type: array
+              title: GeoJSON Coordinates 4
+              items:
+                "$ref": "#/components/schemas/coordinates3"
+        type:
+          type: string
+          enum:
+          - Point
+          - LineString
+          - Polygon
+          - MultiPoint
+          - MultiLineString
+          - MultiPolygon
+          description: the geometry type
+    geojson_bbox:
+      type: array
+      title: GeoJSON BBox
+      maxItems: 4
+      minItems: 4
+      items:
+        $ref: '#/components/schemas/ordinate'
+    geojson_feature:
+      type: object
+      title: GeoJSON Feature
+      nullable: true
+      required:
+      - type
+      - geometry
+      - properties
+      externalDocs:
+        url: https://tools.ietf.org/html/rfc7946#section-3.2
+      properties:
+        bbox:
+          "$ref": "#/components/schemas/geojson_bbox"
+        geometry:
+          "$ref": "#/components/schemas/geojson_geometry"
+        properties:
+          type: object
+        type:
+          type: string
+          enum:
+            - Feature
+    geojson_featurecollection:
+      type: object
+      title: GeoJSON Feature Collection
+      description: GeoJSon Feature collection
+      required:
+       - type
+       - features
+      externalDocs:
+        url: https://tools.ietf.org/html/rfc7946#section-3.3
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/geojson_feature'
+    indexing_summary:
+      type: object

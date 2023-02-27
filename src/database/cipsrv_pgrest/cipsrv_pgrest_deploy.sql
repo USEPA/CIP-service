@@ -1,4 +1,79 @@
 --******************************--
+----- functions/cipsrv_domains.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_domains()
+RETURNS JSONB
+VOLATILE
+AS
+$BODY$ 
+DECLARE
+   json_states JSONB;
+   json_tribes JSONB;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Collect the state domain values
+   ----------------------------------------------------------------------------
+   SELECT 
+   JSON_AGG(a.*)
+   INTO json_states
+   FROM (
+      SELECT
+       aa.geoid
+      ,aa.stusps
+      ,aa.name
+      FROM
+      cipsrv_support.tiger_fedstatewaters aa
+      ORDER BY
+      aa.stusps
+   ) a;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Collect the tribes domain values
+   ----------------------------------------------------------------------------
+   SELECT 
+   JSON_AGG(a.*)
+   INTO json_tribes
+   FROM (
+      SELECT
+       aa.aiannhns_stem
+      ,aa.aiannhns_namelsad
+      ,aa.has_reservation_lands
+      ,aa.has_trust_lands
+      FROM
+      cipsrv_support.tribal_crosswalk aa
+      ORDER BY
+      aa.aiannhns_stem
+   ) a;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Return what we got
+   ----------------------------------------------------------------------------
+   RETURN JSON_BUILD_OBJECT(
+       'states', json_states
+      ,'tribes', json_tribes
+   );
+      
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_pgrest.cipsrv_domains() 
+OWNER TO cipsrv_pgrest;
+
+GRANT EXECUTE ON FUNCTION cipsrv_pgrest.cipsrv_domains() 
+TO PUBLIC;
+
+--******************************--
 ----- functions/cipsrv_index.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_index(
@@ -8,41 +83,44 @@ VOLATILE
 AS
 $BODY$ 
 DECLARE
-   rec                           RECORD;
-   json_input                    JSONB := $1;
-   json_points                   JSONB;
-   json_lines                    JSONB;
-   json_areas                    JSONB;
-   sdo_geometry                  GEOMETRY;
-   str_nhdplus_version           VARCHAR;
-   str_wbd_version               VARCHAR;
-   str_state_filter              VARCHAR;
-   str_known_region              VARCHAR;
-   str_default_point_method      VARCHAR;
-   str_default_line_method       VARCHAR;
-   str_default_area_method       VARCHAR;
-   num_default_line_threshold    NUMERIC;
-   num_default_areacat_threshold NUMERIC;
-   num_default_areaevt_threshold NUMERIC;
-   boo_return_catchment_geometry BOOLEAN;
-   boo_return_flowlines          BOOLEAN;
-   boo_return_huc12s             BOOLEAN;
-   boo_return_flowline_geometry  BOOLEAN;
-   boo_return_huc12_geometry     BOOLEAN;
-   int_catchment_count           INTEGER;
-   num_catchment_areasqkm        NUMERIC;
+   rec                               RECORD;
+   json_input                        JSONB := $1;
+   json_points                       JSONB;
+   json_lines                        JSONB;
+   json_areas                        JSONB;
+   json_geometry                     JSONB;
+   ary_geometry_clip                 VARCHAR[];
+   str_geometry_clip_stage           VARCHAR;
+   ary_catchment_filter              VARCHAR[];
+   str_nhdplus_version               VARCHAR;
+   str_wbd_version                   VARCHAR;
+   str_default_point_indexing_method VARCHAR;
+   str_default_line_indexing_method  VARCHAR;
+   str_default_ring_indexing_method  VARCHAR;
+   str_default_area_indexing_method  VARCHAR;
+   num_default_line_threshold        NUMERIC;
+   num_default_areacat_threshold     NUMERIC;
+   num_default_areaevt_threshold     NUMERIC;
+   str_known_region                  VARCHAR;
+   boo_return_catchment_geometry     BOOLEAN;
+   boo_return_flowlines              BOOLEAN;
+   boo_return_huc12s                 BOOLEAN;
+   boo_return_flowline_geometry      BOOLEAN;
+   boo_return_huc12_geometry         BOOLEAN;
+   int_catchment_count               INTEGER;
+   num_catchment_areasqkm            NUMERIC;
    
-   json_indexed_points           JSONB;
-   json_indexed_lines            JSONB;
-   json_indexed_areas            JSONB;
-   sdo_indexed_collection        GEOMETRY;
-   json_indexing_summary         JSONB;
-   json_flowlines                JSONB;
-   json_catchments               JSONB;
-   json_huc12s                   JSONB;
+   json_indexed_points               JSONB;
+   json_indexed_lines                JSONB;
+   json_indexed_areas                JSONB;
+   sdo_indexed_collection            GEOMETRY;
+   json_indexing_summary             JSONB;
+   json_flowlines                    JSONB;
+   json_catchments                   JSONB;
+   json_huc12s                       JSONB;
    
-   int_return_code               INTEGER;
-   str_status_message            VARCHAR;
+   int_return_code                   INTEGER;
+   str_status_message                VARCHAR;
    
 BEGIN
    
@@ -74,20 +152,59 @@ BEGIN
    IF jsonb_path_exists(json_input,'$.geometry')
    AND json_input->>'geometry' IS NOT NULL
    THEN
-      sdo_geometry := cipsrv_engine.json2geometry(json_input->'geometry');
+      json_geometry := json_input->'geometry';
       
    END IF;
 
-   IF  json_points  IS NULL
-   AND json_lines   IS NULL
-   AND json_areas   IS NULL
-   AND sdo_geometry IS NULL
+   IF  json_points   IS NULL
+   AND json_lines    IS NULL
+   AND json_areas    IS NULL
+   AND json_geometry IS NULL
    THEN
       RETURN jsonb_build_object(
           'return_code', -10
          ,'status_message', 'input events required for cip indexing'
       );
             
+   END IF;
+   
+   IF jsonb_path_exists(json_input,'$.geometry_clip')
+   THEN
+      IF jsonb_typeof(json_input->'geometry_clip') = 'array'
+      THEN
+         ary_geometry_clip := ARRAY(
+            SELECT jsonb_array_elements_text(json_input->'geometry_clip')
+         );
+         
+      END IF;
+      
+   END IF;
+
+   IF jsonb_path_exists(json_input,'$.geometry_clip_stage')
+   AND json_input->>'geometry_clip_stage' IS NOT NULL
+   THEN
+      IF json_input->>'geometry_clip_stage' = ''
+      OR json_input->>'geometry_clip_stage' = ' '
+      THEN
+         str_geometry_clip_stage := NULL;
+         
+      ELSE
+         str_geometry_clip_stage := json_input->>'geometry_clip_stage';
+         
+      END IF;
+      
+   END IF;
+   
+   IF jsonb_path_exists(json_input,'$.catchment_filter')
+   THEN
+      IF jsonb_typeof(json_input->'catchment_filter') = 'array'
+      THEN
+         ary_catchment_filter := ARRAY(
+            SELECT jsonb_array_elements_text(json_input->'catchment_filter')
+         );
+         
+      END IF;
+      
    END IF;
    
    IF jsonb_path_exists(json_input,'$.nhdplus_version')
@@ -109,59 +226,44 @@ BEGIN
       str_wbd_version := json_input->>'wbd_version';
       
    END IF;
-
-   IF jsonb_path_exists(json_input,'$.state_filter')
-   AND json_input->>'state_filter' IS NOT NULL
-   THEN
-      IF json_input->>'state_filter' = ''
-      OR json_input->>'state_filter' = ' '
-      THEN
-         str_state_filter := NULL;
-         str_known_region := NULL;
-         
-      ELSE
-         str_state_filter := json_input->>'state_filter';
-         str_known_region := json_input->>'state_filter';
-         
-      END IF;
-      
-   END IF;
    
-   -- Allow known region override
-   IF jsonb_path_exists(json_input,'$.known_region')
-   AND json_input->>'known_region' IS NOT NULL
+   IF jsonb_path_exists(json_input,'$.default_point_indexing_method')
+   AND json_input->>'default_point_indexing_method' IS NOT NULL
    THEN
-      str_known_region := json_input->>'known_region';
-      
-   END IF;
-   
-   IF jsonb_path_exists(json_input,'$.default_point_method')
-   AND json_input->>'default_point_method' IS NOT NULL
-   THEN
-      str_default_point_method := json_input->>'default_point_method';
+      str_default_point_indexing_method := json_input->>'default_point_indexing_method';
       
    ELSE
-      str_default_point_method := 'point';
+      str_default_point_indexing_method := 'point';
       
    END IF;
    
-   IF jsonb_path_exists(json_input,'$.default_line_method')
-   AND json_input->>'default_line_method' IS NOT NULL
+   IF jsonb_path_exists(json_input,'$.default_line_indexing_method')
+   AND json_input->>'default_line_indexing_method' IS NOT NULL
    THEN
-      str_default_line_method := json_input->>'default_line_method';
+      str_default_line_indexing_method := json_input->>'default_line_indexing_method';
       
    ELSE
-      str_default_line_method := 'line';
+      str_default_line_indexing_method := 'line';
       
    END IF;
    
-   IF jsonb_path_exists(json_input,'$.default_area_method')
-   AND json_input->>'default_area_method' IS NOT NULL
+   IF jsonb_path_exists(json_input,'$.default_ring_indexing_method')
+   AND json_input->>'default_ring_indexing_method' IS NOT NULL
    THEN
-      str_default_area_method := json_input->>'default_area_method';
+      str_default_ring_indexing_method := json_input->>'default_ring_indexing_method';
       
    ELSE
-      str_default_area_method := 'area-simple';
+      str_default_ring_indexing_method := 'area_simple';
+      
+   END IF;
+   
+   IF jsonb_path_exists(json_input,'$.default_area_indexing_method')
+   AND json_input->>'default_area_indexing_method' IS NOT NULL
+   THEN
+      str_default_area_indexing_method := json_input->>'default_area_indexing_method';
+      
+   ELSE
+      str_default_area_indexing_method := 'area_simple';
       
    END IF;
    
@@ -192,6 +294,14 @@ BEGIN
       
    ELSE
       num_default_areaevt_threshold := 10;
+      
+   END IF;
+   
+   -- Allow known region override
+   IF jsonb_path_exists(json_input,'$.known_region')
+   AND json_input->>'known_region' IS NOT NULL
+   THEN
+      str_known_region := json_input->>'known_region';
       
    END IF;
    
@@ -250,21 +360,24 @@ BEGIN
    -- Call the indexing engine
    ----------------------------------------------------------------------------
    rec := cipsrv_engine.cipsrv_index(
-       p_points                    := json_points
-      ,p_lines                     := json_lines
-      ,p_areas                     := json_areas
-      ,p_geometry                  := sdo_geometry
-      ,p_state_filter              := str_state_filter
-      ,p_nhdplus_version           := str_nhdplus_version
-      ,p_wbd_version               := str_wbd_version
-      ,p_default_point_method      := str_default_point_method
-      ,p_default_line_method       := str_default_line_method
-      ,p_default_area_method       := str_default_area_method
-      ,p_default_line_threshold    := num_default_line_threshold
-      ,p_default_areacat_threshold := num_default_areacat_threshold
-      ,p_default_areaevt_threshold := num_default_areaevt_threshold
-      ,p_known_region              := str_known_region
-      ,p_return_catchment_geometry := boo_return_catchment_geometry
+       p_points                        := json_points
+      ,p_lines                         := json_lines
+      ,p_areas                         := json_areas
+      ,p_geometry                      := json_geometry
+      ,p_geometry_clip                 := ary_geometry_clip
+      ,p_geometry_clip_stage           := str_geometry_clip_stage
+      ,p_catchment_filter              := ary_catchment_filter
+      ,p_nhdplus_version               := str_nhdplus_version
+      ,p_wbd_version                   := str_wbd_version
+      ,p_default_point_indexing_method := str_default_point_indexing_method
+      ,p_default_line_indexing_method  := str_default_line_indexing_method
+      ,p_default_ring_indexing_method  := str_default_ring_indexing_method
+      ,p_default_area_indexing_method  := str_default_area_indexing_method
+      ,p_default_line_threshold        := num_default_line_threshold
+      ,p_default_areacat_threshold     := num_default_areacat_threshold
+      ,p_default_areaevt_threshold     := num_default_areaevt_threshold
+      ,p_known_region                  := str_known_region
+      ,p_return_catchment_geometry     := boo_return_catchment_geometry
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
@@ -300,7 +413,7 @@ BEGIN
    -- Step 30
    -- Exit if nothing returned from indexer
    ----------------------------------------------------------------------------
-   IF int_catchment_count = 0
+   IF int_catchment_count = 999990
    THEN
       RETURN jsonb_build_object(
           'indexed_points',     NULL
@@ -328,65 +441,85 @@ BEGIN
    THEN
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
-         json_flowlines := JSON_BUILD_OBJECT(
-             'type',    'FeatureCollection'
-            ,'features', (
-               SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
-               FROM (
-                  SELECT
-                   a.nhdplusid
-                  ,a.gnis_id
-                  ,a.gnis_name
-                  ,a.reachcode
-                  ,a.fmeasure
-                  ,a.tmeasure
-                  ,CASE
-                   WHEN boo_return_flowline_geometry
-                   THEN
-                      ST_Transform(a.shape,4326)
-                   ELSE
-                      CAST(NULL AS GEOMETRY)
-                   END AS geom
-                   FROM
-                   cipsrv_nhdplus_m.nhdflowline a
-                   WHERE
-                   EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
-               ) t
-             )
+         json_flowlines := (
+            SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.gnis_id
+               ,a.gnis_name
+               ,a.reachcode
+               ,a.fmeasure
+               ,a.tmeasure
+               ,CASE
+                WHEN boo_return_flowline_geometry
+                THEN
+                   ST_Transform(a.shape,4326)
+                ELSE
+                   CAST(NULL AS GEOMETRY)
+                END AS geom
+                FROM
+                cipsrv_nhdplus_m.nhdflowline a
+                WHERE
+                EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
+                ORDER BY
+                a.nhdplusid
+            ) t
          );
+         
+         IF json_flowlines IS NULL
+         OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+         THEN
+            json_flowlines := NULL;
+            
+         ELSE
+            json_flowlines := JSON_BUILD_OBJECT(
+                'type'    , 'FeatureCollection'
+               ,'features', json_flowlines
+            );
+            
+         END IF;
          
       ELSIF str_nhdplus_version = 'nhdplus_h'
       THEN
-         json_flowlines := JSON_BUILD_OBJECT(
-             'type',    'FeatureCollection'
-            ,'features', (
-               SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
-               FROM (
-                  SELECT
-                   a.nhdplusid
-                  ,a.gnis_id
-                  ,a.gnis_name
-                  ,a.reachcode
-                  ,a.fmeasure
-                  ,a.tmeasure
-                  ,CASE
-                   WHEN boo_return_flowline_geometry
-                   THEN
-                      ST_Transform(a.shape,4326)
-                   ELSE
-                      CAST(NULL AS GEOMETRY)
-                   END AS geom
-                   FROM
-                   cipsrv_nhdplus_h.nhdflowline a
-                   WHERE
-                   EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
-               ) t
-             )
+         json_flowlines := (
+            SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.gnis_id
+               ,a.gnis_name
+               ,a.reachcode
+               ,a.fmeasure
+               ,a.tmeasure
+               ,CASE
+                WHEN boo_return_flowline_geometry
+                THEN
+                   ST_Transform(a.shape,4326)
+                ELSE
+                   CAST(NULL AS GEOMETRY)
+                END AS geom
+                FROM
+                cipsrv_nhdplus_h.nhdflowline a
+                WHERE
+                EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
+                ORDER BY
+                a.nhdplusid
+            ) t
          );
+         
+         IF json_flowlines IS NULL
+         OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+         THEN
+            json_flowlines := NULL;
+            
+         ELSE
+            json_flowlines := JSON_BUILD_OBJECT(
+                'type'    , 'FeatureCollection'
+               ,'features', json_flowlines
+            );
+            
+         END IF;
          
       ELSE
          RAISE EXCEPTION 'err';
@@ -408,30 +541,40 @@ BEGIN
    -- Step 60
    -- Build the catchments featurecollection
    ----------------------------------------------------------------------------
-   json_catchments := JSON_BUILD_OBJECT(
-       'type',    'FeatureCollection'
-      ,'features', (
-         SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)  
-         FROM (
-            SELECT
-             a.nhdplusid
-            ,a.catchmentstatecode
-            ,a.xwalk_huc12
-            ,a.areasqkm
-            ,CASE WHEN boo_return_catchment_geometry
-             THEN
-               ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
-             ELSE
-               NULL::GEOMETRY
-             END AS geom
-            FROM
-            tmp_cip_out a
-            ORDER BY
-             a.catchmentstatecode
-            ,a.nhdplusid
-         ) t
-       )
+   json_catchments := (
+      SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)  
+      FROM (
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         ,a.xwalk_huc12
+         ,a.areasqkm
+         ,CASE WHEN boo_return_catchment_geometry
+          THEN
+            ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
+          ELSE
+            NULL::GEOMETRY
+          END AS geom
+         FROM
+         tmp_cip_out a
+         ORDER BY
+          a.catchmentstatecode
+         ,a.nhdplusid
+      ) t
    );
+   
+   IF json_catchments IS NULL
+   OR JSONB_ARRAY_LENGTH(json_catchments) = 0
+   THEN
+      json_catchments := NULL;
+      
+   ELSE
+      json_catchments := JSON_BUILD_OBJECT(
+          'type'    , 'FeatureCollection'
+         ,'features', json_catchments
+      );
+      
+   END IF;
       
    ----------------------------------------------------------------------------
    -- Step 60

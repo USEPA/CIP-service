@@ -26,6 +26,8 @@
             ,"functions/query_generic_common_mbr.sql"
             ,"functions/determine_grid_srid.sql"
             ,"functions/clip_by_state.sql"
+            ,"functions/clip_by_tribe.sql"
+            ,"functions/geometry_clip.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [

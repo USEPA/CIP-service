@@ -37,7 +37,7 @@
 # POSTGREST_PASS      : cipsrv_pgrest user password
 #
 #
-name: engine
+name: cip-service-engine
 services:
 {%- if 'cip_pg' in components and 'type' in components.cip_pg and components.cip_pg.type == "container" %}
 {%-    set configval = components.cip_pg.config %}
@@ -48,6 +48,7 @@ services:
          shm_size: '2gb'
       shm_size: {{ postgresql_config[configval].shm_size }}
       hostname: cip_pg
+      container_name: cip-service-engine-cip_pg
       environment:
 {%-   if 'db' in components.cip_pg %}
 {%-      if components.cip_pg.db == "env.POSTGRESQL_DB" %}
@@ -171,6 +172,7 @@ services:
             ARG_POSTGREST_PASS: ${POSTGREST_PASS}
       shm_size: '1gb' 
       hostname: cip_pr
+      container_name: cip-service-engine-cip_pr
       environment:
          PGRST_SERVER_HOST:       cip_pr
          PGRST_SERVER_PORT:       3000
@@ -192,8 +194,8 @@ services:
 networks:
    cip:
       driver: bridge
-volumes:
 {%- if 'type' in components.cip_pg and components.cip_pg.type == "container" %}
+volumes:
    tblspdata:
    pgdata:
 {%- endif %}

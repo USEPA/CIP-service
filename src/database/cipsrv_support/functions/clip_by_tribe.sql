@@ -1,11 +1,12 @@
 CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_tribe(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_known_region         VARCHAR
-   ,IN  p_geoid_filter         VARCHAR
-   ,IN  p_comptype_filter      VARCHAR
-   ,OUT out_clipped_geometry   GEOMETRY
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_geometry                  GEOMETRY
+   ,IN  p_known_region              VARCHAR
+   ,IN  p_tribal_clip_type          VARCHAR
+   ,IN  p_tribal_clip               VARCHAR
+   ,IN  p_tribal_comptype           VARCHAR
+   ,OUT out_clipped_geometry        GEOMETRY
+   ,OUT out_return_code             INTEGER
+   ,OUT out_status_message          VARCHAR
 ) 
 STABLE
 AS $BODY$
@@ -15,30 +16,77 @@ DECLARE
    c_gitcommitdate CONSTANT VARCHAR(255) := 'NULL';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'NULL';
    
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   int_gridsize        INTEGER;
-   sdo_input_geom      GEOMETRY;
-   sdo_tribal_geom     GEOMETRY;
-   sdo_tribal_geom_r   GEOMETRY;
-   sdo_tribal_geom_t   GEOMETRY;
-   str_gtype           VARCHAR;
-   int_gtype           INTEGER;
-   str_comptype_filter VARCHAR;
+   rec                        RECORD;
+   str_known_region           VARCHAR;
+   int_srid                   INTEGER;
+   int_gridsize               INTEGER;
+   sdo_input_geom             GEOMETRY;
+   sdo_results                GEOMETRY[];
+   boo_all_tribal             BOOLEAN;
+   str_gtype                  VARCHAR;
+   int_gtype                  INTEGER;
+   str_tiger_aiannha_stem     VARCHAR;
+   int_epa_tribal_id          INTEGER;
+   str_bia_tribal_code        VARCHAR;
+   str_comptype_clip          VARCHAR;
+   str_attains_organizationid VARCHAR;
 
 BEGIN
 
    out_return_code := 0;
    
-   IF p_comptype_filter IN ('R','T')
-   THEN
-      str_comptype_filter := UPPER(p_comptype_filter);
-      
-   END IF;      
-   
    ----------------------------------------------------------------------------
    -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   str_comptype_clip := p_tribal_comptype;
+   
+   IF p_tribal_clip_type IS NULL
+   OR UPPER(p_tribal_clip_type) IN ('TRIBAL','ALLTRIBES')
+   THEN
+      boo_all_tribal := TRUE;
+   
+   ELSIF UPPER(p_tribal_clip_type) IN ('AIANNHA','AIANNHA_STEM')
+   THEN
+      str_tiger_aiannha_stem := p_tribal_clip;
+      
+      IF LENGTH(str_tiger_aiannha_stem) = 5
+      THEN
+         str_tiger_aiannha_stem := SUBSTR(str_tiger_aiannha_stem,1,4);
+         str_comptype_clip      := SUBSTR(str_tiger_aiannha_stem,5,1);
+      
+      END IF;
+      
+   ELSIF UPPER(p_tribal_clip_type) IN ('EPA','EPA_ID')
+   THEN
+      int_epa_tribal_id := p_tribal_clip::INTEGER;
+      
+   ELSIF UPPER(p_tribal_clip_type) IN ('BIA','BIA_CODE')
+   THEN
+      str_bia_tribal_code := p_tribal_clip;
+      
+   ELSIF UPPER(p_tribal_clip_type) IN ('ATTAINS','ATTAINS_ORGANIZATIONID')
+   THEN
+      str_attains_organizationid := p_tribal_clip;
+      
+   ELSE
+      out_return_code    := -1;
+      out_status_message := 'tribal clip must be provided.';
+      RETURN;
+   
+   END IF;
+   
+   IF UPPER(str_comptype_clip) IN ('R','T')
+   THEN
+      str_comptype_clip := UPPER(p_comptype_clip);
+   
+   ELSE
+      str_comptype_clip := NULL;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
    -- Determine the proper SRID
    ----------------------------------------------------------------------------
    rec := cipsrv_support.determine_grid_srid(
@@ -74,92 +122,253 @@ BEGIN
 
    END IF;
    
-   sdo_input_geom := ST_Transform(p_geometry,int_srid);
+   sdo_input_geom := ST_SnapToGrid(ST_Transform(p_geometry,int_srid),0.001);
    
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Fetch the tribal clip geometries
-   ----------------------------------------------------------------------------
-   IF str_comptype_filter IS NULL 
-   OR str_comptype_filter = 'R'
-   THEN
-      SELECT
-      ST_Transform(a.shape,int_srid)
-      INTO
-      sdo_tribal_geom_r
-      FROM
-      cipsrv_support.tiger_aiannh a
-      WHERE
-      a.geoid = p_geoid_filter || 'R';
-      
-   END IF;
-   
-   IF str_comptype_filter IS NULL 
-   OR str_comptype_filter = 'T'
-   THEN
-      SELECT
-      ST_Transform(a.shape,int_srid)
-      INTO
-      sdo_tribal_geom_t
-      FROM
-      cipsrv_support.tiger_aiannh a
-      WHERE
-      a.geoid = p_geoid_filter || 'T';
-      
-   END IF;
-   
-   IF  sdo_tribal_geom_r IS NULL
-   AND sdo_tribal_geom_t IS NULL
-   THEN
-      out_return_code      := -20;
-      
-      IF str_comptype_filter IS NULL 
-      THEN
-         out_status_message   := 'No results found for tribal GeoID code <' || p_geoid_filter || '>.';
-      
-      ELSE
-         out_status_message   := 'No results found for tribal GeoID code <' || p_geoid_filter || '> with comptype <' || str_comptype_filter || '>.';
-         
-      END IF;
-      
-      out_clipped_geometry := p_geometry;
-      RETURN;
-      
-   ELSIF sdo_tribal_geom_r IS NOT NULL
-   AND   sdo_tribal_geom_t IS NULL
-   THEN
-      sdo_tribal_geom := sdo_tribal_geom_r;
-      
-   ELSIF sdo_tribal_geom_r IS NULL
-   AND   sdo_tribal_geom_t IS NOT NULL
-   THEN
-      sdo_tribal_geom := sdo_tribal_geom_t;
-   
-   ELSE
-      sdo_tribal_geom := ST_Union(
-          sdo_tribal_geom_r
-         ,sdo_tribal_geom_t
-      );
-   
-   END IF;
-      
    ----------------------------------------------------------------------------
    -- Step 30
-   -- Return the intersection
+   -- Fetch the tribal clip geometries
    ----------------------------------------------------------------------------
-   out_clipped_geometry := ST_CollectionExtract(
-       ST_Intersection(
-          sdo_tribal_geom
-         ,sdo_input_geom
-       )
-      ,int_gtype
-   );
+   IF int_srid = 5070
+   THEN
+      SELECT 
+      ARRAY(
+         SELECT
+         ST_Intersection(
+             ST_SnapToGrid(a.shape,0.001)
+            ,sdo_input_geom
+          )
+         FROM
+         cipsrv_support.tiger_aiannha_5070 a
+         LEFT JOIN
+         cipsrv_support.tribal_crosswalk b
+         ON
+         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         WHERE
+         ST_Intersects(
+            a.shape
+           ,sdo_input_geom
+         )
+         AND (
+               str_comptype_clip IS NULL
+            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+         )
+         AND (
+               boo_all_tribal IS TRUE
+            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
+         )
+      )
+      INTO sdo_results;
+   
+   ELSIF int_srid = 3338
+   THEN
+      SELECT 
+      ARRAY(
+         SELECT
+         ST_Intersection(
+             ST_SnapToGrid(a.shape,0.001)
+            ,sdo_input_geom
+          )
+         FROM
+         cipsrv_support.tiger_aiannha_3338 a
+         LEFT JOIN
+         cipsrv_support.tribal_crosswalk b
+         ON
+         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         WHERE
+         ST_Intersects(
+            a.shape
+           ,sdo_input_geom
+         )
+         AND (
+               str_comptype_clip IS NULL
+            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+         )
+         AND (
+               boo_all_tribal IS TRUE
+            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
+         )
+      )
+      INTO sdo_results;
+   
+   ELSIF int_srid = 26904
+   THEN
+      SELECT 
+      ARRAY(
+         SELECT
+         ST_Intersection(
+             ST_SnapToGrid(a.shape,0.001)
+            ,sdo_input_geom
+          )
+         FROM
+         cipsrv_support.tiger_aiannha_26904 a
+         LEFT JOIN
+         cipsrv_support.tribal_crosswalk b
+         ON
+         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         WHERE
+         ST_Intersects(
+            a.shape
+           ,sdo_input_geom
+         )
+         AND (
+               str_comptype_clip IS NULL
+            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+         )
+         AND (
+               boo_all_tribal IS TRUE
+            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
+         )
+      )
+      INTO sdo_results;
+   
+   ELSIF int_srid = 32161
+   THEN
+      SELECT 
+      ARRAY(
+         SELECT
+         ST_Intersection(
+             ST_SnapToGrid(a.shape,0.001)
+            ,sdo_input_geom
+          )
+         FROM
+         cipsrv_support.tiger_aiannha_32161 a
+         LEFT JOIN
+         cipsrv_support.tribal_crosswalk b
+         ON
+         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         WHERE
+         ST_Intersects(
+            a.shape
+           ,sdo_input_geom
+         )
+         AND (
+               str_comptype_clip IS NULL
+            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+         )
+         AND (
+               boo_all_tribal IS TRUE
+            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
+         )
+      )
+      INTO sdo_results;
+   
+   ELSIF int_srid = 32655
+   THEN
+      SELECT 
+      ARRAY(
+         SELECT
+         ST_Intersection(
+             ST_SnapToGrid(a.shape,0.001)
+            ,sdo_input_geom
+          )
+         FROM
+         cipsrv_support.tiger_aiannha_32655 a
+         LEFT JOIN
+         cipsrv_support.tribal_crosswalk b
+         ON
+         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         WHERE
+         ST_Intersects(
+            a.shape
+           ,sdo_input_geom
+         )
+         AND (
+               str_comptype_clip IS NULL
+            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+         )
+         AND (
+               boo_all_tribal IS TRUE
+            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
+         )
+      )
+      INTO sdo_results;
+      
+   ELSIF int_srid = 32702
+   THEN
+      SELECT 
+      ARRAY(
+         SELECT
+         ST_Intersection(
+             ST_SnapToGrid(a.shape,0.001)
+            ,sdo_input_geom
+          )
+         FROM
+         cipsrv_support.tiger_aiannha_32702 a
+         LEFT JOIN
+         cipsrv_support.tribal_crosswalk b
+         ON
+         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         WHERE
+         ST_Intersects(
+            a.shape
+           ,sdo_input_geom
+         )
+         AND (
+               str_comptype_clip IS NULL
+            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+         )
+         AND (
+               boo_all_tribal IS TRUE
+            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
+         )
+      )
+      INTO sdo_results;
+      
+   ELSE
+      RAISE EXCEPTION 'err';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Aggregate results array into single geometry
+   ----------------------------------------------------------------------------
+   IF sdo_results IS NULL
+   OR array_length(sdo_results,1) = 0
+   THEN
+      out_return_code      := -20;
+      out_status_message   := 'No results found for tribal code ' || p_tribal_clip || '.';
+      RETURN;
+  
+   ELSE
+      out_clipped_geometry := ST_CollectionExtract(
+          ST_Union(
+            ST_SnapToGrid(sdo_tribal_geom,0.001)
+          )
+         ,int_gtype
+      );
+      
+   END IF;
    
    IF ST_IsEmpty(out_clipped_geometry)
    THEN
       out_clipped_geometry := NULL;
       out_return_code      := 0;
-      out_status_message   := 'No results returned from clipping input geometry by tribe.';
+      out_status_message   := 'No results returned from clipping input geometry by ' || p_tribal_clip || '.';
       RETURN;
       
    END IF;
@@ -173,10 +382,12 @@ ALTER FUNCTION cipsrv_support.clip_by_tribe(
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_support.clip_by_tribe(
     GEOMETRY
+   ,VARCHAR
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR

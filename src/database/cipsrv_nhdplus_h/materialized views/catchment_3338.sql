@@ -14,6 +14,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
    ---
    ,fcode
    ---
+   ,istribal
+   ---
    ,shape
    ,shape_centroid
 )
@@ -32,11 +34,14 @@ SELECT
 ---
 ,c.fcode::INTEGER           AS fcode
 ---
+,a.istribal
+---
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
     aa.nhdplusid::BIGINT
+   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,3338)) AS shape
    FROM
@@ -69,6 +74,9 @@ ON cipsrv_nhdplus_h.catchment_3338(levelpathi);
 
 CREATE INDEX catchment_3338_02i
 ON cipsrv_nhdplus_h.catchment_3338(fcode);
+
+CREATE INDEX catchment_3338_03i
+ON cipsrv_nhdplus_h.catchment_3338(istribal);
 
 CREATE INDEX catchment_3338_spx
 ON cipsrv_nhdplus_h.catchment_3338 USING GIST(shape);

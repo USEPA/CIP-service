@@ -1,0 +1,16 @@
+profile_name: nginx_demo 
+#
+# Profile recipe to quickly demonstrate CIP usage
+#
+last updated: 20221212
+#
+# Provide location of the CIP engine API 
+cip_pr_host: env.POSTGREST_HOST
+cip_pr_port: env.POSTGREST_PORT
+#
+components:
+   cip_ng:
+      type:             container
+      external_port:    8080
+      add_host_gateway: false
+#
