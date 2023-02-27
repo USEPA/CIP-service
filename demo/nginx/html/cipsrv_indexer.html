@@ -62,11 +62,11 @@
                <span style="font-family: Arial; font-size: 12px;">Clip Geometry By:&nbsp;</span>
                </td>
                <td>
-                  <select name="dzClipGeometry" id="dzClipGeometry" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
+                  <select name="dzGeometryClip" id="dzGeometryClip" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
                   </select>
                </td>
                <td>
-                  <select name="dzClipGeometryStage" id="dzClipGeometryStage" style="font-family: Arial; font-size: 11px;">
+                  <select name="dzGeometryClipStage" id="dzGeometryClipStage" style="font-family: Arial; font-size: 11px;">
                      <option value="BEFORE" SELECTED>Before</option>
                      <option value="AFTER">After</option>
                   </select>
@@ -164,9 +164,10 @@
          document.getElementById("dz_run_service").disabled = true;
          document.getElementById("busy").style.visibility = "hidden";
          var zoom_cache = {};
+         var domainsLoaded = false;
          
-         // Load the domains, this will often fail with some setups
-         var domains = getDomains();
+         // Try to load the domains first time
+         getDomains();         
 
          var map = L.map("map").setView([46.874626,-96.782341],12);
          mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
@@ -210,6 +211,19 @@
             document.getElementById("dz_run_service").disabled = true;
             
          });
+         
+         // Check for domains hit a second time 
+         if (! domainsLoaded ) {
+            const date = Date.now();
+            let currentDate = null;
+            do {
+               currentDate = Date.now();
+            } while (currentDate - date < 400 );
+            
+            if (! domainsLoaded ) {
+               getDomains();
+            }
+         }
          
          var indexed_points = L.geoJson(null,{
             onEachFeature: function (f,l) {
@@ -259,6 +273,19 @@
             ,"XWalked HUC12s":      xwalked_huc12s
          };
          L.control.layers(null, layer_items).addTo(map);
+         
+         // check for domains a third time
+         if (! domainsLoaded ) {
+            const date = Date.now();
+            let currentDate = null;
+            do {
+               currentDate = Date.now();
+            } while (currentDate - date < 1500 );
+            
+            if (! domainsLoaded ) {
+               getDomains();
+            }
+         }
          
          function run_service() {
             dz_clear();
@@ -330,17 +357,20 @@
             xmlHttp.onreadystatechange = function() {
                if (xmlHttp.readyState === 4) { // request is done
                   if (xmlHttp.status === 200) { // successfully
+                     domainsLoaded = true;
+                     
                      var obj = JSON.parse(xmlHttp.responseText);
                      var states = obj["states"];
                      var tribes = obj["tribes"];
                      
                      var catfilter = document.getElementById("dzCatchmentFilters");
+                     ;
                      var load = '<option value="TRIBES">Tribes</option>';
                      for (let i=0; i < states.length; i++) {
                         load += '<option value="' + states[i].stusps + '">' + states[i].name + '</option>';
                      }
                      catfilter.innerHTML = load;
-                     var clipgeo = document.getElementById("dzClipGeometry");
+                     var clipgeo = document.getElementById("dzGeometryClip");
                      load = '';
                      for (let i=0; i < states.length; i++) {
                         load += '<option value="USPS:' + states[i].stusps + '">' + states[i].name + '</option>';
@@ -357,9 +387,9 @@
                         }
                      }
                      clipgeo.innerHTML = load;
-                     return obj;
-                  }
+                  }                  
                }
+   
             };
             var http = "http";
             if (postgrest_port == "443" ) {

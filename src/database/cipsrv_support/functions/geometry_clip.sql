@@ -51,29 +51,22 @@ BEGIN
    -- Step 20
    -- Determine the proper SRID
    ----------------------------------------------------------------------------
-   IF p_known_region IS NULL
+   rec := cipsrv_support.determine_grid_srid(
+       p_geometry        := p_geometry
+      ,p_known_region    := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_gridsize       := rec.out_grid_size;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
    THEN
-      rec := cipsrv_support.determine_grid_srid(
-          p_geometry        := p_geometry
-         ,p_known_region    := p_known_region
-      );
-      int_srid           := rec.out_srid;
-      int_gridsize       := rec.out_grid_size;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;
-      
-      str_known_region := int_srid::VARCHAR;
-      
-   ELSE
-      str_known_region := p_known_region;
+      RETURN;
       
    END IF;
+   
+   str_known_region := int_srid::VARCHAR;
    
    str_gtype := ST_GeometryType(p_geometry);
    
@@ -99,7 +92,7 @@ BEGIN
    ----------------------------------------------------------------------------
    FOR i IN 1 .. array_length(p_clippers,1)
    LOOP
-      ary_clip := string_to_array(UPPER(p_clipppers[i]),':');
+      ary_clip := string_to_array(UPPER(p_clippers[i]),':');
       
       IF array_length(ary_clip,1) > 0
       THEN

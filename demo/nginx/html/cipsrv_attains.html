@@ -186,11 +186,11 @@
                <span style="font-family: Arial; font-size: 12px;">Clip Geometry By:&nbsp;</span>
                </td>
                <td>
-                  <select name="dzClipGeometry" id="dzClipGeometry" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
+                  <select name="dzGeometryClip" id="dzGeometryClip" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
                   </select>
                </td>
                <td>
-                  <select name="dzClipGeometryStage" id="dzClipGeometryStage" style="font-family: Arial; font-size: 11px;">
+                  <select name="dzGeometryClipStage" id="dzGeometryClipStage" style="font-family: Arial; font-size: 11px;">
                      <option value="BEFORE" SELECTED>Before</option>
                      <option value="AFTER">After</option>
                   </select>
@@ -300,9 +300,10 @@
          z6.onclick = function(){select_back();};
 
          var zoom_cache = {};
+         var domainsLoaded = false;
          
-         // Load the domains, this will often fail with some setups
-         var domains = getDomains();
+         // Try to load the domains first time
+         getDomains(); 
          
          var lazy_org;
          var lazy_auid;
@@ -339,6 +340,19 @@
          var ATTAINS_lines      = L.geoJson().addTo(map);
          var ATTAINS_areas      = L.geoJson().addTo(map);
          var ATTAINS_catchments = L.geoJson().addTo(map);
+         
+         // Check for domains hit a second time 
+         if (! domainsLoaded ) {
+            const date = Date.now();
+            let currentDate = null;
+            do {
+               currentDate = Date.now();
+            } while (currentDate - date < 20 );
+            
+            if (! domainsLoaded ) {
+               getDomains();
+            }
+         }
          
          var indexed_points = L.geoJson(null,{
             onEachFeature: function (f,l) {
@@ -391,6 +405,19 @@
             ,"XWalked HUC12s":      xwalked_huc12s
          };
          L.control.layers(null, layer_items).addTo(map);
+         
+         // check for domains a third time
+         if (! domainsLoaded ) {
+            const date = Date.now();
+            let currentDate = null;
+            do {
+               currentDate = Date.now();
+            } while (currentDate - date < 200 );
+            
+            if (! domainsLoaded ) {
+               getDomains();
+            }
+         }
 
          function run_service() {
             dz_clear();
@@ -486,6 +513,8 @@
             xmlHttp.onreadystatechange = function() {
                if (xmlHttp.readyState === 4) { // request is done
                   if (xmlHttp.status === 200) { // successfully
+                     domainsLoaded = true;
+                     
                      var obj = JSON.parse(xmlHttp.responseText);
                      var states = obj["states"];
                      var tribes = obj["tribes"];
