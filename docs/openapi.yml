@@ -74,8 +74,6 @@ components:
            type: boolean
          has_trust_lands:
            type: boolean
-    cipsrv_domains_tribe:
-      type: object
     cipsrv_index_rb:
       type: object
       properties:
