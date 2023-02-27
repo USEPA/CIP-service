@@ -254,6 +254,14 @@ BEGIN
    THEN
       sdo_geometry := ST_GeomFromGeoJSON(json_feature->'geometry')::JSONB;
       
+      -- This fixes a bug in PostGIS 3.1.5
+      IF sdo_geometry IS NOT NULL
+      AND ( ST_SRID(sdo_geometry) IS NULL OR ST_SRID(sdo_geometry) = 0 )
+      THEN
+         sdo_geometry := ST_SetSRID(sdo_geometry,4326);
+         
+      END IF;
+      
       -- Break up geometry collections and multilinestrings
       IF ST_GeometryType(sdo_geometry) IN (
           'ST_MultiLineString'
@@ -362,7 +370,7 @@ BEGIN
       str_known_region := p_known_region;
       
    END IF;
-   
+
    ----------------------------------------------------------------------------
    -- Test for int_srid override
    ----------------------------------------------------------------------------
@@ -376,7 +384,7 @@ BEGIN
       int_srid := p_int_srid;
       
    END IF;
-   
+
    ----------------------------------------------------------------------------
    -- Try to sort out int_srid with overrides
    ----------------------------------------------------------------------------
