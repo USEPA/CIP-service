@@ -29,6 +29,8 @@
             ,"functions/jsonb2features.sql"
             ,"functions/feature2jsonb.sql"
             ,"functions/features2jsonb.sql"
+            ,"functions/features2geomcollection.sql"
+            ,"functions/preprocess2summary.sql"
             ,"functions/unpackjsonb.sql"
             ,"functions/feature_clip.sql"
             ,"functions/json2geometry.sql"

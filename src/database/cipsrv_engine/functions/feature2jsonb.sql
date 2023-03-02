@@ -17,23 +17,18 @@ BEGIN
    
    json_properties := (p_feature).properties;
    
+   IF json_properties IS NULL
+   THEN
+      json_properties := '{}'::JSONB;
+      
+   END IF;
+   
    IF (p_feature).globalid IS NOT NULL
    THEN
       json_properties := JSONB_SET(
           jsonb_in          := json_properties
          ,path              := ARRAY['globalid']
          ,replacement       := TO_JSONB((p_feature).globalid)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).gtype IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['gtype']
-         ,replacement       := TO_JSONB((p_feature).gtype)
          ,create_if_missing := TRUE
       );
       
@@ -61,122 +56,56 @@ BEGIN
       
    END IF;
    
-   IF (p_feature).isring IS NOT NULL
+   IF (p_feature).converted_to_ring IS NOT NULL
    THEN
       json_properties := JSONB_SET(
           jsonb_in          := json_properties
-         ,path              := ARRAY['isring']
-         ,replacement       := TO_JSONB((p_feature).isring)
+         ,path              := ARRAY['converted_to_ring']
+         ,replacement       := TO_JSONB((p_feature).converted_to_ring)
          ,create_if_missing := TRUE
       );
       
    END IF;
    
-   IF (p_feature).nhdplus_version IS NOT NULL
+   IF (p_feature).indexing_method_used IS NOT NULL
    THEN
       json_properties := JSONB_SET(
           jsonb_in          := json_properties
-         ,path              := ARRAY['nhdplus_version']
-         ,replacement       := TO_JSONB((p_feature).nhdplus_version)
+         ,path              := ARRAY['indexing_method_used']
+         ,replacement       := TO_JSONB((p_feature).indexing_method_used)
          ,create_if_missing := TRUE
       );
       
    END IF;
    
-   IF (p_feature).known_region IS NOT NULL
+   IF (p_feature).line_threshold_used IS NOT NULL
    THEN
       json_properties := JSONB_SET(
           jsonb_in          := json_properties
-         ,path              := ARRAY['known_region']
-         ,replacement       := TO_JSONB((p_feature).known_region)
+         ,path              := ARRAY['line_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).line_threshold_used)
          ,create_if_missing := TRUE
       );
       
    END IF;
    
-   IF (p_feature).int_srid IS NOT NULL
+   IF (p_feature).areacat_threshold_used IS NOT NULL
    THEN
       json_properties := JSONB_SET(
           jsonb_in          := json_properties
-         ,path              := ARRAY['int_srid']
-         ,replacement       := TO_JSONB((p_feature).int_srid)
+         ,path              := ARRAY['areacat_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).areacat_threshold_used)
          ,create_if_missing := TRUE
       );
       
    END IF;
    
-   IF (p_feature).point_indexing_method IS NOT NULL
+   IF (p_feature).areaevt_threshold_used IS NOT NULL
    THEN
       json_properties := JSONB_SET(
           jsonb_in          := json_properties
-         ,path              := ARRAY['point_indexing_method']
-         ,replacement       := TO_JSONB((p_feature).point_indexing_method)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).line_indexing_method IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['line_indexing_method']
-         ,replacement       := TO_JSONB((p_feature).line_indexing_method)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).ring_indexing_method IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['ring_indexing_method']
-         ,replacement       := TO_JSONB((p_feature).ring_indexing_method)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).area_indexing_method IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['area_indexing_method']
-         ,replacement       := TO_JSONB((p_feature).area_indexing_method)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).line_threshold IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['line_threshold']
-         ,replacement       := TO_JSONB((p_feature).line_threshold)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).areacat_threshold IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['areacat_threshold']
-         ,replacement       := TO_JSONB((p_feature).areacat_threshold)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).areaevt_threshold IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['areaevt_threshold']
-         ,replacement       := TO_JSONB((p_feature).areaevt_threshold)
+         ,path              := ARRAY['areaevt_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).areaevt_threshold_used)
          ,create_if_missing := TRUE
       );
       
