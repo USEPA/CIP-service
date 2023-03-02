@@ -366,15 +366,6 @@ BEGIN
    IF int_srid IS NOT NULL
    AND ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
    THEN
-      IF boo_isring
-      THEN
-         num_area_areasqkm := ROUND(ST_Area(ST_Transform(
-             ST_MakePolygon(sdo_geometry)
-            ,int_srid
-         ))::NUMERIC / 1000000,8);
-         
-      END IF;
-      
       num_line_lengthkm := ROUND(ST_Length(ST_Transform(
           sdo_geometry
          ,int_srid
@@ -405,13 +396,18 @@ BEGIN
       ,str_nhdplus_version
       ,str_known_region
       ,int_srid
+      ,NULL
+      ,NULL
       ,str_point_indexing_method
       ,str_line_indexing_method
       ,str_ring_indexing_method
       ,str_area_indexing_method
       ,num_line_threshold
+      ,NULL
       ,num_areacat_threshold
+      ,NULL
       ,num_areaevt_threshold
+      ,NULL
    )::cipsrv_engine.cip_feature;
 
    RETURN ARRAY[obj_rez];   

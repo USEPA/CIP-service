@@ -24,11 +24,14 @@ DECLARE
    num_default_areacat_threshold     NUMERIC;
    num_default_areaevt_threshold     NUMERIC;
    str_known_region                  VARCHAR;
+   boo_return_indexed_features       BOOLEAN;
+   boo_return_indexed_collection     BOOLEAN;
    boo_return_catchment_geometry     BOOLEAN;
    boo_return_flowlines              BOOLEAN;
    boo_return_huc12s                 BOOLEAN;
    boo_return_flowline_geometry      BOOLEAN;
    boo_return_huc12_geometry         BOOLEAN;
+   boo_return_indexing_summary       BOOLEAN;
    int_catchment_count               INTEGER;
    num_catchment_areasqkm            NUMERIC;
    
@@ -36,6 +39,7 @@ DECLARE
    json_indexed_lines                JSONB;
    json_indexed_areas                JSONB;
    sdo_indexed_collection            GEOMETRY;
+   json_indexed_collection           JSONB;
    json_indexing_summary             JSONB;
    json_flowlines                    JSONB;
    json_catchments                   JSONB;
@@ -227,6 +231,26 @@ BEGIN
       
    END IF;
    
+   IF jsonb_path_exists(json_input,'$.return_indexed_features')
+   AND json_input->>'return_indexed_features' IS NOT NULL
+   THEN
+      boo_return_indexed_features := (json_input->>'return_indexed_features')::BOOLEAN;
+      
+   ELSE
+      boo_return_indexed_features := TRUE;
+      
+   END IF;
+   
+   IF jsonb_path_exists(json_input,'$.return_indexed_collection')
+   AND json_input->>'return_indexed_collection' IS NOT NULL
+   THEN
+      boo_return_indexed_collection := (json_input->>'return_indexed_collection')::BOOLEAN;
+      
+   ELSE
+      boo_return_indexed_collection := FALSE;
+      
+   END IF;
+
    IF jsonb_path_exists(json_input,'$.return_catchment_geometry')
    AND json_input->>'return_catchment_geometry' IS NOT NULL
    THEN
@@ -236,6 +260,16 @@ BEGIN
       boo_return_catchment_geometry := FALSE;
       
    END IF;
+
+   IF jsonb_path_exists(json_input,'$.return_indexing_summary')
+   AND json_input->>'return_indexing_summary' IS NOT NULL
+   THEN
+      boo_return_indexing_summary := (json_input->>'return_indexing_summary')::BOOLEAN;
+      
+   ELSE
+      boo_return_indexing_summary := TRUE;
+      
+   END IF;   
    
    IF jsonb_path_exists(json_input,'$.return_flowlines')
    AND json_input->>'return_flowlines' IS NOT NULL
@@ -299,7 +333,10 @@ BEGIN
       ,p_default_areacat_threshold     := num_default_areacat_threshold
       ,p_default_areaevt_threshold     := num_default_areaevt_threshold
       ,p_known_region                  := str_known_region
+      ,p_return_indexed_features       := boo_return_indexed_features
+      ,p_return_indexed_collection     := boo_return_indexed_collection
       ,p_return_catchment_geometry     := boo_return_catchment_geometry
+      ,p_return_indexing_summary       := boo_return_indexing_summary
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
@@ -502,11 +539,20 @@ BEGIN
    -- Step 60
    -- Return what we got
    ----------------------------------------------------------------------------
+   IF sdo_indexed_collection IS NOT NULL
+   THEN
+      json_indexed_collection := JSONB_BUILD_OBJECT(
+          'type'     ,'Feature'
+         ,'geometry' ,ST_AsGeoJSON(sdo_indexed_collection)::JSONB
+       );
+       
+   END IF; 
+   
    RETURN jsonb_build_object(
        'indexed_points',     json_indexed_points
       ,'indexed_lines',      json_indexed_lines
       ,'indexed_areas',      json_indexed_areas
-      ,'indexed_collection', ST_AsGeoJSON(sdo_indexed_collection)::JSONB
+      ,'indexed_collection', json_indexed_collection
       ,'indexing_summary',   json_indexing_summary      
       ,'catchment_count',    int_catchment_count
       ,'catchment_areasqkm', num_catchment_areasqkm

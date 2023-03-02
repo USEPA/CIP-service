@@ -81,54 +81,122 @@ components:
           oneOf:
           - $ref: '#/components/schemas/geojson_featurecollection'
           - $ref: '#/components/schemas/geojson_feature'
+          nullable: true
         lines:
           oneOf:
           - $ref: '#/components/schemas/geojson_featurecollection'
           - $ref: '#/components/schemas/geojson_feature'
+          nullable: true
         areas:
           oneOf:
           - $ref: '#/components/schemas/geojson_featurecollection'
           - $ref: '#/components/schemas/geojson_feature'
+          nullable: true
         geometry:
           oneOf:
           - $ref: '#/components/schemas/geojson_featurecollection'
           - $ref: '#/components/schemas/geojson_feature'
-          - $ref: '#/components/schemas/geojson_geometry'  
+          - $ref: '#/components/schemas/geojson_geometry'
+          nullable: true
         geometry_clip:
           type: string
+          nullable: true
         geometry_clip_stage:
           type: string
+          nullable: true
+          enum:
+          - BEFORE
+          - AFTER
+          default: BEFORE
         catchment_filter:
           type: string
+          nullable: true
         nhdplus_version:
           type: string
-          example: "nhdplus_m"
+          nullable: false
+          enum:
+          - nhdplus_m
+          - nhdplus_h
+          default: nhdplus_m
         wbd_version:
           type: string
-        default_point_method:
+          nullable: true
+        default_point_indexing_method:
           type: string
-        default_line_method:
+          nullable: true
+          enum:
+          - point_simple
+          default: point_simple
+        default_line_indexing_method:
           type: string
-        default_area_method:
+          nullable: true
+          enum:
+          - line_simple
+          - line_levelpath
+          default: line_simple
+        default_ring_indexing_method:
           type: string
+          nullable: true
+          enum:
+          - area_simple
+          - area_centroid
+          - area_artpath
+          - treat_as_lines
+          default: treat_as_lines
+        default_area_indexing_method:
+          type: string
+          nullable: true
+          enum:
+          - area_simple
+          - area_centroid
+          - area_artpath
+          default: area_simple
         default_line_threshold:
           type: string
+          nullable: true
         default_areacat_threshold:
           type: string
+          nullable: true
         default_areaevt_threshold:
           type: string
+          nullable: true
         known_region:
           type: string
+          nullable: true
+        return_indexing_summary:
+          type: boolean
+          nullable: true
+          default: true
+        return_indexed_features:
+          type: boolean
+          nullable: true
+          default: true
+        return_indexed_collection:
+          type: boolean
+          nullable: true
+          default: false
         return_catchment_geometry:
-          type: string
+          type: boolean
+          nullable: true
+          default: true
         return_flowlines:
-          type: string
+          type: boolean
+          nullable: true
+          default: true
         return_huc12s:
-          type: string
+          type: boolean
+          nullable: true
+          default: false
         return_flowline_geometry:
-          type: string
+          type: boolean
+          nullable: true
+          default: true
         return_huc12_geometry:
-          type: string
+          type: boolean
+          nullable: true
+          default: true
+      required:
+      - nhdplus_version
     cipsrv_index_resp:
       type: object
       properties:
@@ -249,3 +317,13 @@ components:
             $ref: '#/components/schemas/geojson_feature'
     indexing_summary:
       type: object
+      properties:
+        input_features:
+          type: object
+          properties:
+            point_count:
+              type: integer
+            line_count:
+              type: integer
+            area_count:
+              type: integer

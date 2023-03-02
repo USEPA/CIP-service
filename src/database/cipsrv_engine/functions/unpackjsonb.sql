@@ -117,14 +117,40 @@ BEGIN
          ,p_areaevt_threshold     := p_default_areaevt_threshold
       );
       
-      -- Add ring handling here
-      
       out_features := array_cat(out_features,ary_points);
       out_features := array_cat(out_features,ary_lines);
       out_features := array_cat(out_features,ary_areas);
-   
+      
    END IF;
- 
+      
+   -------------------------------------------------------------------------
+   -- Ring Handling
+   -------------------------------------------------------------------------
+   IF out_features IS NOT NULL
+   AND array_length(out_features,1) > 0
+   THEN
+      FOR i IN 1 .. array_length(out_features,1)
+      LOOP
+         IF out_features[i].isRing 
+         AND out_features[i].ring_indexing_method != 'treat_as_lines'
+         THEN
+            out_features[i].geometry := ST_MakePolygon(out_features[i].geometry);
+            out_features[i].gtype    := ST_GeometryType(out_features[i].geometry);
+            out_features[i].converted_to_ring := TRUE;
+            out_features[i].area_indexing_method := out_features[i].ring_indexing_method;
+            
+            out_features[i].lengthkm := NULL;
+            out_features[i].areasqkm := ROUND(ST_Area(ST_Transform(
+                out_features[i].geometry
+               ,out_features[i].int_srid
+            ))::NUMERIC / 1000000,8);
+            
+         END IF;
+      
+      END LOOP;
+      
+   END IF;
+
 END;
 $BODY$
 LANGUAGE plpgsql;
