@@ -3,14 +3,12 @@ RETURNS INTEGER
 VOLATILE
 AS $BODY$
 DECLARE
-
 BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 10
-   -- Create tmp_navigation_connections temp table
-   ----------------------------------------------------------------------------
-   
+   -- Create tmp_navigation_working30 temp table
+   ---------------------------------------------------------------------------- 
    IF cipsrv_nhdplus_m.temp_table_exists('tmp_navigation_working30')
    THEN
       TRUNCATE TABLE tmp_navigation_working30;
@@ -25,7 +23,10 @@ BEGIN
          ,flowtimeday                 NUMERIC
          ,network_distancekm          NUMERIC
          ,network_flowtimeday         NUMERIC
-         ,downhydroseq                BIGINT
+         ,levelpathi                  BIGINT
+         ,terminalpa                  BIGINT
+         ,uphydroseq                  BIGINT
+         ,dnhydroseq                  BIGINT
          ,navtermination_flag         INTEGER
          ,nav_order                   INTEGER
          ,selected                    BOOLEAN
@@ -44,7 +45,7 @@ BEGIN
       ON tmp_navigation_working30(network_flowtimeday);
       
       CREATE INDEX tmp_navigation_working30_03i
-      ON tmp_navigation_working30(downhydroseq);
+      ON tmp_navigation_working30(dnhydroseq);
       
       CREATE INDEX tmp_navigation_working30_04i
       ON tmp_navigation_working30(nav_order);
@@ -53,9 +54,53 @@ BEGIN
       ON tmp_navigation_working30(selected);
       
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 20
+   -- Create tmp_navigation_results temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_nhdplus_m.temp_table_exists('tmp_navigation_results')
+   THEN
+      TRUNCATE TABLE tmp_navigation_results;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_navigation_results(
+          nhdplusid                   BIGINT
+         ,permanent_identifier        VARCHAR(40)
+         ,reachcode                   VARCHAR(14)
+         ,fmeasure                    NUMERIC
+         ,tmeasure                    NUMERIC
+         ,network_distancekm          NUMERIC
+         ,network_flowtimeday         NUMERIC
+         ,hydroseq                    BIGINT
+         ,levelpathi                  BIGINT
+         ,terminalpa                  BIGINT
+         ,uphydroseq                  BIGINT
+         ,dnhydroseq                  BIGINT
+         ,lengthkm                    NUMERIC
+         ,flowtimeday                 NUMERIC
+         ,reachsmdate                 DATE
+         ,ftype                       INTEGER
+         ,fcode                       INTEGER
+         ,gnis_id                     VARCHAR(10)
+         ,gnis_name                   VARCHAR(65)
+         ,wbarea_permanent_identifier VARCHAR(40)
+         ,quality_marker              INTEGER
+         ,navtermination_flag         INTEGER
+         ,shape                       GEOMETRY
+         ,nav_order                   INTEGER
+      );
+
+      CREATE UNIQUE INDEX tmp_navigation_results_pk
+      ON tmp_navigation_results(nhdplusid);
+      
+      CREATE UNIQUE INDEX tmp_navigation_results_1u
+      ON tmp_navigation_results(hydroseq);
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 30
    -- I guess that went okay
    ----------------------------------------------------------------------------
    RETURN 0;

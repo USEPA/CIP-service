@@ -23,6 +23,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(
    ,headwater
    ,coastal_connection
    ,network_end
+   ,vpuid
 )
 AS
 SELECT
@@ -74,106 +75,7 @@ SELECT
 ,CAST(a.tonode AS BIGINT)     AS tonode
 ,CASE
  WHEN a.hydroseq IN (
-   --- Big Tributaries --
-    350009839  -- Arkansas
-   ,550002171  -- Big Blue
-   ,590012528  -- Big Sioux
-   ,590004188  -- Bighorn
-   ,350003361  -- Black
-   ,390006004  -- Black (2)
-   ,390000311  -- Canadian
-   ,510002921  -- Cedar
-   ,590007834  -- Cheyenne
-   ,590010733  -- Cheyenne (2)
-   ,390001215  -- Cimarron
-   ,50004179   -- Clearwater
-   ,430000065  -- Cumberland
-   ,510002338  -- Des Moines
-   ,10002380   -- Feather
-   ,720000771  -- Gila
-   ,760000231  -- Green
-   ,430001637  -- Green
-   ,510000257  -- Illinois
-   ,510002770  -- Iowa
-   ,590008899  -- James
-   ,430000838  -- Kanawha
-   ,550001526  -- Kansas
-   ,430002658  -- Kentucky
-   ,720001913  -- Little Colorado
-   ,590006912  -- Little Missouri
-   ,550008373  -- Loup
-   ,590012003  -- Milk
-   ,510003597  -- Minnesota
-   ,350003335  -- Mississippi from Atchafalaya
-   ,550000017  -- Missouri
-   ,720001632  -- Muddy
-   ,430002416  -- Muskingum
-   ,390004971  -- Neosho
-   ,590001226  -- Niobrara
-   ,550003947  -- North Platte
-   ,350003411  -- Ouachita
-   ,430000004  -- Ohio
-   ,550009800  -- Osage
-   ,50003837   -- Owyhee 
-   ,680001003  -- Pecos
-   ,550000622  -- Platte
-   ,590006969  -- Powder
-   ,550005927  -- Republican
-   ,510001488  -- Rock
-   ,50002910   -- Salmon
-   ,720001660  -- Salt
-   ,760000974  -- San Juan
-   ,430002448  -- Scioto
-   ,840000351  -- Sheyenne
-   ,50001581   -- Snake
-   ,550010594  -- Solomon
-   ,510003688  -- St. Croix
-   ,350005173  -- St. Francis
-   ,470000012  -- Tennessee
-   ,430001211  -- Wabash
-   ,350003903  -- White
-   ,590011506  -- White (2)
-   ,50004305   -- Willamette
-   ,510002581  -- Wisconsin
-   ,350005918  -- Yazoo
-   ,590001280  -- Yellowstone
-   --- Born on the Port Allen Bayou --
-   ,350002673
-   ,350002676
-   ,350002718
-   ,350002733
-   ,350002775
-   ,350002785
-   ,350002783
-   ,350002835
-   ,350002844
-   ,350002873
-   ,350002878
-   ,350002894
-   ,350002915
-   ,350002946
-   ,350002973
-   ,350003025
-   ,350003055
-   ,350003153
-   ,350003177
-   ,350003182
-   ,350003196
-   ,350003274
-   ,350037594
-   ,350045866
-   ,350083155
-   --- Kaskaskia Old Course --
-   ,510000109
-   ,510000101
-   ,510000102
-   ,510000111
-   --- Other minor networks receiving big water
-   ,510000080
-   ,510000089
-   ,510000143
-   ,550002456
-   ,550003310
+   0
  )
  THEN
    TRUE
@@ -215,6 +117,7 @@ SELECT
  ELSE
    FALSE
  END AS network_end
+,a.vpuid
 FROM
 cipsrv_nhdplus_h.nhdplusflowlinevaa a
 JOIN
@@ -275,6 +178,9 @@ ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(coastal_connection);
 
 CREATE INDEX nhdplusflowlinevaa_nav_12i
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(network_end);
+
+CREATE INDEX nhdplusflowlinevaa_nav_13i
+ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(vpuid);
 
 ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_nav;
 

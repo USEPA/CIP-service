@@ -23,6 +23,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(
    ,headwater
    ,coastal_connection
    ,network_end
+   ,vpuid
 )
 AS
 SELECT
@@ -215,6 +216,7 @@ SELECT
  ELSE
    FALSE
  END AS network_end
+,a.vpuid
 FROM
 cipsrv_nhdplus_m.nhdplusflowlinevaa a
 JOIN
@@ -275,6 +277,9 @@ ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(coastal_connection);
 
 CREATE INDEX nhdplusflowlinevaa_nav_12i
 ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(network_end);
+
+CREATE INDEX nhdplusflowlinevaa_nav_13i
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(vpuid);
 
 ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_nav;
 
