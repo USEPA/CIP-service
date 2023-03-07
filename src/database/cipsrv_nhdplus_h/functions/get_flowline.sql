@@ -63,51 +63,52 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
+         ,b.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.hydroseq
          ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
          ,b.dnhydroseq
          ,b.dnminorhyd
-         ,b.uphydroseq
          ,b.divergence
          ,b.streamleve
          ,b.arbolatesu
-         ,b.terminalpa
-         ,a.catchment_nhdplusid
-         ,a.innetwork
-         ,a.coastal
-         ,a.navigable
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,a.flowtimeday
-         ,a.flowtimeday / (a.tmeasure - a.fmeasure)
-         ,b.pathlength
-         ,b.pathtimema
          ,b.fromnode
          ,b.tonode
          ,a.vpuid
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
          INTO STRICT
          out_flowline
          FROM 
          cipsrv_nhdplus_h.nhdflowline a
          LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa_nav b
+         cipsrv_nhdplus_h.nhdplusflowlinevaa b
          ON
          a.nhdplusid = b.nhdplusid
          WHERE
             a.nhdplusid            = p_nhdplusid
          OR a.permanent_identifier = p_permanent_identifier
-         OR a.hydroseq             = p_hydroseq;
+         OR b.hydroseq             = p_hydroseq;
 
          out_flowline.out_lengthkm           := out_flowline.lengthkm;
          out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
@@ -131,51 +132,52 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
+         ,b.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.hydroseq
          ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
          ,b.dnhydroseq
          ,b.dnminorhyd
-         ,b.uphydroseq
          ,b.divergence
          ,b.streamleve
          ,b.arbolatesu
-         ,b.terminalpa
-         ,a.catchment_nhdplusid
-         ,a.innetwork
-         ,a.coastal
-         ,a.navigable
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,a.flowtimeday
-         ,a.flowtimeday / (a.tmeasure - a.fmeasure)
-         ,b.pathlength
-         ,b.pathtimema 
          ,b.fromnode
          ,b.tonode
          ,a.vpuid
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema 
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
          INTO STRICT
          out_flowline
          FROM 
          cipsrv_nhdplus_h.nhdflowline a
          LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa_nav b
+         cipsrv_nhdplus_h.nhdplusflowlinevaa b
          ON
          a.nhdplusid = b.nhdplusid
          WHERE (
                a.nhdplusid            = p_nhdplusid
             OR a.permanent_identifier = p_permanent_identifier
-            OR a.hydroseq             = p_hydroseq
+            OR b.hydroseq             = p_hydroseq
          ) AND (
             a.fmeasure = p_measure
             OR
@@ -187,6 +189,7 @@ BEGIN
          IF str_direction = 'D'
          THEN
             IF  p_measure = out_flowline.fmeasure
+            AND out_flowline.hydroseq IS NOT NULL
             AND out_flowline.hydroseq = out_flowline.terminalpa
             THEN
                out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
@@ -211,7 +214,7 @@ BEGIN
             
             END IF;
             
-            num_difference                 := out_flowline.tmeasure - out_flowline.out_measure;
+            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
             out_flowline.out_node            := out_flowline.fromnode;
             
             out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
@@ -237,45 +240,46 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
+         ,b.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.hydroseq
          ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
          ,b.dnhydroseq
          ,b.dnminorhyd
-         ,b.uphydroseq
          ,b.divergence
          ,b.streamleve
          ,b.arbolatesu
-         ,b.terminalpa
-         ,a.catchment_nhdplusid
-         ,a.innetwork
-         ,a.coastal
-         ,a.navigable
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,a.flowtimeday
-         ,a.flowtimeday / (a.tmeasure - a.fmeasure)
-         ,b.pathlength
-         ,b.pathtimema 
          ,b.fromnode
          ,b.tonode
          ,a.vpuid
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema 
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
          INTO STRICT
          out_flowline
          FROM 
          cipsrv_nhdplus_h.nhdflowline a
          LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa_nav b
+         cipsrv_nhdplus_h.nhdplusflowlinevaa b
          ON
          a.nhdplusid = b.nhdplusid
          WHERE 
@@ -312,45 +316,46 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
+         ,b.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.hydroseq
          ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
          ,b.dnhydroseq
          ,b.dnminorhyd
-         ,b.uphydroseq
          ,b.divergence
          ,b.streamleve
          ,b.arbolatesu
-         ,b.terminalpa
-         ,a.catchment_nhdplusid
-         ,a.innetwork
-         ,a.coastal
-         ,a.navigable
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,a.flowtimeday
-         ,a.flowtimeday / (a.tmeasure - a.fmeasure)
-         ,b.pathlength
-         ,b.pathtimema
          ,b.fromnode
          ,b.tonode
          ,a.vpuid
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
-         ,NULL
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
          INTO STRICT
          out_flowline
          FROM 
          cipsrv_nhdplus_h.nhdflowline a
          LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa_nav b
+         cipsrv_nhdplus_h.nhdplusflowlinevaa b
          ON
          a.nhdplusid = b.nhdplusid
          WHERE 
@@ -366,13 +371,14 @@ BEGIN
          IF str_direction = 'D'
          THEN
             IF  p_measure = out_flowline.fmeasure
+            AND out_flowline.hydroseq IS NOT NULL
             AND out_flowline.hydroseq = out_flowline.terminalpa
             THEN
                out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
             
             END IF;
             
-            num_difference                 := p_measure - out_flowline.fmeasure;
+            num_difference                   := p_measure - out_flowline.fmeasure;
             out_flowline.out_node            := out_flowline.tonode;
             
             out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
@@ -390,7 +396,7 @@ BEGIN
             
             END IF;
             
-            num_difference                 := out_flowline.tmeasure - p_measure;
+            num_difference                   := out_flowline.tmeasure - p_measure;
             out_flowline.out_node            := out_flowline.fromnode;
             
             out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;

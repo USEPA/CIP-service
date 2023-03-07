@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.navigate(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.navigate(
     IN  p_search_type                  VARCHAR
    ,IN  p_start_nhdplusid              BIGINT
    ,IN  p_start_permanent_identifier   VARCHAR
@@ -29,8 +29,8 @@ AS $BODY$
 DECLARE
    rec                            RECORD;
    str_search_type                VARCHAR(16) := UPPER(p_search_type); 
-   obj_start_flowline             cipsrv_nhdplus_m.flowline;
-   obj_stop_flowline              cipsrv_nhdplus_m.flowline;
+   obj_start_flowline             cipsrv_nhdplus_h.flowline;
+   obj_stop_flowline              cipsrv_nhdplus_h.flowline;
    num_maximum_distancekm         NUMERIC     := p_max_distancekm;
    num_maximum_flowtimeday        NUMERIC     := p_max_flowtimeday;
    int_counter                    INTEGER;
@@ -118,13 +118,13 @@ BEGIN
    -- Step 20
    -- Flush or create the temp tables
    ----------------------------------------------------------------------------
-   int_check := cipsrv_nhdplus_m.create_navigation_temp_tables();
+   int_check := cipsrv_nhdplus_h.create_navigation_temp_tables();
 
    ----------------------------------------------------------------------------
    -- Step 40
    -- Get the start flowline
    ----------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.get_flowline(
+   rec := cipsrv_nhdplus_h.get_flowline(
        p_direction            := str_search_type
       ,p_nhdplusid            := p_start_nhdplusid
       ,p_permanent_identifier := p_start_permanent_identifier
@@ -193,7 +193,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF str_search_type IN ('PP','PPALL')
    THEN
-      rec := cipsrv_nhdplus_m.get_flowline(
+      rec := cipsrv_nhdplus_h.get_flowline(
           p_direction            := 'U'
          ,p_nhdplusid            := p_stop_nhdplusid
          ,p_permanent_identifier := p_stop_permanent_identifier
@@ -243,7 +243,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF obj_stop_flowline.hydroseq > obj_start_flowline.hydroseq
    THEN
-      rec := cipsrv_nhdplus_m.get_flowline(
+      rec := cipsrv_nhdplus_h.get_flowline(
           p_direction            := str_search_type
          ,p_nhdplusid            := p_stop_nhdplusid
          ,p_permanent_identifier := p_stop_permanent_identifier
@@ -255,7 +255,7 @@ BEGIN
       out_status_message     := r.out_status_message;
       obj_start_flowline     := r.out_flowline;
       
-      rec := cipsrv_nhdplus_m.get_flowline(
+      rec := cipsrv_nhdplus_h.get_flowline(
           p_direction            := 'U'
          ,p_nhdplusid            := p_start_nhdplusid
          ,p_permanent_identifier := p_start_permanent_identifier
@@ -297,7 +297,7 @@ BEGIN
    OR num_maximum_distancekm < obj_start_flowline.out_lengthkm
    OR num_maximum_flowtimeday < obj_start_flowline.out_flowtimeday
    THEN
-      int_counter := cipsrv_nhdplus_m.nav_single(
+      int_counter := cipsrv_nhdplus_h.nav_single(
           str_search_type          := str_search_type
          ,obj_start_flowline       := obj_start_flowline
          ,obj_stop_flowline        := obj_stop_flowline
@@ -313,14 +313,14 @@ BEGIN
    ----------------------------------------------------------------------------
       IF str_search_type = 'PP'
       THEN
-         int_counter := cipsrv_nhdplus_m.nav_pp(
+         int_counter := cipsrv_nhdplus_h.nav_pp(
              obj_start_flowline       := obj_start_flowline
             ,obj_stop_flowline        := obj_stop_flowline
          );
          
       ELSIF str_search_type = 'PPALL'
       THEN
-         int_counter := cipsrv_nhdplus_m.nav_ppall(
+         int_counter := cipsrv_nhdplus_h.nav_ppall(
              obj_start_flowline       := obj_start_flowline
             ,obj_stop_flowline        := obj_stop_flowline
          );
@@ -346,14 +346,14 @@ BEGIN
                AND obj_start_flowline.arbolatesu > 200
             )
             THEN
-               int_counter := cipsrv_nhdplus_m.nav_ut_extended(
+               int_counter := cipsrv_nhdplus_h.nav_ut_extended(
                    obj_start_flowline      := obj_start_flowline
                   ,num_maximum_distancekm  := num_maximum_distancekm
                   ,num_maximum_flowtimeday := num_maximum_flowtimeday
                );
 
             ELSE   
-               int_counter := cipsrv_nhdplus_m.nav_ut_concise(
+               int_counter := cipsrv_nhdplus_h.nav_ut_concise(
                    obj_start_flowline      := obj_start_flowline
                   ,num_maximum_distancekm  := num_maximum_distancekm
                   ,num_maximum_flowtimeday := num_maximum_flowtimeday
@@ -367,7 +367,7 @@ BEGIN
    ----------------------------------------------------------------------------
          ELSIF str_search_type = 'UM'
          THEN
-            int_counter := cipsrv_nhdplus_m.nav_um(
+            int_counter := cipsrv_nhdplus_h.nav_um(
                 obj_start_flowline      := obj_start_flowline
                ,num_maximum_distancekm  := num_maximum_distancekm
                ,num_maximum_flowtimeday := num_maximum_flowtimeday
@@ -379,7 +379,7 @@ BEGIN
    ----------------------------------------------------------------------------
          ELSIF str_search_type = 'DM'
          THEN
-            int_counter := cipsrv_nhdplus_m.nav_dm(
+            int_counter := cipsrv_nhdplus_h.nav_dm(
                 obj_start_flowline      := obj_start_flowline
                ,num_maximum_distancekm  := num_maximum_distancekm
                ,num_maximum_flowtimeday := num_maximum_flowtimeday
@@ -391,7 +391,7 @@ BEGIN
    -------------------------------------------------------------------
          ELSIF str_search_type = 'DD'
          THEN
-            int_counter := cipsrv_nhdplus_m.nav_dd(
+            int_counter := cipsrv_nhdplus_h.nav_dd(
                 obj_start_flowline      := obj_start_flowline
                ,num_maximum_distancekm  := num_maximum_distancekm
                ,num_maximum_flowtimeday := num_maximum_flowtimeday
@@ -427,7 +427,7 @@ BEGIN
                ,aa.network_flowtimeday
                ,2
                FROM
-               cipsrv_nhdplus_m.nav_trim_temp(
+               cipsrv_nhdplus_h.nav_trim_temp(
                    p_search_type          := str_search_type
                   ,p_fmeasure             := a.fmeasure
                   ,p_tmeasure             := a.tmeasure
@@ -464,7 +464,7 @@ BEGIN
                ,aa.network_flowtimeday
                ,2
                FROM
-               cipsrv_nhdplus_m.nav_trim_temp(
+               cipsrv_nhdplus_h.nav_trim_temp(
                    p_search_type          := str_search_type
                   ,p_fmeasure             := a.fmeasure
                   ,p_tmeasure             := a.tmeasure
@@ -575,11 +575,11 @@ BEGIN
             OR   aa.tmeasure <> bb.fmeasure
             THEN
                ST_GeometryN(
-                   ST_LocateBetween(bb.shape,aa.fmeasure,aa.tmeasure)
+                   ST_LocateBetween(ST_Force3DM(bb.shape),aa.fmeasure,aa.tmeasure)
                   ,1
                )
             ELSE
-               bb.shape
+               ST_Force3DM(bb.shape)
             END
           ELSE
             NULL::GEOMETRY
@@ -588,7 +588,7 @@ BEGIN
          FROM
          tmp_navigation_working30 aa
          JOIN
-         cipsrv_nhdplus_m.nhdflowline bb
+         cipsrv_nhdplus_h.nhdflowline bb
          ON
          aa.nhdplusid = bb.nhdplusid
          WHERE
@@ -678,7 +678,7 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.navigate(
+ALTER FUNCTION cipsrv_nhdplus_h.navigate(
     VARCHAR
    ,BIGINT
    ,VARCHAR
@@ -696,7 +696,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.navigate(
    ,BOOLEAN
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.navigate(
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.navigate(
     VARCHAR
    ,BIGINT
    ,VARCHAR

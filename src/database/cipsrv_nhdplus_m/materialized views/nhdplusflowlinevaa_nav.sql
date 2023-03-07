@@ -3,52 +3,40 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_nav;
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(
     nhdplusid
    ,hydroseq
-   ,levelpathi
-   ,divergence
    ,fmeasure
    ,tmeasure
+   ,levelpathi
+   ,terminalpa
+   ,uphydroseq
+   ,dnhydroseq
+   ,dnminorhyd
+   ,divergence
+   ,fromnode
+   ,tonode
+   /* ++++++++++ */
    ,lengthkm
    ,totma
    ,pathlength
    ,pathtimema
-   ,uphydroseq
-   ,dnhydroseq
-   ,dnminorhyd
-   ,terminalpa
-   ,fromnode
-   ,tonode
+   /* ++++++++++ */
    ,force_main_line
    ,ary_upstream_hydroseq
    ,ary_downstream_hydroseq
+   /* ++++++++++ */
    ,headwater
    ,coastal_connection
    ,network_end
+   /* ++++++++++ */
    ,vpuid
 )
 AS
 SELECT
  CAST(a.nhdplusid  AS BIGINT) AS nhdplusid
 ,CAST(a.hydroseq   AS BIGINT) AS hydroseq 
-,CAST(a.levelpathi AS BIGINT) AS levelpathi
-,a.divergence
 ,b.fmeasure
 ,b.tmeasure
-,b.lengthkm
-,CASE
- WHEN a.totma = -9999
- THEN
-   NULL
- ELSE
-   a.totma
- END AS totma
-,a.pathlength
-,CASE
- WHEN a.pathtimema = -9999
- THEN
-   NULL
- ELSE
-   a.pathtimema
- END AS pathtimema
+,CAST(a.levelpathi AS BIGINT) AS levelpathi
+,CAST(a.terminalpa AS BIGINT) AS terminalpa
 ,CASE
  WHEN a.uphydroseq = 0
  THEN
@@ -70,9 +58,27 @@ SELECT
  ELSE
    CAST(a.dnminorhyd AS BIGINT)
  END AS dnminorhyd
-,CAST(a.terminalpa AS BIGINT) AS terminalpa
+,a.divergence
 ,CAST(a.fromnode AS BIGINT)   AS fromnode
 ,CAST(a.tonode AS BIGINT)     AS tonode
+/* ++++++++++ */
+,b.lengthkm
+,CASE
+ WHEN a.totma = -9999
+ THEN
+   NULL
+ ELSE
+   a.totma
+ END AS totma
+,a.pathlength
+,CASE
+ WHEN a.pathtimema = -9999
+ THEN
+   NULL
+ ELSE
+   a.pathtimema
+ END AS pathtimema
+/* ++++++++++ */
 ,CASE
  WHEN a.hydroseq IN (
    --- Big Tributaries --
@@ -181,7 +187,7 @@ SELECT
  ELSE
    FALSE
  END AS force_main_line
-,ARRAY(SELECT CAST(b.fromhydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow b WHERE b.tohydroseq = a.hydroseq) AS ary_upstream_hydroseq
+,ARRAY(SELECT CAST(bb.fromhydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow bb WHERE bb.tohydroseq = a.hydroseq) AS ary_upstream_hydroseq
 ,CASE
  WHEN a.dndraincou = 1
  THEN
@@ -191,7 +197,7 @@ SELECT
    ARRAY[CAST(a.dnhydroseq AS BIGINT),CAST(a.dnminorhyd AS BIGINT)]
  WHEN a.dndraincou > 2
  THEN
-   ARRAY(SELECT CAST(c.tohydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow c WHERE c.fromhydroseq = a.hydroseq)
+   ARRAY(SELECT CAST(cc.tohydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow cc WHERE cc.fromhydroseq = a.hydroseq)
  ELSE
    NULL
  END AS ary_downstream_hydroseq
@@ -203,14 +209,14 @@ SELECT
    FALSE
  END AS headwater
 ,CASE
- WHEN EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.nhdplusflow d WHERE d.fromhydroseq = a.hydroseq AND d.direction = 714)
+ WHEN EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.nhdplusflow dd WHERE dd.fromhydroseq = a.hydroseq AND dd.direction = 714)
  THEN
    TRUE
  ELSE
    FALSE
  END AS coastal_connection
 ,CASE
- WHEN EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.nhdplusflow d WHERE d.fromhydroseq = a.hydroseq AND d.direction = 713)
+ WHEN EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.nhdplusflow ee WHERE ee.fromhydroseq = a.hydroseq AND ee.direction = 713)
  THEN
    TRUE
  ELSE

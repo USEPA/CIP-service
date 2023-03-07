@@ -196,7 +196,7 @@ BEGIN
       int_return_code     := rec.out_return_code;
       str_status_message  := rec.out_status_message;
       
-   ELSIF str_nhdplus_version = 'nhdplus_m'
+   ELSIF str_nhdplus_version = 'nhdplus_h'
    THEN
       rec := cipsrv_nhdplus_h.navigate(
           p_search_type                := str_search_type
@@ -267,28 +267,29 @@ BEGIN
       FROM (
          SELECT
           a.nhdplusid
-         ,a.permanent_identifier
-         ,a.reachcode
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,a.network_distancekm
-         ,a.network_flowtimeday
-         ,a.hydroseq
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
          ,a.dnhydroseq
-         ,a.lengthkm
-         ,a.flowtimeday
-         ,a.reachsmdate
-         ,a.ftype
+         ,TRUNC(a.lengthkm,8)    AS lengthkm
+         ,TRUNC(a.flowtimeday,8) AS flowtimeday
+         /* +++++++++ */
+         ,TRUNC(a.network_distancekm,8)  AS network_distancekm
+         ,TRUNC(a.network_flowtimeday,8) AS network_flowtimeday
+         /* +++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
          ,a.fcode
          ,a.gnis_id
          ,a.gnis_name
          ,a.wbarea_permanent_identifier
+         /* +++++++++ */
          ,a.navtermination_flag
          ,a.nav_order
-         ,a.shape AS geom
+         ,ST_Transform(a.shape,4326) AS geom
          FROM
          tmp_navigation_results a
          ORDER BY
