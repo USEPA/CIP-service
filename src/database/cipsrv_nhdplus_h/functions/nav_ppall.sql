@@ -348,7 +348,7 @@ BEGIN
       ,network_distancekm
       ,network_flowtimeday
       ,levelpathi
-      ,terminalap
+      ,terminalpa
       ,uphydroseq
       ,dnhydroseq
       ,base_pathlength

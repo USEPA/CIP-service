@@ -216,7 +216,7 @@ BEGIN
       
       END IF;
       
-      obj_stop_flowline := r.out_flowline;
+      obj_stop_flowline := rec.out_flowline;
 
       IF obj_stop_flowline.hydroseq IS NULL
       THEN
@@ -251,9 +251,9 @@ BEGIN
          ,p_hydroseq             := p_stop_hydroseq
          ,p_measure              := p_stop_measure
       );
-      out_return_code        := r.out_return_code;
-      out_status_message     := r.out_status_message;
-      obj_start_flowline     := r.out_flowline;
+      out_return_code        := rec.out_return_code;
+      out_status_message     := rec.out_status_message;
+      obj_start_flowline     := rec.out_flowline;
       
       rec := cipsrv_nhdplus_h.get_flowline(
           p_direction            := 'U'

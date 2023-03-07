@@ -133,7 +133,7 @@ BEGIN
       FROM
       tmp_navigation_working30 a
       JOIN
-      cipsrv_nhdplus_h.navplusflowlinevaa_nav b
+      cipsrv_nhdplus_h.nhdplusflowlinevaa_nav b
       ON
       a.hydroseq = b.hydroseq
       WHERE
