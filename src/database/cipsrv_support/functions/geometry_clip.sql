@@ -180,7 +180,7 @@ BEGIN
             
          END IF;
       
-      ELSIF str_token1 IN ('AIANNHA','AIANNHA_STEM','EPA','EPA_ID','BIA','BIA_CODE','ATTAINS','ATTAINS_ORGANIZATIONID')
+      ELSIF str_token1 IN ('AIANNHNS','GEOID','GEOID_STEM','EPA','EPA_ID','BIA','BIA_CODE','ATTAINS','ATTAINS_ORGANIZATIONID')
       THEN
          IF str_token3 IN ('R','T')
          THEN
@@ -220,7 +220,9 @@ BEGIN
    -- Step 40
    -- Return the intersection
    ----------------------------------------------------------------------------
-   IF ary_results IS NULL OR array_length(ary_results,1) = 0
+   IF ary_results IS NULL 
+   OR array_length(ary_results,1) IS NULL
+   OR array_length(ary_results,1) = 0
    THEN
       out_clipped_geometry := NULL;
       out_return_code      := 0;
