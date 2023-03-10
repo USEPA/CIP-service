@@ -186,7 +186,7 @@
                <span style="font-family: Arial; font-size: 12px;">Clip Geometry By:&nbsp;</span>
                </td>
                <td>
-                  <select name="dzGeometryClip" id="dzGeometryClip" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
+                  <select name="dzClipGeometry" id="dzClipGeometry" style="font-family: Arial; font-size: 11px; width:310px" multiple="multiple" size="4">
                   </select>
                </td>
                <td>
@@ -534,13 +534,13 @@
                      }
                      for (let i=0; i < tribes.length; i++) {
                         if (tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
-                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + '">' + tribes[i].aiannhns_namelsad + '</option>';
-                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
-                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + '">' + tribes[i].aiannha_namelsad + '</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':R">' + tribes[i].aiannha_namelsad + ' (Reservation Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':T">' + tribes[i].aiannha_namelsad + ' (Trust Lands Only)</option>';
                         } else if (tribes[i].has_reservation_lands && ! tribes[i].has_trust_lands) {
-                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':R">' + tribes[i].aiannha_namelsad + ' (Reservation Lands Only)</option>';
                         } else if (! tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
-                           load += '<option value="AIANNHNS:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':T">' + tribes[i].aiannha_namelsad + ' (Trust Lands Only)</option>';
                         }
                      }
                      clipgeo.innerHTML = load;
