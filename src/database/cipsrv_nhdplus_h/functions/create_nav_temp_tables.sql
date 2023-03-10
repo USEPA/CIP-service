@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.create_navigation_temp_tables()
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.create_navigation_temp_tables()
 RETURNS INTEGER
 VOLATILE
 AS $BODY$
@@ -9,7 +9,7 @@ BEGIN
    -- Step 10
    -- Create tmp_navigation_working30 temp table
    ---------------------------------------------------------------------------- 
-   IF cipsrv_nhdplus_m.temp_table_exists('tmp_navigation_working30')
+   IF cipsrv_nhdplus_h.temp_table_exists('tmp_navigation_working30')
    THEN
       TRUNCATE TABLE tmp_navigation_working30;
       
@@ -59,7 +59,7 @@ BEGIN
    -- Step 20
    -- Create tmp_navigation_results temp table
    ---------------------------------------------------------------------------- 
-   IF cipsrv_nhdplus_m.temp_table_exists('tmp_navigation_results')
+   IF cipsrv_nhdplus_h.temp_table_exists('tmp_navigation_results')
    THEN
       TRUNCATE TABLE tmp_navigation_results;
       
@@ -110,7 +110,7 @@ END;
 $BODY$ 
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.create_navigation_temp_tables() OWNER TO cipsrv;
+ALTER FUNCTION cipsrv_nhdplus_h.create_navigation_temp_tables() OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.create_navigation_temp_tables() TO PUBLIC;
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.create_navigation_temp_tables() TO PUBLIC;
 

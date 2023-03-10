@@ -35,6 +35,7 @@
             ,"functions/feature_clip.sql"
             ,"functions/json2geometry.sql"
             ,"functions/json2numeric.sql"
+            ,"functions/json2bigint.sql"
             ,"functions/determine_grid_srid.sql"
             ,"functions/parse_catchment_filter.sql"
             ,"functions/cipsrv_index.sql"
