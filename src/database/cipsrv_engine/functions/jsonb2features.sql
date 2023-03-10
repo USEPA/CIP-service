@@ -60,7 +60,7 @@ BEGIN
       obj_rez := cipsrv_engine.jsonb2feature(
           p_feature               := JSONB_BUILD_OBJECT(
              'type',     'Feature'
-             'geometry', p_features
+            ,'geometry', p_features
           )
          ,p_nhdplus_version       := str_nhdplus_version
          ,p_known_region          := str_known_region
