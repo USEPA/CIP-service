@@ -264,9 +264,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_state(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := '';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'ddfc1574494284e24067ff48e06e4974faf6313a';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Wed Feb 22 09:13:38 2023 -0500';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v0.1.0-12-g012e252';
+   c_gitcommit     CONSTANT VARCHAR(255) := '012e252e9f3411d103163de5013b61c0a4f66daa';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Mar 10 18:11:13 2023 -0500';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                RECORD;
@@ -286,29 +286,22 @@ BEGIN
    -- Step 10
    -- Determine the proper SRID
    ----------------------------------------------------------------------------
-   IF p_known_region IS NULL
+   rec := cipsrv_support.determine_grid_srid(
+       p_geometry        := p_geometry
+      ,p_known_region    := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_gridsize       := rec.out_grid_size;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
    THEN
-      rec := cipsrv_support.determine_grid_srid(
-          p_geometry        := p_geometry
-         ,p_known_region    := p_known_region
-      );
-      int_srid           := rec.out_srid;
-      int_gridsize       := rec.out_grid_size;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;
-      
-      str_known_region := int_srid::VARCHAR;
-      
-   ELSE
-      str_known_region := p_known_region;
+      RETURN;
       
    END IF;
+   
+   str_known_region := int_srid::VARCHAR;
    
    str_gtype := ST_GeometryType(p_geometry);
    
@@ -327,7 +320,7 @@ BEGIN
    END IF;      
    
    sdo_input_geom := ST_Transform(p_geometry,int_srid);
-   
+
    ----------------------------------------------------------------------------
    -- Step 20
    -- Fetch the state clip geometry
@@ -340,7 +333,7 @@ BEGIN
    cipsrv_support.tiger_fedstatewaters a
    WHERE
    a.stusps = p_state_clip;
-   
+
    IF sdo_state_geom IS NULL
    THEN
       out_return_code      := -20;
@@ -403,9 +396,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_tribe(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := '';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'ddfc1574494284e24067ff48e06e4974faf6313a';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Wed Feb 22 09:13:38 2023 -0500';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v0.1.0-12-g012e252';
+   c_gitcommit     CONSTANT VARCHAR(255) := '012e252e9f3411d103163de5013b61c0a4f66daa';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Mar 10 18:11:13 2023 -0500';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                        RECORD;
@@ -417,7 +410,8 @@ DECLARE
    boo_all_tribal             BOOLEAN;
    str_gtype                  VARCHAR;
    int_gtype                  INTEGER;
-   str_tiger_aiannha_stem     VARCHAR;
+   str_tiger_aiannhns         VARCHAR;
+   str_geoid                  VARCHAR;
    int_epa_tribal_id          INTEGER;
    str_bia_tribal_code        VARCHAR;
    str_comptype_clip          VARCHAR;
@@ -426,7 +420,7 @@ DECLARE
 BEGIN
 
    out_return_code := 0;
-   
+
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters
@@ -438,14 +432,18 @@ BEGIN
    THEN
       boo_all_tribal := TRUE;
    
-   ELSIF UPPER(p_tribal_clip_type) IN ('AIANNHA','AIANNHA_STEM')
+   ELSIF UPPER(p_tribal_clip_type) IN ('AIANNHNS')
    THEN
-      str_tiger_aiannha_stem := p_tribal_clip;
+      str_tiger_aiannhns := p_tribal_clip;
       
-      IF LENGTH(str_tiger_aiannha_stem) = 5
+   ELSIF UPPER(p_tribal_clip_type) IN ('GEOID','GEOID_STEM')
+   THEN
+      str_geoid := p_tribal_clip;
+      
+      IF LENGTH(str_geoid) = 5
       THEN
-         str_tiger_aiannha_stem := SUBSTR(str_tiger_aiannha_stem,1,4);
-         str_comptype_clip      := SUBSTR(str_tiger_aiannha_stem,5,1);
+         str_geoid          := SUBSTR(str_geoid,1,4);
+         str_comptype_clip  := SUBSTR(str_geoid,5,1);
       
       END IF;
       
@@ -476,34 +474,27 @@ BEGIN
       str_comptype_clip := NULL;
       
    END IF;
-   
+
    ----------------------------------------------------------------------------
    -- Step 20
    -- Determine the proper SRID
    ----------------------------------------------------------------------------
-   IF p_known_region IS NULL
+   rec := cipsrv_support.determine_grid_srid(
+       p_geometry        := p_geometry
+      ,p_known_region    := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_gridsize       := rec.out_grid_size;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
    THEN
-      rec := cipsrv_support.determine_grid_srid(
-          p_geometry        := p_geometry
-         ,p_known_region    := p_known_region
-      );
-      int_srid           := rec.out_srid;
-      int_gridsize       := rec.out_grid_size;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;
-      
-      str_known_region := int_srid::VARCHAR;
-      
-   ELSE
-      str_known_region := p_known_region;
+      RETURN;
       
    END IF;
+   
+   str_known_region := int_srid::VARCHAR;
    
    str_gtype := ST_GeometryType(p_geometry);
    
@@ -541,7 +532,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem 
          WHERE
          ST_Intersects(
             a.shape
@@ -549,12 +540,13 @@ BEGIN
          )
          AND (
                str_comptype_clip IS NULL
-            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
-            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+            OR ( str_comptype_clip = 'R' AND b.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND b.has_trust_lands )
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
             OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
             OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
@@ -576,7 +568,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem
          WHERE
          ST_Intersects(
             a.shape
@@ -584,12 +576,13 @@ BEGIN
          )
          AND (
                str_comptype_clip IS NULL
-            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
-            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+            OR ( str_comptype_clip = 'R' AND b.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND b.has_trust_lands )
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
             OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
             OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
@@ -611,7 +604,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem
          WHERE
          ST_Intersects(
             a.shape
@@ -619,14 +612,15 @@ BEGIN
          )
          AND (
                str_comptype_clip IS NULL
-            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
-            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+            OR ( str_comptype_clip = 'R' AND b.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND b.has_trust_lands )
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
-            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
-            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id      = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code    = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
          )
       )
@@ -646,7 +640,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem
          WHERE
          ST_Intersects(
             a.shape
@@ -654,12 +648,13 @@ BEGIN
          )
          AND (
                str_comptype_clip IS NULL
-            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
-            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+            OR ( str_comptype_clip = 'R' AND b.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND b.has_trust_lands )
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
             OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
             OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
@@ -681,7 +676,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem
          WHERE
          ST_Intersects(
             a.shape
@@ -689,12 +684,13 @@ BEGIN
          )
          AND (
                str_comptype_clip IS NULL
-            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
-            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+            OR ( str_comptype_clip = 'R' AND b.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND b.has_trust_lands )
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
             OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
             OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
@@ -716,7 +712,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.aiannha,1,4) = b.aiannha_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem
          WHERE
          ST_Intersects(
             a.shape
@@ -724,12 +720,13 @@ BEGIN
          )
          AND (
                str_comptype_clip IS NULL
-            OR ( str_comptype_clip = 'R' AND a.has_reservation_lands ) 
-            OR ( str_comptype_clip = 'T' AND a.has_trust_lands )
+            OR ( str_comptype_clip = 'R' AND b.has_reservation_lands ) 
+            OR ( str_comptype_clip = 'T' AND b.has_trust_lands )
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannha_stem IS NOT NULL     AND a.aiannha = str_tiger_aiannha_stem )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
             OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
             OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
@@ -747,6 +744,7 @@ BEGIN
    -- Aggregate results array into single geometry
    ----------------------------------------------------------------------------
    IF sdo_results IS NULL
+   OR array_length(sdo_results,1) IS NULL
    OR array_length(sdo_results,1) = 0
    THEN
       out_return_code      := -20;
@@ -755,8 +753,9 @@ BEGIN
   
    ELSE
       out_clipped_geometry := ST_CollectionExtract(
-          ST_Union(
-            ST_SnapToGrid(sdo_tribal_geom,0.001)
+          ST_SnapToGrid(
+             ST_Union(sdo_results)
+            ,0.001
           )
          ,int_gtype
       );
@@ -806,9 +805,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.geometry_clip(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := '';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'ddfc1574494284e24067ff48e06e4974faf6313a';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Wed Feb 22 09:13:38 2023 -0500';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v0.1.0-12-g012e252';
+   c_gitcommit     CONSTANT VARCHAR(255) := '012e252e9f3411d103163de5013b61c0a4f66daa';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Mar 10 18:11:13 2023 -0500';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                RECORD;
@@ -848,29 +847,22 @@ BEGIN
    -- Step 20
    -- Determine the proper SRID
    ----------------------------------------------------------------------------
-   IF p_known_region IS NULL
+   rec := cipsrv_support.determine_grid_srid(
+       p_geometry        := p_geometry
+      ,p_known_region    := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_gridsize       := rec.out_grid_size;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
    THEN
-      rec := cipsrv_support.determine_grid_srid(
-          p_geometry        := p_geometry
-         ,p_known_region    := p_known_region
-      );
-      int_srid           := rec.out_srid;
-      int_gridsize       := rec.out_grid_size;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;
-      
-      str_known_region := int_srid::VARCHAR;
-      
-   ELSE
-      str_known_region := p_known_region;
+      RETURN;
       
    END IF;
+   
+   str_known_region := int_srid::VARCHAR;
    
    str_gtype := ST_GeometryType(p_geometry);
    
@@ -896,7 +888,7 @@ BEGIN
    ----------------------------------------------------------------------------
    FOR i IN 1 .. array_length(p_clippers,1)
    LOOP
-      ary_clip := string_to_array(UPPER(p_clipppers[i]),':');
+      ary_clip := string_to_array(UPPER(p_clippers[i]),':');
       
       IF array_length(ary_clip,1) > 0
       THEN
@@ -984,7 +976,7 @@ BEGIN
             
          END IF;
       
-      ELSIF str_token1 IN ('AIANNHA','AIANNHA_STEM','EPA','EPA_ID','BIA','BIA_CODE','ATTAINS','ATTAINS_ORGANIZATIONID')
+      ELSIF str_token1 IN ('AIANNHNS','GEOID','GEOID_STEM','EPA','EPA_ID','BIA','BIA_CODE','ATTAINS','ATTAINS_ORGANIZATIONID')
       THEN
          IF str_token3 IN ('R','T')
          THEN
@@ -1024,7 +1016,9 @@ BEGIN
    -- Step 40
    -- Return the intersection
    ----------------------------------------------------------------------------
-   IF ary_results IS NULL OR array_length(ary_results,1) = 0
+   IF ary_results IS NULL 
+   OR array_length(ary_results,1) IS NULL
+   OR array_length(ary_results,1) = 0
    THEN
       out_clipped_geometry := NULL;
       out_return_code      := 0;

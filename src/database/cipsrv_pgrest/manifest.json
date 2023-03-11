@@ -24,6 +24,7 @@
          ,"includes": [
              "functions/cipsrv_domains.sql"
             ,"functions/cipsrv_index.sql"
+            ,"functions/cipsrv_nav.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
