@@ -41,8 +41,9 @@ BEGIN
    INTO json_tribes
    FROM (
       SELECT
-       aa.aiannhns_stem
-      ,aa.aiannhns_namelsad
+       aa.aiannha_aiannhns
+      ,aa.aiannha_geoid_stem
+      ,aa.aiannha_namelsad
       ,aa.has_reservation_lands
       ,aa.has_trust_lands
       FROM

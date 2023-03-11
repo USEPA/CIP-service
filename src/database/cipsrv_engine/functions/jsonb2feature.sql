@@ -51,6 +51,7 @@ BEGIN
       
    ELSIF JSONB_TYPEOF(json_feature) != 'object'
    OR json_feature->'type' IS NULL
+   OR json_feature->>'type' != 'Feature'
    THEN
       RAISE EXCEPTION 'input jsonb is not geojson feature';
    
@@ -94,7 +95,7 @@ BEGIN
       has_properties := TRUE;
 
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Extract the geometry
    ----------------------------------------------------------------------------
@@ -120,7 +121,7 @@ BEGIN
          LOOP
             sdo_geometry2 := ST_GeometryN(sdo_geometry,i);
             
-            ary_rez := array_cat(ary_rez,
+            ary_rez := cipsrv_engine.featurecat(ary_rez,
                cipsrv_engine.jsonb2feature(
                    p_feature               := json_feature
                   ,p_geometry_override     := sdo_geometry2

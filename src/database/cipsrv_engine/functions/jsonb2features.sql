@@ -50,11 +50,33 @@ BEGIN
    num_default_line_threshold        := p_default_line_threshold;
    num_default_areacat_threshold     := p_default_areacat_threshold;
    num_default_areaevt_threshold     := p_default_areaevt_threshold;
-   
+
    ----------------------------------------------------------------------------
    -- Build the features
    ----------------------------------------------------------------------------
    IF JSONB_TYPEOF(p_features) = 'object'
+   AND p_features->>'type' IN ('Point','LineString','Polygon','MultiPoint','MultiLineString','MultiPolygon','GeometryCollection')
+   THEN
+      obj_rez := cipsrv_engine.jsonb2feature(
+          p_feature               := JSONB_BUILD_OBJECT(
+             'type',     'Feature'
+            ,'geometry', p_features
+          )
+         ,p_nhdplus_version       := str_nhdplus_version
+         ,p_known_region          := str_known_region
+         ,p_int_srid              := int_srid
+         ,p_point_indexing_method := str_default_point_indexing_method
+         ,p_line_indexing_method  := str_default_line_indexing_method
+         ,p_ring_indexing_method  := str_default_ring_indexing_method
+         ,p_area_indexing_method  := str_default_area_indexing_method
+         ,p_line_threshold        := num_default_line_threshold
+         ,p_areacat_threshold     := num_default_areacat_threshold
+         ,p_areaevt_threshold     := num_default_areaevt_threshold
+      );
+      
+      ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
+   
+   ELSIF JSONB_TYPEOF(p_features) = 'object'
    AND p_features->>'type' = 'Feature'
    THEN
       obj_rez := cipsrv_engine.jsonb2feature(
@@ -71,15 +93,15 @@ BEGIN
          ,p_areaevt_threshold     := num_default_areaevt_threshold
       );
       
-      ary_rez := array_cat(ary_rez,obj_rez);
+      ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
    
-   ELSIF JSONB_TYPEOF(p_features) = 'array'
+   ELSIF JSONB_TYPEOF(p_features) = 'object'
    AND p_features->>'type' = 'FeatureCollection'
    THEN
-      FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features)
+      FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features->'features')
       LOOP
          obj_rez := cipsrv_engine.jsonb2feature(
-             p_feature               := p_features->i-1
+             p_feature               := p_features->'features'->i-1
             ,p_nhdplus_version       := str_nhdplus_version
             ,p_known_region          := str_known_region
             ,p_int_srid              := int_srid
@@ -92,12 +114,12 @@ BEGIN
             ,p_areaevt_threshold     := num_default_areaevt_threshold
          );
       
-         ary_rez := array_cat(ary_rez,obj_rez);
+         ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
    
       END LOOP;
       
    ELSE
-      RAISE EXCEPTION 'input jsonb is not geojson';
+      RAISE EXCEPTION 'input jsonb is not geojson %', p_features;
    
    END IF;
    

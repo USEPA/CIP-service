@@ -25,6 +25,7 @@
              "types/cip_feature.sql"
             ,"functions/temp_table_exists.sql"
             ,"functions/create_cip_temp_tables.sql"
+            ,"functions/featurecat.sql"
             ,"functions/jsonb2feature.sql"
             ,"functions/jsonb2features.sql"
             ,"functions/feature2jsonb.sql"
