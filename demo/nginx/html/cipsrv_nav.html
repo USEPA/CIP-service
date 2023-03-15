@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en" >
+   <head>
+      <meta charset="UTF-8">
+      <title>CIP Service Navigation</title>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.3/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <style>
+         #busy {
+           position: absolute;
+           top: 15%;
+           left: 820px;
+           z-index: 100;
+         }
+      </style>
+      <script src="/config.js"></script>
+   </head>
+   <body>
+      <div id="busy">
+         <svg width="57" height="57" viewBox="0 0 57 57" xmlns="http://www.w3.org/2000/svg" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+               <g transform="translate(1 1)" stroke-width="2">
+                  <circle cx="5" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;5;50;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" values="5;27;49;5" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="27" cy="5" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" from="5" to="5" values="5;50;50;5" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" from="27" to="27" values="27;49;5;27" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="49" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;50;5;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" from="49" to="49" begin="0s" dur="2.2s" values="49;5;27;49" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+               </g>
+            </g>
+         </svg>
+      </div>
+      <div id="container" style="width: 1400px;">
+         <div id="map" class="map" style="height: 700px; width: 800px; float: left;">
+         </div>
+         <div id="righty" style="width: 600px; float: left;">
+            <div id="top" style="text-align: center;">
+               <h2>&nbsp;</h2>
+               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Navigation Test Harness</h2>
+               <span style="font-family: Arial; font-size: 11px;">Add points to the map or enter your WGS84 WKT text:</span>
+               <br/>
+               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
+               <br/>
+               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px">
+                  <option value="nhdplus_m" SELECTED>Medium Resolution</option>
+                  <option value="nhdplus_h">High Resolution</option>
+               </select>
+               <br/>
+               <table border="0" align="center">
+                 <tr>
+                   <td colspan="2" style="font-family: Arial; font-size: 11px;padding-top: 5px;">Or enter NHDPlus identifiers and optional Measures</td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start NHDPlusID:
+                     <input name="pStartNHDPlusID" type="text" class="text" id="pStartNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop NHDPlusID:
+                     <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Perm Id: 
+                     <input name="pStartPermanentIdentifier" type="text" class="text" id="pStartPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Perm Id: 
+                     <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Reach Code: 
+                     <input name="pStartReachCode" type="text" class="text" id="pStartReachCode" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Reach Code: 
+                     <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Hydro Seq: 
+                     <input name="pStartHydroSeq" type="text" class="text" id="pStartHydroSeq" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Hydro Seq: 
+                     <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Measure:
+                     <input name="pStartMeasure" type="text" class="text" id="pStartMeasure" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Measure:
+                     <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+               </table>
+               <select name="pSearchType" id="pSearchType" onchange="update_form();check_start();" style="margin-top: 6px;">
+                 <option value="UT" SELECTED>Upstream with Tributaries</option>
+                 <option value="UM">Upstream Main Path Only</option>
+                 <option value="DD">Downstream with Divergences</option>
+                 <option value="DM">Downstream Main Path Only</option>
+                 <option value="PP">Point to Point</option>
+                 <option value="PPALL">Point to Point, All Streams Between</option>
+               </select>
+               <input name="pSearchMaxDistanceKm" type="text" class="text" id="pSearchMaxDistanceKm" style="display:inline; width:30px" value="15" />&nbsp;km
+               <br/>
+               <br/>
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input type="button" onclick="dz_clear();" value="Clear" name="dz_clear" id="dz_clear" />&nbsp;<input type="button" onclick="run_random_point();" value="Random" name="dz_random" id="dz_random" />&nbsp;
+               <select name="randomy" id="randomy" style="font-size: 9px;">
+                 <option value="ALL" SELECTED>Random All</option>
+                 <option value="CONUS" >Contiguous US</option>
+                 <option value="HAWAII">Hawaii</option>
+                 <option value="PRVI"  >Puerto Rico / VI</option>
+                 <option value="GUMP"  >Guam / Marianas</option>
+                 <option value="AS"    >American Samoa</option>
+               </select>
+            </div>
+         </div>
+      </div>
+      <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
+      </div>
+      <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script>
+         document.getElementById("dz_run_service").disabled = true;
+         document.getElementById("busy").style.visibility = "hidden";
+         
+         var map = L.map("map").setView([38.88343, -77.035271], 13);
+         mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+         basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "Map data &copy; " + mapLink,
+            maxZoom: 18
+         });
+         basemap.addTo(map);
+         
+         var drawnItems = new L.FeatureGroup().addTo(map);
+         var drawControl = new L.Control.Draw({
+            draw: {
+                polygon: false
+               ,polyline: false
+               ,rectangle: false
+               ,circle: false
+               ,marker: true
+               ,circlemarker: false
+            },
+            edit: {
+               featureGroup: drawnItems,
+               edit: false,
+               remove: true
+            }
+         });
+         map.addControl(drawControl);
+         
+         map.on(L.Draw.Event.CREATED, function(e) {
+            var type = e.layerType;
+            var layer = e.layer;
+
+            var search_menu = document.getElementById("pSearchType");
+            var search_type = search_menu.options[search_menu.selectedIndex].value;
+            var layer_count = drawnItems.getLayers().length;
+
+            if (search_type == "PP" || search_type == "PPALL") {
+               if (layer_count == 2) {
+                  drawnItems.clearLayers();
+                  blank_pts();
+                  blank_nhdplusids();
+                  document.getElementById("dz_run_service").disabled = true;
+               } 
+            } else {
+               if (layer_count == 1) {
+                  drawnItems.clearLayers();
+                  blank_pts();
+                  blank_nhdplusids();
+                  document.getElementById("dz_run_service").disabled = true;
+               }
+            }
+
+            if (type === "marker") {
+               if (search_type == "PP" || search_type == "PPALL") {
+                  if (layer_count != 1) {
+                     var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+
+                     document.getElementById("pPoint").value = start_geojsonval;
+                     layer.bindPopup(start_geojsonval);
+                     blank_start_nhdplusids();
+                     
+                  } else if (layer_count == 1) {
+                     var stop_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+                     
+                     document.getElementById("pPoint2").value = stop_geojsonval;
+                     layer.bindPopup(stop_geojsonval);
+                     blank_stop_nhdplusids();
+
+                     document.getElementById("dz_run_service").disabled = false;
+                  }
+                  
+               } else {
+                  var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+
+                  document.getElementById("pPoint").value = start_geojsonval;
+                  layer.bindPopup(start_geojsonval);
+                  blank_start_nhdplusids();
+
+                  document.getElementById("dz_run_service").disabled = false;
+               }
+            }
+
+            drawnItems.addLayer(layer);
+            check_start();
+         });
+
+         map.on(L.Draw.Event.DELETED, function(e) {
+            var layer_count = drawnItems.getLayers().length;
+
+            if (layer_count == 1) {
+               document.getElementById("pPoint2").value = "";
+            } else {
+               document.getElementById("pPoint").value = "";
+            }
+
+            document.getElementById("dz_run_service").disabled = true;
+         });
+         
+         var snap_path = L.geoJson(null, {
+            onEachFeature: onEachFeature_snap_path
+         }).addTo(map);
+         
+         var flowlines = new L.GeoJSON(null, {
+            onEachFeature: onEachFeature_flowlines
+         }).addTo(map);
+         
+         var layer_items = {
+           "Snap path": snap_path,
+           "Returned Streams": flowlines
+         };
+         L.control.layers(null, layer_items).addTo(map);
+         
+         function onEachFeature_snap_path(feature,layer) {
+            if (feature.properties && feature.properties.snap_distancekm) {
+               layer.bindPopup(
+                  "Length (Km): " +
+                  feature.properties.snap_distancekm.toString()
+               );
+            }
+         }
+         
+         function onEachFeature_flowlines(feature,layer) {
+            if (feature.properties && feature.properties.nhdplusid) {
+               layer.bindPopup(
+                  "NHDPlusID: " +
+                  feature.properties.nhdplusid.toString() +
+                  "<BR/>" +
+                  "Perm ID: " +
+                  feature.properties.permanent_identifier +
+                  "<BR/>" +
+                  "Reach Code: " +
+                  feature.properties.reachcode +
+                  "<BR/>" +
+                  "Hydro Seq: " +
+                  feature.properties.hydroseq.toString() +
+                  "<BR/>" +
+                  "FMeasure: " +
+                  feature.properties.fmeasure.toString() +
+                  "<BR/>" +
+                  "TMeasure: " +
+                  feature.properties.tmeasure.toString() +
+                  "<BR/>" +
+                  "GNIS Name: " +
+                  feature.properties.gnis_name +
+                  "<BR/>" +
+                  "Length (Km): " +
+                  feature.properties.lengthkm +
+                  "<BR/>" +
+                  "Network Distance (Km): " +
+                  feature.properties.network_distancekm +
+                  "<BR/>" 
+               );
+            }
+         }
+
+         function run_service() {
+            dz_clear();
+            busy_on();
+
+            var start_geojsonval = document.getElementById("pPoint").value;
+            var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+            if (start_geojsonval == "" ) {
+               
+               var search_type      = get_select_values(document.getElementById("pSearchType"));
+               
+               var data = {
+                   "search_type"               : search_type
+                  ,"nhdplus_version"           : nhdplus_version
+                   
+                  ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
+                  ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
+                  ,"start_reachcode"           : document.getElementById("pStartReachCode").value
+                  ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
+                  ,"start_measure"             : document.getElementById("pStartMeasure").value
+                  
+                  ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
+                  ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
+                  ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
+                  ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
+                  ,"stop_measure"              : document.getElementById("pStopMeasure").value
+                  
+                  ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+                  ,"return_flowline_details"   : true
+                  ,"return_flowline_geometry"  : true
+               }
+            
+               var http = "http";
+               if (postgrest_port == "443" ) {
+                  http = "https";
+               }
+               httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_nav",data,nav_response);
+            
+            } else {
+               if (start_geojsonval !== "") {
+                  console.log(start_geojsonval);
+                  var data = {
+                      "point"           : JSON.parse(start_geojsonval)
+                     ,"nhdplus_version" : nhdplus_version 
+                     ,"return_snap_path": true
+                  }
+                  
+                  var http = "http";
+                  if (postgrest_port == "443" ) {
+                     http = "https";
+                  }
+                  httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/point_catreach_index",data,pt1_response);
+               
+               } 
+            
+            }
+            
+         }
+         
+         function httpPost(url,data,callback) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open("POST",url,true);
+            xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
+            xmlHttp.responseType = 'json';
+            xmlHttp.onreadystatechange = function() {
+               if(xmlHttp.readyState === 4) {
+                  if(xmlHttp.status === 200) {
+                     response = xmlHttp.response;
+                     callback(null,response);
+                  } else {
+                     callback(xmlHttp.statusText,null);
+                  }
+               }
+            };
+            xmlHttp.send(JSON.stringify(data));
+         }
+
+         function get_select_values(select){
+            var result = null;
+            
+            if ( select == null ) {
+               return result;
+            }
+            
+            if ( select.options == null ) {
+               return result;
+            }
+            
+            if ( select.selectedIndex == null ) {
+               return result;
+            }
+            
+            return select.options[select.selectedIndex].value;
+         
+         }
+         
+         function get_mselect_values(select){
+            var result = [];
+            var options = select && select.options;
+            var opt;
+            
+            if ( options == null ) {
+               return result;
+            }
+
+            for (var i=0, iLen=options.length; i<iLen; i++) {
+               opt = options[i];
+
+               if (opt.selected) {
+                  result.push(opt.value || opt.text);
+               }
+            }
+            return result;
+         }
+         
+         function nav_response(error,response) {
+            busy_off();
+   
+            if (error) {
+               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+               return false;
+            } else if (response == null) {
+               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+               return false;
+            } else if (response.return_code != 0) {
+               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+               return false;
+            } else if (response.catchment_count == 0) {
+               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+            }
+            
+            if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
+               flowlines.addData(response.flowlines).setStyle({
+                  "color": "#FFFF00",
+                  "fillColor": "#FFFF00"
+               });
+               
+               map.fitBounds(flowlines.getBounds(), {
+                  maxZoom: 16
+               });
+               
+            }
+            
+         }
+         
+         function pt1_response(error,response) {
+            if (error) {
+               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+               return false;
+            } else if (response == null) {
+               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+               return false;
+            } else if (response.return_code != 0) {
+               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+               return false;
+            } else if (response.catchment_count == 0) {
+               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+            }
+            
+            if (response.snap_path !== null && response.snap_path.geometry.type !== null) {
+               snap_path.addData(response.snap_path).setStyle({
+                   "color": "#FFA500"
+                  ,"fillColor": "#FFA500"
+               });
+               
+               document.getElementById("pStartNHDPlusID").value = response.nhdplusid;
+               document.getElementById("pStartPermanentIdentifier").value = response.permanent_identifier;
+               document.getElementById("pStartReachCode").value = response.reachcode;
+               document.getElementById("pStartHydroSeq").value = response.hydroseq;
+               document.getElementById("pStartMeasure").value = response.snap_measure;
+               
+            }
+
+            var stop_geojsonval  = document.getElementById("pPoint2").value;
+            var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+            if (stop_geojsonval !== "") {
+               
+               var data = {
+                   "point"           : JSON.parse(stop_geojsonval)
+                  ,"nhdplus_version" : nhdplus_version 
+                  ,"return_snap_path": true
+               }
+               
+               var http = "http";
+               if (postgrest_port == "443" ) {
+                  http = "https";
+               }
+               httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/point_catreach_index",data,pt2_response);
+            
+            } else {
+               var search_type      = get_select_values(document.getElementById("pSearchType"));
+            
+               var data = {
+                   "search_type"               : search_type
+                  ,"nhdplus_version"           : nhdplus_version
+                   
+                  ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
+                  ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
+                  ,"start_reachcode"           : document.getElementById("pStartReachCode").value
+                  ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
+                  ,"start_measure"             : document.getElementById("pStartMeasure").value
+                  
+                  ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
+                  ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
+                  ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
+                  ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
+                  ,"stop_measure"              : document.getElementById("pStopMeasure").value
+                  
+                  ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+                  ,"return_flowline_details"   : true
+                  ,"return_flowline_geometry"  : true
+               }
+            
+               var http = "http";
+               if (postgrest_port == "443" ) {
+                  http = "https";
+               }
+               httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_nav",data,nav_response);
+            }
+            
+         }
+         
+         function pt2_response(error,response) {
+            if (error) {
+               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+               return false;
+            } else if (response == null) {
+               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+               return false;
+            } else if (response.return_code != 0) {
+               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+               return false;
+            } else if (response.catchment_count == 0) {
+               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+            }
+            
+            if (response.snap_path !== null && response.snap_path.geometry.type !== null) {
+               snap_path.addData(response.snap_path).setStyle({
+                   "color": "#FFA500"
+                  ,"fillColor": "#FFA500"
+               });
+               
+               document.getElementById("pStopNHDPlusID").value = response.nhdplusid;
+               document.getElementById("pStopPermanentIdentifier").value = response.permanent_identifier;
+               document.getElementById("pStopReachCode").value = response.reachcode;
+               document.getElementById("pStopHydroSeq").value = response.hydroseq;
+               document.getElementById("pStopMeasure").value = response.snap_measure;
+               
+            }
+            
+            var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+            var search_type      = get_select_values(document.getElementById("pSearchType"));
+            
+            var data = {
+                "search_type"               : search_type
+               ,"nhdplus_version"           : nhdplus_version
+                
+               ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
+               ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
+               ,"start_reachcode"           : document.getElementById("pStartReachCode").value
+               ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
+               ,"start_measure"             : document.getElementById("pStartMeasure").value
+               
+               ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
+               ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
+               ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
+               ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
+               ,"stop_measure"              : document.getElementById("pStopMeasure").value
+               
+               ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+               ,"return_flowline_details"   : true
+               ,"return_flowline_geometry"  : true
+            }
+         
+            var http = "http";
+            if (postgrest_port == "443" ) {
+               http = "https";
+            }
+            httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_nav",data,nav_response);
+            
+         }
+         
+         function dz_clear() {
+            document.getElementById("output").innerHTML = "";
+            snap_path.clearLayers();
+            flowlines.clearLayers();
+            busy_off();
+            document.getElementById("dz_run_service").disabled = true;
+         }
+
+         function busy_on() {
+            document.getElementById("busy").style.visibility = "visible";
+            document.body.style.cursor = "wait";
+            document.getElementById("dz_run_service").disabled = true;
+         }
+
+         function busy_off() {
+            document.getElementById("busy").style.visibility = "hidden";
+            document.body.style.cursor = "auto";
+            document.getElementById("dz_run_service").disabled = false;
+         }
+         
+         function blank_pts() {
+            drawnItems.clearLayers();
+            document.getElementById("pPoint").value = "";
+            document.getElementById("pPoint2").value = "";
+         }
+
+         function blank_pt1() {
+           document.getElementById("pPoint").value = "";
+         }
+
+         function blank_pt2() {
+           document.getElementById("pPoint2").value = "";
+         }
+          
+         function blank_comids() {
+           blank_start_nhdplusids();
+           blank_stop_nhdplusids();
+         }
+
+         function blank_start_nhdplusids() {
+           document.getElementById("pStartNHDPlusID").value = "";
+           document.getElementById("pStartPermanentIdentifier").value = "";
+           document.getElementById("pStartReachCode").value = "";
+           document.getElementById("pStartHydroSeq").value = "";
+           document.getElementById("pStartMeasure").value = "";
+         }
+
+         function blank_stop_nhdplusids() {
+           document.getElementById("pStopNHDPlusID").value = "";
+           document.getElementById("pStopPermanentIdentifier").value = "";
+           document.getElementById("pStopReachCode").value = "";
+           document.getElementById("pStopHydroSeq").value = "";
+           document.getElementById("pStopMeasure").value = "";
+         }
+
+         function check_start() {
+           var search_type = get_select_values(document.getElementById("pSearchType"));
+
+           var pt1 = document.getElementById("pPoint").value;
+           var pt2 = document.getElementById("pPoint2").value;
+
+           var com1 = document.getElementById("pStartNHDPlusID").value;
+           var per1 = document.getElementById("pStartPermanentIdentifier").value;
+           var rch1 = document.getElementById("pStartReachCode").value;
+           var hyd1 = document.getElementById("pStartHydroSeq").value;
+
+           var com2 = document.getElementById("pStopNHDPlusID").value;
+           var per2 = document.getElementById("pStopPermanentIdentifier").value;
+           var rch2 = document.getElementById("pStopReachCode").value;
+           var hyd2 = document.getElementById("pStopHydroSeq").value;
+
+           if (search_type != "PP" && search_type != "PPALL" && pt1 !== null && pt1 !== "") {
+             document.getElementById("dz_run_service").disabled = false;
+           } else if (
+             ( search_type == "PP" || search_type == "PPALL" ) &&
+             pt1 !== null &&
+             pt1 !== "" &&
+             pt2 !== null &&
+             pt2 !== ""
+           ) {
+             document.getElementById("dz_run_service").disabled = false;
+           } else {
+             if (search_type == "PP" || search_type == "PPALL") {
+               if (
+                 (com1 !== null && com1 !== "") ||
+                 (per1 !== null && per1 !== "") ||
+                 (rch1 !== null && rch1 !== "") ||
+                 (hyd1 !== null && hyd1 !== "") 
+               ) {
+                 if (
+                   (com1 !== null && com1 !== "") ||
+                   (per1 !== null && per1 !== "") ||
+                   (rch1 !== null && rch1 !== "") ||
+                   (hyd1 !== null && hyd1 !== "")
+                 ) {
+                   document.getElementById("dz_run_service").disabled = false;
+                 } else {
+                   document.getElementById("dz_run_service").disabled = true;
+                 }
+               }
+             } else {
+               if (
+                 (com1 !== null && com1 !== "") ||
+                 (per1 !== null && per1 !== "") ||
+                 (rch1 !== null && rch1 !== "") ||
+                 (hyd1 !== null && hyd1 !== "") 
+               ) {
+                 document.getElementById("dz_run_service").disabled = false;
+               } else {
+                 document.getElementById("dz_run_service").disabled = true;
+               }
+             }
+           }
+         }
+         
+      </script>
+   </body>
+</html>

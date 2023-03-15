@@ -62,6 +62,13 @@ BEGIN
          ,'status_message', 'valid input point is required.'
       );
    
+   ELSIF ST_GeometryType(sdo_point) != 'ST_Point'
+   THEN
+      RETURN JSONB_BUILD_OBJECT(
+          'return_code',    -20
+         ,'status_message', 'geometry must be single point.'
+      );
+   
    END IF;
    
    IF JSONB_PATH_EXISTS(json_input,'$.nhdplus_version')
@@ -565,7 +572,7 @@ BEGIN
           ST_InterpolatePoint(
              sdo_flowline
             ,sdo_point
-          )
+          )::NUMERIC
          ,5
       );
       
@@ -651,7 +658,7 @@ LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_pgrest.point_catreach_index(
    JSONB
-) OWNER TO cipsrv;
+) OWNER TO cipsrv_pgrest;
 
 GRANT EXECUTE ON FUNCTION cipsrv_pgrest.point_catreach_index(
    JSONB
