@@ -582,7 +582,7 @@ BEGIN
             ST_GeometryN(
                 ST_LocateAlong(
                   sdo_flowline
-                 ,num_measure
+                 ,num_snap_measure
                 )
                ,1
             )
