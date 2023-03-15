@@ -540,7 +540,7 @@ BEGIN
          WHERE
          a.nhdplusid = int_nhdplusid;
          
-      ELSIF str_nhdplus_version = 'nhdplus_m'
+      ELSIF str_nhdplus_version = 'nhdplus_h'
       THEN
          SELECT
           a.permanent_identifier

@@ -50,7 +50,7 @@
                <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
-               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px">
+               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="blank_nhdplusids();">
                   <option value="nhdplus_m" SELECTED>Medium Resolution</option>
                   <option value="nhdplus_h">High Resolution</option>
                </select>
@@ -111,16 +111,10 @@
                <input name="pSearchMaxDistanceKm" type="text" class="text" id="pSearchMaxDistanceKm" style="display:inline; width:30px" value="15" />&nbsp;km
                <br/>
                <br/>
+               
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
-               <input type="button" onclick="dz_clear();" value="Clear" name="dz_clear" id="dz_clear" />&nbsp;<input type="button" onclick="run_random_point();" value="Random" name="dz_random" id="dz_random" />&nbsp;
-               <select name="randomy" id="randomy" style="font-size: 9px;">
-                 <option value="ALL" SELECTED>Random All</option>
-                 <option value="CONUS" >Contiguous US</option>
-                 <option value="HAWAII">Hawaii</option>
-                 <option value="PRVI"  >Puerto Rico / VI</option>
-                 <option value="GUMP"  >Guam / Marianas</option>
-                 <option value="AS"    >American Samoa</option>
-               </select>
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
+          
             </div>
          </div>
       </div>
@@ -132,6 +126,7 @@
       <script>
          document.getElementById("dz_run_service").disabled = true;
          document.getElementById("busy").style.visibility = "hidden";
+         update_form();
          
          var map = L.map("map").setView([38.88343, -77.035271], 13);
          mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
@@ -288,7 +283,7 @@
          }
 
          function run_service() {
-            dz_clear();
+            dz_clear_old();
             busy_on();
 
             var start_geojsonval = document.getElementById("pPoint").value;
@@ -326,7 +321,7 @@
             
             } else {
                if (start_geojsonval !== "") {
-                  console.log(start_geojsonval);
+
                   var data = {
                       "point"           : JSON.parse(start_geojsonval)
                      ,"nhdplus_version" : nhdplus_version 
@@ -419,8 +414,9 @@
             
             if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
                flowlines.addData(response.flowlines).setStyle({
-                  "color": "#FFFF00",
-                  "fillColor": "#FFFF00"
+                   "color": "#0000FF"
+                  ,"fillColor": "#0000FF"
+                  ,"weight": 4
                });
                
                map.fitBounds(flowlines.getBounds(), {
@@ -568,7 +564,17 @@
             
          }
          
-         function dz_clear() {
+         function dz_reset() {
+            document.getElementById("output").innerHTML = "";
+            snap_path.clearLayers();
+            flowlines.clearLayers();
+            blank_pts();
+            blank_nhdplusids()
+            busy_off();
+            document.getElementById("dz_run_service").disabled = true;
+         }
+         
+         function dz_clear_old() {
             document.getElementById("output").innerHTML = "";
             snap_path.clearLayers();
             flowlines.clearLayers();
@@ -602,7 +608,7 @@
            document.getElementById("pPoint2").value = "";
          }
           
-         function blank_comids() {
+         function blank_nhdplusids() {
            blank_start_nhdplusids();
            blank_stop_nhdplusids();
          }
@@ -681,6 +687,28 @@
                }
              }
            }
+         }
+         
+         function update_form() {
+            var search_type = get_select_values(document.getElementById("pSearchType"));
+
+            if (search_type == "PP" || search_type == "PPALL") {
+               document.getElementById("pStopNHDPlusID").disabled = false;
+               document.getElementById("pStopPermanentIdentifier").disabled = false;
+               document.getElementById("pStopReachCode").disabled = false;
+               document.getElementById("pStopHydroSeq").disabled = false;
+               document.getElementById("pStopMeasure").disabled = false;
+               document.getElementById("pPoint2").disabled = false;
+               document.getElementById("pSearchMaxDistanceKm").disabled = true;
+            } else {
+               document.getElementById("pStopNHDPlusID").disabled = true;
+               document.getElementById("pStopPermanentIdentifier").disabled = true;
+               document.getElementById("pStopReachCode").disabled = true;
+               document.getElementById("pStopHydroSeq").disabled = true;
+               document.getElementById("pStopMeasure").disabled = true;
+               document.getElementById("pPoint2").disabled = true;
+               document.getElementById("pSearchMaxDistanceKm").disabled = false;
+            }
          }
          
       </script>
