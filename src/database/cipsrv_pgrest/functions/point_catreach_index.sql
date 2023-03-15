@@ -597,7 +597,7 @@ BEGIN
          AND num_snap_distancekm > 0.00005
          THEN
             sdo_snap_path := ST_MakeLine(
-                sdo_input
+                sdo_point
                ,sdo_snap_point
             );
       
