@@ -401,29 +401,39 @@ BEGIN
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
          json_flowlines := (
-            SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+            SELECT 
+            JSONB_AGG(j.my_json) AS my_feats
             FROM (
-               SELECT
-                a.nhdplusid
-               ,a.gnis_id
-               ,a.gnis_name
-               ,a.reachcode
-               ,a.fmeasure
-               ,a.tmeasure
-               ,CASE
-                WHEN boo_return_flowline_geometry
-                THEN
-                   ST_Transform(a.shape,4326)
-                ELSE
-                   CAST(NULL AS GEOMETRY)
-                END AS geom
-                FROM
-                cipsrv_nhdplus_m.nhdflowline a
-                WHERE
-                EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                ORDER BY
-                a.nhdplusid
-            ) t
+               SELECT 
+               JSONB_BUILD_OBJECT(
+                   'type',       'Feature'
+                  ,'obj_type',   'indexed_flowline_properties'
+                  ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+                  ,'properties', TO_JSONB(t.*) - 'geom'
+               ) AS my_json
+               FROM (
+                  SELECT
+                   a.nhdplusid
+                  ,a.gnis_id
+                  ,a.gnis_name
+                  ,a.reachcode
+                  ,a.fmeasure
+                  ,a.tmeasure
+                  ,CASE
+                   WHEN boo_return_flowline_geometry
+                   THEN
+                      ST_Transform(a.shape,4326)
+                   ELSE
+                      CAST(NULL AS GEOMETRY)
+                   END AS geom
+                   FROM
+                   cipsrv_nhdplus_m.nhdflowline a
+                   WHERE
+                   EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
+                   ORDER BY
+                   a.nhdplusid
+               ) t
+            ) j
          );
          
          IF json_flowlines IS NULL
@@ -442,29 +452,39 @@ BEGIN
       ELSIF str_nhdplus_version = 'nhdplus_h'
       THEN
          json_flowlines := (
-            SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+            SELECT 
+            JSONB_AGG(j.my_json) AS my_feats
             FROM (
-               SELECT
-                a.nhdplusid
-               ,a.gnis_id
-               ,a.gnis_name
-               ,a.reachcode
-               ,a.fmeasure
-               ,a.tmeasure
-               ,CASE
-                WHEN boo_return_flowline_geometry
-                THEN
-                   ST_Transform(a.shape,4326)
-                ELSE
-                   CAST(NULL AS GEOMETRY)
-                END AS geom
-                FROM
-                cipsrv_nhdplus_h.nhdflowline a
-                WHERE
-                EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                ORDER BY
-                a.nhdplusid
-            ) t
+               SELECT 
+               JSONB_BUILD_OBJECT(
+                   'type',       'Feature'
+                  ,'obj_type',   'indexed_flowline_properties'
+                  ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+                  ,'properties', TO_JSONB(t.*) - 'geom'
+               ) AS my_json
+               FROM (
+                  SELECT
+                   a.nhdplusid
+                  ,a.gnis_id
+                  ,a.gnis_name
+                  ,a.reachcode
+                  ,a.fmeasure
+                  ,a.tmeasure
+                  ,CASE
+                   WHEN boo_return_flowline_geometry
+                   THEN
+                      ST_Transform(a.shape,4326)
+                   ELSE
+                      CAST(NULL AS GEOMETRY)
+                   END AS geom
+                   FROM
+                   cipsrv_nhdplus_h.nhdflowline a
+                   WHERE
+                   EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
+                   ORDER BY
+                   a.nhdplusid
+               ) t
+            ) j
          );
          
          IF json_flowlines IS NULL
@@ -501,25 +521,35 @@ BEGIN
    -- Build the catchments featurecollection
    ----------------------------------------------------------------------------
    json_catchments := (
-      SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)  
+      SELECT 
+      JSONB_AGG(j.my_json) AS my_feats
       FROM (
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecode
-         ,a.xwalk_huc12
-         ,a.areasqkm
-         ,CASE WHEN boo_return_catchment_geometry
-          THEN
-            ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
-          ELSE
-            NULL::GEOMETRY
-          END AS geom
-         FROM
-         tmp_cip_out a
-         ORDER BY
-          a.catchmentstatecode
-         ,a.nhdplusid
-      ) t
+         SELECT 
+         JSONB_BUILD_OBJECT(
+             'type',       'Feature'
+            ,'obj_type',   'indexed_catchment_properties'
+            ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+            ,'properties', TO_JSONB(t.*) - 'geom'
+         ) AS my_json
+         FROM (
+            SELECT
+             a.nhdplusid
+            ,a.catchmentstatecode
+            ,a.xwalk_huc12
+            ,a.areasqkm
+            ,CASE WHEN boo_return_catchment_geometry
+             THEN
+               ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
+             ELSE
+               NULL::GEOMETRY
+             END AS geom
+            FROM
+            tmp_cip_out a
+            ORDER BY
+             a.catchmentstatecode
+            ,a.nhdplusid
+         ) t
+      ) j
    );
    
    IF json_catchments IS NULL

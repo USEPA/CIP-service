@@ -616,6 +616,7 @@ BEGIN
       jsonb_snap_point := JSONB_BUILD_OBJECT(
           'type'      ,'Feature'
          ,'geometry'  ,ST_AsGeoJSON(ST_Transform(sdo_snap_point,4326))::JSONB
+         ,'obj_type'  ,'snap_point_properties'
          ,'properties',JSONB_BUILD_OBJECT(
              'nhdplusid'  ,int_nhdplusid
             ,'reachcode'  ,str_reachcode
@@ -630,6 +631,7 @@ BEGIN
       jsonb_snap_path := JSONB_BUILD_OBJECT(
           'type'      ,'Feature'
          ,'geometry'  ,ST_AsGeoJSON(ST_Transform(sdo_snap_path,4326))::JSONB
+         ,'obj_type'  ,'snap_path_properties'
          ,'properties',JSONB_BUILD_OBJECT(
             'lengthkm', num_snap_distancekm
          )

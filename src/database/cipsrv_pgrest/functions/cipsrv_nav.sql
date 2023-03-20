@@ -263,39 +263,49 @@ BEGIN
    -- Build the flowlines featurecollection
    ----------------------------------------------------------------------------
    json_flowlines := (
-      SELECT JSON_AGG(ST_AsGeoJSON(t.*)::JSON)
+      SELECT 
+      JSONB_AGG(j.my_json) AS my_feats
       FROM (
-         SELECT
-          a.nhdplusid
-         ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.levelpathi
-         ,a.terminalpa
-         ,a.uphydroseq
-         ,a.dnhydroseq
-         ,TRUNC(a.lengthkm,8)    AS lengthkm
-         ,TRUNC(a.flowtimeday,8) AS flowtimeday
-         /* +++++++++ */
-         ,TRUNC(a.network_distancekm,8)  AS network_distancekm
-         ,TRUNC(a.network_flowtimeday,8) AS network_flowtimeday
-         /* +++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         ,a.gnis_id
-         ,a.gnis_name
-         ,a.wbarea_permanent_identifier
-         /* +++++++++ */
-         ,a.navtermination_flag
-         ,a.nav_order
-         ,ST_Transform(a.shape,4326) AS geom
-         FROM
-         tmp_navigation_results a
-         ORDER BY
-          a.nav_order
-         ,a.network_distancekm
-      ) t
+         SELECT 
+         JSONB_BUILD_OBJECT(
+             'type',       'Feature'
+            ,'obj_type',   'navigated_flowline_properties'
+            ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+            ,'properties', TO_JSONB(t.*) - 'geom'
+         ) AS my_json
+         FROM (
+            SELECT
+             a.nhdplusid
+            ,a.hydroseq
+            ,a.fmeasure
+            ,a.tmeasure
+            ,a.levelpathi
+            ,a.terminalpa
+            ,a.uphydroseq
+            ,a.dnhydroseq
+            ,TRUNC(a.lengthkm,8)    AS lengthkm
+            ,TRUNC(a.flowtimeday,8) AS flowtimeday
+            /* +++++++++ */
+            ,TRUNC(a.network_distancekm,8)  AS network_distancekm
+            ,TRUNC(a.network_flowtimeday,8) AS network_flowtimeday
+            /* +++++++++ */
+            ,a.permanent_identifier
+            ,a.reachcode
+            ,a.fcode
+            ,a.gnis_id
+            ,a.gnis_name
+            ,a.wbarea_permanent_identifier
+            /* +++++++++ */
+            ,a.navtermination_flag
+            ,a.nav_order
+            ,ST_Transform(a.shape,4326) AS geom
+            FROM
+            tmp_navigation_results a
+            ORDER BY
+             a.nav_order
+            ,a.network_distancekm
+         ) t
+      ) j
    );
          
    IF json_flowlines IS NULL
