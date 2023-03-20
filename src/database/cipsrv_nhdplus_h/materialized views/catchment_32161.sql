@@ -2,7 +2,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_32161 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -15,14 +14,17 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,iscoastal
+   ,isocean
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -35,13 +37,20 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.iscoastal
+,a.isocean
 ---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal = 'Y'    THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
    FROM
@@ -77,6 +86,15 @@ ON cipsrv_nhdplus_h.catchment_32161(fcode);
 
 CREATE INDEX catchment_32161_03i
 ON cipsrv_nhdplus_h.catchment_32161(istribal);
+
+CREATE INDEX catchment_32161_04i
+ON cipsrv_nhdplus_h.catchment_32161(isnavigable);
+
+CREATE INDEX catchment_32161_05i
+ON cipsrv_nhdplus_h.catchment_32161(iscoastal);
+
+CREATE INDEX catchment_32161_06i
+ON cipsrv_nhdplus_h.catchment_32161(isocean);
 
 CREATE INDEX catchment_32161_spx
 ON cipsrv_nhdplus_h.catchment_32161 USING GIST(shape);

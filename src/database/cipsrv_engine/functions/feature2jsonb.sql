@@ -114,6 +114,7 @@ BEGIN
    json_rez := JSONB_BUILD_OBJECT(
        'type'       ,'Feature'
       ,'geometry'   ,ST_AsGeoJSON(ST_Transform((p_feature).geometry,4326))::JSONB
+      ,'obj_type'   ,'event_feature_properties'
       ,'properties' ,json_properties
    );
 
