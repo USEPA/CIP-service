@@ -8,7 +8,7 @@ The Catchment Index Processing Service provides the ability to associate hydrolo
 
 ### Capabilities
 
-To explore the CIP-service API capabilities, see the [OpenAPI documentation](docs/openapi.yaml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. Good examples would be the [Swagger Next Editor](https://editor-next.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) or the [OpenAPI Explorer](https://rhosys.github.io/openapi-explorer/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml#?route=overview). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
+To explore the CIP-service API capabilities, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. Good examples would be the [Swagger Next Editor](https://editor-next.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) or the [OpenAPI Explorer](https://rhosys.github.io/openapi-explorer/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml#?route=overview). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
 
 ### Overview
 
