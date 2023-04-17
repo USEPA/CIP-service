@@ -9,4 +9,5 @@ Dockerfile.jp
 Dockerfile.ng
 Dockerfile.pg
 Dockerfile.pr
-
+*.gdb
+ImportLog*
