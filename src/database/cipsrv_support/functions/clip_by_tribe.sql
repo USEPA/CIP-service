@@ -83,7 +83,7 @@ BEGIN
    
    IF UPPER(str_comptype_clip) IN ('R','T')
    THEN
-      str_comptype_clip := UPPER(p_comptype_clip);
+      str_comptype_clip := UPPER(str_comptype_clip);
    
    ELSE
       str_comptype_clip := NULL;
