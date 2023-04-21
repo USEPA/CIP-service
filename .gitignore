@@ -11,6 +11,7 @@ Dockerfile.pg
 Dockerfile.pr
 *.gdb
 ImportLog*
-.backups/
-GPMessages/
-scratch/
+demo/arcgis/CIP-service/.backups/
+demo/arcgis/CIP-service/GpMessages/
+demo/arcgis/CIP-service/scratch/
+demo/arcgis/CIP-service/Index/
