@@ -285,36 +285,41 @@ class CIPIndex(object):
       with open(scratchfile,"r") as file:
          geojson = json.loads(file.read());
          
+      payload = {
+          'geometry':                      geojson
+         ,'geometry_clip':                 clipby
+         ,'geometry_clip_stage':           clipstage
+         ,'catchment_filter':              filterby
+         ,'nhdplus_version':               resolution
+         ,'wbd_version':                   None
+            
+         ,'default_point_indexing_method': point_method
+         ,'default_line_indexing_method':  line_method
+         ,'default_ring_indexing_method':  ring_method
+         ,'default_area_indexing_method':  area_method
+         ,'default_line_threshold':        linear_threshold
+         ,'default_areacat_threshold':     areacat_threshold
+         ,'default_areaevt_threshold':     areaevt_threshold
+          
+         ,'return_indexed_features':       True
+         ,'return_indexed_collection':     False
+         ,'return_catchment_geometry':     True
+         ,'return_flowlines':              show_flowlines
+         ,'return_flowline_geometry':      True
+         ,'return_huc12s':                 False
+      }
+      
+      arcpy.AddMessage(str(json.dumps(payload)))
+         
       ##---------------------------------------------------------------------##
       response = requests.post(
           g_dmap_host + ':' + str(g_dmap_port) + '/rpc/cipsrv_index'
-         ,json = {
-             'geometry':                      geojson
-            ,'geometry_clip':                 clipby
-            ,'geometry_clip_stage':           clipstage
-            ,'catchment_filter':              filterby
-            ,'nhdplus_version':               resolution
-            ,'wbd_version':                   None
-               
-            ,'default_point_indexing_method': point_method
-            ,'default_line_indexing_method':  line_method
-            ,'default_ring_indexing_method':  ring_method
-            ,'default_area_indexing_method':  area_method
-            ,'default_line_threshold':        linear_threshold
-            ,'default_areacat_threshold':     areacat_threshold
-            ,'default_areaevt_threshold':     areaevt_threshold
-             
-            ,'return_indexed_features':       True
-            ,'return_indexed_collection':     False
-            ,'return_catchment_geometry':     True
-            ,'return_flowlines':              show_flowlines
-            ,'return_flowline_geometry':      True
-            ,'return_huc12s':                 False
-         }
+         ,json = payload
       );
+      arcpy.AddMessage(str(response))
       if response.status_code != 200:
          raise Exception("Indexing Query failed with return code " + str(response.status_code) + ".");
-         
+      
       jresponse = response.json();
       
       arcpy.AddMessage(str(jresponse));
