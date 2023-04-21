@@ -243,7 +243,10 @@ class CIPIndex(object):
    def execute(self, parameters, messages):
    
       aprx = arcpy.mp.ArcGISProject(g_proj);
-      map  = aprx.listMaps(g_mapname)[0];
+      try:
+         map  = aprx.listMaps(g_mapname)[0];
+      except:
+         map  = aprx.listMaps("*")[0];
       
       ##---------------------------------------------------------------------##
       resolution        = resolution2code(parameters[2].valueAsText);
@@ -309,20 +312,20 @@ class CIPIndex(object):
          ,'return_huc12s':                 False
       }
       
-      arcpy.AddMessage(str(json.dumps(payload)))
+      #arcpy.AddMessage(str(json.dumps(payload)))
          
       ##---------------------------------------------------------------------##
       response = requests.post(
           g_dmap_host + ':' + str(g_dmap_port) + '/rpc/cipsrv_index'
          ,json = payload
       );
-      arcpy.AddMessage(str(response))
+      
+      #arcpy.AddMessage(str(response))
       if response.status_code != 200:
          raise Exception("Indexing Query failed with return code " + str(response.status_code) + ".");
       
       jresponse = response.json();
       
-      arcpy.AddMessage(str(jresponse));
       if not 'return_code' in jresponse:
          raise Exception("Indexing Query failed: " + str(jresponse));
          
