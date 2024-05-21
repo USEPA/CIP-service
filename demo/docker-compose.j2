@@ -36,12 +36,12 @@ services:
          dockerfile: Dockerfile.ng
          args:
 {%-      if cip_pr_host == "env.POSTGREST_HOST" %}
-            ARG_POSTGREST_HOST: ${POSTGREST_HOST}
+            ARG_POSTGREST_HOST: ${POSTGREST_HOST:-localhost}
 {%-      else %}
             ARG_POSTGREST_HOST: {{ cip_pr_host }}
 {%-      endif %}
 {%-      if cip_pr_port == "env.POSTGREST_PORT" %}
-            ARG_POSTGREST_PORT: ${POSTGREST_PORT}
+            ARG_POSTGREST_PORT: ${POSTGREST_PORT:-3000}
 {%-      else %}
             ARG_POSTGREST_PORT: {{ cip_pr_port }}
 {%-      endif %}
@@ -50,7 +50,11 @@ services:
 {%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}
       ports:
          - target: 80
+{%-      if components.cip_ng.external_port == "env.NGINX_PORT" %}
+           published: ${NGINX_PORT:-8080}
+{%-      else %}
            published: {{ components.cip_ng.external_port }}
+{%-      endif %}
 {%-    endif %}
       networks:
          - cip

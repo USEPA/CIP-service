@@ -45,7 +45,7 @@ def load_sqlfile(conn,sqlfile,echo=False):
             sqlbuf = [];
             for line in file:
             
-                if not re.match('(^--\*\*\*\*\*\*.*)|(^-----)',line):
+                if not re.match(r"(^--\*\*\*\*\*\*.*)|(^-----)",line):
                     
                     if re.match(splitmatch,line) and len(sqlbuf) > 0:
                         
