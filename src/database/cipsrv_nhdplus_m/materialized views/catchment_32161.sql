@@ -15,8 +15,13 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
    ---
    ,istribal
    ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
    ,iscoastal
    ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
    ,areasqkm
    ,shape
@@ -38,8 +43,13 @@ SELECT
 ---
 ,a.istribal
 ,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
 ,a.iscoastal
 ,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
 ---
 ,a.areasqkm
 ,a.shape
@@ -47,10 +57,15 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,bool_or(CASE WHEN aa.istribal = 'Y'    THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
    ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
    ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
    FROM
