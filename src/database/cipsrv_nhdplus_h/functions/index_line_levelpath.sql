@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threashold_perc    NUMERIC
+   ,IN  p_line_threshold_perc     NUMERIC
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -14,7 +14,7 @@ DECLARE
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    geom_part              GEOMETRY;
-   num_lin_threshold      NUMERIC;
+   num_line_threshold     NUMERIC;
    int_count              INTEGER;
    num_main_levelpathi    BIGINT;
    ary_main_lp_int_nodes  BIGINT[];
@@ -29,6 +29,7 @@ DECLARE
    int_debug              INTEGER;
    str_debug              VARCHAR;
    int_geom_count         INTEGER;
+   num_geometry_lengthkm  NUMERIC;
 
 BEGIN
 
@@ -38,12 +39,12 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
-   IF p_line_threashold_perc IS NULL
+   IF p_line_threshold_perc IS NULL
    THEN
-      num_lin_threshold := 0;
+      num_line_threshold := 0;
    
    ELSE
-      num_lin_threshold := p_line_threashold_perc / 100;
+      num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
    
@@ -68,6 +69,18 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
+   
+   IF num_geometry_lengthkm IS NULL
+   THEN
+      num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC * 0.001,8);
+      
+   ELSE
+      num_geometry_lengthkm := p_geometry_lengthkm;
+      
+   END IF;
    
    ----------------------------------------------------------------------------
    -- Step 30
@@ -118,14 +131,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -218,14 +231,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -318,14 +331,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -418,14 +431,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -518,14 +531,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -618,14 +631,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -709,7 +722,7 @@ BEGIN
          FROM
          tmp_line a
          WHERE
-            (num_lin_threshold IS NULL OR a.nhdpercentage > num_lin_threshold)
+            (num_line_threshold IS NULL OR a.nhdpercentage > num_line_threshold)
          OR a.eventpercentage = 1
          GROUP BY
          a.levelpathi
@@ -766,7 +779,7 @@ BEGIN
                OR NOT (aa.tonode = ANY(ary_main_lp_int_nodes))
             )
             AND ( 
-               (num_lin_threshold IS NULL OR aa.nhdpercentage > num_lin_threshold)
+               (num_line_threshold IS NULL OR aa.nhdpercentage > num_line_threshold)
                OR aa.eventpercentage = 1
             )
             GROUP BY

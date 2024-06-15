@@ -2,38 +2,39 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
     IN  p_geometry             GEOMETRY
    ,IN  p_geometry_areasqkm    NUMERIC
    ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threashold_perc  NUMERIC
-   ,IN  p_evt_threashold_perc  NUMERIC
+   ,IN  p_cat_threshold_perc   NUMERIC
+   ,IN  p_evt_threshold_perc   NUMERIC
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
-   num_cat_threshold   NUMERIC;
-   num_evt_threshold   NUMERIC;
+   rec                   RECORD;
+   str_known_region      VARCHAR;
+   int_srid              INTEGER;
+   geom_input            GEOMETRY;
+   num_cat_threshold     NUMERIC;
+   num_evt_threshold     NUMERIC;
+   num_geometry_areasqkm NUMERIC;
 
 BEGIN
 
-   IF p_cat_threashold_perc IS NULL
+   IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
    
    ELSE
-      num_cat_threshold := p_cat_threashold_perc / 100;
+      num_cat_threshold := p_cat_threshold_perc / 100;
       
    END IF;
    
-   IF p_evt_threashold_perc IS NULL
+   IF p_evt_threshold_perc IS NULL
    THEN
       num_evt_threshold := 0;
    
    ELSE
-      num_evt_threshold := p_evt_threashold_perc / 100;
+      num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
 
@@ -54,6 +55,18 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
+   
+   IF p_geometry_areasqkm IS NULL
+   THEN
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   ELSE
+      num_geometry_areasqkm := p_geometry_areasqkm;
+      
+   END IF;
       
    IF str_known_region = '5070'
    THEN
@@ -70,21 +83,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -95,8 +111,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_5070 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -106,7 +121,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
@@ -125,21 +141,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -150,8 +169,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_3338 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -161,7 +179,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
@@ -180,21 +199,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -205,8 +227,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_26904 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -216,7 +237,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
@@ -235,21 +257,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -260,8 +285,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_32161 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -271,7 +295,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
@@ -290,21 +315,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -315,8 +343,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_32655 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -326,7 +353,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
@@ -345,21 +373,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -370,8 +401,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_32702 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -381,7 +411,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    

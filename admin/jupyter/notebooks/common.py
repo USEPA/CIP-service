@@ -22,6 +22,26 @@ def pg_restore(host_name,host_port,database_name,user_name,database_password,dum
    p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
     
    return p.communicate(bytes('{}\n'.format(database_password),'utf-8'));
+
+def ogr2ogr(cmdstring):
+    
+   command = 'ogr2ogr {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def ogr2ogr(cmdstring):
+    
+   command = 'ogr2ogr {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
    
 def load_sqlfile(conn,sqlfile,echo=False):
     

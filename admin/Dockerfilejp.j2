@@ -42,6 +42,7 @@ RUN apt-get update                              &&\
 RUN useradd -m -s /bin/bash -N -u 1001 ${NB_USER}           &&\
     mkdir /home/${NB_USER}/notebooks                        &&\
     mkdir /home/${NB_USER}/notebooks/sql                    &&\
+    mkdir /home/${NB_USER}/notebooks/upload                 &&\
     mkdir /home/${NB_USER}/loading_dock                     &&\
     mkdir -p /home/${NB_USER}/.ssh                          &&\
     chown -R ${NB_USER}:users /home/${NB_USER}/notebooks    &&\
@@ -63,6 +64,7 @@ RUN chmod 0644 /home/${NB_USER}/.ssh/known_hosts            &&\
     chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
 
 USER ${NB_USER}
+COPY ./jupyter/jupyter_notebook_config.py /home/jovyan/.jupyter/jupyter_notebook_config.py
 
 {%- if ghkey == true %}
 RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
@@ -82,6 +84,7 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels           \
       pysal                                                \
       rtree                                                \
       shapely                                              \
+      solara                                               \
       wget                                                 \
       openpyxl
 
@@ -100,6 +103,7 @@ RUN pip3 install --break-system-packages                   \
       pysal                                                \
       rtree                                                \
       shapely                                              \
+      solara                                               \
       wget                                                 \
       openpyxl
 

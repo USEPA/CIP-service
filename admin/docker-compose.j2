@@ -30,6 +30,7 @@
 # POSTGRESQL_HOST    : database host
 # POSTGRESQL_PORT    : database port
 # POSTGRESQL_CIP_PASS: cipsrv user password
+# POSTGRESQL_UPL_PASS: cipsrv_upload user password
 # JUPYTER_TOKEN      : jupyter server token, a value of "easy" will forgo this
 #
 #
@@ -70,6 +71,11 @@ services:
          POSTGRESQL_CIP_PASS:     $POSTGRESQL_CIP_PASS
 {%-   else %}
          POSTGRESQL_CIP_PASS:     {{ cip_pg_cip_pass }}
+{%-   endif %}
+{%-   if cip_pg_cip_pass == "env.POSTGRESQL_UPL_PASS"  %}
+         POSTGRESQL_UPL_PASS:     $POSTGRESQL_UPL_PASS
+{%-   else %}
+         POSTGRESQL_UPL_PASS:     {{ cip_pg_upl_pass }}
 {%-   endif %}
          GITHUB_REPO_URL:         {{ github_repo[ghrep].url }}
          GITHUB_DEFAULT_BRANCH:   {{ github_repo[ghrep].default_branch }}

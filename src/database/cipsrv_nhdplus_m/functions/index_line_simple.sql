@@ -2,28 +2,29 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threashold_perc    NUMERIC
+   ,IN  p_line_threshold_perc     NUMERIC
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
-   num_lin_threshold   NUMERIC;
-   int_count           INTEGER;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_line_threshold     NUMERIC;
+   int_count              INTEGER;
+   num_geometry_lengthkm  NUMERIC;
 
 BEGIN
 
-   IF p_line_threashold_perc IS NULL
+   IF p_line_threshold_perc IS NULL
    THEN
-      num_lin_threshold := 0;
+      num_line_threshold := 0;
    
    ELSE
-      num_lin_threshold := p_line_threashold_perc / 100;
+      num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
 
@@ -45,6 +46,18 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
 
+   IF p_geometry_lengthkm IS NULL
+   THEN
+      num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC * 0.001,8);
+      
+   ELSE
+      num_geometry_lengthkm := p_geometry_lengthkm;
+      
+   END IF;
+
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);
@@ -59,14 +72,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -104,7 +117,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
 
    ELSIF str_known_region = '3338'
@@ -121,14 +134,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -166,7 +179,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
    
    ELSIF str_known_region = '26904'
@@ -183,14 +196,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -228,7 +241,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32161'
@@ -245,14 +258,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -290,7 +303,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32655'
@@ -307,14 +320,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -352,7 +365,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32702'
@@ -369,14 +382,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -414,7 +427,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
    
    ELSE

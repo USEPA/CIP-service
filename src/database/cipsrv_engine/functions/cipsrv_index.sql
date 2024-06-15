@@ -304,7 +304,7 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
-                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+                  ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -315,7 +315,7 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
-                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+                  ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -335,7 +335,7 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
-                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+                  ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -346,7 +346,7 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
-                  ,p_line_threashold_perc   := (ary_features[i]).line_threshold
+                  ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -366,8 +366,8 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
                   ,p_known_region           := str_known_region
-                  ,p_cat_threashold_perc    := (ary_features[i]).areacat_threshold
-                  ,p_evt_threashold_perc    := (ary_features[i]).areaevt_threshold
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -378,8 +378,8 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
                   ,p_known_region           := str_known_region
-                  ,p_cat_threashold_perc    := (ary_features[i]).areacat_threshold
-                  ,p_evt_threashold_perc    := (ary_features[i]).areaevt_threshold
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -400,8 +400,8 @@ BEGIN
                    p_geometry             := (ary_features[i]).geometry
                   ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
                   ,p_known_region         := str_known_region
-                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
-                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -412,8 +412,8 @@ BEGIN
                    p_geometry             := (ary_features[i]).geometry
                   ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
                   ,p_known_region         := str_known_region
-                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
-                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -434,8 +434,8 @@ BEGIN
                    p_geometry             := (ary_features[i]).geometry
                   ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
                   ,p_known_region         := str_known_region
-                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
-                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -446,8 +446,8 @@ BEGIN
                    p_geometry             := (ary_features[i]).geometry
                   ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
                   ,p_known_region         := str_known_region
-                  ,p_cat_threashold_perc  := (ary_features[i]).areacat_threshold
-                  ,p_evt_threashold_perc  := (ary_features[i]).areaevt_threshold
+                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;

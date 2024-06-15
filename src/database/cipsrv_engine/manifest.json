@@ -24,6 +24,9 @@
          ,"includes": [
              "types/cip_feature.sql"
             ,"functions/temp_table_exists.sql"
+            ,"functions/table_exists.sql"
+            ,"functions/field_exists.sql"
+            ,"functions/index_exists.sql"
             ,"functions/create_cip_temp_tables.sql"
             ,"functions/featurecat.sql"
             ,"functions/jsonb2feature.sql"
@@ -34,12 +37,14 @@
             ,"functions/preprocess2summary.sql"
             ,"functions/unpackjsonb.sql"
             ,"functions/feature_clip.sql"
+            ,"functions/feature_batch_clip.sql"
             ,"functions/json2geometry.sql"
             ,"functions/json2numeric.sql"
             ,"functions/json2bigint.sql"
             ,"functions/determine_grid_srid.sql"
             ,"functions/parse_catchment_filter.sql"
             ,"functions/cipsrv_index.sql"
+            ,"procedures/cipsrv_batch_index.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [

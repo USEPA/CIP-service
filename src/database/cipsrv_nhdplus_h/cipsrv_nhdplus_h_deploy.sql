@@ -1312,7 +1312,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_simple(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threashold_perc    NUMERIC
+   ,IN  p_line_threshold_perc    NUMERIC
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -1328,12 +1328,12 @@ DECLARE
 
 BEGIN
 
-   IF p_line_threashold_perc IS NULL
+   IF p_line_threshold_perc IS NULL
    THEN
       num_lin_threshold := 0;
    
    ELSE
-      num_lin_threshold := p_line_threashold_perc / 100;
+      num_lin_threshold := p_line_threshold_perc / 100;
       
    END IF;
 
@@ -1762,7 +1762,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threashold_perc    NUMERIC
+   ,IN  p_line_threshold_perc    NUMERIC
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -1798,12 +1798,12 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
-   IF p_line_threashold_perc IS NULL
+   IF p_line_threshold_perc IS NULL
    THEN
       num_lin_threshold := 0;
    
    ELSE
-      num_lin_threshold := p_line_threashold_perc / 100;
+      num_lin_threshold := p_line_threshold_perc / 100;
       
    END IF;
    
@@ -2698,8 +2698,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_simple(
     IN  p_geometry             GEOMETRY
    ,IN  p_geometry_areasqkm    NUMERIC
    ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threashold_perc  NUMERIC
-   ,IN  p_evt_threashold_perc  NUMERIC
+   ,IN  p_cat_threshold_perc  NUMERIC
+   ,IN  p_evt_threshold_perc  NUMERIC
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
 )
@@ -2716,21 +2716,21 @@ DECLARE
 
 BEGIN
 
-   IF p_cat_threashold_perc IS NULL
+   IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
    
    ELSE
-      num_cat_threshold := p_cat_threashold_perc / 100;
+      num_cat_threshold := p_cat_threshold_perc / 100;
       
    END IF;
    
-   IF p_evt_threashold_perc IS NULL
+   IF p_evt_threshold_perc IS NULL
    THEN
       num_evt_threshold := 0;
    
    ELSE
-      num_evt_threshold := p_evt_threashold_perc / 100;
+      num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
 
@@ -3137,8 +3137,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_centroid(
     IN  p_geometry             GEOMETRY
    ,IN  p_geometry_areasqkm    NUMERIC
    ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threashold_perc  NUMERIC
-   ,IN  p_evt_threashold_perc  NUMERIC
+   ,IN  p_cat_threshold_perc  NUMERIC
+   ,IN  p_evt_threshold_perc  NUMERIC
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
 )
@@ -3154,21 +3154,21 @@ DECLARE
 
 BEGIN
 
-   IF p_cat_threashold_perc IS NULL
+   IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
    
    ELSE
-      num_cat_threshold := p_cat_threashold_perc / 100;
+      num_cat_threshold := p_cat_threshold_perc / 100;
       
    END IF;
    
-   IF p_evt_threashold_perc IS NULL
+   IF p_evt_threshold_perc IS NULL
    THEN
       num_evt_threshold := 0;
    
    ELSE
-      num_evt_threshold := p_evt_threashold_perc / 100;
+      num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
 
@@ -3549,8 +3549,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_artpath(
     IN  p_geometry             GEOMETRY
    ,IN  p_geometry_areasqkm    NUMERIC
    ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threashold_perc  NUMERIC
-   ,IN  p_evt_threashold_perc  NUMERIC
+   ,IN  p_cat_threshold_perc  NUMERIC
+   ,IN  p_evt_threshold_perc  NUMERIC
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
 )
@@ -3566,21 +3566,21 @@ DECLARE
 
 BEGIN
 
-   IF p_cat_threashold_perc IS NULL
+   IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
    
    ELSE
-      num_cat_threshold := p_cat_threashold_perc / 100;
+      num_cat_threshold := p_cat_threshold_perc / 100;
       
    END IF;
    
-   IF p_evt_threashold_perc IS NULL
+   IF p_evt_threshold_perc IS NULL
    THEN
       num_evt_threshold := 0;
    
    ELSE
-      num_evt_threshold := p_evt_threashold_perc / 100;
+      num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
 

@@ -3,12 +3,12 @@
 The Catchment Index Processing Service provides the ability to associate hydrologic features with NHDPlus catchments. The current project is divided into three "bundles" providing functionality through several combinations of Docker and standalone resources.
 
 1. **Engine**: The engine bundle provides the core functionality of CIP.  At present there are two components, the database and the middleware API.
-2. **Admin**: The admin bundle provides a set of Jupyter notebooks used in the deployment of CIP data and code to the engine.
+2. **Admin**: The admin bundle provides a set of Jupyter notebooks used in the deployment of CIP data and code to the engine.  The admin notebooks also provide a simple interface for batch processing.
 3. **Demo**: The demo bundle provides a simple Nginx web server that hosts simple examples of CIP indexing.
 
 ### Capabilities
 
-To explore the CIP-service API capabilities, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. Good examples would be the [Swagger Next Editor](https://editor-next.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) or the [OpenAPI Explorer](https://rhosys.github.io/openapi-explorer/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml#?route=overview). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
+To explore the CIP-service API capabilities, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. For example, see the [Swagger Next Editor](https://editor-next.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
 
 ### Overview
 
@@ -26,7 +26,7 @@ __Cloud Hosted__
 
 ### Prerequisites
 
-- docker
+- docker engine or docker desktop
 - [docker compose V2](https://docs.docker.com/compose/)
 - at least 16 GB of memory
 - at least 80 GB of free disk
@@ -36,10 +36,10 @@ __Cloud Hosted__
 
 The project uses the following containers which are standard, stable, trusted dockerhub images.  If you have any reason to distrust or find problematic any of the following, please open a ticket.
 
-- postgis/postgist:14
-- postgrest/postgrest:v10
-- osgeo/gdal:ubuntu
-- nginx
+- postgis/postgis:15-3.4
+- postgrest/postgrest:v12.0.3
+- ghcr.io/osgeo/gdal:ubuntu-full-3.9.0
+- nginx:1.25.5
 
 ### Profile Configuration
 
@@ -55,9 +55,9 @@ The project uses the following containers which are standard, stable, trusted do
     - ./config/config-compose.sh  admin admin_local
     - ./config/config-compose.sh  demo nginx_demo
   - python:  
-    - ./config/config-compose.py --batch engine --bprofile desktop
-    - ./config/config-compose.py --batch admin  --bprofile admin_local
-    - ./config/config-compose.py --batch demo   --bprofile nginx_demo
+    - ./config/config-compose.py --bundle engine --bprofile desktop
+    - ./config/config-compose.py --bundle admin  --bprofile admin_local
+    - ./config/config-compose.py --bundle demo   --bprofile nginx_demo
   
 these steps will generate the needed docker-compose.yml and Dockerfiles in each bundle directory.  Note running the Python configuration code directly on your host is the quickest and simplest of the above methods but requires Python 3 with the jinja2 package installed.
 
@@ -79,13 +79,13 @@ __Admin__
 
 1. in the admin directory, type **docker compose -p admin build**.  The admin_local profile will attach o the engine_cip network created above.  
 
-2. then type **docker compose - p admin up --detach**.
+2. then type **docker compose -p admin up --detach**.
 
 __Demo__
 
 1. in the demo directory, type **docker compose -p demo build**. The nginx_demo profile expects to find the engine API at localhost, port 3000.
 
-2. then type **docker compose - p demo up --detach**. 
+2. then type **docker compose -p demo up --detach**. 
 
 ### Typical Configuration Steps
 

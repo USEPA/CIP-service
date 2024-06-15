@@ -24,6 +24,9 @@ else:
    
 if templates is None:
    templates = os.path.join('..',bundle);
+   
+   if not os.path.exists(templates):
+      templates = os.path.join(bundle);
 
 if outdir is None:
    outdir = templates;
