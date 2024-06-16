@@ -20,7 +20,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_3338(
    ,enabled
    ,fmeasure
    ,tmeasure
-   ,reachsmdate
    ,shape
 )
 AS
@@ -44,14 +43,9 @@ SELECT
 ,a.enabled
 ,a.fmeasure
 ,a.tmeasure
-,b.reachsmdate
 ,ST_Transform(a.shape,3338) AS shape
 FROM
 cipsrv_nhdplus_m.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_m.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
 WHERE
 a.vpuid IN ('19');
 
