@@ -13,6 +13,7 @@ DECLARE
    rec                   RECORD;
    str_known_region      VARCHAR;
    int_srid              INTEGER;
+   int_count             INTEGER;
    geom_input            GEOMETRY;
    num_cat_threshold     NUMERIC;
    num_evt_threshold     NUMERIC;
@@ -67,7 +68,7 @@ BEGIN
       num_geometry_areasqkm := p_geometry_areasqkm;
       
    END IF;
-      
+   
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);

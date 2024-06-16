@@ -1,63 +1,73 @@
 CREATE OR REPLACE PROCEDURE cipsrv_engine.cipsrv_batch_index(
-    IN  p_dataset_prefix                VARCHAR
-   ,OUT out_return_code                 INTEGER
-   ,OUT out_status_message              VARCHAR
+    IN  p_dataset_prefix                   VARCHAR
+   ,OUT out_return_code                    INTEGER
+   ,OUT out_status_message                 VARCHAR
+   ,IN  p_override_default_nhdplus_version VARCHAR DEFAULT NULL
 )
 AS $BODY$ 
 DECLARE
-   rec                               RECORD;
-   rec2                              RECORD;
-   rec3                              RECORD;
-   str_sql                           VARCHAR;
-   str_dataset_prefix                VARCHAR;
-   str_control_dataset_prefix        VARCHAR;
-   str_control_source_originator     VARCHAR;
-   str_control_source_series         VARCHAR;
-   str_geometry_clip                 VARCHAR;
-   ary_geometry_clip                 VARCHAR[];
-   str_geometry_clip_stage           VARCHAR;
-   str_catchment_filter              VARCHAR;
-   ary_catchment_filter              VARCHAR[];
-   str_nhdplus_version               VARCHAR;
-   str_catchment_resolution          VARCHAR;
-   str_default_nhdplus_version       VARCHAR;
-   str_xwalk_huc12_version           VARCHAR;
-   str_point_indexing_method         VARCHAR;
-   str_default_point_indexing_method VARCHAR;
-   str_line_indexing_method          VARCHAR;
-   str_default_line_indexing_method  VARCHAR;
-   str_ring_indexing_method          VARCHAR;
-   str_default_ring_indexing_method  VARCHAR;
-   str_area_indexing_method          VARCHAR;
-   str_default_area_indexing_method  VARCHAR;
-   num_line_threshold                NUMERIC;
-   num_default_line_threshold        NUMERIC;
-   num_areacat_threshold             NUMERIC;
-   num_default_areacat_threshold     NUMERIC;
-   num_areaevt_threshold             NUMERIC;
-   num_default_areaevt_threshold     NUMERIC;
-   str_known_region                  VARCHAR;
-   str_default_known_region          VARCHAR;
-   str_username                      VARCHAR;
-   dat_datecreated                   DATE;
-   boo_filter_by_state               BOOLEAN;
-   ary_state_filters                 VARCHAR[];
-   boo_filter_by_tribal              BOOLEAN;
-   int_count                         INTEGER;
-   boo_isring                        BOOLEAN;
-   num_point_indexing_return_code    INTEGER;
-   str_point_indexing_status_message VARCHAR;
-   num_line_indexing_return_code     INTEGER;
-   str_line_indexing_status_message  VARCHAR;
-   num_ring_indexing_return_code     INTEGER;
-   str_ring_indexing_status_message  VARCHAR;
-   num_area_indexing_return_code     INTEGER;
-   str_area_indexing_status_message  VARCHAR;
-   geom_part                         GEOMETRY;
-   num_line_lengthkm                 NUMERIC;
-   num_area_areasqkm                 NUMERIC;
-   int_cat_mr_count                  INTEGER;
-   int_cat_hr_count                  INTEGER;
+   rec                                RECORD;
+   rec2                               RECORD;
+   rec3                               RECORD;
+   str_sql                            VARCHAR;
+   str_dataset_prefix                 VARCHAR;
+   str_control_dataset_prefix         VARCHAR;
+   str_control_source_originator      VARCHAR;
+   str_control_source_series          VARCHAR;
+   str_geometry_clip                  VARCHAR;
+   ary_geometry_clip                  VARCHAR[];
+   str_geometry_clip_stage            VARCHAR;
+   str_catchment_filter               VARCHAR;
+   ary_catchment_filter               VARCHAR[];
+   str_nhdplus_version                VARCHAR;
+   str_catchment_resolution           VARCHAR;
+   str_default_nhdplus_version        VARCHAR;
+   str_xwalk_huc12_version            VARCHAR;
+   
+   str_point_indexing_method          VARCHAR;
+   str_default_point_indexing_method  VARCHAR;
+   
+   str_line_indexing_method           VARCHAR;
+   str_default_line_indexing_method   VARCHAR;
+   num_line_threshold                 NUMERIC;
+   num_default_line_threshold         NUMERIC;
+   
+   str_ring_indexing_method           VARCHAR;
+   str_default_ring_indexing_method   VARCHAR;
+   num_ring_areacat_threshold         NUMERIC;
+   num_default_ring_areacat_threshold NUMERIC;
+   num_ring_areaevt_threshold         NUMERIC;
+   num_default_ring_areaevt_threshold NUMERIC;
+   
+   str_area_indexing_method           VARCHAR;
+   str_default_area_indexing_method   VARCHAR;
+   num_areacat_threshold              NUMERIC;
+   num_default_areacat_threshold      NUMERIC;
+   num_areaevt_threshold              NUMERIC;
+   num_default_areaevt_threshold      NUMERIC;
+   
+   str_known_region                   VARCHAR;
+   str_default_known_region           VARCHAR;
+   str_username                       VARCHAR;
+   dat_datecreated                    DATE;
+   boo_filter_by_state                BOOLEAN;
+   ary_state_filters                  VARCHAR[];
+   boo_filter_by_tribal               BOOLEAN;
+   int_count                          INTEGER;
+   boo_isring                         BOOLEAN;
+   num_point_indexing_return_code     INTEGER;
+   str_point_indexing_status_message  VARCHAR;
+   num_line_indexing_return_code      INTEGER;
+   str_line_indexing_status_message   VARCHAR;
+   num_ring_indexing_return_code      INTEGER;
+   str_ring_indexing_status_message   VARCHAR;
+   num_area_indexing_return_code      INTEGER;
+   str_area_indexing_status_message   VARCHAR;
+   geom_part                          GEOMETRY;
+   num_line_lengthkm                  NUMERIC;
+   num_area_areasqkm                  NUMERIC;
+   int_cat_mr_count                   INTEGER;
+   int_cat_hr_count                   INTEGER;
    
 BEGIN
 
@@ -507,13 +517,20 @@ BEGIN
            || ',a.catchment_filter '
            || ',a.nhdplus_version '
            || ',a.xwalk_huc12_version '
+           
            || ',a.default_point_indexing_method '
+           
            || ',a.default_line_indexing_method '
-           || ',a.default_ring_indexing_method '
-           || ',a.default_area_indexing_method '
            || ',a.default_line_threshold '
+           
+           || ',a.default_ring_indexing_method '
+           || ',a.default_ring_areacat_threshold '
+           || ',a.default_ring_areaevt_threshold '
+           
+           || ',a.default_area_indexing_method '
            || ',a.default_areacat_threshold '
            || ',a.default_areaevt_threshold '
+           
            || ',a.known_region '
            || ',a.username '
            || ',a.datecreated '
@@ -530,16 +547,29 @@ BEGIN
    ,str_catchment_filter
    ,str_default_nhdplus_version
    ,str_xwalk_huc12_version
+   
    ,str_default_point_indexing_method
+   
    ,str_default_line_indexing_method
-   ,str_default_ring_indexing_method
-   ,str_default_area_indexing_method
    ,num_default_line_threshold
+   
+   ,str_default_ring_indexing_method
+   ,num_default_ring_areacat_threshold
+   ,num_default_ring_areaevt_threshold
+   
+   ,str_default_area_indexing_method
    ,num_default_areacat_threshold
    ,num_default_areaevt_threshold
+   
    ,str_default_known_region
    ,str_username
    ,dat_datecreated;
+   
+   IF p_override_default_nhdplus_version IS NOT NULL
+   THEN
+      str_default_nhdplus_version := p_override_default_nhdplus_version;
+   
+   END IF;
    
    IF str_dataset_prefix != LOWER(str_control_dataset_prefix)
    THEN
@@ -583,12 +613,37 @@ BEGIN
    FOR rec IN EXECUTE 'SELECT a.* FROM cipsrv_upload.' || str_dataset_prefix || '_sfid a '
    LOOP
       --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+      str_nhdplus_version               := NULL;
+            
+      num_point_indexing_return_code    := NULL;
+      str_point_indexing_status_message := NULL;
+      
+      str_line_indexing_method          := NULL;
+      num_line_indexing_return_code     := NULL;
+      str_line_indexing_status_message  := NULL;
+      num_line_threshold                := NULL;
+            
+      str_ring_indexing_method          := NULL;
+      num_ring_indexing_return_code     := NULL;
+      str_ring_indexing_status_message  := NULL;
+      num_ring_areacat_threshold        := NULL;
+      num_ring_areaevt_threshold        := NULL;
+      
+      str_area_indexing_method          := NULL;
+      num_areacat_threshold             := NULL;
+      num_areaevt_threshold             := NULL;
+      num_area_indexing_return_code     := NULL;
+      str_area_indexing_status_message  := NULL;
+      
+      str_known_region                  := NULL;
+
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
       IF rec.src_point_count > 0
       THEN
          FOR rec2 IN EXECUTE 'SELECT b.* FROM cipsrv_upload.' || str_dataset_prefix || '_points b WHERE b.source_joinkey = $1' USING rec.source_joinkey
          LOOP
+            --###############################################################--
             str_nhdplus_version := NULL;
-            
             IF rec2.nhdplus_version IS NOT NULL
             THEN
                str_nhdplus_version := rec2.nhdplus_version;
@@ -602,8 +657,8 @@ BEGIN
                
             END IF;
 
+            --###############################################################--
             str_known_region := NULL;
-            
             IF rec2.known_region IS NOT NULL
             THEN
                str_known_region := rec2.known_region;
@@ -617,8 +672,8 @@ BEGIN
                
             END IF;
             
+            --###############################################################--
             str_point_indexing_method := NULL;
-            
             IF rec2.point_indexing_method IS NOT NULL
             THEN
                str_point_indexing_method := rec2.point_indexing_method;
@@ -673,8 +728,8 @@ BEGIN
       THEN
          FOR rec2 IN EXECUTE 'SELECT c.* FROM cipsrv_upload.' || str_dataset_prefix || '_lines c WHERE c.source_joinkey = $1' USING rec.source_joinkey
          LOOP
+            --###############################################################--
             str_nhdplus_version := NULL;
-            
             IF rec2.nhdplus_version IS NOT NULL
             THEN
                str_nhdplus_version := rec2.nhdplus_version;
@@ -687,9 +742,9 @@ BEGIN
                END IF;
                
             END IF;
-            
-            str_known_region := NULL;
          
+            --###############################################################--
+            str_known_region := NULL;
             IF rec2.known_region IS NOT NULL
             THEN
                str_known_region := rec2.known_region;
@@ -703,8 +758,8 @@ BEGIN
                
             END IF;
             
+            --###############################################################--
             str_ring_indexing_method := NULL;
-            
             IF rec2.ring_indexing_method IS NOT NULL
             THEN
                str_ring_indexing_method := rec2.ring_indexing_method;
@@ -735,31 +790,33 @@ BEGIN
                --- Branch for ring handling -----------------------------------
                IF boo_isring
                THEN
-                  num_areacat_threshold := NULL;
-               
-                  IF rec2.areacat_threshold IS NOT NULL
+                  str_line_indexing_method := NULL;
+                  
+                  --###############################################################--
+                  num_ring_areacat_threshold := NULL;
+                  IF rec2.ring_areacat_threshold IS NOT NULL
                   THEN
-                     num_areacat_threshold := rec2.areacat_threshold;
+                     num_ring_areacat_threshold := rec2.ring_areacat_threshold;
                      
                   ELSE
-                     IF num_default_areacat_threshold IS NOT NULL
+                     IF num_default_ring_areacat_threshold IS NOT NULL
                      THEN
-                        num_areacat_threshold := num_default_areacat_threshold;
+                        num_ring_areacat_threshold := num_default_ring_areacat_threshold;
                      
                      END IF;
                      
                   END IF;
                   
-                  num_areaevt_threshold := NULL;
-                  
-                  IF rec2.areaevt_threshold IS NOT NULL
+                  --###############################################################--
+                  num_ring_areaevt_threshold := NULL;
+                  IF rec2.ring_areaevt_threshold IS NOT NULL
                   THEN
-                     num_areaevt_threshold := rec2.areaevt_threshold;
+                     num_ring_areaevt_threshold := rec2.ring_areaevt_threshold;
                      
                   ELSE
-                     IF num_default_areaevt_threshold IS NOT NULL
+                     IF num_default_ring_areaevt_threshold IS NOT NULL
                      THEN
-                        num_areaevt_threshold := num_default_areaevt_threshold;
+                        num_ring_areaevt_threshold := num_default_ring_areaevt_threshold;
                      
                      END IF;
                      
@@ -775,11 +832,11 @@ BEGIN
                             p_geometry             := ST_MakePolygon(geom_part)
                            ,p_geometry_areasqkm    := NULL
                            ,p_known_region         := str_known_region
-                           ,p_cat_threshold_perc   := num_areacat_threshold
-                           ,p_evt_threshold_perc   := num_areaevt_threshold
+                           ,p_cat_threshold_perc   := num_ring_areacat_threshold
+                           ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                         );
-                        num_line_indexing_return_code    := rec3.out_return_code;
-                        str_line_indexing_status_message := rec3.out_status_message;
+                        num_ring_indexing_return_code    := rec3.out_return_code;
+                        str_ring_indexing_status_message := rec3.out_status_message;
                         
                      ELSIF str_nhdplus_version = 'nhdplus_h'
                      THEN
@@ -787,11 +844,11 @@ BEGIN
                             p_geometry             := ST_MakePolygon(geom_part)
                            ,p_geometry_areasqkm    := NULL
                            ,p_known_region         := str_known_region
-                           ,p_cat_threshold_perc   := num_areacat_threshold
-                           ,p_evt_threshold_perc   := num_areaevt_threshold
+                           ,p_cat_threshold_perc   := num_ring_areacat_threshold
+                           ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                         );
-                        num_line_indexing_return_code    := rec3.out_return_code;
-                        str_line_indexing_status_message := rec3.out_status_message;
+                        num_ring_indexing_return_code    := rec3.out_return_code;
+                        str_ring_indexing_status_message := rec3.out_status_message;
                      
                      ELSE
                         RAISE EXCEPTION 'err %',str_nhdplus_version;
@@ -806,8 +863,8 @@ BEGIN
                             p_geometry             := ST_MakePolygon(geom_part)
                            ,p_geometry_areasqkm    := NULL
                            ,p_known_region         := str_known_region
-                           ,p_cat_threshold_perc   := num_areacat_threshold
-                           ,p_evt_threshold_perc   := num_areaevt_threshold
+                           ,p_cat_threshold_perc   := num_ring_areacat_threshold
+                           ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -818,8 +875,8 @@ BEGIN
                             p_geometry             := ST_MakePolygon(geom_part)
                            ,p_geometry_areasqkm    := NULL
                            ,p_known_region         := str_known_region
-                           ,p_cat_threshold_perc   := num_areacat_threshold
-                           ,p_evt_threshold_perc   := num_areaevt_threshold
+                           ,p_cat_threshold_perc   := num_ring_areacat_threshold
+                           ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -837,8 +894,8 @@ BEGIN
                             p_geometry             := ST_MakePolygon(geom_part)
                            ,p_geometry_areasqkm    := NULL
                            ,p_known_region         := str_known_region
-                           ,p_cat_threshold_perc   := num_areacat_threshold
-                           ,p_evt_threshold_perc   := num_areaevt_threshold
+                           ,p_cat_threshold_perc   := num_ring_areacat_threshold
+                           ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -849,8 +906,8 @@ BEGIN
                             p_geometry             := ST_MakePolygon(geom_part)
                            ,p_geometry_areasqkm    := NULL
                            ,p_known_region         := str_known_region
-                           ,p_cat_threshold_perc   := num_areacat_threshold
-                           ,p_evt_threshold_perc   := num_areaevt_threshold
+                           ,p_cat_threshold_perc   := num_ring_areacat_threshold
+                           ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -866,9 +923,11 @@ BEGIN
                   END IF;
                
                -- Normal line handling here --------------------------------------
-               ELSE            
-                  str_line_indexing_method := NULL;
+               ELSE
+                  str_ring_indexing_method := NULL;
                   
+                  --###############################################################--
+                  str_line_indexing_method := NULL;
                   IF rec2.line_indexing_method IS NOT NULL
                   THEN
                      str_line_indexing_method := rec2.line_indexing_method;
@@ -882,8 +941,8 @@ BEGIN
                      
                   END IF;
                
+                  --###############################################################--
                   num_line_threshold := NULL;
-                  
                   IF rec2.line_threshold IS NOT NULL
                   THEN
                      num_line_threshold := rec2.line_threshold;
@@ -975,8 +1034,8 @@ BEGIN
       THEN
          FOR rec2 IN EXECUTE 'SELECT d.* FROM cipsrv_upload.' || str_dataset_prefix || '_areas d WHERE d.source_joinkey = $1' USING rec.source_joinkey
          LOOP
+            --###############################################################--
             str_nhdplus_version := NULL;
-            
             IF rec2.nhdplus_version IS NOT NULL
             THEN
                str_nhdplus_version := rec2.nhdplus_version;
@@ -990,8 +1049,8 @@ BEGIN
                
             END IF;
             
+            --###############################################################--
             str_known_region := NULL;
-         
             IF rec2.known_region IS NOT NULL
             THEN
                str_known_region := rec2.known_region;
@@ -1005,8 +1064,8 @@ BEGIN
                
             END IF;
             
+            --###############################################################--
             str_area_indexing_method := NULL;
-            
             IF rec2.area_indexing_method IS NOT NULL
             THEN
                str_area_indexing_method := rec2.area_indexing_method;
@@ -1019,9 +1078,9 @@ BEGIN
                END IF;
                
             END IF;
-            
+  
+            --###############################################################--
             num_areacat_threshold := NULL;
-            
             IF rec2.areacat_threshold IS NOT NULL
             THEN
                num_areacat_threshold := rec2.areacat_threshold;
@@ -1035,8 +1094,8 @@ BEGIN
                
             END IF;
             
+            --###############################################################--
             num_areaevt_threshold := NULL;
-            
             IF rec2.areaevt_threshold IS NOT NULL
             THEN
                num_areaevt_threshold := rec2.areaevt_threshold;
@@ -1139,7 +1198,7 @@ BEGIN
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
-               
+
                ELSE
                   RAISE EXCEPTION 'err %',str_nhdplus_version;
                
@@ -1252,10 +1311,9 @@ BEGIN
       ,boo_filter_by_state
       ,ary_state_filters
       ,boo_filter_by_tribal;
-      
+
       GET DIAGNOSTICS int_count = ROW_COUNT;
-      
-      COMMIT;
+
       EXECUTE 'TRUNCATE TABLE tmp_cip';
       
       IF str_nhdplus_version = 'nhdplus_m'
@@ -1307,7 +1365,9 @@ BEGIN
       ,int_cat_mr_count
       ,int_cat_hr_count
       ,rec.source_joinkey;
-   
+      
+      COMMIT;
+
    END LOOP;
    
    ----------------------------------------------------------------------------
@@ -1335,9 +1395,11 @@ LANGUAGE plpgsql;
 
 ALTER PROCEDURE cipsrv_engine.cipsrv_batch_index(
     VARCHAR
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON PROCEDURE cipsrv_engine.cipsrv_batch_index(
     VARCHAR
+   ,VARCHAR
 ) TO PUBLIC;
 

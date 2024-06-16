@@ -148,7 +148,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_3338 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -161,14 +160,22 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
+   ,iscoastal
+   ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -181,13 +188,30 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
 ---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,3338)) AS shape
    FROM
@@ -224,6 +248,15 @@ ON cipsrv_nhdplus_m.catchment_3338(fcode);
 CREATE INDEX catchment_3338_03i
 ON cipsrv_nhdplus_m.catchment_3338(istribal);
 
+CREATE INDEX catchment_3338_04i
+ON cipsrv_nhdplus_m.catchment_3338(isnavigable);
+
+CREATE INDEX catchment_3338_05i
+ON cipsrv_nhdplus_m.catchment_3338(iscoastal);
+
+CREATE INDEX catchment_3338_06i
+ON cipsrv_nhdplus_m.catchment_3338(isocean);
+
 CREATE INDEX catchment_3338_spx
 ON cipsrv_nhdplus_m.catchment_3338 USING GIST(shape);
 
@@ -241,7 +274,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_5070 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -254,14 +286,22 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
+   ,iscoastal
+   ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -274,13 +314,30 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
 ---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,5070)) AS shape
    FROM
@@ -317,6 +374,15 @@ ON cipsrv_nhdplus_m.catchment_5070(fcode);
 CREATE INDEX catchment_5070_03i
 ON cipsrv_nhdplus_m.catchment_5070(istribal);
 
+CREATE INDEX catchment_5070_04i
+ON cipsrv_nhdplus_m.catchment_5070(isnavigable);
+
+CREATE INDEX catchment_5070_05i
+ON cipsrv_nhdplus_m.catchment_5070(iscoastal);
+
+CREATE INDEX catchment_5070_06i
+ON cipsrv_nhdplus_m.catchment_5070(isocean);
+
 CREATE INDEX catchment_5070_spx
 ON cipsrv_nhdplus_m.catchment_5070 USING GIST(shape);
 
@@ -334,7 +400,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_26904 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_26904(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -347,14 +412,22 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_26904(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
+   ,iscoastal
+   ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -367,13 +440,30 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
 ---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,26904)) AS shape
    FROM
@@ -410,6 +500,15 @@ ON cipsrv_nhdplus_m.catchment_26904(fcode);
 CREATE INDEX catchment_26904_03i
 ON cipsrv_nhdplus_m.catchment_26904(istribal);
 
+CREATE INDEX catchment_26904_04i
+ON cipsrv_nhdplus_m.catchment_26904(isnavigable);
+
+CREATE INDEX catchment_26904_05i
+ON cipsrv_nhdplus_m.catchment_26904(iscoastal);
+
+CREATE INDEX catchment_26904_06i
+ON cipsrv_nhdplus_m.catchment_26904(isocean);
+
 CREATE INDEX catchment_26904_spx
 ON cipsrv_nhdplus_m.catchment_26904 USING GIST(shape);
 
@@ -427,7 +526,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32161 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -440,14 +538,22 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
+   ,iscoastal
+   ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -460,13 +566,30 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
 ---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
    FROM
@@ -503,6 +626,15 @@ ON cipsrv_nhdplus_m.catchment_32161(fcode);
 CREATE INDEX catchment_32161_03i
 ON cipsrv_nhdplus_m.catchment_32161(istribal);
 
+CREATE INDEX catchment_32161_04i
+ON cipsrv_nhdplus_m.catchment_32161(isnavigable);
+
+CREATE INDEX catchment_32161_05i
+ON cipsrv_nhdplus_m.catchment_32161(iscoastal);
+
+CREATE INDEX catchment_32161_06i
+ON cipsrv_nhdplus_m.catchment_32161(isocean);
+
 CREATE INDEX catchment_32161_spx
 ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape);
 
@@ -520,7 +652,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32655 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32655(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -533,14 +664,22 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32655(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
+   ,iscoastal
+   ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -553,13 +692,30 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
 ---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32655)) AS shape
    FROM
@@ -596,6 +752,15 @@ ON cipsrv_nhdplus_m.catchment_32655(fcode);
 CREATE INDEX catchment_32655_03i
 ON cipsrv_nhdplus_m.catchment_32655(istribal);
 
+CREATE INDEX catchment_32655_04i
+ON cipsrv_nhdplus_m.catchment_32655(isnavigable);
+
+CREATE INDEX catchment_32655_05i
+ON cipsrv_nhdplus_m.catchment_32655(iscoastal);
+
+CREATE INDEX catchment_32655_06i
+ON cipsrv_nhdplus_m.catchment_32655(isocean);
+
 CREATE INDEX catchment_32655_spx
 ON cipsrv_nhdplus_m.catchment_32655 USING GIST(shape);
 
@@ -613,7 +778,6 @@ DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32702 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
     nhdplusid
-   ,areasqkm
    ---
    ,hydroseq
    ,levelpathi
@@ -626,14 +790,22 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
    ,fcode
    ---
    ,istribal
+   ,isnavigable
+   ,hasvaa
+   ,issink
+   ,isheadwater
+   ,iscoastal
+   ,isocean
+   ,isalaskan
+   ,h3hexagonaddr
    ---
+   ,areasqkm
    ,shape
    ,shape_centroid
 )
 AS
 SELECT
- a.nhdplusid::BIGINT        AS nhdplusid
-,a.areasqkm
+ a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -646,12 +818,30 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
+---
+,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT
-   ,bool_or(CASE WHEN aa.istribal = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
+   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+   ,'N' AS isalaskan
+   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
    ,SUM(aa.areasqkm) AS areasqkm
    ,ST_UNION(ST_Transform(aa.shape,32702)) AS shape
    FROM
@@ -688,6 +878,15 @@ ON cipsrv_nhdplus_m.catchment_32702(fcode);
 CREATE INDEX catchment_32702_03i
 ON cipsrv_nhdplus_m.catchment_32702(istribal);
 
+CREATE INDEX catchment_32702_04i
+ON cipsrv_nhdplus_m.catchment_32702(isnavigable);
+
+CREATE INDEX catchment_32702_05i
+ON cipsrv_nhdplus_m.catchment_32702(iscoastal);
+
+CREATE INDEX catchment_32702_06i
+ON cipsrv_nhdplus_m.catchment_32702(isocean);
+
 CREATE INDEX catchment_32702_spx
 ON cipsrv_nhdplus_m.catchment_32702 USING GIST(shape);
 
@@ -697,6 +896,426 @@ ON cipsrv_nhdplus_m.catchment_32702 USING GIST(shape_centroid);
 ANALYZE cipsrv_nhdplus_m.catchment_32702;
 
 --VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.catchment_32702;
+
+--******************************--
+----- materialized views/nhdflowline_3338.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_3338 CASCADE;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_3338(
+    permanent_identifier
+   ,fdate
+   ,resolution
+   ,gnis_id
+   ,gnis_name
+   ,lengthkm
+   ,reachcode
+   ,flowdir
+   ,wbarea_permanent_identifier
+   ,ftype
+   ,fcode
+   ,mainpath
+   ,innetwork
+   ,visibilityfilter
+   ,nhdplusid
+   ,vpuid
+   ,enabled
+   ,fmeasure
+   ,tmeasure
+   ,shape
+)
+AS
+SELECT
+ a.permanent_identifier
+,a.fdate
+,a.resolution
+,a.gnis_id
+,a.gnis_name
+,a.lengthkm
+,a.reachcode
+,a.flowdir
+,a.wbarea_permanent_identifier
+,a.ftype
+,a.fcode
+,a.mainpath
+,a.innetwork
+,a.visibilityfilter
+,a.nhdplusid
+,a.vpuid
+,a.enabled
+,a.fmeasure
+,a.tmeasure
+,ST_Transform(a.shape,3338) AS shape
+FROM
+cipsrv_nhdplus_m.nhdflowline a
+WHERE
+a.vpuid IN ('19');
+
+ALTER TABLE cipsrv_nhdplus_m.nhdflowline_3338 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_3338 TO public;
+
+CREATE UNIQUE INDEX nhdflowline_3338_01u
+ON cipsrv_nhdplus_m.nhdflowline_3338(nhdplusid);
+
+CREATE INDEX nhdflowline_3338_02i
+ON cipsrv_nhdplus_m.nhdflowline_3338(fcode);
+
+CREATE INDEX nhdflowline_3338_spx
+ON cipsrv_nhdplus_m.nhdflowline_3338 USING GIST(shape);
+
+ANALYZE cipsrv_nhdplus_m.nhdflowline_3338;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_3338;
+
+--******************************--
+----- materialized views/nhdflowline_5070.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_5070 CASCADE;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_5070(
+    permanent_identifier
+   ,fdate
+   ,resolution
+   ,gnis_id
+   ,gnis_name
+   ,lengthkm
+   ,reachcode
+   ,flowdir
+   ,wbarea_permanent_identifier
+   ,ftype
+   ,fcode
+   ,mainpath
+   ,innetwork
+   ,visibilityfilter
+   ,nhdplusid
+   ,vpuid
+   ,enabled
+   ,fmeasure
+   ,tmeasure
+   ,shape
+)
+AS
+SELECT
+ a.permanent_identifier
+,a.fdate
+,a.resolution
+,a.gnis_id
+,a.gnis_name
+,a.lengthkm
+,a.reachcode
+,a.flowdir
+,a.wbarea_permanent_identifier
+,a.ftype
+,a.fcode
+,a.mainpath
+,a.innetwork
+,a.visibilityfilter
+,a.nhdplusid
+,a.vpuid
+,a.enabled
+,a.fmeasure
+,a.tmeasure
+,ST_Transform(a.shape,5070) AS shape
+FROM
+cipsrv_nhdplus_m.nhdflowline a
+WHERE
+a.vpuid NOT IN ('19','20','21','22A','22G','22M');
+
+ALTER TABLE cipsrv_nhdplus_m.nhdflowline_5070 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_5070 TO public;
+
+CREATE UNIQUE INDEX nhdflowline_5070_01u
+ON cipsrv_nhdplus_m.nhdflowline_5070(nhdplusid);
+
+CREATE INDEX nhdflowline_5070_02i
+ON cipsrv_nhdplus_m.nhdflowline_5070(fcode);
+
+CREATE INDEX nhdflowline_5070_spx
+ON cipsrv_nhdplus_m.nhdflowline_5070 USING GIST(shape);
+
+ANALYZE cipsrv_nhdplus_m.nhdflowline_5070;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_5070;
+
+--******************************--
+----- materialized views/nhdflowline_26904.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_26904 CASCADE;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_26904(
+    permanent_identifier
+   ,fdate
+   ,resolution
+   ,gnis_id
+   ,gnis_name
+   ,lengthkm
+   ,reachcode
+   ,flowdir
+   ,wbarea_permanent_identifier
+   ,ftype
+   ,fcode
+   ,mainpath
+   ,innetwork
+   ,visibilityfilter
+   ,nhdplusid
+   ,vpuid
+   ,enabled
+   ,fmeasure
+   ,tmeasure
+   ,shape
+)
+AS
+SELECT
+ a.permanent_identifier
+,a.fdate
+,a.resolution
+,a.gnis_id
+,a.gnis_name
+,a.lengthkm
+,a.reachcode
+,a.flowdir
+,a.wbarea_permanent_identifier
+,a.ftype
+,a.fcode
+,a.mainpath
+,a.innetwork
+,a.visibilityfilter
+,a.nhdplusid
+,a.vpuid
+,a.enabled
+,a.fmeasure
+,a.tmeasure
+,ST_Transform(a.shape,26904) AS shape
+FROM
+cipsrv_nhdplus_m.nhdflowline a
+WHERE
+a.vpuid IN ('20');
+
+ALTER TABLE cipsrv_nhdplus_m.nhdflowline_26904 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_26904 TO public;
+
+CREATE UNIQUE INDEX nhdflowline_26904_01u
+ON cipsrv_nhdplus_m.nhdflowline_26904(nhdplusid);
+
+CREATE INDEX nhdflowline_26904_02i
+ON cipsrv_nhdplus_m.nhdflowline_26904(fcode);
+
+CREATE INDEX nhdflowline_26904_spx
+ON cipsrv_nhdplus_m.nhdflowline_26904 USING GIST(shape);
+
+ANALYZE cipsrv_nhdplus_m.nhdflowline_26904;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_26904;
+
+--******************************--
+----- materialized views/nhdflowline_32161.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_32161 CASCADE;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32161(
+    permanent_identifier
+   ,fdate
+   ,resolution
+   ,gnis_id
+   ,gnis_name
+   ,lengthkm
+   ,reachcode
+   ,flowdir
+   ,wbarea_permanent_identifier
+   ,ftype
+   ,fcode
+   ,mainpath
+   ,innetwork
+   ,visibilityfilter
+   ,nhdplusid
+   ,vpuid
+   ,enabled
+   ,fmeasure
+   ,tmeasure
+   ,shape
+)
+AS
+SELECT
+ a.permanent_identifier
+,a.fdate
+,a.resolution
+,a.gnis_id
+,a.gnis_name
+,a.lengthkm
+,a.reachcode
+,a.flowdir
+,a.wbarea_permanent_identifier
+,a.ftype
+,a.fcode
+,a.mainpath
+,a.innetwork
+,a.visibilityfilter
+,a.nhdplusid
+,a.vpuid
+,a.enabled
+,a.fmeasure
+,a.tmeasure
+,ST_Transform(a.shape,32161) AS shape
+FROM
+cipsrv_nhdplus_m.nhdflowline a
+WHERE
+a.vpuid IN ('21');
+
+ALTER TABLE cipsrv_nhdplus_m.nhdflowline_32161 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_32161 TO public;
+
+CREATE UNIQUE INDEX nhdflowline_32161_01u
+ON cipsrv_nhdplus_m.nhdflowline_32161(nhdplusid);
+
+CREATE INDEX nhdflowline_32161_02i
+ON cipsrv_nhdplus_m.nhdflowline_32161(fcode);
+
+CREATE INDEX nhdflowline_32161_spx
+ON cipsrv_nhdplus_m.nhdflowline_32161 USING GIST(shape);
+
+ANALYZE cipsrv_nhdplus_m.nhdflowline_32161;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_32161;
+
+--******************************--
+----- materialized views/nhdflowline_32655.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_32655 CASCADE;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32655(
+    permanent_identifier
+   ,fdate
+   ,resolution
+   ,gnis_id
+   ,gnis_name
+   ,lengthkm
+   ,reachcode
+   ,flowdir
+   ,wbarea_permanent_identifier
+   ,ftype
+   ,fcode
+   ,mainpath
+   ,innetwork
+   ,visibilityfilter
+   ,nhdplusid
+   ,vpuid
+   ,enabled
+   ,fmeasure
+   ,tmeasure
+   ,shape
+)
+AS
+SELECT
+ a.permanent_identifier
+,a.fdate
+,a.resolution
+,a.gnis_id
+,a.gnis_name
+,a.lengthkm
+,a.reachcode
+,a.flowdir
+,a.wbarea_permanent_identifier
+,a.ftype
+,a.fcode
+,a.mainpath
+,a.innetwork
+,a.visibilityfilter
+,a.nhdplusid
+,a.vpuid
+,a.enabled
+,a.fmeasure
+,a.tmeasure
+,ST_Transform(a.shape,32655) AS shape
+FROM
+cipsrv_nhdplus_m.nhdflowline a
+WHERE
+a.vpuid IN ('22G','22M');
+
+ALTER TABLE cipsrv_nhdplus_m.nhdflowline_32655 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_32655 TO public;
+
+CREATE UNIQUE INDEX nhdflowline_32655_01u
+ON cipsrv_nhdplus_m.nhdflowline_32655(nhdplusid);
+
+CREATE INDEX nhdflowline_32655_02i
+ON cipsrv_nhdplus_m.nhdflowline_32655(fcode);
+
+CREATE INDEX nhdflowline_32655_spx
+ON cipsrv_nhdplus_m.nhdflowline_32655 USING GIST(shape);
+
+ANALYZE cipsrv_nhdplus_m.nhdflowline_32655;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_32655;
+
+--******************************--
+----- materialized views/nhdflowline_32702.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_32702 CASCADE;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32702(
+    permanent_identifier
+   ,fdate
+   ,resolution
+   ,gnis_id
+   ,gnis_name
+   ,lengthkm
+   ,reachcode
+   ,flowdir
+   ,wbarea_permanent_identifier
+   ,ftype
+   ,fcode
+   ,mainpath
+   ,innetwork
+   ,visibilityfilter
+   ,nhdplusid
+   ,vpuid
+   ,enabled
+   ,fmeasure
+   ,tmeasure
+   ,shape
+)
+AS
+SELECT
+ a.permanent_identifier
+,a.fdate
+,a.resolution
+,a.gnis_id
+,a.gnis_name
+,a.lengthkm
+,a.reachcode
+,a.flowdir
+,a.wbarea_permanent_identifier
+,a.ftype
+,a.fcode
+,a.mainpath
+,a.innetwork
+,a.visibilityfilter
+,a.nhdplusid
+,a.vpuid
+,a.enabled
+,a.fmeasure
+,a.tmeasure
+,ST_Transform(a.shape,32702) AS shape
+FROM
+cipsrv_nhdplus_m.nhdflowline a
+WHERE
+a.vpuid = '22A';
+
+ALTER TABLE cipsrv_nhdplus_m.nhdflowline_32702 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_32702 TO public;
+
+CREATE UNIQUE INDEX nhdflowline_32702_01u
+ON cipsrv_nhdplus_m.nhdflowline_32702(nhdplusid);
+
+CREATE INDEX nhdflowline_32702_02i
+ON cipsrv_nhdplus_m.nhdflowline_32702(fcode);
+
+CREATE INDEX nhdflowline_32702_spx
+ON cipsrv_nhdplus_m.nhdflowline_32702 USING GIST(shape);
+
+ANALYZE cipsrv_nhdplus_m.nhdflowline_32702;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_32702;
 
 --******************************--
 ----- types/flowline.sql 
@@ -1312,28 +1931,29 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threshold_perc    NUMERIC
+   ,IN  p_line_threshold_perc     NUMERIC
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
-   num_lin_threshold   NUMERIC;
-   int_count           INTEGER;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_line_threshold     NUMERIC;
+   int_count              INTEGER;
+   num_geometry_lengthkm  NUMERIC;
 
 BEGIN
 
    IF p_line_threshold_perc IS NULL
    THEN
-      num_lin_threshold := 0;
+      num_line_threshold := 0;
    
    ELSE
-      num_lin_threshold := p_line_threshold_perc / 100;
+      num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
 
@@ -1355,6 +1975,18 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
 
+   IF p_geometry_lengthkm IS NULL
+   THEN
+      num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC * 0.001,8);
+      
+   ELSE
+      num_geometry_lengthkm := p_geometry_lengthkm;
+      
+   END IF;
+
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);
@@ -1369,14 +2001,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1414,7 +2046,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
 
    ELSIF str_known_region = '3338'
@@ -1431,14 +2063,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1476,7 +2108,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
    
    ELSIF str_known_region = '26904'
@@ -1493,14 +2125,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1538,7 +2170,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32161'
@@ -1555,14 +2187,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1600,7 +2232,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32655'
@@ -1617,14 +2249,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1662,7 +2294,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32702'
@@ -1679,14 +2311,14 @@ BEGIN
           aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
-          WHEN aa.overlapmeasure >= p_geometry_lengthkm
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
           THEN
             1
-          WHEN p_geometry_lengthkm = 0
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
          ,CASE
           WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1724,7 +2356,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_lin_threshold IS NULL OR a.nhdpercentage >= num_lin_threshold
+      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
       ON CONFLICT DO NOTHING;
    
    ELSE
@@ -1762,7 +2394,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threshold_perc    NUMERIC
+   ,IN  p_line_threshold_perc     NUMERIC
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -1774,7 +2406,7 @@ DECLARE
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    geom_part              GEOMETRY;
-   num_lin_threshold      NUMERIC;
+   num_line_threshold     NUMERIC;
    int_count              INTEGER;
    num_main_levelpathi    BIGINT;
    ary_main_lp_int_nodes  BIGINT[];
@@ -1788,7 +2420,8 @@ DECLARE
    boo_check              BOOLEAN;
    int_debug              INTEGER;
    str_debug              VARCHAR;
-   int_geom_count         INTEGER;
+   int_geom_count         INTEGER;   
+   num_geometry_lengthkm  NUMERIC;
 
 BEGIN
 
@@ -1800,10 +2433,10 @@ BEGIN
    ----------------------------------------------------------------------------
    IF p_line_threshold_perc IS NULL
    THEN
-      num_lin_threshold := 0;
+      num_line_threshold := 0;
    
    ELSE
-      num_lin_threshold := p_line_threshold_perc / 100;
+      num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
    
@@ -1828,6 +2461,18 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
+   
+   IF num_geometry_lengthkm IS NULL
+   THEN
+      num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC * 0.001,8);
+      
+   ELSE
+      num_geometry_lengthkm := p_geometry_lengthkm;
+      
+   END IF;
    
    ----------------------------------------------------------------------------
    -- Step 30
@@ -1878,14 +2523,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -1978,14 +2623,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -2078,14 +2723,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -2178,14 +2823,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -2278,14 +2923,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -2378,14 +3023,14 @@ BEGIN
             ,aa.areasqkm
             ,aa.overlapmeasure
             ,CASE
-             WHEN aa.overlapmeasure >= p_geometry_lengthkm
+             WHEN aa.overlapmeasure >= num_geometry_lengthkm
              THEN
                1
-             WHEN p_geometry_lengthkm = 0
+             WHEN num_geometry_lengthkm = 0
              THEN
                0
              ELSE
-               ROUND(aa.overlapmeasure / p_geometry_lengthkm,8)
+               ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
              END AS eventpercentage
             ,CASE
              WHEN aa.overlapmeasure >= aa.lengthkm
@@ -2469,7 +3114,7 @@ BEGIN
          FROM
          tmp_line a
          WHERE
-            (num_lin_threshold IS NULL OR a.nhdpercentage > num_lin_threshold)
+            (num_line_threshold IS NULL OR a.nhdpercentage > num_line_threshold)
          OR a.eventpercentage = 1
          GROUP BY
          a.levelpathi
@@ -2526,7 +3171,7 @@ BEGIN
                OR NOT (aa.tonode = ANY(ary_main_lp_int_nodes))
             )
             AND ( 
-               (num_lin_threshold IS NULL OR aa.nhdpercentage > num_lin_threshold)
+               (num_line_threshold IS NULL OR aa.nhdpercentage > num_line_threshold)
                OR aa.eventpercentage = 1
             )
             GROUP BY
@@ -2698,21 +3343,21 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_simple(
     IN  p_geometry             GEOMETRY
    ,IN  p_geometry_areasqkm    NUMERIC
    ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threshold_perc  NUMERIC
-   ,IN  p_evt_threshold_perc  NUMERIC
+   ,IN  p_cat_threshold_perc   NUMERIC
+   ,IN  p_evt_threshold_perc   NUMERIC
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
-   num_cat_threshold   NUMERIC;
-   num_evt_threshold   NUMERIC;
-   int_count           INTEGER;
+   rec                   RECORD;
+   str_known_region      VARCHAR;
+   int_srid              INTEGER;
+   geom_input            GEOMETRY;
+   num_cat_threshold     NUMERIC;
+   num_evt_threshold     NUMERIC;
+   num_geometry_areasqkm NUMERIC;
 
 BEGIN
 
@@ -2751,6 +3396,18 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
+   
+   IF p_geometry_areasqkm IS NULL
+   THEN
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   ELSE
+      num_geometry_areasqkm := p_geometry_areasqkm;
+      
+   END IF;
       
    IF str_known_region = '5070'
    THEN
@@ -2767,11 +3424,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -2825,11 +3482,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -2883,11 +3540,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -2941,11 +3598,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -2999,11 +3656,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3057,11 +3714,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3106,8 +3763,6 @@ BEGIN
       
    END IF;
    
-   GET DIAGNOSTICS int_count = ROW_COUNT;
-   
    RETURN;
    
 END;
@@ -3145,12 +3800,13 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_centroid(
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
-   num_cat_threshold   NUMERIC;
-   num_evt_threshold   NUMERIC;
+   rec                   RECORD;
+   str_known_region      VARCHAR;
+   int_srid              INTEGER;
+   geom_input            GEOMETRY;
+   num_cat_threshold     NUMERIC;
+   num_evt_threshold     NUMERIC;
+   num_geometry_areasqkm NUMERIC;
 
 BEGIN
 
@@ -3189,6 +3845,18 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
+   
+   IF p_geometry_areasqkm IS NULL
+   THEN
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   ELSE
+      num_geometry_areasqkm := p_geometry_areasqkm;
+      
+   END IF;
       
    IF str_known_region = '5070'
    THEN
@@ -3205,11 +3873,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3259,11 +3927,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3313,11 +3981,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3367,11 +4035,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3421,11 +4089,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3475,11 +4143,11 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
          FROM (
             SELECT
@@ -3549,20 +4217,21 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
     IN  p_geometry             GEOMETRY
    ,IN  p_geometry_areasqkm    NUMERIC
    ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threshold_perc  NUMERIC
-   ,IN  p_evt_threshold_perc  NUMERIC
+   ,IN  p_cat_threshold_perc   NUMERIC
+   ,IN  p_evt_threshold_perc   NUMERIC
    ,OUT out_return_code        INTEGER
    ,OUT out_status_message     VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
-   num_cat_threshold   NUMERIC;
-   num_evt_threshold   NUMERIC;
+   rec                   RECORD;
+   str_known_region      VARCHAR;
+   int_srid              INTEGER;
+   geom_input            GEOMETRY;
+   num_cat_threshold     NUMERIC;
+   num_evt_threshold     NUMERIC;
+   num_geometry_areasqkm NUMERIC;
 
 BEGIN
 
@@ -3601,6 +4270,18 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
+   
+   IF p_geometry_areasqkm IS NULL
+   THEN
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   ELSE
+      num_geometry_areasqkm := p_geometry_areasqkm;
+      
+   END IF;
       
    IF str_known_region = '5070'
    THEN
@@ -3617,21 +4298,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -3642,8 +4326,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_5070 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -3653,7 +4336,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
@@ -3672,21 +4356,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -3697,8 +4384,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_3338 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -3708,7 +4394,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
@@ -3727,21 +4414,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -3752,8 +4442,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_26904 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -3763,7 +4452,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
@@ -3782,21 +4472,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -3807,8 +4500,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_32161 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -3818,7 +4510,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
@@ -3837,21 +4530,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -3862,8 +4558,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_32655 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -3873,7 +4568,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
@@ -3892,21 +4588,24 @@ BEGIN
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN p_geometry_areasqkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / p_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.nhdplusid
             ,aaa.areasqkm
+            ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.nhdplusid
                ,aaaa.areasqkm
+               ,aaaa.fcode
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
@@ -3917,8 +4616,7 @@ BEGIN
                FROM
                cipsrv_nhdplus_m.catchment_32702 aaaa
                WHERE
-                   aaaa.fcode = 55800
-               AND ST_Intersects(
+               ST_Intersects(
                    aaaa.shape
                   ,geom_input
                )
@@ -3928,7 +4626,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
@@ -4559,6 +5258,511 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.get_flowline(
    ,VARCHAR
    ,BIGINT
    ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
+----- functions/catconstrained_reach_index.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_reach_index(
+    IN  p_geometry               GEOMETRY
+   ,IN  p_catchment_nhdplusid    NUMERIC
+   ,IN  p_known_region           VARCHAR
+   ,OUT out_permanent_identifier VARCHAR
+   ,OUT out_nhdplusid            NUMERIC
+   ,OUT out_fdate                DATE
+   ,OUT out_resolution           INTEGER
+   ,OUT out_reachcode            VARCHAR
+   ,OUT out_flowdir              INTEGER
+   ,OUT out_gnis_id              VARCHAR
+   ,OUT out_gnis_name            VARCHAR
+   ,OUT out_wbarea_permanent_identifier VARCHAR
+   ,OUT out_ftype                INTEGER
+   ,OUT out_fcode                INTEGER
+   ,OUT out_vpuid                VARCHAR
+   ,OUT out_snap_measure         NUMERIC
+   ,OUT out_snap_distancekm      NUMERIC
+   ,OUT out_snap_point           GEOMETRY
+   ,OUT out_return_code          INTEGER
+   ,OUT out_status_message       VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                  RECORD;
+   int_raster_srid      INTEGER;
+   sdo_input            GEOMETRY;
+   
+BEGIN
+
+   out_return_code := 0;
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters and set parameters
+   --------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   OR p_catchment_nhdplusid IS NULL
+   THEN
+      RAISE EXCEPTION 'point and catchment nhdplusid required.';
+      
+   END IF;
+   
+   IF ST_GeometryType(p_geometry) <> 'ST_Point'
+   THEN
+      out_return_code    := -99;
+      out_status_message := 'Input must be point geometry';
+      RETURN;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the projection
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_geometry
+      ,p_known_region   := p_known_region
+   );
+   int_raster_srid    := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project input point if required
+   --------------------------------------------------------------------------
+   IF ST_SRID(p_geometry) = int_raster_srid
+   THEN
+      sdo_input := p_geometry;
+      
+   ELSE
+      sdo_input := ST_Transform(p_geometry,int_raster_srid);
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Pull the matching flowline
+   --------------------------------------------------------------------------
+   IF int_raster_srid = 5070
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.nhdplusid
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.vpuid
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       out_permanent_identifier
+      ,out_nhdplusid
+      ,out_fdate
+      ,out_resolution
+      ,out_gnis_id
+      ,out_gnis_name
+      ,out_reachcode
+      ,out_flowdir
+      ,out_wbarea_permanent_identifier
+      ,out_ftype
+      ,out_fcode
+      ,out_vpuid
+      ,out_snap_measure
+      ,out_snap_distancekm
+      ,out_snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.nhdplusid
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.vpuid
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_5070 aa
+         WHERE
+         aa.nhdplusid = p_catchment_nhdplusid
+      ) a;
+   
+   ELSIF int_raster_srid = 26904
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.nhdplusid
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.vpuid
+      ,ROUND(
+           a.snap_measure::numeric
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       out_permanent_identifier
+      ,out_nhdplusid
+      ,out_fdate
+      ,out_resolution
+      ,out_gnis_id
+      ,out_gnis_name
+      ,out_reachcode
+      ,out_flowdir
+      ,out_wbarea_permanent_identifier
+      ,out_ftype
+      ,out_fcode
+      ,out_vpuid
+      ,out_snap_measure
+      ,out_snap_distancekm
+      ,out_snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.nhdplusid
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.vpuid
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_26904 aa
+         WHERE
+         aa.nhdplusid = p_catchment_nhdplusid
+      ) a;
+      
+   ELSIF int_raster_srid = 32161
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.nhdplusid
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.vpuid
+      ,ROUND(
+           a.snap_measure::numeric
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       out_permanent_identifier
+      ,out_nhdplusid
+      ,out_fdate
+      ,out_resolution
+      ,out_gnis_id
+      ,out_gnis_name
+      ,out_reachcode
+      ,out_flowdir
+      ,out_wbarea_permanent_identifier
+      ,out_ftype
+      ,out_fcode
+      ,out_vpuid
+      ,out_snap_measure
+      ,out_snap_distancekm
+      ,out_snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.nhdplusid
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.vpuid
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32161 aa
+         WHERE
+         aa.nhdplusid = p_catchment_nhdplusid
+      ) a;
+      
+   ELSIF int_raster_srid = 32655
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.nhdplusid
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.vpuid
+      ,ROUND(
+           a.snap_measure::numeric
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       out_permanent_identifier
+      ,out_nhdplusid
+      ,out_fdate
+      ,out_resolution
+      ,out_gnis_id
+      ,out_gnis_name
+      ,out_reachcode
+      ,out_flowdir
+      ,out_wbarea_permanent_identifier
+      ,out_ftype
+      ,out_fcode
+      ,out_vpuid
+      ,out_snap_measure
+      ,out_snap_distancekm
+      ,out_snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.nhdplusid
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.vpuid
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32655 aa
+         WHERE
+         aa.nhdplusid = p_catchment_nhdplusid
+      ) a;
+      
+   ELSIF int_raster_srid = 32702
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.nhdplusid
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.vpuid
+      ,ROUND(
+           a.snap_measure::numeric
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       out_permanent_identifier
+      ,out_nhdplusid
+      ,out_fdate
+      ,out_resolution
+      ,out_gnis_id
+      ,out_gnis_name
+      ,out_reachcode
+      ,out_flowdir
+      ,out_wbarea_permanent_identifier
+      ,out_ftype
+      ,out_fcode
+      ,out_vpuid
+      ,out_snap_measure
+      ,out_snap_distancekm
+      ,out_snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.nhdplusid
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.vpuid
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32702 aa
+         WHERE
+         aa.nhdplusid = p_catchment_nhdplusid
+      ) a;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Check for problems and mismatches
+   --------------------------------------------------------------------------
+   IF out_nhdplusid IS NULL
+   OR out_permanent_identifier IS NULL
+   THEN
+      out_return_code    := -1;
+      out_status_message := 'Error matching catchment to flowline <<' || p_catchment_nhdplusid::VARCHAR || '>>';
+      RETURN;
+      
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.catconstrained_reach_index(
+    GEOMETRY
+   ,NUMERIC
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.catconstrained_reach_index(
+    GEOMETRY
+   ,NUMERIC
+   ,VARCHAR
 ) TO PUBLIC;
 
 --******************************--

@@ -26,6 +26,8 @@ BEGIN
          ,tonode                  BIGINT
          ,connector_fromnode      BIGINT
          ,connector_tonode        BIGINT
+         ,fcode                   INTEGER
+         ,isnavigable             BOOLEAN
       );
 
       CREATE UNIQUE INDEX tmp_line_pk 
@@ -36,6 +38,12 @@ BEGIN
       
       CREATE INDEX tmp_line_01i
       ON tmp_line(levelpathi);
+      
+      CREATE INDEX tmp_line_02i
+      ON tmp_line(fcode);
+      
+      CREATE INDEX tmp_line_03i
+      ON tmp_line(isnavigable);
 
    END IF;
    
