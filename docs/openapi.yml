@@ -157,6 +157,12 @@ components:
           - line_simple
           - line_levelpath
           default: line_simple
+        default_line_threshold:
+          description: Linear threshold percentage (0 - 100) to use when linear features are received without expressly defining a linear threshold value.
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true
         default_ring_indexing_method:
           description: Area indexing method to use when linear features that form a closed ring are received without expressly defining a ring indexing method.  To preclude ring processing, set this value to **treat_as_lines**.
           type: string
@@ -167,6 +173,18 @@ components:
           - area_artpath
           - treat_as_lines
           default: treat_as_lines
+        default_ring_areacat_threshold:
+          description: Area catchment threshold percentage (0 - 100) to use when ring features are received without expressly defining a ring area catchment threshold value.
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true
+        default_ring_areaevt_threshold:
+          description: Area event threshold percentage (0 - 100) to use when ring features are received without expressly defining a ring area event threshold value.
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true     
         default_area_indexing_method:
           description: Area indexing method to use when polygon features are received without expressly defining an area indexing method.
           type: string
@@ -176,20 +194,14 @@ components:
           - area_centroid
           - area_artpath
           default: area_simple
-        default_line_threshold:
-          description: Linear threshold percentage (0 - 100) to use when linear features are received without expressly defining a linear threshold value.
-          type: number
-          minimum: 0
-          maximum: 100
-          nullable: true
         default_areacat_threshold:
-          description: Area catchment threshold percentage (0 - 100) to use when area (or ring) features are received without expressly defining an area catchment threshold value.
+          description: Area catchment threshold percentage (0 - 100) to use when area features are received without expressly defining an area catchment threshold value.
           type: number
           minimum: 0
           maximum: 100
           nullable: true
         default_areaevt_threshold:
-          description: Area event threshold percentage (0 - 100) to use when area (or ring) features are received without expressly defining an area event threshold value.
+          description: Area event threshold percentage (0 - 100) to use when area features are received without expressly defining an area event threshold value.
           type: number
           minimum: 0
           maximum: 100

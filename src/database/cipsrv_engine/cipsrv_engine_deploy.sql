@@ -5,32 +5,40 @@ DROP TYPE IF EXISTS cipsrv_engine.cip_feature CASCADE;
 
 CREATE TYPE cipsrv_engine.cip_feature
 AS (
-    globalid               VARCHAR
-   ,gtype                  VARCHAR
-   ,geometry               GEOMETRY
-   ,lengthkm               NUMERIC
-   ,areasqkm               NUMERIC
-   ,isring                 BOOLEAN
-   ,properties             JSONB
-   ,source_featureid       VARCHAR
-   ,nhdplus_version        VARCHAR
-   ,known_region           VARCHAR
-   ,int_srid               INTEGER
-   ,indexing_method_used   VARCHAR
-   ,converted_to_ring      BOOLEAN
-   ,point_indexing_method  VARCHAR
-   ,line_indexing_method   VARCHAR
-   ,ring_indexing_method   VARCHAR
-   ,area_indexing_method   VARCHAR
-   ,line_threshold         NUMERIC
-   ,line_threshold_used    NUMERIC
-   ,areacat_threshold      NUMERIC
-   ,areacat_threshold_used NUMERIC
-   ,areaevt_threshold      NUMERIC
-   ,areaevt_threshold_used NUMERIC
+    globalid                    VARCHAR
+   ,gtype                       VARCHAR
+   ,geometry                    GEOMETRY
+   ,lengthkm                    NUMERIC
+   ,areasqkm                    NUMERIC
+   ,isring                      BOOLEAN
+   ,properties                  JSONB
+   ,source_featureid            VARCHAR
+   ,nhdplus_version             VARCHAR
+   ,known_region                VARCHAR
+   ,int_srid                    INTEGER
+   ,indexing_method_used        VARCHAR
+   ,converted_to_ring           BOOLEAN
+   
+   ,point_indexing_method       VARCHAR
+   
+   ,line_indexing_method        VARCHAR
+   ,line_threshold              NUMERIC
+   ,line_threshold_used         NUMERIC
+   
+   ,ring_indexing_method        VARCHAR
+   ,ring_areacat_threshold      NUMERIC
+   ,ring_areacat_threshold_used NUMERIC
+   ,ring_areaevt_threshold      NUMERIC
+   ,ring_areaevt_threshold_used NUMERIC
+   
+   ,area_indexing_method        VARCHAR
+   ,areacat_threshold           NUMERIC
+   ,areacat_threshold_used      NUMERIC
+   ,areaevt_threshold           NUMERIC
+   ,areaevt_threshold_used      NUMERIC
 );
 
-GRANT usage ON TYPE cipsrv_engine.cip_feature TO public;
+GRANT USAGE ON TYPE cipsrv_engine.cip_feature TO public;
 
 --******************************--
 ----- functions/temp_table_exists.sql 
@@ -409,46 +417,60 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.featurecat(
 ----- functions/jsonb2feature.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
-    IN  p_feature               JSONB
-   ,IN  p_geometry_override     GEOMETRY DEFAULT NULL
-   ,IN  p_globalid              VARCHAR  DEFAULT NULL
-   ,IN  p_source_featureid      VARCHAR  DEFAULT NULL
-   ,IN  p_nhdplus_version       VARCHAR  DEFAULT NULL
-   ,IN  p_known_region          VARCHAR  DEFAULT NULL
-   ,IN  p_int_srid              INTEGER  DEFAULT NULL
-   ,IN  p_point_indexing_method VARCHAR  DEFAULT NULL
-   ,IN  p_line_indexing_method  VARCHAR  DEFAULT NULL
-   ,IN  p_ring_indexing_method  VARCHAR  DEFAULT NULL
-   ,IN  p_area_indexing_method  VARCHAR  DEFAULT NULL
-   ,IN  p_line_threshold        NUMERIC  DEFAULT NULL
-   ,IN  p_areacat_threshold     NUMERIC  DEFAULT NULL
-   ,IN  p_areaevt_threshold     NUMERIC  DEFAULT NULL
+    IN  p_feature                JSONB
+   ,IN  p_geometry_override      GEOMETRY DEFAULT NULL
+   ,IN  p_globalid               VARCHAR  DEFAULT NULL
+   ,IN  p_source_featureid       VARCHAR  DEFAULT NULL
+   ,IN  p_nhdplus_version        VARCHAR  DEFAULT NULL
+   ,IN  p_known_region           VARCHAR  DEFAULT NULL
+   ,IN  p_int_srid               INTEGER  DEFAULT NULL
+   
+   ,IN  p_point_indexing_method  VARCHAR  DEFAULT NULL
+   
+   ,IN  p_line_indexing_method   VARCHAR  DEFAULT NULL
+   ,IN  p_line_threshold         NUMERIC  DEFAULT NULL
+   
+   ,IN  p_ring_indexing_method   VARCHAR  DEFAULT NULL
+   ,IN  p_ring_areacat_threshold NUMERIC  DEFAULT NULL
+   ,IN  p_ring_areaevt_threshold NUMERIC  DEFAULT NULL
+   
+   ,IN  p_area_indexing_method   VARCHAR  DEFAULT NULL
+   ,IN  p_areacat_threshold      NUMERIC  DEFAULT NULL
+   ,IN  p_areaevt_threshold      NUMERIC  DEFAULT NULL
+   
 ) RETURNS cipsrv_engine.cip_feature[]
 IMMUTABLE
 AS $BODY$ 
 DECLARE
-   rec                       RECORD;
+   rec                        RECORD;
    obj_rez cipsrv_engine.cip_feature;
    ary_rez cipsrv_engine.cip_feature[];
-   has_properties            BOOLEAN;
-   boo_isring                BOOLEAN;
-   str_globalid              VARCHAR;
-   str_nhdplus_version       VARCHAR;
-   str_known_region          VARCHAR;
-   int_srid                  INTEGER;
-   str_point_indexing_method VARCHAR;
-   str_line_indexing_method  VARCHAR;
-   str_ring_indexing_method  VARCHAR;
-   str_area_indexing_method  VARCHAR;
-   str_source_featureid      VARCHAR;
-   num_line_threshold        NUMERIC;
-   num_areacat_threshold     NUMERIC;
-   num_areaevt_threshold     NUMERIC;
-   sdo_geometry              GEOMETRY;
-   sdo_geometry2             GEOMETRY;
-   json_feature              JSONB := p_feature;
-   num_line_lengthkm         NUMERIC;
-   num_area_areasqkm         NUMERIC;
+   has_properties             BOOLEAN;
+   boo_isring                 BOOLEAN;
+   str_globalid               VARCHAR;
+   str_nhdplus_version        VARCHAR;
+   str_known_region           VARCHAR;
+   int_srid                   INTEGER;
+   str_source_featureid       VARCHAR;
+   
+   str_point_indexing_method  VARCHAR;
+   
+   str_line_indexing_method   VARCHAR;
+   num_line_threshold         NUMERIC;
+   
+   str_ring_indexing_method   VARCHAR;
+   num_ring_areacat_threshold NUMERIC;
+   num_ring_areaevt_threshold NUMERIC;
+   
+   str_area_indexing_method   VARCHAR;
+   num_areacat_threshold      NUMERIC;
+   num_areaevt_threshold      NUMERIC;
+   
+   sdo_geometry               GEOMETRY;
+   sdo_geometry2              GEOMETRY;
+   json_feature               JSONB := p_feature;
+   num_line_lengthkm          NUMERIC;
+   num_area_areasqkm          NUMERIC;
    
 BEGIN
 
@@ -533,18 +555,24 @@ BEGIN
             
             ary_rez := cipsrv_engine.featurecat(ary_rez,
                cipsrv_engine.jsonb2feature(
-                   p_feature               := json_feature
-                  ,p_geometry_override     := sdo_geometry2
-                  ,p_nhdplus_version       := p_nhdplus_version
-                  ,p_known_region          := p_known_region
-                  ,p_int_srid              := p_int_srid
-                  ,p_point_indexing_method := p_point_indexing_method
-                  ,p_line_indexing_method  := p_line_indexing_method
-                  ,p_ring_indexing_method  := p_ring_indexing_method
-                  ,p_area_indexing_method  := p_area_indexing_method
-                  ,p_line_threshold        := p_line_threshold
-                  ,p_areacat_threshold     := p_areacat_threshold
-                  ,p_areaevt_threshold     := p_areaevt_threshold
+                   p_feature                := json_feature
+                  ,p_geometry_override      := sdo_geometry2
+                  ,p_nhdplus_version        := p_nhdplus_version
+                  ,p_known_region           := p_known_region
+                  ,p_int_srid               := p_int_srid
+                  
+                  ,p_point_indexing_method  := p_point_indexing_method
+                  
+                  ,p_line_indexing_method   := p_line_indexing_method
+                  ,p_line_threshold         := p_line_threshold
+                  
+                  ,p_ring_indexing_method   := p_ring_indexing_method
+                  ,p_ring_areacat_threshold := p_ring_areacat_threshold
+                  ,p_ring_areaevt_threshold := p_ring_areaevt_threshold
+                  
+                  ,p_area_indexing_method   := p_area_indexing_method
+                  ,p_areacat_threshold      := p_areacat_threshold
+                  ,p_areaevt_threshold      := p_areaevt_threshold
                )
             );
             
@@ -701,6 +729,17 @@ BEGIN
 
    END IF;
    
+   IF has_properties
+   AND json_feature->'properties'->'line_threshold' IS NOT NULL
+   THEN
+      num_line_threshold := json_feature->'properties'->'line_threshold';
+      
+   ELSIF p_line_threshold IS NOT NULL
+   THEN
+      num_line_threshold := p_line_threshold;
+      
+   END IF;
+   
    ----------------------------------------------------------------------------
    -- Test for ring indexing_method override
    ----------------------------------------------------------------------------
@@ -713,6 +752,28 @@ BEGIN
    THEN
       str_ring_indexing_method := p_ring_indexing_method;
 
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'ring_areacat_threshold' IS NOT NULL
+   THEN
+      num_ring_areacat_threshold := json_feature->'properties'->'ring_areacat_threshold';
+      
+   ELSIF p_ring_areacat_threshold IS NOT NULL
+   THEN
+      num_ring_areacat_threshold := p_ring_areacat_threshold;
+      
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'ring_areaevt_threshold' IS NOT NULL
+   THEN
+      num_ring_areaevt_threshold := json_feature->'properties'->'ring_areaevt_threshold';
+      
+   ELSIF p_ring_areaevt_threshold IS NOT NULL
+   THEN
+      num_ring_areaevt_threshold := p_ring_areaevt_threshold;
+      
    END IF;
    
    ----------------------------------------------------------------------------
@@ -728,24 +789,7 @@ BEGIN
       str_area_indexing_method := p_area_indexing_method;
 
    END IF;
-      
-   ----------------------------------------------------------------------------
-   -- Test for line_threshold override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'line_threshold' IS NOT NULL
-   THEN
-      num_line_threshold := json_feature->'properties'->'line_threshold';
-      
-   ELSIF p_line_threshold IS NOT NULL
-   THEN
-      num_line_threshold := p_line_threshold;
-      
-   END IF;
    
-   ----------------------------------------------------------------------------
-   -- Test for areacat_threshold override
-   ----------------------------------------------------------------------------
    IF has_properties
    AND json_feature->'properties'->'areacat_threshold' IS NOT NULL
    THEN
@@ -757,9 +801,6 @@ BEGIN
       
    END IF;
    
-   ----------------------------------------------------------------------------
-   -- Test for areaevt_threshold override
-   ----------------------------------------------------------------------------
    IF has_properties
    AND json_feature->'properties'->'areaevt_threshold' IS NOT NULL
    THEN
@@ -809,12 +850,20 @@ BEGIN
       ,int_srid
       ,NULL
       ,NULL
+      
       ,str_point_indexing_method
+      
       ,str_line_indexing_method
-      ,str_ring_indexing_method
-      ,str_area_indexing_method
       ,num_line_threshold
       ,NULL
+      
+      ,str_ring_indexing_method
+      ,num_ring_areacat_threshold
+      ,NULL
+      ,num_ring_areaevt_threshold
+      ,NULL
+      
+      ,str_area_indexing_method
       ,num_areacat_threshold
       ,NULL
       ,num_areaevt_threshold
@@ -836,10 +885,15 @@ ALTER FUNCTION cipsrv_engine.jsonb2feature(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) OWNER TO cipsrv;
@@ -853,10 +907,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) TO PUBLIC;
@@ -865,33 +924,46 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
 ----- functions/jsonb2features.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2features(
-    IN  p_features                      JSONB
-   ,IN  p_nhdplus_version               VARCHAR DEFAULT NULL
-   ,IN  p_known_region                  VARCHAR DEFAULT NULL
-   ,IN  p_int_srid                      INTEGER DEFAULT NULL
-   ,IN  p_default_point_indexing_method VARCHAR DEFAULT NULL
-   ,IN  p_default_line_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_ring_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_area_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_line_threshold        NUMERIC DEFAULT NULL
-   ,IN  p_default_areacat_threshold     NUMERIC DEFAULT NULL
-   ,IN  p_default_areaevt_threshold     NUMERIC DEFAULT NULL
+    IN  p_features                       JSONB
+   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
+   ,IN  p_known_region                   VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                       INTEGER DEFAULT NULL
+   
+   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
+   
+   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
+   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
+   
 ) RETURNS cipsrv_engine.cip_feature[]
 VOLATILE
 AS $BODY$ 
 DECLARE
    obj_rez cipsrv_engine.cip_feature[];
    ary_rez cipsrv_engine.cip_feature[];
-   str_nhdplus_version               VARCHAR;
-   str_known_region                  VARCHAR;
-   int_srid                          INTEGER;
-   str_default_point_indexing_method VARCHAR;
-   str_default_line_indexing_method  VARCHAR;
-   str_default_ring_indexing_method  VARCHAR;
-   str_default_area_indexing_method  VARCHAR;
-   num_default_line_threshold        NUMERIC;
-   num_default_areacat_threshold     NUMERIC;
-   num_default_areaevt_threshold     NUMERIC;
+   str_nhdplus_version                VARCHAR;
+   str_known_region                   VARCHAR;
+   int_srid                           INTEGER;
+   
+   str_default_point_indexing_method  VARCHAR;
+   
+   str_default_line_indexing_method   VARCHAR;
+   num_default_line_threshold         NUMERIC;
+   
+   str_default_ring_indexing_method   VARCHAR;
+   num_default_ring_areacat_threshold NUMERIC;
+   num_default_ring_areaevt_threshold NUMERIC;
+   
+   str_default_area_indexing_method   VARCHAR;
+   num_default_areacat_threshold      NUMERIC;
+   num_default_areaevt_threshold      NUMERIC;
    
 BEGIN
 
@@ -906,16 +978,22 @@ BEGIN
       
    END IF;
    
-   str_nhdplus_version               := p_nhdplus_version;
-   str_known_region                  := p_known_region;
-   int_srid                          := p_int_srid;
-   str_default_point_indexing_method := p_default_point_indexing_method;
-   str_default_line_indexing_method  := p_default_line_indexing_method;
-   str_default_ring_indexing_method  := p_default_ring_indexing_method;
-   str_default_area_indexing_method  := p_default_area_indexing_method;
-   num_default_line_threshold        := p_default_line_threshold;
-   num_default_areacat_threshold     := p_default_areacat_threshold;
-   num_default_areaevt_threshold     := p_default_areaevt_threshold;
+   str_nhdplus_version                := p_nhdplus_version;
+   str_known_region                   := p_known_region;
+   int_srid                           := p_int_srid;
+   
+   str_default_point_indexing_method  := p_default_point_indexing_method;
+   
+   str_default_line_indexing_method   := p_default_line_indexing_method;
+   num_default_line_threshold         := p_default_line_threshold;
+   
+   str_default_ring_indexing_method   := p_default_ring_indexing_method;
+   num_default_ring_areacat_threshold := p_default_ring_areacat_threshold;
+   num_default_ring_areaevt_threshold := p_default_ring_areaevt_threshold;
+
+   str_default_area_indexing_method   := p_default_area_indexing_method;
+   num_default_areacat_threshold      := p_default_areacat_threshold;
+   num_default_areaevt_threshold      := p_default_areaevt_threshold;
 
    ----------------------------------------------------------------------------
    -- Build the features
@@ -928,16 +1006,22 @@ BEGIN
              'type',     'Feature'
             ,'geometry', p_features
           )
-         ,p_nhdplus_version       := str_nhdplus_version
-         ,p_known_region          := str_known_region
-         ,p_int_srid              := int_srid
-         ,p_point_indexing_method := str_default_point_indexing_method
-         ,p_line_indexing_method  := str_default_line_indexing_method
-         ,p_ring_indexing_method  := str_default_ring_indexing_method
-         ,p_area_indexing_method  := str_default_area_indexing_method
-         ,p_line_threshold        := num_default_line_threshold
-         ,p_areacat_threshold     := num_default_areacat_threshold
-         ,p_areaevt_threshold     := num_default_areaevt_threshold
+         ,p_nhdplus_version        := str_nhdplus_version
+         ,p_known_region           := str_known_region
+         ,p_int_srid               := int_srid
+         
+         ,p_point_indexing_method  := str_default_point_indexing_method
+         
+         ,p_line_indexing_method   := str_default_line_indexing_method
+         ,p_line_threshold         := num_default_line_threshold
+         
+         ,p_ring_indexing_method   := str_default_ring_indexing_method
+         ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
+         ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+         
+         ,p_area_indexing_method   := str_default_area_indexing_method
+         ,p_areacat_threshold      := num_default_areacat_threshold
+         ,p_areaevt_threshold      := num_default_areaevt_threshold
       );
       
       ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
@@ -946,17 +1030,24 @@ BEGIN
    AND p_features->>'type' = 'Feature'
    THEN
       obj_rez := cipsrv_engine.jsonb2feature(
-          p_feature               := p_features
-         ,p_nhdplus_version       := str_nhdplus_version
-         ,p_known_region          := str_known_region
-         ,p_int_srid              := int_srid
-         ,p_point_indexing_method := str_default_point_indexing_method
-         ,p_line_indexing_method  := str_default_line_indexing_method
-         ,p_ring_indexing_method  := str_default_ring_indexing_method
-         ,p_area_indexing_method  := str_default_area_indexing_method
-         ,p_line_threshold        := num_default_line_threshold
-         ,p_areacat_threshold     := num_default_areacat_threshold
-         ,p_areaevt_threshold     := num_default_areaevt_threshold
+          p_feature                := p_features
+         ,p_nhdplus_version        := str_nhdplus_version
+         ,p_known_region           := str_known_region
+         ,p_int_srid               := int_srid
+         
+         ,p_point_indexing_method  := str_default_point_indexing_method
+         
+         ,p_line_indexing_method   := str_default_line_indexing_method
+         ,p_line_threshold         := num_default_line_threshold
+         
+         ,p_ring_indexing_method   := str_default_ring_indexing_method
+         ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
+         ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+         
+         ,p_area_indexing_method   := str_default_area_indexing_method
+         ,p_areacat_threshold      := num_default_areacat_threshold
+         ,p_areaevt_threshold      := num_default_areaevt_threshold
+          
       );
       
       ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
@@ -967,17 +1058,24 @@ BEGIN
       FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features->'features')
       LOOP
          obj_rez := cipsrv_engine.jsonb2feature(
-             p_feature               := p_features->'features'->i-1
-            ,p_nhdplus_version       := str_nhdplus_version
-            ,p_known_region          := str_known_region
-            ,p_int_srid              := int_srid
-            ,p_point_indexing_method := str_default_point_indexing_method
-            ,p_line_indexing_method  := str_default_line_indexing_method
-            ,p_ring_indexing_method  := str_default_ring_indexing_method
-            ,p_area_indexing_method  := str_default_area_indexing_method
-            ,p_line_threshold        := num_default_line_threshold
-            ,p_areacat_threshold     := num_default_areacat_threshold
-            ,p_areaevt_threshold     := num_default_areaevt_threshold
+             p_feature                := p_features->'features'->i-1
+            ,p_nhdplus_version        := str_nhdplus_version
+            ,p_known_region           := str_known_region
+            ,p_int_srid               := int_srid
+            
+            ,p_point_indexing_method  := str_default_point_indexing_method
+            
+            ,p_line_indexing_method   := str_default_line_indexing_method
+            ,p_line_threshold         := num_default_line_threshold
+            
+            ,p_ring_indexing_method   := str_default_ring_indexing_method
+            ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
+            ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+            
+            ,p_area_indexing_method   := str_default_area_indexing_method
+            ,p_areacat_threshold      := num_default_areacat_threshold
+            ,p_areaevt_threshold      := num_default_areaevt_threshold
+            
          );
       
          ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
@@ -1001,10 +1099,15 @@ ALTER FUNCTION cipsrv_engine.jsonb2features(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) OWNER TO cipsrv;
@@ -1015,10 +1118,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2features(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) TO PUBLIC;
@@ -1134,6 +1242,30 @@ BEGIN
           jsonb_in          := json_properties
          ,path              := ARRAY['areaevt_threshold_used']
          ,replacement       := TO_JSONB((p_feature).areaevt_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   
+   
+   IF (p_feature).ring_areacat_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_areacat_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).ring_areacat_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).ring_areaevt_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_areaevt_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).ring_areaevt_threshold_used)
          ,create_if_missing := TRUE
       );
       
@@ -1380,23 +1512,30 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.preprocess2summary(
 ----- functions/unpackjsonb.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
-    IN  p_points                        JSONB
-   ,IN  p_lines                         JSONB
-   ,IN  p_areas                         JSONB
-   ,IN  p_geometry                      JSONB 
-   ,IN  p_nhdplus_version               VARCHAR
-   ,IN  p_known_region                  VARCHAR DEFAULT NULL
-   ,IN  p_int_srid                      INTEGER DEFAULT NULL
-   ,IN  p_default_point_indexing_method VARCHAR DEFAULT NULL
-   ,IN  p_default_line_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_ring_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_area_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_line_threshold        NUMERIC DEFAULT NULL
-   ,IN  p_default_areacat_threshold     NUMERIC DEFAULT NULL
-   ,IN  p_default_areaevt_threshold     NUMERIC DEFAULT NULL
-   ,OUT out_return_code                 INTEGER
-   ,OUT out_status_message              VARCHAR
-   ,OUT out_features                    cipsrv_engine.cip_feature[]
+    IN  p_points                         JSONB
+   ,IN  p_lines                          JSONB
+   ,IN  p_areas                          JSONB
+   ,IN  p_geometry                       JSONB 
+   ,IN  p_nhdplus_version                VARCHAR
+   ,IN  p_known_region                   VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                       INTEGER DEFAULT NULL
+   
+   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
+   
+   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
+   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
+   
+   ,OUT out_return_code                  INTEGER
+   ,OUT out_status_message               VARCHAR
+   ,OUT out_features                     cipsrv_engine.cip_feature[]
 )
 IMMUTABLE
 AS $BODY$ 
@@ -1507,6 +1646,8 @@ BEGIN
             out_features[i].gtype    := ST_GeometryType(out_features[i].geometry);
             out_features[i].converted_to_ring := TRUE;
             out_features[i].area_indexing_method := out_features[i].ring_indexing_method;
+            out_features[i].areacat_threshold    := out_features[i].ring_areacat_threshold;
+            out_features[i].areaevt_threshold    := out_features[i].ring_areaevt_threshold;
             
             out_features[i].lengthkm := NULL;
             out_features[i].areasqkm := ROUND(ST_Area(ST_Transform(
@@ -1533,10 +1674,15 @@ ALTER FUNCTION cipsrv_engine.unpackjsonb(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) OWNER TO cipsrv;
@@ -1550,10 +1696,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.unpackjsonb(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) TO PUBLIC;
@@ -2081,60 +2232,72 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.parse_catchment_filter(
 ----- functions/cipsrv_index.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
-    IN  p_points                        JSONB
-   ,IN  p_lines                         JSONB
-   ,IN  p_areas                         JSONB
-   ,IN  p_geometry                      JSONB 
-   ,IN  p_geometry_clip                 VARCHAR[]
-   ,IN  p_geometry_clip_stage           VARCHAR
-   ,IN  p_catchment_filter              VARCHAR[]
-   ,IN  p_nhdplus_version               VARCHAR
-   ,IN  p_wbd_version                   VARCHAR
-   ,IN  p_default_point_indexing_method VARCHAR
-   ,IN  p_default_line_indexing_method  VARCHAR
-   ,IN  p_default_ring_indexing_method  VARCHAR
-   ,IN  p_default_area_indexing_method  VARCHAR
-   ,IN  p_default_line_threshold        NUMERIC
-   ,IN  p_default_areacat_threshold     NUMERIC
-   ,IN  p_default_areaevt_threshold     NUMERIC
-   ,IN  p_known_region                  VARCHAR
-   ,IN  p_return_indexed_features       BOOLEAN
-   ,IN  p_return_indexed_collection     BOOLEAN
-   ,IN  p_return_catchment_geometry     BOOLEAN
-   ,IN  p_return_indexing_summary       BOOLEAN
-   ,OUT out_indexed_points              JSONB
-   ,OUT out_indexed_lines               JSONB
-   ,OUT out_indexed_areas               JSONB
-   ,OUT out_indexed_collection          GEOMETRY
-   ,OUT out_indexing_summary            JSONB
-   ,OUT out_catchment_count             INTEGER
-   ,OUT out_catchment_areasqkm          NUMERIC
-   ,OUT out_return_code                 INTEGER
-   ,OUT out_status_message              VARCHAR
+    IN  p_points                         JSONB
+   ,IN  p_lines                          JSONB
+   ,IN  p_areas                          JSONB
+   ,IN  p_geometry                       JSONB 
+   ,IN  p_geometry_clip                  VARCHAR[]
+   ,IN  p_geometry_clip_stage            VARCHAR
+   ,IN  p_catchment_filter               VARCHAR[]
+   ,IN  p_nhdplus_version                VARCHAR
+   ,IN  p_wbd_version                    VARCHAR
+   
+   ,IN  p_default_point_indexing_method  VARCHAR
+   
+   ,IN  p_default_line_indexing_method   VARCHAR
+   ,IN  p_default_line_threshold         NUMERIC
+   
+   ,IN  p_default_ring_indexing_method   VARCHAR
+   ,IN  p_default_ring_areacat_threshold NUMERIC
+   ,IN  p_default_ring_areaevt_threshold NUMERIC
+   
+   ,IN  p_default_area_indexing_method   VARCHAR
+   ,IN  p_default_areacat_threshold      NUMERIC
+   ,IN  p_default_areaevt_threshold      NUMERIC
+   
+   ,IN  p_known_region                   VARCHAR
+   ,IN  p_return_indexed_features        BOOLEAN
+   ,IN  p_return_indexed_collection      BOOLEAN
+   ,IN  p_return_catchment_geometry      BOOLEAN
+   ,IN  p_return_indexing_summary        BOOLEAN
+   ,OUT out_indexed_points               JSONB
+   ,OUT out_indexed_lines                JSONB
+   ,OUT out_indexed_areas                JSONB
+   ,OUT out_indexed_collection           GEOMETRY
+   ,OUT out_indexing_summary             JSONB
+   ,OUT out_catchment_count              INTEGER
+   ,OUT out_catchment_areasqkm           NUMERIC
+   ,OUT out_return_code                  INTEGER
+   ,OUT out_status_message               VARCHAR
 )
 VOLATILE
 AS $BODY$ 
 DECLARE
-   rec                               RECORD;
-   int_srid                          INTEGER;
-   ary_features                      cipsrv_engine.cip_feature[];   
-   boo_return_geometry               BOOLEAN;
+   rec                                RECORD;
+   int_srid                           INTEGER;
+   ary_features                       cipsrv_engine.cip_feature[];   
+   boo_return_geometry                BOOLEAN;
    
-   str_default_point_indexing_method VARCHAR;
-   str_default_line_indexing_method  VARCHAR;
-   str_default_ring_indexing_method  VARCHAR;
-   str_default_area_indexing_method  VARCHAR;
-   num_default_line_threshold        NUMERIC;
-   num_default_areacat_threshold     NUMERIC;
-   num_default_areaevt_threshold     NUMERIC;
+   str_default_point_indexing_method  VARCHAR;
    
-   str_known_region                  VARCHAR;
-   str_geometry_clip_stage           VARCHAR;
-   boo_filter_by_state               BOOLEAN;
-   boo_return_indexed_features       BOOLEAN;
-   boo_return_indexing_summary       BOOLEAN;
-   ary_state_filters                 VARCHAR[];
-   boo_filter_by_tribal              BOOLEAN;
+   str_default_line_indexing_method   VARCHAR;
+   num_default_line_threshold         NUMERIC;
+   
+   str_default_ring_indexing_method   VARCHAR;
+   num_default_ring_areacat_threshold NUMERIC;
+   num_default_ring_areaevt_threshold NUMERIC;
+   
+   str_default_area_indexing_method   VARCHAR;
+   num_default_areacat_threshold      NUMERIC;
+   num_default_areaevt_threshold      NUMERIC;
+   
+   str_known_region                   VARCHAR;
+   str_geometry_clip_stage            VARCHAR;
+   boo_filter_by_state                BOOLEAN;
+   boo_return_indexed_features        BOOLEAN;
+   boo_return_indexing_summary        BOOLEAN;
+   ary_state_filters                  VARCHAR[];
+   boo_filter_by_tribal               BOOLEAN;
    
 BEGIN
 
@@ -2184,6 +2347,8 @@ BEGIN
    
    END IF;
    
+   --########################################################################--
+   
    str_default_point_indexing_method  := p_default_point_indexing_method;
    IF str_default_point_indexing_method IS NULL
    THEN
@@ -2196,6 +2361,8 @@ BEGIN
       RETURN;
     
    END IF;
+   
+   --########################################################################--
    
    str_default_line_indexing_method  := p_default_line_indexing_method;
    IF str_default_line_indexing_method IS NULL
@@ -2210,18 +2377,14 @@ BEGIN
     
    END IF;
    
-   str_default_area_indexing_method  := p_default_area_indexing_method;
-   IF str_default_area_indexing_method IS NULL
+   num_default_line_threshold := p_default_line_threshold;
+   IF num_default_line_threshold IS NULL
    THEN
-      str_default_area_indexing_method := 'area_simple';
+      num_default_line_threshold := 10;
       
-   ELSIF str_default_area_indexing_method NOT IN ('area_simple','area_centroid','area_artpath')
-   THEN
-      out_return_code    := -10;
-      out_status_message := 'unknown CIP area indexing method';
-      RETURN;
-    
    END IF;
+   
+   --########################################################################--
    
    str_default_ring_indexing_method  := p_default_ring_indexing_method;
    IF str_default_ring_indexing_method IS NULL
@@ -2236,11 +2399,33 @@ BEGIN
     
    END IF;
    
-   num_default_line_threshold := p_default_line_threshold;
-   IF num_default_line_threshold IS NULL
+   num_default_ring_areacat_threshold := p_default_ring_areacat_threshold;
+   IF num_default_ring_areacat_threshold IS NULL
    THEN
-      num_default_line_threshold := 10;
+      num_default_ring_areacat_threshold := 10;
       
+   END IF;
+   
+   num_default_ring_areaevt_threshold := p_default_ring_areaevt_threshold;
+   IF num_default_ring_areaevt_threshold IS NULL
+   THEN
+      num_default_ring_areaevt_threshold := 10;
+      
+   END IF;
+   
+   --########################################################################--
+   
+   str_default_area_indexing_method  := p_default_area_indexing_method;
+   IF str_default_area_indexing_method IS NULL
+   THEN
+      str_default_area_indexing_method := 'area_simple';
+      
+   ELSIF str_default_area_indexing_method NOT IN ('area_simple','area_centroid','area_artpath')
+   THEN
+      out_return_code    := -10;
+      out_status_message := 'unknown CIP area indexing method';
+      RETURN;
+    
    END IF;
    
    num_default_areacat_threshold := p_default_areacat_threshold;
@@ -2256,6 +2441,8 @@ BEGIN
       num_default_areaevt_threshold := 10;
       
    END IF;
+   
+   --########################################################################--
    
    boo_return_indexed_features := p_return_indexed_features;
    IF boo_return_indexed_features IS NULL
@@ -2286,20 +2473,26 @@ BEGIN
    -- Build features from JSONB inputs
    ----------------------------------------------------------------------------
    rec := cipsrv_engine.unpackjsonb(
-       p_points                        := p_points
-      ,p_lines                         := p_lines
-      ,p_areas                         := p_areas
-      ,p_geometry                      := p_geometry 
-      ,p_nhdplus_version               := p_nhdplus_version
-      ,p_known_region                  := str_known_region
-      ,p_int_srid                      := NULL
-      ,p_default_point_indexing_method := str_default_point_indexing_method
-      ,p_default_line_indexing_method  := str_default_line_indexing_method
-      ,p_default_ring_indexing_method  := str_default_ring_indexing_method
-      ,p_default_area_indexing_method  := str_default_area_indexing_method
-      ,p_default_line_threshold        := num_default_line_threshold
-      ,p_default_areacat_threshold     := num_default_areacat_threshold
-      ,p_default_areaevt_threshold     := num_default_areaevt_threshold
+       p_points                         := p_points
+      ,p_lines                          := p_lines
+      ,p_areas                          := p_areas
+      ,p_geometry                       := p_geometry 
+      ,p_nhdplus_version                := p_nhdplus_version
+      ,p_known_region                   := str_known_region
+      ,p_int_srid                       := NULL
+      
+      ,p_default_point_indexing_method  := str_default_point_indexing_method
+      
+      ,p_default_line_indexing_method   := str_default_line_indexing_method
+      ,p_default_line_threshold         := num_default_line_threshold
+      
+      ,p_default_ring_indexing_method   := str_default_ring_indexing_method
+      ,p_default_ring_areacat_threshold := num_default_ring_areacat_threshold
+      ,p_default_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+      
+      ,p_default_area_indexing_method   := str_default_area_indexing_method
+      ,p_default_areacat_threshold      := num_default_areacat_threshold
+      ,p_default_areaevt_threshold      := num_default_areaevt_threshold
    );
    out_return_code     := rec.out_return_code;
    out_status_message  := rec.out_status_message;
@@ -2703,13 +2896,20 @@ ALTER FUNCTION cipsrv_engine.cipsrv_index(
    ,VARCHAR[]
    ,VARCHAR
    ,VARCHAR
+   
    ,VARCHAR
+   
    ,VARCHAR
-   ,VARCHAR
+   ,NUMERIC
+   
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
+   ,NUMERIC
+   
    ,VARCHAR
    ,BOOLEAN
    ,BOOLEAN
@@ -2727,13 +2927,20 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_index(
    ,VARCHAR[]
    ,VARCHAR
    ,VARCHAR
+   
    ,VARCHAR
+   
    ,VARCHAR
-   ,VARCHAR
+   ,NUMERIC
+   
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
+   ,NUMERIC
+   
    ,VARCHAR
    ,BOOLEAN
    ,BOOLEAN

@@ -1703,6 +1703,8 @@ BEGIN
          ,tonode                  BIGINT
          ,connector_fromnode      BIGINT
          ,connector_tonode        BIGINT
+         ,fcode                   INTEGER
+         ,isnavigable             BOOLEAN
       );
 
       CREATE UNIQUE INDEX tmp_line_pk 
@@ -1713,6 +1715,12 @@ BEGIN
       
       CREATE INDEX tmp_line_01i
       ON tmp_line(levelpathi);
+      
+      CREATE INDEX tmp_line_02i
+      ON tmp_line(fcode);
+      
+      CREATE INDEX tmp_line_03i
+      ON tmp_line(isnavigable);
 
    END IF;
    
@@ -2408,6 +2416,7 @@ DECLARE
    geom_part              GEOMETRY;
    num_line_threshold     NUMERIC;
    int_count              INTEGER;
+   int_count2             INTEGER;
    num_main_levelpathi    BIGINT;
    ary_main_lp_int_nodes  BIGINT[];
    ary_done_levelpathis   BIGINT[];
@@ -2504,6 +2513,8 @@ BEGIN
             ,fromnode
             ,connector_tonode
             ,connector_fromnode
+            ,fcode
+            ,isnavigable
          ) 
          SELECT
           a.nhdplusid
@@ -2517,6 +2528,8 @@ BEGIN
          ,a.fromnode
          ,a.connector_tonode
          ,a.connector_fromnode
+         ,a.fcode
+         ,a.isnavigable
          FROM (
             SELECT
              aa.nhdplusid
@@ -2545,6 +2558,8 @@ BEGIN
             ,aa.fromnode
             ,aa.connector_tonode
             ,aa.connector_fromnode
+            ,aa.fcode
+            ,aa.isnavigable
             FROM (
                SELECT
                 aaa.nhdplusid
@@ -2557,6 +2572,8 @@ BEGIN
                ,aaa.fromnode
                ,aaa.connector_tonode
                ,aaa.connector_fromnode
+               ,aaa.fcode
+               ,aaa.isnavigable
                FROM (
                   SELECT
                    aaaa.nhdplusid
@@ -2575,6 +2592,8 @@ BEGIN
                   ,aaaa.fromnode
                   ,aaaa.connector_tonode
                   ,aaaa.connector_fromnode
+                  ,aaaa.fcode
+                  ,aaaa.isnavigable
                   FROM
                   cipsrv_nhdplus_h.catchment_5070 aaaa
                   WHERE
@@ -2604,6 +2623,8 @@ BEGIN
             ,fromnode
             ,connector_tonode
             ,connector_fromnode
+            ,fcode
+            ,isnavigable
          ) 
          SELECT
           a.nhdplusid
@@ -2617,6 +2638,8 @@ BEGIN
          ,a.fromnode
          ,a.connector_tonode
          ,a.connector_fromnode
+         ,a.fcode
+         ,a.isnavigable
          FROM (
             SELECT
              aa.nhdplusid
@@ -2645,6 +2668,8 @@ BEGIN
             ,aa.fromnode
             ,aa.connector_tonode
             ,aa.connector_fromnode
+            ,aa.fcode
+            ,aa.isnavigable
             FROM (
                SELECT
                 aaa.nhdplusid
@@ -2657,6 +2682,8 @@ BEGIN
                ,aaa.fromnode
                ,aaa.connector_tonode
                ,aaa.connector_fromnode
+               ,aaa.fcode
+               ,aaa.isnavigable
                FROM (
                   SELECT
                    aaaa.nhdplusid
@@ -2675,6 +2702,8 @@ BEGIN
                   ,aaaa.fromnode
                   ,aaaa.connector_tonode
                   ,aaaa.connector_fromnode
+                  ,aaaa.fcode
+                  ,aaaa.isnavigable
                   FROM
                   cipsrv_nhdplus_h.catchment_3338 aaaa
                   WHERE
@@ -2704,6 +2733,8 @@ BEGIN
             ,fromnode
             ,connector_tonode
             ,connector_fromnode
+            ,fcode
+            ,isnavigable
          ) 
          SELECT
           a.nhdplusid
@@ -2717,6 +2748,8 @@ BEGIN
          ,a.fromnode
          ,a.connector_tonode
          ,a.connector_fromnode
+         ,a.fcode
+         ,a.isnavigable
          FROM (
             SELECT
              aa.nhdplusid
@@ -2745,6 +2778,8 @@ BEGIN
             ,aa.fromnode
             ,aa.connector_tonode
             ,aa.connector_fromnode
+            ,aa.fcode
+            ,aa.isnavigable
             FROM (
                SELECT
                 aaa.nhdplusid
@@ -2757,6 +2792,8 @@ BEGIN
                ,aaa.fromnode
                ,aaa.connector_tonode
                ,aaa.connector_fromnode
+               ,aaa.fcode
+               ,aaa.isnavigable
                FROM (
                   SELECT
                    aaaa.nhdplusid
@@ -2775,6 +2812,8 @@ BEGIN
                   ,aaaa.fromnode
                   ,aaaa.connector_tonode
                   ,aaaa.connector_fromnode
+                  ,aaaa.fcode
+                  ,aaaa.isnavigable
                   FROM
                   cipsrv_nhdplus_h.catchment_26904 aaaa
                   WHERE
@@ -2804,6 +2843,8 @@ BEGIN
             ,fromnode
             ,connector_tonode
             ,connector_fromnode
+            ,fcode
+            ,isnavigable
          ) 
          SELECT
           a.nhdplusid
@@ -2817,6 +2858,8 @@ BEGIN
          ,a.fromnode
          ,a.connector_tonode
          ,a.connector_fromnode
+         ,a.fcode
+         ,a.isnavigable
          FROM (
             SELECT
              aa.nhdplusid
@@ -2845,6 +2888,8 @@ BEGIN
             ,aa.fromnode
             ,aa.connector_tonode
             ,aa.connector_fromnode
+            ,aa.fcode
+            ,aa.isnavigable
             FROM (
                SELECT
                 aaa.nhdplusid
@@ -2857,6 +2902,8 @@ BEGIN
                ,aaa.fromnode
                ,aaa.connector_tonode
                ,aaa.connector_fromnode
+               ,aaa.fcode
+               ,aaa.isnavigable
                FROM (
                   SELECT
                    aaaa.nhdplusid
@@ -2875,6 +2922,8 @@ BEGIN
                   ,aaaa.fromnode
                   ,aaaa.connector_tonode
                   ,aaaa.connector_fromnode
+                  ,aaaa.fcode
+                  ,aaaa.isnavigable
                   FROM
                   cipsrv_nhdplus_h.catchment_32161 aaaa
                   WHERE
@@ -2904,6 +2953,8 @@ BEGIN
             ,fromnode
             ,connector_tonode
             ,connector_fromnode
+            ,fcode
+            ,isnavigable
          ) 
          SELECT
           a.nhdplusid
@@ -2917,6 +2968,8 @@ BEGIN
          ,a.fromnode
          ,a.connector_tonode
          ,a.connector_fromnode
+         ,a.fcode
+         ,a.isnavigable
          FROM (
             SELECT
              aa.nhdplusid
@@ -2945,6 +2998,8 @@ BEGIN
             ,aa.fromnode
             ,aa.connector_tonode
             ,aa.connector_fromnode
+            ,aa.fcode
+            ,aa.isnavigable
             FROM (
                SELECT
                 aaa.nhdplusid
@@ -2957,6 +3012,8 @@ BEGIN
                ,aaa.fromnode
                ,aaa.connector_tonode
                ,aaa.connector_fromnode
+               ,aaa.fcode
+               ,aaa.isnavigable
                FROM (
                   SELECT
                    aaaa.nhdplusid
@@ -2975,6 +3032,8 @@ BEGIN
                   ,aaaa.fromnode
                   ,aaaa.connector_tonode
                   ,aaaa.connector_fromnode
+                  ,aaaa.fcode
+                  ,aaaa.isnavigable
                   FROM
                   cipsrv_nhdplus_h.catchment_32655 aaaa
                   WHERE
@@ -3004,6 +3063,8 @@ BEGIN
             ,fromnode
             ,connector_tonode
             ,connector_fromnode
+            ,fcode
+            ,isnavigable
          ) 
          SELECT
           a.nhdplusid
@@ -3017,6 +3078,8 @@ BEGIN
          ,a.fromnode
          ,a.connector_tonode
          ,a.connector_fromnode
+         ,a.fcode
+         ,a.isnavigable
          FROM (
             SELECT
              aa.nhdplusid
@@ -3045,6 +3108,8 @@ BEGIN
             ,aa.fromnode
             ,aa.connector_tonode
             ,aa.connector_fromnode
+            ,aa.fcode
+            ,aa.isnavigable
             FROM (
                SELECT
                 aaa.nhdplusid
@@ -3057,6 +3122,8 @@ BEGIN
                ,aaa.fromnode
                ,aaa.connector_tonode
                ,aaa.connector_fromnode
+               ,aaa.fcode
+               ,aaa.isnavigable
                FROM (
                   SELECT
                    aaaa.nhdplusid
@@ -3075,6 +3142,8 @@ BEGIN
                   ,aaaa.fromnode
                   ,aaaa.connector_tonode
                   ,aaaa.connector_fromnode
+                  ,aaaa.fcode
+                  ,aaaa.isnavigable
                   FROM
                   cipsrv_nhdplus_h.catchment_32702 aaaa
                   WHERE
@@ -3102,7 +3171,6 @@ BEGIN
    ----------------------------------------------------------------------------
       IF int_count > 0
       THEN
-      
          SELECT
           a.levelpathi
          ,MAX(a.hydroseq)
@@ -3114,7 +3182,8 @@ BEGIN
          FROM
          tmp_line a
          WHERE
-            (num_line_threshold IS NULL OR a.nhdpercentage > num_line_threshold)
+            a.isnavigable
+         OR (num_line_threshold IS NULL OR a.nhdpercentage > num_line_threshold)
          OR a.eventpercentage = 1
          GROUP BY
          a.levelpathi
@@ -3204,6 +3273,25 @@ BEGIN
          AND a.hydroseq >= num_min_hydroseq
          AND a.hydroseq <= num_max_hydroseq
          ON CONFLICT DO NOTHING;
+         
+         GET DIAGNOSTICS int_count2 = ROW_COUNT;
+         
+         -- This is a bit dodgy but if the input is entirely outside the scope of navigable catchments
+         -- e.g. out in the ocean or emulating a coastal flowline, then provide back the spatial intersect
+         IF int_count2 = 0
+         THEN
+            INSERT INTO tmp_cip(
+               nhdplusid
+            ) 
+            SELECT 
+            a.nhdplusid
+            FROM
+            tmp_line a
+            WHERE
+            NOT a.isnavigable
+            ON CONFLICT DO NOTHING;
+            
+         END IF;
  
    ----------------------------------------------------------------------------
    -- Step 70
@@ -4228,6 +4316,7 @@ DECLARE
    rec                   RECORD;
    str_known_region      VARCHAR;
    int_srid              INTEGER;
+   int_count             INTEGER;
    geom_input            GEOMETRY;
    num_cat_threshold     NUMERIC;
    num_evt_threshold     NUMERIC;
@@ -4282,7 +4371,7 @@ BEGIN
       num_geometry_areasqkm := p_geometry_areasqkm;
       
    END IF;
-      
+   
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);
