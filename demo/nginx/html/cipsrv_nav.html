@@ -795,6 +795,19 @@
                document.getElementById("pSearchMaxDistanceKm").disabled = false;
             }
          }
+
+         function get_url_parameter(param_key) {
+            var page_url = window.location.search.substring(1);
+            
+            var url_variables = page_url.split('&');
+            for (var i = 0; i < url_variables.length; i++) {
+               var parameter_name = url_variables[i].split('=');
+               if (parameter_name[0] == param_key) {
+                  return parameter_name[1];
+               }
+            }
+            return null;
+         }
          
       </script>
    </body>

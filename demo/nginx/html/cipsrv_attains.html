@@ -254,6 +254,14 @@
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
                <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="10" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <br/>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Catchment Thold:</span>
+               <input name="dzRingCatThreasholdPerc" id="dzRingCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Event Thold:</span>
+               <input name="dzRingEvtThreasholdPerc" id="dzRingEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <br/>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
                <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="50" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
@@ -468,13 +476,18 @@
                ,"nhdplus_version":               get_select_values(pnhdv)
                ,"wbd_version":                   null
                
-               ,"default_point_indexing_method": get_select_values(pointm)
-               ,"default_line_indexing_method":  get_select_values(linem)
-               ,"default_ring_indexing_method":  get_select_values(ringm)
-               ,"default_area_indexing_method":  get_select_values(aream)
-               ,"default_line_threshold":        document.getElementById("dzLineThreasholdPerc").value
-               ,"default_areacat_threshold":     document.getElementById("dzCatThreasholdPerc").value
-               ,"default_areaevt_threshold":     document.getElementById("dzEvtThreasholdPerc").value
+               ,"default_point_indexing_method":  get_select_values(pointm)
+               
+               ,"default_line_indexing_method":   get_select_values(linem)
+               ,"default_line_threshold":         document.getElementById("dzLineThreasholdPerc").value
+               
+               ,"default_ring_indexing_method":   get_select_values(ringm)
+               ,"default_ring_areacat_threshold": document.getElementById("dzRingCatThreasholdPerc").value
+               ,"default_ring_areaevt_threshold": document.getElementById("dzRingEvtThreasholdPerc").value
+               
+               ,"default_area_indexing_method":   get_select_values(aream)
+               ,"default_areacat_threshold":      document.getElementById("dzCatThreasholdPerc").value
+               ,"default_areaevt_threshold":      document.getElementById("dzEvtThreasholdPerc").value
                
                ,"return_indexed_features":       true
                ,"return_indexed_collection":     false

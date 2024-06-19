@@ -130,6 +130,14 @@
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
                <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <br/>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Catchment Thold:</span>
+               <input name="dzRingCatThreasholdPerc" id="dzRingCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Event Thold:</span>
+               <input name="dzRingEvtThreasholdPerc" id="dzRingEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <br/>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
                <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
@@ -304,28 +312,33 @@
             var geom  = JSON.parse(document.getElementById("dzGeometry").value);
 
             var data = {
-                "geometry":                      geom
+                "geometry":                       geom
                 
-               ,"geometry_clip":                 get_mselect_values(geomc)
-               ,"geometry_clip_stage":           get_select_values(geoms)
-               ,"catchment_filter":              get_mselect_values(catfl)
-               ,"nhdplus_version":               get_select_values(pnhdv)
-               ,"wbd_version":                   null
+               ,"geometry_clip":                  get_mselect_values(geomc)
+               ,"geometry_clip_stage":            get_select_values(geoms)
+               ,"catchment_filter":               get_mselect_values(catfl)
+               ,"nhdplus_version":                get_select_values(pnhdv)
+               ,"wbd_version":                    null
                
-               ,"default_point_indexing_method": get_select_values(pointm)
-               ,"default_line_indexing_method":  get_select_values(linem)
-               ,"default_ring_indexing_method":  get_select_values(ringm)
-               ,"default_area_indexing_method":  get_select_values(aream)
-               ,"default_line_threshold":        document.getElementById("dzLineThreasholdPerc").value
-               ,"default_areacat_threshold":     document.getElementById("dzCatThreasholdPerc").value
-               ,"default_areaevt_threshold":     document.getElementById("dzEvtThreasholdPerc").value
+               ,"default_point_indexing_method":  get_select_values(pointm)
                
-               ,"return_indexed_features":       true
-               ,"return_indexed_collection":     false
-               ,"return_catchment_geometry":     document.getElementById("dzShowCatchments").checked
-               ,"return_flowlines":              document.getElementById("dzShowFlowlines").checked
-               ,"return_flowline_geometry":      true
-               ,"return_huc12s":                 document.getElementById("dzShowHUC12s").checked
+               ,"default_line_indexing_method":   get_select_values(linem)
+               ,"default_line_threshold":         document.getElementById("dzLineThreasholdPerc").value
+               
+               ,"default_ring_indexing_method":   get_select_values(ringm)
+               ,"default_ring_areacat_threshold": document.getElementById("dzRingCatThreasholdPerc").value
+               ,"default_ring_areaevt_threshold": document.getElementById("dzRingEvtThreasholdPerc").value
+               
+               ,"default_area_indexing_method":   get_select_values(aream)
+               ,"default_areacat_threshold":      document.getElementById("dzCatThreasholdPerc").value
+               ,"default_areaevt_threshold":      document.getElementById("dzEvtThreasholdPerc").value
+               
+               ,"return_indexed_features":        true
+               ,"return_indexed_collection":      false
+               ,"return_catchment_geometry":      document.getElementById("dzShowCatchments").checked
+               ,"return_flowlines":               document.getElementById("dzShowFlowlines").checked
+               ,"return_flowline_geometry":       true
+               ,"return_huc12s":                  document.getElementById("dzShowHUC12s").checked
             };
             
             if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
@@ -622,6 +635,19 @@
             document.getElementById("busy").style.visibility = "hidden";
             document.body.style.cursor = "auto";
             document.getElementById("dz_run_service").disabled = false;
+         }
+
+         function get_url_parameter(param_key) {
+            var page_url = window.location.search.substring(1);
+            
+            var url_variables = page_url.split('&');
+            for (var i = 0; i < url_variables.length; i++) {
+               var parameter_name = url_variables[i].split('=');
+               if (parameter_name[0] == param_key) {
+                  return parameter_name[1];
+               }
+            }
+            return null;
          }
          
       </script>
