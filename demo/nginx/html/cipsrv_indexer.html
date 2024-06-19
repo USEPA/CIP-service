@@ -13,7 +13,7 @@
            z-index: 100;
          }
       </style>
-      <script src="/config.js"></script>
+      <script src="./config.js" onerror="return null;"></script>
    </head>
    <body>
       <div id="busy">
@@ -328,11 +328,28 @@
                ,"return_huc12s":                 document.getElementById("dzShowHUC12s").checked
             };
             
+            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
+               zpostgrest_host = get_url_parameter("postgrest_host");
+            } else {
+               zpostgrest_host = postgrest_host;
+            }
+
+            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
+               zpostgrest_port = get_url_parameter("postgrest_port");
+            } else {
+               zpostgrest_port = postgrest_port;
+            }
+
+            if (zpostgrest_host === null) {
+               console.log("no PostgREST API server location defined.");
+               return;
+            }
+            
             var http = "http";
-            if (postgrest_port == "443" ) {
+            if (zpostgrest_port == "443" ) {
                http = "https";
             }
-            httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_index",data,get_response);
+            httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_index",data,get_response);
            
          }
          
@@ -393,11 +410,29 @@
                }
    
             };
+            
+            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
+               zpostgrest_host = get_url_parameter("postgrest_host");
+            } else {
+               zpostgrest_host = postgrest_host;
+            }
+
+            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
+               zpostgrest_port = get_url_parameter("postgrest_port");
+            } else {
+               zpostgrest_port = postgrest_port;
+            }
+
+            if (zpostgrest_host === null) {
+               console.log("no PostgREST API server location defined.");
+               return;
+            }
+            
             var http = "http";
-            if (postgrest_port == "443" ) {
+            if (zpostgrest_port == "443" ) {
                http = "https";
             }
-            var url = http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_domains"
+            var url = http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_domains"
             xmlHttp.open('GET',url);
             xmlHttp.send();
          }      

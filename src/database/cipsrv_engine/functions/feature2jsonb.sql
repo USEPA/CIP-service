@@ -111,6 +111,30 @@ BEGIN
       
    END IF;
    
+   
+   
+   IF (p_feature).ring_areacat_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_areacat_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).ring_areacat_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).ring_areaevt_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_areaevt_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).ring_areaevt_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
    json_rez := JSONB_BUILD_OBJECT(
        'type'       ,'Feature'
       ,'geometry'   ,ST_AsGeoJSON(ST_Transform((p_feature).geometry,4326))::JSONB

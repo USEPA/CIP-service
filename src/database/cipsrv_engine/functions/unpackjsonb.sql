@@ -1,21 +1,28 @@
 CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
-    IN  p_points                        JSONB
-   ,IN  p_lines                         JSONB
-   ,IN  p_areas                         JSONB
-   ,IN  p_geometry                      JSONB 
-   ,IN  p_nhdplus_version               VARCHAR
-   ,IN  p_known_region                  VARCHAR DEFAULT NULL
-   ,IN  p_int_srid                      INTEGER DEFAULT NULL
-   ,IN  p_default_point_indexing_method VARCHAR DEFAULT NULL
-   ,IN  p_default_line_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_ring_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_area_indexing_method  VARCHAR DEFAULT NULL
-   ,IN  p_default_line_threshold        NUMERIC DEFAULT NULL
-   ,IN  p_default_areacat_threshold     NUMERIC DEFAULT NULL
-   ,IN  p_default_areaevt_threshold     NUMERIC DEFAULT NULL
-   ,OUT out_return_code                 INTEGER
-   ,OUT out_status_message              VARCHAR
-   ,OUT out_features                    cipsrv_engine.cip_feature[]
+    IN  p_points                         JSONB
+   ,IN  p_lines                          JSONB
+   ,IN  p_areas                          JSONB
+   ,IN  p_geometry                       JSONB 
+   ,IN  p_nhdplus_version                VARCHAR
+   ,IN  p_known_region                   VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                       INTEGER DEFAULT NULL
+   
+   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
+   
+   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
+   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
+   
+   ,OUT out_return_code                  INTEGER
+   ,OUT out_status_message               VARCHAR
+   ,OUT out_features                     cipsrv_engine.cip_feature[]
 )
 IMMUTABLE
 AS $BODY$ 
@@ -126,6 +133,8 @@ BEGIN
             out_features[i].gtype    := ST_GeometryType(out_features[i].geometry);
             out_features[i].converted_to_ring := TRUE;
             out_features[i].area_indexing_method := out_features[i].ring_indexing_method;
+            out_features[i].areacat_threshold    := out_features[i].ring_areacat_threshold;
+            out_features[i].areaevt_threshold    := out_features[i].ring_areaevt_threshold;
             
             out_features[i].lengthkm := NULL;
             out_features[i].areasqkm := ROUND(ST_Area(ST_Transform(
@@ -152,10 +161,15 @@ ALTER FUNCTION cipsrv_engine.unpackjsonb(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) OWNER TO cipsrv;
@@ -169,10 +183,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.unpackjsonb(
    ,VARCHAR
    ,INTEGER
    ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
+   
    ,VARCHAR
    ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
    ,NUMERIC
    ,NUMERIC
 ) TO PUBLIC;

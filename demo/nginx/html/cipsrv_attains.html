@@ -13,7 +13,7 @@
            z-index: 100;
          }
       </style>
-      <script src="/config.js"></script>
+      <script src="config.js"></script>
    </head>
    <body>
       <div id="busy">
@@ -483,12 +483,29 @@
                ,"return_flowline_geometry":      true
                ,"return_huc12s":                 document.getElementById("dzShowHUC12s").checked
             };
+            
+            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
+               zpostgrest_host = get_url_parameter("postgrest_host");
+            } else {
+               zpostgrest_host = postgrest_host;
+            }
+
+            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
+               zpostgrest_port = get_url_parameter("postgrest_port");
+            } else {
+               zpostgrest_port = postgrest_port;
+            }
+
+            if (zpostgrest_host === null) {
+               console.log("no PostgREST API server location defined.");
+               return;
+            }
 
             var http = "http";
-            if (postgrest_port == "443" ) {
+            if (zpostgrest_port == "443" ) {
                http = "https";
             }
-            httpPost(http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_index",data,get_response);
+            httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_index",data,get_response);
 
          }
 
@@ -534,13 +551,13 @@
                      }
                      for (let i=0; i < tribes.length; i++) {
                         if (tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + '">' + tribes[i].aiannha_namelsad + '</option>';
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':R">' + tribes[i].aiannha_namelsad + ' (Reservation Lands Only)</option>';
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':T">' + tribes[i].aiannha_namelsad + ' (Trust Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + '">' + tribes[i].aiannhns_namelsad + '</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
                         } else if (tribes[i].has_reservation_lands && ! tribes[i].has_trust_lands) {
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':R">' + tribes[i].aiannha_namelsad + ' (Reservation Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
                         } else if (! tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannha_geoid_stem + ':T">' + tribes[i].aiannha_namelsad + ' (Trust Lands Only)</option>';
+                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
                         }
                      }
                      clipgeo.innerHTML = load;
@@ -548,11 +565,29 @@
                   }
                }
             };
+            
+            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
+               zpostgrest_host = get_url_parameter("postgrest_host");
+            } else {
+               zpostgrest_host = postgrest_host;
+            }
+
+            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
+               zpostgrest_port = get_url_parameter("postgrest_port");
+            } else {
+               zpostgrest_port = postgrest_port;
+            }
+
+            if (zpostgrest_host === null) {
+               console.log("no PostgREST API server location defined.");
+               return;
+            }
+
             var http = "http";
-            if (postgrest_port == "443" ) {
+            if (zpostgrest_port == "443" ) {
                http = "https";
             }
-            var url = http + "://" + postgrest_host + ":" + postgrest_port + "/rpc/cipsrv_domains"
+            var url = http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_domains"
             xmlHttp.open('GET',url);
             xmlHttp.send();
          }      
@@ -1443,6 +1478,19 @@
             
          }
 
+         function get_url_parameter(param_key) {
+            var page_url = window.location.search.substring(1);
+            
+            var url_variables = page_url.split('&');
+            for (var i = 0; i < url_variables.length; i++) {
+               var parameter_name = url_variables[i].split('=');
+               if (parameter_name[0] == param_key) {
+                  return parameter_name[1];
+               }
+            }
+            return null;
+         }
+         
       </script>
    </body>
 </html>

@@ -5,48 +5,55 @@ VOLATILE
 AS
 $BODY$ 
 DECLARE
-   rec                               RECORD;
-   json_input                        JSONB := $1;
-   json_points                       JSONB;
-   json_lines                        JSONB;
-   json_areas                        JSONB;
-   json_geometry                     JSONB;
-   ary_geometry_clip                 VARCHAR[];
-   str_geometry_clip_stage           VARCHAR;
-   ary_catchment_filter              VARCHAR[];
-   str_nhdplus_version               VARCHAR;
-   str_wbd_version                   VARCHAR;
-   str_default_point_indexing_method VARCHAR;
-   str_default_line_indexing_method  VARCHAR;
-   str_default_ring_indexing_method  VARCHAR;
-   str_default_area_indexing_method  VARCHAR;
-   num_default_line_threshold        NUMERIC;
-   num_default_areacat_threshold     NUMERIC;
-   num_default_areaevt_threshold     NUMERIC;
-   str_known_region                  VARCHAR;
-   boo_return_indexed_features       BOOLEAN;
-   boo_return_indexed_collection     BOOLEAN;
-   boo_return_catchment_geometry     BOOLEAN;
-   boo_return_flowlines              BOOLEAN;
-   boo_return_huc12s                 BOOLEAN;
-   boo_return_flowline_geometry      BOOLEAN;
-   boo_return_huc12_geometry         BOOLEAN;
-   boo_return_indexing_summary       BOOLEAN;
-   int_catchment_count               INTEGER;
-   num_catchment_areasqkm            NUMERIC;
+   rec                                RECORD;
+   json_input                         JSONB := $1;
+   json_points                        JSONB;
+   json_lines                         JSONB;
+   json_areas                         JSONB;
+   json_geometry                      JSONB;
+   ary_geometry_clip                  VARCHAR[];
+   str_geometry_clip_stage            VARCHAR;
+   ary_catchment_filter               VARCHAR[];
+   str_nhdplus_version                VARCHAR;
+   str_wbd_version                    VARCHAR;
    
-   json_indexed_points               JSONB;
-   json_indexed_lines                JSONB;
-   json_indexed_areas                JSONB;
-   sdo_indexed_collection            GEOMETRY;
-   json_indexed_collection           JSONB;
-   json_indexing_summary             JSONB;
-   json_flowlines                    JSONB;
-   json_catchments                   JSONB;
-   json_huc12s                       JSONB;
+   str_default_point_indexing_method  VARCHAR;
    
-   int_return_code                   INTEGER;
-   str_status_message                VARCHAR;
+   str_default_line_indexing_method   VARCHAR;
+   num_default_line_threshold         NUMERIC;
+   
+   str_default_ring_indexing_method   VARCHAR;
+   num_default_ring_areacat_threshold NUMERIC;
+   num_default_ring_areaevt_threshold NUMERIC;
+   
+   str_default_area_indexing_method   VARCHAR;
+   num_default_areacat_threshold      NUMERIC;
+   num_default_areaevt_threshold      NUMERIC;
+   
+   str_known_region                   VARCHAR;
+   boo_return_indexed_features        BOOLEAN;
+   boo_return_indexed_collection      BOOLEAN;
+   boo_return_catchment_geometry      BOOLEAN;
+   boo_return_flowlines               BOOLEAN;
+   boo_return_huc12s                  BOOLEAN;
+   boo_return_flowline_geometry       BOOLEAN;
+   boo_return_huc12_geometry          BOOLEAN;
+   boo_return_indexing_summary        BOOLEAN;
+   int_catchment_count                INTEGER;
+   num_catchment_areasqkm             NUMERIC;
+   
+   json_indexed_points                JSONB;
+   json_indexed_lines                 JSONB;
+   json_indexed_areas                 JSONB;
+   sdo_indexed_collection             GEOMETRY;
+   json_indexed_collection            JSONB;
+   json_indexing_summary              JSONB;
+   json_flowlines                     JSONB;
+   json_catchments                    JSONB;
+   json_huc12s                        JSONB;
+   
+   int_return_code                    INTEGER;
+   str_status_message                 VARCHAR;
    
 BEGIN
    
@@ -153,6 +160,7 @@ BEGIN
       
    END IF;
    
+   --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
    IF JSONB_PATH_EXISTS(json_input,'$.default_point_indexing_method')
    AND json_input->>'default_point_indexing_method' IS NOT NULL
    THEN
@@ -163,6 +171,7 @@ BEGIN
       
    END IF;
    
+   --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
    IF JSONB_PATH_EXISTS(json_input,'$.default_line_indexing_method')
    AND json_input->>'default_line_indexing_method' IS NOT NULL
    THEN
@@ -173,6 +182,17 @@ BEGIN
       
    END IF;
    
+   IF JSONB_PATH_EXISTS(json_input,'$.default_line_threshold')
+   AND json_input->>'default_line_threshold' IS NOT NULL 
+   THEN
+      num_default_line_threshold := cipsrv_engine.json2numeric(json_input->'default_line_threshold');
+      
+   ELSE
+      num_default_line_threshold := 10;
+      
+   END IF;
+   
+   --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
    IF JSONB_PATH_EXISTS(json_input,'$.default_ring_indexing_method')
    AND json_input->>'default_ring_indexing_method' IS NOT NULL
    THEN
@@ -183,6 +203,27 @@ BEGIN
       
    END IF;
    
+   IF JSONB_PATH_EXISTS(json_input,'$.default_ring_areacat_threshold')
+   AND json_input->>'default_ring_areacat_threshold' IS NOT NULL
+   THEN
+      num_default_ring_areacat_threshold := cipsrv_engine.json2numeric(json_input->'default_ring_areacat_threshold');
+      
+   ELSE
+      num_default_ring_areacat_threshold := 10;
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.default_ring_areaevt_threshold')
+   AND json_input->>'default_ring_areaevt_threshold' IS NOT NULL
+   THEN
+      num_default_ring_areaevt_threshold := cipsrv_engine.json2numeric(json_input->'default_ring_areaevt_threshold');
+      
+   ELSE
+      num_default_ring_areaevt_threshold := 10;
+      
+   END IF;
+   
+   --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
    IF JSONB_PATH_EXISTS(json_input,'$.default_area_indexing_method')
    AND json_input->>'default_area_indexing_method' IS NOT NULL
    THEN
@@ -190,16 +231,6 @@ BEGIN
       
    ELSE
       str_default_area_indexing_method := 'area_simple';
-      
-   END IF;
-   
-   IF JSONB_PATH_EXISTS(json_input,'$.default_line_threshold')
-   AND json_input->>'default_line_threshold' IS NOT NULL 
-   THEN
-      num_default_line_threshold := cipsrv_engine.json2numeric(json_input->'default_line_threshold');
-      
-   ELSE
-      num_default_line_threshold := 10;
       
    END IF;
    
@@ -223,6 +254,7 @@ BEGIN
       
    END IF;
    
+   --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
    -- Allow known region override
    IF JSONB_PATH_EXISTS(json_input,'$.known_region')
    AND json_input->>'known_region' IS NOT NULL
@@ -316,27 +348,34 @@ BEGIN
    -- Call the indexing engine
    ----------------------------------------------------------------------------
    rec := cipsrv_engine.cipsrv_index(
-       p_points                        := json_points
-      ,p_lines                         := json_lines
-      ,p_areas                         := json_areas
-      ,p_geometry                      := json_geometry
-      ,p_geometry_clip                 := ary_geometry_clip
-      ,p_geometry_clip_stage           := str_geometry_clip_stage
-      ,p_catchment_filter              := ary_catchment_filter
-      ,p_nhdplus_version               := str_nhdplus_version
-      ,p_wbd_version                   := str_wbd_version
-      ,p_default_point_indexing_method := str_default_point_indexing_method
-      ,p_default_line_indexing_method  := str_default_line_indexing_method
-      ,p_default_ring_indexing_method  := str_default_ring_indexing_method
-      ,p_default_area_indexing_method  := str_default_area_indexing_method
-      ,p_default_line_threshold        := num_default_line_threshold
-      ,p_default_areacat_threshold     := num_default_areacat_threshold
-      ,p_default_areaevt_threshold     := num_default_areaevt_threshold
-      ,p_known_region                  := str_known_region
-      ,p_return_indexed_features       := boo_return_indexed_features
-      ,p_return_indexed_collection     := boo_return_indexed_collection
-      ,p_return_catchment_geometry     := boo_return_catchment_geometry
-      ,p_return_indexing_summary       := boo_return_indexing_summary
+       p_points                         := json_points
+      ,p_lines                          := json_lines
+      ,p_areas                          := json_areas
+      ,p_geometry                       := json_geometry
+      ,p_geometry_clip                  := ary_geometry_clip
+      ,p_geometry_clip_stage            := str_geometry_clip_stage
+      ,p_catchment_filter               := ary_catchment_filter
+      ,p_nhdplus_version                := str_nhdplus_version
+      ,p_wbd_version                    := str_wbd_version
+      
+      ,p_default_point_indexing_method  := str_default_point_indexing_method
+      
+      ,p_default_line_indexing_method   := str_default_line_indexing_method
+      ,p_default_line_threshold         := num_default_line_threshold
+      
+      ,p_default_ring_indexing_method   := str_default_ring_indexing_method
+      ,p_default_ring_areacat_threshold := num_default_ring_areacat_threshold
+      ,p_default_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+      
+      ,p_default_area_indexing_method   := str_default_area_indexing_method
+      ,p_default_areacat_threshold      := num_default_areacat_threshold
+      ,p_default_areaevt_threshold      := num_default_areaevt_threshold
+      
+      ,p_known_region                   := str_known_region
+      ,p_return_indexed_features        := boo_return_indexed_features
+      ,p_return_indexed_collection      := boo_return_indexed_collection
+      ,p_return_catchment_geometry      := boo_return_catchment_geometry
+      ,p_return_indexing_summary        := boo_return_indexing_summary
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
