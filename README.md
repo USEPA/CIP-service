@@ -81,7 +81,7 @@ __Admin__
 
 2. then type **docker compose -p admin up --detach**.
 
-__Demo__
+__[Demo](./docs/demo.md)__
 
 1. in the demo directory, type **docker compose -p demo build**. The nginx_demo profile expects to find the engine API at localhost, port 3000.
 
