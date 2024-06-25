@@ -1,8 +1,8 @@
 ## Demo Bundle
 
-The demo bundle is provided as an easy way to quickly stand up web interfaces to the provided API.  EPA welcomes your additions to the sample set.  However, in some case one might wish to forgo the extra server **and** yet occasionally run a demo to check a particular result.
+The demo bundle is provided as an easy way to quickly stand up web interfaces to the provided API.  EPA welcomes your additions to the sample set.  However, in some cases one might wish to forgo the extra server **and** yet occasionally run a demo to check a particular result.
 
-Assuming folks interested in CIP indexing also have a desktop GIS such ArcGIS Pro or [QGIS](https://qgis.org/en/site/index.html) available, the current set of included demos located [here](https://github.com/USEPA/CIP-service/tree/main/demo/nginx/html) can be run in a stand-alone fashion using the Python command prompt.  To launch a local server, first change directory to the nginx location:
+Assuming folks interested in CIP indexing also have a desktop GIS such ArcGIS Pro or [QGIS](https://qgis.org/en/site/index.html) available, the current set of included demos located [here](https://github.com/USEPA/CIP-service/tree/main/demo/nginx/html) can be run in a stand-alone fashion using the Python command prompt.  To launch a local server, first change your directory to the nginx location:
 
 * cd \<\<my file location\>\>\CIP-service\demo\nginx
 * python -m http.server
