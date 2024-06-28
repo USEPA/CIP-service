@@ -1,8 +1,18 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2feature';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
     IN  p_feature                JSONB
    ,IN  p_geometry_override      GEOMETRY DEFAULT NULL
    ,IN  p_globalid               VARCHAR  DEFAULT NULL
    ,IN  p_source_featureid       VARCHAR  DEFAULT NULL
+   ,IN  p_permid_joinkey         VARCHAR  DEFAULT NULL
    ,IN  p_nhdplus_version        VARCHAR  DEFAULT NULL
    ,IN  p_known_region           VARCHAR  DEFAULT NULL
    ,IN  p_int_srid               INTEGER  DEFAULT NULL
@@ -30,6 +40,7 @@ DECLARE
    has_properties             BOOLEAN;
    boo_isring                 BOOLEAN;
    str_globalid               VARCHAR;
+   str_permid_joinkey         VARCHAR;
    str_nhdplus_version        VARCHAR;
    str_known_region           VARCHAR;
    int_srid                   INTEGER;
@@ -139,6 +150,8 @@ BEGIN
                cipsrv_engine.jsonb2feature(
                    p_feature                := json_feature
                   ,p_geometry_override      := sdo_geometry2
+                  ,p_source_featureid       := p_source_featureid
+                  ,p_permid_joinkey         := p_permid_joinkey
                   ,p_nhdplus_version        := p_nhdplus_version
                   ,p_known_region           := p_known_region
                   ,p_int_srid               := p_int_srid
@@ -209,6 +222,20 @@ BEGIN
    ELSIF p_source_featureid IS NOT NULL
    THEN
       str_source_featureid := p_source_featureid;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for permid_joinkey override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'permid_joinkey' IS NOT NULL
+   THEN
+      str_permid_joinkey := json_feature->'properties'->>'permid_joinkey';
+      
+   ELSIF p_permid_joinkey IS NOT NULL
+   THEN
+      str_permid_joinkey := p_permid_joinkey;
       
    END IF;
    
@@ -427,6 +454,7 @@ BEGIN
       ,boo_isring
       ,json_feature->'properties'
       ,str_source_featureid
+      ,str_permid_joinkey
       ,str_nhdplus_version
       ,str_known_region
       ,int_srid
@@ -465,6 +493,7 @@ ALTER FUNCTION cipsrv_engine.jsonb2feature(
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
+   ,VARCHAR
    ,INTEGER
    ,VARCHAR
    
@@ -483,6 +512,7 @@ ALTER FUNCTION cipsrv_engine.jsonb2feature(
 GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
     JSONB
    ,GEOMETRY
+   ,VARCHAR
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR

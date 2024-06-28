@@ -10,6 +10,7 @@ AS (
    ,isring                      BOOLEAN
    ,properties                  JSONB
    ,source_featureid            VARCHAR
+   ,permid_joinkey              VARCHAR
    ,nhdplus_version             VARCHAR
    ,known_region                VARCHAR
    ,int_srid                    INTEGER

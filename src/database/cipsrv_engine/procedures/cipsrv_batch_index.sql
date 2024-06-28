@@ -1,3 +1,12 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_batch_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP PROCEDURE IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE PROCEDURE cipsrv_engine.cipsrv_batch_index(
     IN  p_dataset_prefix                   VARCHAR
    ,OUT out_return_code                    INTEGER
@@ -20,8 +29,8 @@ DECLARE
    str_catchment_filter               VARCHAR;
    ary_catchment_filter               VARCHAR[];
    str_nhdplus_version                VARCHAR;
-   str_catchment_resolution           VARCHAR;
    str_default_nhdplus_version        VARCHAR;
+   str_catchment_resolution           VARCHAR;
    str_xwalk_huc12_version            VARCHAR;
    
    str_point_indexing_method          VARCHAR;
@@ -174,12 +183,34 @@ BEGIN
    
    COMMIT;
    
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Add measurements field if needed
+   ----------------------------------------------------------------------------
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_dataset_prefix || '_lines','lengthkm')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_dataset_prefix || '_lines ADD COLUMN lengthkm NUMERIC';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_dataset_prefix || '_areas','areasqkm')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_dataset_prefix || '_areas ADD COLUMN areasqkm NUMERIC';
+   
+   END IF;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Analyze incoming tables
+   ----------------------------------------------------------------------------
    EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_points';
    EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_lines';
    EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_areas';
    
    ----------------------------------------------------------------------------
-   -- Step 40
+   -- Step 60
    -- Create the sfid table
    ----------------------------------------------------------------------------
    EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_sfid';
@@ -257,7 +288,7 @@ BEGIN
    COMMIT;
    
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 70
    -- Load the sfid table
    ----------------------------------------------------------------------------
    str_sql := 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_sfid( '
@@ -368,7 +399,7 @@ BEGIN
    COMMIT;
 
    ----------------------------------------------------------------------------
-   -- Step 60
+   -- Step 80
    -- Update the feature tables with new source_joinkeys
    ----------------------------------------------------------------------------
    str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_points a '
@@ -406,11 +437,9 @@ BEGIN
            || ') ';
            
    EXECUTE str_sql;
-   
-   COMMIT;
            
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 90
    -- Create the cip results table
    ----------------------------------------------------------------------------
    EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_cip';
@@ -503,9 +532,74 @@ BEGIN
    EXECUTE str_sql;
    
    COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 100
+   -- Create the src2cip results table
+   ----------------------------------------------------------------------------
+   EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_src2cip';
+      
+   EXECUTE 'DROP SEQUENCE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq';
+   
+   str_sql := 'CREATE TABLE cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    objectid              INTEGER     NOT NULL '
+           || '   ,source_joinkey        VARCHAR(40) NOT NULL'
+           || '   ,permid_joinkey        VARCHAR(40) NOT NULL '
+           || '   ,cat_joinkey           VARCHAR(40) NOT NULL'
+           || '   ,globalid              VARCHAR(40) NOT NULL '
+           || ') ';
+           
+   EXECUTE str_sql;
+   
+   str_sql := 'GRANT SELECT ON TABLE cipsrv_upload.' || str_dataset_prefix || '_src2cip TO PUBLIC';
+   
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_src2cip_pk '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    source_joinkey '
+           || '   ,permid_joinkey '           
+           || '   ,cat_joinkey '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_src2cip_u01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    objectid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_src2cip_u02 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    globalid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE INDEX ' || str_dataset_prefix || '_src2cip_i01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    source_joinkey '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE INDEX ' || str_dataset_prefix || '_src2cip_i02 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    permid_joinkey '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE SEQUENCE cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq START WITH 1';
+           
+   EXECUTE str_sql;
+   
+   COMMIT;
 
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 110
    -- Read the control table
    ----------------------------------------------------------------------------
    str_sql := 'SELECT '
@@ -587,8 +681,40 @@ BEGIN
    
    ary_geometry_clip := string_to_array(str_geometry_clip,',');
    
+   COMMIT;
+   
    ----------------------------------------------------------------------------
-   -- Step 90
+   -- Step 120
+   -- Update the feature tables with measures
+   ----------------------------------------------------------------------------
+   str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_lines a '
+           || 'SET lengthkm = cipsrv_engine.measure_lengthkm( '
+           || '    a.shape '
+           || '   ,a.nhdplus_version '
+           || '   ,$1 '
+           || '   ,a.known_region '
+           || '   ,$2 '
+           || ') ';
+           
+   EXECUTE str_sql 
+   USING str_default_nhdplus_version,str_default_known_region;
+   
+   str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_areas a '
+           || 'SET areasqkm = cipsrv_engine.measure_areasqkm( '
+           || '    a.shape '
+           || '   ,a.nhdplus_version '
+           || '   ,$1 '
+           || '   ,a.known_region '
+           || '   ,$2 '
+           || ') ';
+           
+   EXECUTE str_sql 
+   USING str_default_nhdplus_version,str_default_known_region;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 130
    -- Clip features if requested
    ----------------------------------------------------------------------------
    IF str_geometry_clip_stage = 'BEFORE'
@@ -607,7 +733,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 100
+   -- Step 140
    -- Step through each sfid
    ----------------------------------------------------------------------------
    FOR rec IN EXECUTE 'SELECT a.* FROM cipsrv_upload.' || str_dataset_prefix || '_sfid a '
@@ -696,6 +822,7 @@ BEGIN
                   rec3 := cipsrv_nhdplus_m.index_point_simple(
                       p_geometry             := rec2.shape
                      ,p_known_region         := str_known_region
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_point_indexing_return_code    := rec3.out_return_code;
                   str_point_indexing_status_message := rec3.out_status_message;
@@ -705,6 +832,7 @@ BEGIN
                   rec3 := cipsrv_nhdplus_h.index_point_simple(
                       p_geometry             := rec2.shape
                      ,p_known_region         := str_known_region
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_point_indexing_return_code    := rec3.out_return_code;
                   str_point_indexing_status_message := rec3.out_status_message;
@@ -834,11 +962,12 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
                         
-                     ELSIF str_nhdplus_version = 'nhdplus_h'
+                     ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
                      THEN
                         rec3 := cipsrv_nhdplus_h.index_area_simple(
                             p_geometry             := ST_MakePolygon(geom_part)
@@ -846,6 +975,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -865,6 +995,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -877,6 +1008,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -896,6 +1028,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -908,6 +1041,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -967,6 +1101,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -978,6 +1113,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -996,6 +1132,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -1007,6 +1144,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -1121,6 +1259,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -1133,6 +1272,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -1152,6 +1292,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -1164,6 +1305,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -1183,6 +1325,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -1195,6 +1338,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -1266,7 +1410,7 @@ BEGIN
               || ',$6 '
               || ',$7 '
               || ',$8 '
-              || ',a.catchmentstatecode || a.nhdplusid::VARCHAR '
+              || ',a.catchmentstatecode || a.nhdplusid::BIGINT::VARCHAR '
               || ',a.catchmentstatecode '
               || ',a.nhdplusid '
               || ',a.istribal '
@@ -1314,8 +1458,6 @@ BEGIN
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
 
-      EXECUTE 'TRUNCATE TABLE tmp_cip';
-      
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
          int_cat_mr_count := int_count;
@@ -1327,6 +1469,44 @@ BEGIN
          int_cat_hr_count := int_count;
          
       END IF;
+      
+      COMMIT;
+      
+      EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_cip';
+      
+      --************************************************************--
+      str_sql := 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+              || '    objectid '
+              || '   ,source_joinkey '
+              || '   ,permid_joinkey '
+              || '   ,cat_joinkey '
+              || '   ,globalid '
+              || ') '
+              || 'SELECT '
+              || ' NEXTVAL(''cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq'') AS objectid '
+              || ',$1 '
+              || ',''{'' || a.permid_joinkey::VARCHAR || ''}'' '
+              || ',b.cat_joinkey '
+              || ',''{'' || uuid_generate_v1() || ''}'' '
+              || 'FROM '
+              || 'tmp_cip a '
+              || 'JOIN '
+              || 'cipsrv_upload.' || str_dataset_prefix || '_cip b '
+              || 'ON '
+              || 'b.nhdplusid = a.nhdplusid '
+              || 'ON CONFLICT DO NOTHING ';
+              
+      EXECUTE str_sql 
+      USING rec.source_joinkey;
+
+      GET DIAGNOSTICS int_count = ROW_COUNT;
+      
+      COMMIT;
+      
+      EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_src2cip';
+      
+      --************************************************************--
+      EXECUTE 'TRUNCATE TABLE tmp_cip';
       
       --************************************************************--
       str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_sfid a '
@@ -1371,7 +1551,7 @@ BEGIN
    END LOOP;
    
    ----------------------------------------------------------------------------
-   -- Step 110
+   -- Step 150
    -- Clip features AFTER if requested
    ----------------------------------------------------------------------------
    IF str_geometry_clip_stage = 'AFTER'

@@ -1766,13 +1766,213 @@ ALTER FUNCTION cipsrv_nhdplus_h.create_line_temp_tables() OWNER TO cipsrv;
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.create_line_temp_tables() TO PUBLIC;
 
 --******************************--
+----- functions/measure_lengthkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.measure_lengthkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.measure_lengthkm(
+    IN  p_geometry          GEOMETRY
+   ,IN  p_known_region      VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                RECORD;
+   int_srid           INTEGER;
+   int_return_code    INTEGER;
+   str_status_message VARCHAR;
+   sdo_geometry       GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.determine_grid_srid(
+       p_geometry       := p_geometry
+      ,p_known_region   := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_return_code    := rec.out_return_code;
+   str_status_message := rec.out_status_message;
+  
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Project as needed
+   ----------------------------------------------------------------------------
+   sdo_geometry := ST_Transform(
+       p_geometry
+      ,int_srid
+   );
+   
+   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
+   THEN
+      sdo_geometry := ST_CollectionExtract(sdo_geometry,2);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Return results in km
+   ----------------------------------------------------------------------------
+   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
+   THEN
+      RETURN 0;
+      
+   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
+   THEN
+      RETURN ROUND(ST_Length(sdo_geometry)::NUMERIC * 0.001,8);
+      
+   ELSE
+      RAISE EXCEPTION 'measure lengthkm requires linear geometry - %',ST_GeometryType(sdo_geometry);
+      
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_h.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/measure_areasqkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.measure_areasqkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.measure_areasqkm(
+    IN  p_geometry          GEOMETRY
+   ,IN  p_known_region      VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                RECORD;
+   int_srid           INTEGER;
+   int_return_code    INTEGER;
+   str_status_message VARCHAR;
+   sdo_geometry       GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.determine_grid_srid(
+       p_geometry       := p_geometry
+      ,p_known_region   := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_return_code    := rec.out_return_code;
+   str_status_message := rec.out_status_message;
+  
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Project as needed
+   ----------------------------------------------------------------------------
+   sdo_geometry := ST_Transform(
+       p_geometry
+      ,int_srid
+   );
+   
+   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
+   THEN
+      sdo_geometry := ST_CollectionExtract(sdo_geometry,3);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Return results in km
+   ----------------------------------------------------------------------------
+   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
+   THEN
+      RETURN 0;
+      
+   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_Polygon','ST_MultiPolygon')
+   THEN
+      RETURN ROUND(ST_Area(sdo_geometry)::NUMERIC / 1000000,8);
+      
+   ELSE
+      RAISE EXCEPTION 'measure areasqkm requires polygon geometry - %',ST_GeometryType(sdo_geometry);
+      
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_h.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
 ----- functions/index_point_simple.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_point_simple';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_point_simple(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_known_region         VARCHAR
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_geometry                GEOMETRY
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_permid_joinkey          UUID
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -1793,24 +1993,26 @@ BEGIN
    int_srid           := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-   
+
    IF out_return_code != 0
    THEN
       RETURN;
-      
+
    END IF;
-   
+
    str_known_region := int_srid::VARCHAR;
-      
+
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);
-      
+
       INSERT INTO tmp_cip(
-         nhdplusid
-      ) 
-      SELECT 
-      a.nhdplusid
+          permid_joinkey
+         ,nhdplusid
+      )
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM
       cipsrv_nhdplus_h.catchment_5070 a
       WHERE
@@ -1819,16 +2021,18 @@ BEGIN
          ,geom_input
       )
       ON CONFLICT DO NOTHING;
-   
+
    ELSIF str_known_region = '3338'
    THEN
       geom_input := ST_Transform(p_geometry,3338);
-      
+
       INSERT INTO tmp_cip(
-         nhdplusid
-      ) 
-      SELECT 
-      a.nhdplusid
+          permid_joinkey
+         ,nhdplusid
+      )
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM
       cipsrv_nhdplus_h.catchment_3338 a
       WHERE
@@ -1837,16 +2041,18 @@ BEGIN
          ,geom_input
       )
       ON CONFLICT DO NOTHING;
-   
+
    ELSIF str_known_region = '26904'
    THEN
       geom_input := ST_Transform(p_geometry,26904);
-      
+
       INSERT INTO tmp_cip(
-         nhdplusid
-      ) 
-      SELECT 
-      a.nhdplusid
+          permid_joinkey
+         ,nhdplusid
+      )
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM
       cipsrv_nhdplus_h.catchment_26904 a
       WHERE
@@ -1855,16 +2061,18 @@ BEGIN
          ,geom_input
       )
       ON CONFLICT DO NOTHING;
-      
+
    ELSIF str_known_region = '32161'
    THEN
       geom_input := ST_Transform(p_geometry,32161);
-      
+
       INSERT INTO tmp_cip(
-         nhdplusid
-      ) 
-      SELECT 
-      a.nhdplusid
+          permid_joinkey
+         ,nhdplusid
+      )
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM
       cipsrv_nhdplus_h.catchment_32161 a
       WHERE
@@ -1873,16 +2081,18 @@ BEGIN
          ,geom_input
       )
       ON CONFLICT DO NOTHING;
-      
+
    ELSIF str_known_region = '32655'
    THEN
       geom_input := ST_Transform(p_geometry,32655);
-      
+
       INSERT INTO tmp_cip(
-         nhdplusid
-      ) 
-      SELECT 
-      a.nhdplusid
+          permid_joinkey
+         ,nhdplusid
+      )
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM
       cipsrv_nhdplus_h.catchment_32655 a
       WHERE
@@ -1891,16 +2101,18 @@ BEGIN
          ,geom_input
       )
       ON CONFLICT DO NOTHING;
-      
+
    ELSIF str_known_region = '32702'
    THEN
       geom_input := ST_Transform(p_geometry,32702);
-      
+
       INSERT INTO tmp_cip(
-         nhdplusid
-      ) 
-      SELECT 
-      a.nhdplusid
+          permid_joinkey
+         ,nhdplusid
+      )
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM
       cipsrv_nhdplus_h.catchment_32702 a
       WHERE
@@ -1909,15 +2121,15 @@ BEGIN
          ,geom_input
       )
       ON CONFLICT DO NOTHING;
-   
+
    ELSE
       out_return_code    := -10;
       out_status_message := 'err ' || str_known_region;
-      
+
    END IF;
-   
+
    RETURN;
-   
+
 END;
 $BODY$
 LANGUAGE plpgsql;
@@ -1925,21 +2137,33 @@ LANGUAGE plpgsql;
 ALTER FUNCTION cipsrv_nhdplus_h.index_point_simple(
     GEOMETRY
    ,VARCHAR
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_point_simple(
     GEOMETRY
    ,VARCHAR
+   ,UUID
 ) TO PUBLIC;
 
 --******************************--
 ----- functions/index_line_simple.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_line_simple';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_simple(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
    ,IN  p_line_threshold_perc     NUMERIC
+   ,IN  p_permid_joinkey          UUID
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -1974,7 +2198,7 @@ BEGIN
    int_srid           := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-
+   
    IF out_return_code != 0
    THEN
       RETURN;
@@ -1982,8 +2206,8 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
-   
-   IF num_geometry_lengthkm IS NULL
+
+   IF p_geometry_lengthkm IS NULL
    THEN
       num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
           p_geometry
@@ -2000,10 +2224,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,5070);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -2062,10 +2288,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,3338);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -2124,10 +2352,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,26904);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -2186,10 +2416,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32161);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -2248,10 +2480,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32655);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -2310,10 +2544,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32702);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -2386,6 +2622,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_line_simple(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_simple(
@@ -2393,16 +2630,27 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_simple(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 
 --******************************--
 ----- functions/index_line_levelpath.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_line_levelpath';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
    ,IN  p_line_threshold_perc     NUMERIC
+   ,IN  p_permid_joinkey          UUID
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -2429,7 +2677,7 @@ DECLARE
    boo_check              BOOLEAN;
    int_debug              INTEGER;
    str_debug              VARCHAR;
-   int_geom_count         INTEGER;
+   int_geom_count         INTEGER;   
    num_geometry_lengthkm  NUMERIC;
 
 BEGIN
@@ -3171,6 +3419,7 @@ BEGIN
    ----------------------------------------------------------------------------
       IF int_count > 0
       THEN
+      
          SELECT
           a.levelpathi
          ,MAX(a.hydroseq)
@@ -3262,10 +3511,12 @@ BEGIN
          GET DIAGNOSTICS int_count = ROW_COUNT;
 
          INSERT INTO tmp_cip(
-            nhdplusid
+             permid_joinkey
+            ,nhdplusid
          ) 
-         SELECT 
-         a.nhdplusid
+         SELECT
+          p_permid_joinkey         
+         ,a.nhdplusid
          FROM
          cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes a
          WHERE
@@ -3281,10 +3532,12 @@ BEGIN
          IF int_count2 = 0
          THEN
             INSERT INTO tmp_cip(
-               nhdplusid
+                permid_joinkey
+               ,nhdplusid
             ) 
             SELECT 
-            a.nhdplusid
+             p_permid_joinkey
+            ,a.nhdplusid
             FROM
             tmp_line a
             WHERE
@@ -3377,10 +3630,12 @@ BEGIN
                      ary_done_levelpathis := array_append(ary_done_levelpathis,rec.levelpathi);
                      
                      INSERT INTO tmp_cip(
-                        nhdplusid
+                         permid_joinkey
+                        ,nhdplusid
                      ) 
-                     SELECT 
-                     a.nhdplusid
+                     SELECT
+                      p_permid_joinkey
+                     ,a.nhdplusid
                      FROM
                      cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes a
                      WHERE
@@ -3415,6 +3670,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
@@ -3422,19 +3678,30 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 
 --******************************--
 ----- functions/index_area_simple.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_area_simple';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_simple(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_geometry_areasqkm    NUMERIC
-   ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threshold_perc   NUMERIC
-   ,IN  p_evt_threshold_perc   NUMERIC
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_geometry                GEOMETRY
+   ,IN  p_geometry_areasqkm       NUMERIC
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_cat_threshold_perc      NUMERIC
+   ,IN  p_evt_threshold_perc      NUMERIC
+   ,IN  p_permid_joinkey          UUID
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -3502,10 +3769,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,5070);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -3560,10 +3829,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,3338);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )  
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -3618,10 +3889,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,26904);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -3676,10 +3949,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32161);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -3734,10 +4009,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32655);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )  
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey      
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -3792,10 +4069,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32702);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )  
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -3863,6 +4142,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_area_simple(
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_simple(
@@ -3871,19 +4151,30 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_simple(
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 
 --******************************--
 ----- functions/index_area_centroid.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_area_centroid';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_centroid(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_geometry_areasqkm    NUMERIC
-   ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threshold_perc  NUMERIC
-   ,IN  p_evt_threshold_perc  NUMERIC
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_geometry                GEOMETRY
+   ,IN  p_geometry_areasqkm       NUMERIC
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_cat_threshold_perc      NUMERIC
+   ,IN  p_evt_threshold_perc      NUMERIC   
+   ,IN  p_permid_joinkey          UUID
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -3951,10 +4242,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,5070);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4005,10 +4298,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,3338);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4059,10 +4354,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,26904);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4113,10 +4410,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32161);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4167,10 +4466,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32655);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       )
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4221,10 +4522,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32702);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey      
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4288,6 +4591,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_area_centroid(
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_centroid(
@@ -4296,19 +4600,30 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_centroid(
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 
 --******************************--
 ----- functions/index_area_artpath.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_area_artpath';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_artpath(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_geometry_areasqkm    NUMERIC
-   ,IN  p_known_region         VARCHAR
-   ,IN  p_cat_threshold_perc   NUMERIC
-   ,IN  p_evt_threshold_perc   NUMERIC
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_geometry                GEOMETRY
+   ,IN  p_geometry_areasqkm       NUMERIC
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_cat_threshold_perc      NUMERIC
+   ,IN  p_evt_threshold_perc      NUMERIC
+   ,IN  p_permid_joinkey          UUID
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -4316,7 +4631,6 @@ DECLARE
    rec                   RECORD;
    str_known_region      VARCHAR;
    int_srid              INTEGER;
-   int_count             INTEGER;
    geom_input            GEOMETRY;
    num_cat_threshold     NUMERIC;
    num_evt_threshold     NUMERIC;
@@ -4371,16 +4685,18 @@ BEGIN
       num_geometry_areasqkm := p_geometry_areasqkm;
       
    END IF;
-   
+      
    IF str_known_region = '5070'
    THEN
       geom_input := ST_Transform(p_geometry,5070);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey      
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4435,10 +4751,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,3338);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4493,10 +4811,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,26904);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4551,10 +4871,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32161);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey      
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4609,10 +4931,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32655);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey      
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4667,10 +4991,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32702);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
-      SELECT 
-      a.nhdplusid
+      SELECT
+       p_permid_joinkey      
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -4738,6 +5064,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_area_artpath(
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_artpath(
@@ -4746,6 +5073,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_artpath(
    ,VARCHAR
    ,NUMERIC
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 
 --******************************--
@@ -5351,6 +5679,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.get_flowline(
 
 --******************************--
 ----- functions/catconstrained_reach_index.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.catconstrained_reach_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.catconstrained_reach_index(
     IN  p_geometry               GEOMETRY

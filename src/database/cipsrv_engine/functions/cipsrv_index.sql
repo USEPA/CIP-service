@@ -1,3 +1,12 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
     IN  p_points                         JSONB
    ,IN  p_lines                          JSONB
@@ -320,6 +329,7 @@ BEGIN
                rec := cipsrv_nhdplus_m.index_point_simple(
                    p_geometry               := (ary_features[i]).geometry
                   ,p_known_region           := str_known_region
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -329,6 +339,7 @@ BEGIN
                rec := cipsrv_nhdplus_h.index_point_simple(
                    p_geometry               := (ary_features[i]).geometry
                   ,p_known_region           := str_known_region
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -347,6 +358,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -358,6 +370,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -378,6 +391,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -389,6 +403,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -410,6 +425,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -422,6 +438,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -439,11 +456,12 @@ BEGIN
             IF p_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_simple(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -451,11 +469,12 @@ BEGIN
             ELSIF p_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_simple(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -473,11 +492,12 @@ BEGIN
             IF p_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_centroid(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -485,11 +505,12 @@ BEGIN
             ELSIF p_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_centroid(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;

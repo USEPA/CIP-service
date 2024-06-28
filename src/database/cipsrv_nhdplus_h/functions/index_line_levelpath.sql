@@ -1,8 +1,18 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_line_levelpath';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
    ,IN  p_line_threshold_perc     NUMERIC
+   ,IN  p_permid_joinkey          UUID
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -29,7 +39,7 @@ DECLARE
    boo_check              BOOLEAN;
    int_debug              INTEGER;
    str_debug              VARCHAR;
-   int_geom_count         INTEGER;
+   int_geom_count         INTEGER;   
    num_geometry_lengthkm  NUMERIC;
 
 BEGIN
@@ -771,6 +781,7 @@ BEGIN
    ----------------------------------------------------------------------------
       IF int_count > 0
       THEN
+      
          SELECT
           a.levelpathi
          ,MAX(a.hydroseq)
@@ -862,10 +873,12 @@ BEGIN
          GET DIAGNOSTICS int_count = ROW_COUNT;
 
          INSERT INTO tmp_cip(
-            nhdplusid
+             permid_joinkey
+            ,nhdplusid
          ) 
-         SELECT 
-         a.nhdplusid
+         SELECT
+          p_permid_joinkey         
+         ,a.nhdplusid
          FROM
          cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes a
          WHERE
@@ -881,10 +894,12 @@ BEGIN
          IF int_count2 = 0
          THEN
             INSERT INTO tmp_cip(
-               nhdplusid
+                permid_joinkey
+               ,nhdplusid
             ) 
             SELECT 
-            a.nhdplusid
+             p_permid_joinkey
+            ,a.nhdplusid
             FROM
             tmp_line a
             WHERE
@@ -977,10 +992,12 @@ BEGIN
                      ary_done_levelpathis := array_append(ary_done_levelpathis,rec.levelpathi);
                      
                      INSERT INTO tmp_cip(
-                        nhdplusid
+                         permid_joinkey
+                        ,nhdplusid
                      ) 
-                     SELECT 
-                     a.nhdplusid
+                     SELECT
+                      p_permid_joinkey
+                     ,a.nhdplusid
                      FROM
                      cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes a
                      WHERE
@@ -1015,6 +1032,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
@@ -1022,5 +1040,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_levelpath(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 

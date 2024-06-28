@@ -1,9 +1,18 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.unpackjsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
     IN  p_points                         JSONB
    ,IN  p_lines                          JSONB
    ,IN  p_areas                          JSONB
-   ,IN  p_geometry                       JSONB 
-   ,IN  p_nhdplus_version                VARCHAR
+   ,IN  p_geometry                       JSONB
+   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
    ,IN  p_known_region                   VARCHAR DEFAULT NULL
    ,IN  p_int_srid                       INTEGER DEFAULT NULL
    
@@ -47,6 +56,12 @@ BEGIN
    AND p_geometry IS NULL
    THEN
       RETURN;
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      RAISE EXCEPTION 'nhdplus version cannot be null';
       
    END IF;
    

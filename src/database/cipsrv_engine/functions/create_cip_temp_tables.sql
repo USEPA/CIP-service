@@ -15,11 +15,15 @@ BEGIN
       
    ELSE
       CREATE TEMPORARY TABLE tmp_cip(
-         nhdplusid             BIGINT
+          permid_joinkey       UUID
+         ,nhdplusid            BIGINT
       );
 
       CREATE UNIQUE INDEX tmp_cip_pk 
-      ON tmp_cip(nhdplusid);
+      ON tmp_cip(
+          permid_joinkey
+         ,nhdplusid
+      );
 
    END IF;
    

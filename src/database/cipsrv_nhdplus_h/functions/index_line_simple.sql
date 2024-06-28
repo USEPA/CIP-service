@@ -1,8 +1,18 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.index_line_simple';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_simple(
     IN  p_geometry                GEOMETRY
    ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
    ,IN  p_line_threshold_perc     NUMERIC
+   ,IN  p_permid_joinkey          UUID
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -37,7 +47,7 @@ BEGIN
    int_srid           := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-
+   
    IF out_return_code != 0
    THEN
       RETURN;
@@ -45,8 +55,8 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
-   
-   IF num_geometry_lengthkm IS NULL
+
+   IF p_geometry_lengthkm IS NULL
    THEN
       num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
           p_geometry
@@ -63,10 +73,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,5070);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -125,10 +137,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,3338);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -187,10 +201,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,26904);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -249,10 +265,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32161);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -311,10 +329,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32655);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -373,10 +393,12 @@ BEGIN
       geom_input := ST_Transform(p_geometry,32702);
       
       INSERT INTO tmp_cip(
-         nhdplusid
+          permid_joinkey
+         ,nhdplusid
       ) 
       SELECT 
-      a.nhdplusid
+       p_permid_joinkey
+      ,a.nhdplusid
       FROM (
          SELECT
           aa.nhdplusid
@@ -449,6 +471,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_line_simple(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_simple(
@@ -456,5 +479,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_line_simple(
    ,NUMERIC
    ,VARCHAR
    ,NUMERIC
+   ,UUID
 ) TO PUBLIC;
 

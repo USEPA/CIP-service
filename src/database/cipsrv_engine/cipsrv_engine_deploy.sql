@@ -13,6 +13,7 @@ AS (
    ,isring                      BOOLEAN
    ,properties                  JSONB
    ,source_featureid            VARCHAR
+   ,permid_joinkey              VARCHAR
    ,nhdplus_version             VARCHAR
    ,known_region                VARCHAR
    ,int_srid                    INTEGER
@@ -98,6 +99,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.temp_table_exists(
 --******************************--
 ----- functions/table_exists.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.table_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE or REPLACE FUNCTION cipsrv_engine.table_exists(
     IN  p_schema_name VARCHAR
    ,IN  p_table_name  VARCHAR
@@ -155,6 +165,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.table_exists(
 
 --******************************--
 ----- functions/field_exists.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.field_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE or REPLACE FUNCTION cipsrv_engine.field_exists(
     IN  p_schema_name VARCHAR
@@ -236,6 +255,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.field_exists(
 --******************************--
 ----- functions/index_exists.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.index_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE or REPLACE FUNCTION cipsrv_engine.index_exists(
     IN  p_schema_name VARCHAR
    ,IN  p_table_name  VARCHAR
@@ -310,11 +338,15 @@ BEGIN
       
    ELSE
       CREATE TEMPORARY TABLE tmp_cip(
-         nhdplusid             BIGINT
+          permid_joinkey       UUID
+         ,nhdplusid            BIGINT
       );
 
       CREATE UNIQUE INDEX tmp_cip_pk 
-      ON tmp_cip(nhdplusid);
+      ON tmp_cip(
+          permid_joinkey
+         ,nhdplusid
+      );
 
    END IF;
    
@@ -414,13 +446,229 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.featurecat(
 ) TO PUBLIC;
 
 --******************************--
+----- functions/measure_lengthkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.measure_lengthkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.measure_lengthkm(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_nhdplus_version         VARCHAR
+   ,IN  p_default_nhdplus_version VARCHAR DEFAULT NULL
+   ,IN  p_known_region            VARCHAR DEFAULT NULL
+   ,IN  p_default_known_region    VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   str_nhdplus_version VARCHAR;
+   str_known_region    VARCHAR;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      IF p_default_nhdplus_version IS NULL
+      THEN
+         RAISE EXCEPTION 'nhdplus version required';
+      
+      ELSE
+         str_nhdplus_version := p_default_nhdplus_version;
+         
+      END IF;
+      
+   ELSE
+      str_nhdplus_version := p_nhdplus_version; 
+   
+   END IF;
+   
+   str_known_region := p_known_region;
+   IF str_known_region IS NULL
+   THEN
+      str_known_region := p_default_known_region;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   IF str_nhdplus_version IN ('nhdplus_m','MR')
+   THEN
+      RETURN cipsrv_nhdplus_m.measure_lengthkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
+   THEN
+      RETURN cipsrv_nhdplus_h.measure_lengthkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSE
+      RAISE EXCEPTION 'unknown nhdplus version %',str_nhdplus_version;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/measure_areasqkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.measure_areasqkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.measure_areasqkm(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_nhdplus_version         VARCHAR
+   ,IN  p_default_nhdplus_version VARCHAR DEFAULT NULL
+   ,IN  p_known_region            VARCHAR DEFAULT NULL
+   ,IN  p_default_known_region    VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   str_nhdplus_version VARCHAR;
+   str_known_region    VARCHAR;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      IF p_default_nhdplus_version IS NULL
+      THEN
+         RAISE EXCEPTION 'nhdplus version required';
+      
+      ELSE
+         str_nhdplus_version := p_default_nhdplus_version;
+         
+      END IF;
+      
+   ELSE
+      str_nhdplus_version := p_nhdplus_version; 
+   
+   END IF;
+   
+   str_known_region := p_known_region;
+   IF str_known_region IS NULL
+   THEN
+      str_known_region := p_default_known_region;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   IF str_nhdplus_version IN ('nhdplus_m','MR')
+   THEN
+      RETURN cipsrv_nhdplus_m.measure_areasqkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
+   THEN
+      RETURN cipsrv_nhdplus_h.measure_areasqkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSE
+      RAISE EXCEPTION 'unknown nhdplus version %',str_nhdplus_version;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR    
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
 ----- functions/jsonb2feature.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2feature';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
     IN  p_feature                JSONB
    ,IN  p_geometry_override      GEOMETRY DEFAULT NULL
    ,IN  p_globalid               VARCHAR  DEFAULT NULL
    ,IN  p_source_featureid       VARCHAR  DEFAULT NULL
+   ,IN  p_permid_joinkey         VARCHAR  DEFAULT NULL
    ,IN  p_nhdplus_version        VARCHAR  DEFAULT NULL
    ,IN  p_known_region           VARCHAR  DEFAULT NULL
    ,IN  p_int_srid               INTEGER  DEFAULT NULL
@@ -448,6 +696,7 @@ DECLARE
    has_properties             BOOLEAN;
    boo_isring                 BOOLEAN;
    str_globalid               VARCHAR;
+   str_permid_joinkey         VARCHAR;
    str_nhdplus_version        VARCHAR;
    str_known_region           VARCHAR;
    int_srid                   INTEGER;
@@ -557,6 +806,8 @@ BEGIN
                cipsrv_engine.jsonb2feature(
                    p_feature                := json_feature
                   ,p_geometry_override      := sdo_geometry2
+                  ,p_source_featureid       := p_source_featureid
+                  ,p_permid_joinkey         := p_permid_joinkey
                   ,p_nhdplus_version        := p_nhdplus_version
                   ,p_known_region           := p_known_region
                   ,p_int_srid               := p_int_srid
@@ -627,6 +878,20 @@ BEGIN
    ELSIF p_source_featureid IS NOT NULL
    THEN
       str_source_featureid := p_source_featureid;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for permid_joinkey override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'permid_joinkey' IS NOT NULL
+   THEN
+      str_permid_joinkey := json_feature->'properties'->>'permid_joinkey';
+      
+   ELSIF p_permid_joinkey IS NOT NULL
+   THEN
+      str_permid_joinkey := p_permid_joinkey;
       
    END IF;
    
@@ -845,6 +1110,7 @@ BEGIN
       ,boo_isring
       ,json_feature->'properties'
       ,str_source_featureid
+      ,str_permid_joinkey
       ,str_nhdplus_version
       ,str_known_region
       ,int_srid
@@ -883,6 +1149,7 @@ ALTER FUNCTION cipsrv_engine.jsonb2feature(
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
+   ,VARCHAR
    ,INTEGER
    ,VARCHAR
    
@@ -905,6 +1172,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
    ,VARCHAR
    ,VARCHAR
    ,VARCHAR
+   ,VARCHAR
    ,INTEGER
    ,VARCHAR
    
@@ -922,6 +1190,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
 
 --******************************--
 ----- functions/jsonb2features.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2features';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2features(
     IN  p_features                       JSONB
@@ -1134,6 +1411,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2features(
 --******************************--
 ----- functions/feature2jsonb.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.feature2jsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.feature2jsonb(
    IN  p_feature      cipsrv_engine.cip_feature
 ) RETURNS JSONB
@@ -1295,17 +1581,26 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.feature2jsonb(
 --******************************--
 ----- functions/features2jsonb.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.features2jsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.features2jsonb(
     IN  p_features           cipsrv_engine.cip_feature[]
    ,IN  p_geometry_type      VARCHAR DEFAULT NULL
    ,IN  p_empty_collection   BOOLEAN DEFAULT FALSE
 ) RETURNS JSONB
 IMMUTABLE
-AS $BODY$ 
+AS $BODY$
 DECLARE
    obj_rez JSONB;
    ary_rez JSONB;
-   
+
 BEGIN
 
    IF p_features IS NULL
@@ -1317,23 +1612,23 @@ BEGIN
              'type'    , 'FeatureCollection'
             ,'features', '[]'::JSONB
          );
-      
+
       ELSE
          RETURN NULL;
-         
+
       END IF;
-      
+
    END IF;
-   
+
    FOR i IN 1 .. array_length(p_features,1)
    LOOP
       IF p_geometry_type IS NULL
       OR ( p_geometry_type IN ('P')
          AND p_features[i].gtype IN ('ST_Point','ST_MultiPoint')
-      ) 
+      )
       OR ( p_geometry_type IN ('L')
          AND p_features[i].gtype IN ('ST_LineString','ST_MultiLineString')
-      ) 
+      )
       OR ( p_geometry_type IN ('A')
          AND p_features[i].gtype IN ('ST_Polygon','ST_MultiPolygon')
       )
@@ -1341,20 +1636,20 @@ BEGIN
          obj_rez := cipsrv_engine.feature2jsonb(
             p_feature := p_features[i]
          );
-         
+
          IF ary_rez IS NULL
          THEN
             ary_rez := JSON_BUILD_ARRAY(obj_rez);
-            
+
          ELSE
             ary_rez := ary_rez || obj_rez;
-         
+
          END IF;
-         
+
       END IF;
-   
+
    END LOOP;
-   
+
    IF ary_rez IS NULL
    OR JSONB_ARRAY_LENGTH(ary_rez) = 0
    THEN
@@ -1364,18 +1659,18 @@ BEGIN
              'type'    , 'FeatureCollection'
             ,'features', '[]'::JSONB
          );
-      
+
       ELSE
          RETURN NULL;
-         
+
       END IF;
-      
+
    ELSE
       RETURN JSON_BUILD_OBJECT(
           'type'    , 'FeatureCollection'
          ,'features', ary_rez
-      );      
-   
+      );
+
    END IF;
 
 END;
@@ -1511,12 +1806,21 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.preprocess2summary(
 --******************************--
 ----- functions/unpackjsonb.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.unpackjsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
     IN  p_points                         JSONB
    ,IN  p_lines                          JSONB
    ,IN  p_areas                          JSONB
-   ,IN  p_geometry                       JSONB 
-   ,IN  p_nhdplus_version                VARCHAR
+   ,IN  p_geometry                       JSONB
+   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
    ,IN  p_known_region                   VARCHAR DEFAULT NULL
    ,IN  p_int_srid                       INTEGER DEFAULT NULL
    
@@ -1560,6 +1864,12 @@ BEGIN
    AND p_geometry IS NULL
    THEN
       RETURN;
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      RAISE EXCEPTION 'nhdplus version cannot be null';
       
    END IF;
    
@@ -1806,6 +2116,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_clip(
 
 --******************************--
 ----- functions/feature_batch_clip.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.feature_batch_clip';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.feature_batch_clip(
     IN  p_keyword                       VARCHAR
@@ -2231,6 +2550,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.parse_catchment_filter(
 --******************************--
 ----- functions/cipsrv_index.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
     IN  p_points                         JSONB
    ,IN  p_lines                          JSONB
@@ -2553,6 +2881,7 @@ BEGIN
                rec := cipsrv_nhdplus_m.index_point_simple(
                    p_geometry               := (ary_features[i]).geometry
                   ,p_known_region           := str_known_region
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2562,6 +2891,7 @@ BEGIN
                rec := cipsrv_nhdplus_h.index_point_simple(
                    p_geometry               := (ary_features[i]).geometry
                   ,p_known_region           := str_known_region
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2580,6 +2910,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2591,6 +2922,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2611,6 +2943,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2622,6 +2955,7 @@ BEGIN
                   ,p_geometry_lengthkm      := (ary_features[i]).lengthkm
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2643,6 +2977,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2655,6 +2990,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2672,11 +3008,12 @@ BEGIN
             IF p_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_simple(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2684,11 +3021,12 @@ BEGIN
             ELSIF p_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_simple(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2706,11 +3044,12 @@ BEGIN
             IF p_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_centroid(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2718,11 +3057,12 @@ BEGIN
             ELSIF p_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_centroid(
-                   p_geometry             := (ary_features[i]).geometry
-                  ,p_geometry_areasqkm    := (ary_features[i]).areasqkm
-                  ,p_known_region         := str_known_region
-                  ,p_cat_threshold_perc   := (ary_features[i]).areacat_threshold
-                  ,p_evt_threshold_perc   := (ary_features[i]).areaevt_threshold
+                   p_geometry               := (ary_features[i]).geometry
+                  ,p_geometry_areasqkm      := (ary_features[i]).areasqkm
+                  ,p_known_region           := str_known_region
+                  ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
+                  ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
+                  ,p_permid_joinkey         := NULL
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -2951,6 +3291,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_index(
 --******************************--
 ----- procedures/cipsrv_batch_index.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_batch_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP PROCEDURE IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE PROCEDURE cipsrv_engine.cipsrv_batch_index(
     IN  p_dataset_prefix                   VARCHAR
    ,OUT out_return_code                    INTEGER
@@ -2973,8 +3322,8 @@ DECLARE
    str_catchment_filter               VARCHAR;
    ary_catchment_filter               VARCHAR[];
    str_nhdplus_version                VARCHAR;
-   str_catchment_resolution           VARCHAR;
    str_default_nhdplus_version        VARCHAR;
+   str_catchment_resolution           VARCHAR;
    str_xwalk_huc12_version            VARCHAR;
    
    str_point_indexing_method          VARCHAR;
@@ -3127,12 +3476,34 @@ BEGIN
    
    COMMIT;
    
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Add measurements field if needed
+   ----------------------------------------------------------------------------
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_dataset_prefix || '_lines','lengthkm')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_dataset_prefix || '_lines ADD COLUMN lengthkm NUMERIC';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_dataset_prefix || '_areas','areasqkm')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_dataset_prefix || '_areas ADD COLUMN areasqkm NUMERIC';
+   
+   END IF;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Analyze incoming tables
+   ----------------------------------------------------------------------------
    EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_points';
    EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_lines';
    EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_areas';
    
    ----------------------------------------------------------------------------
-   -- Step 40
+   -- Step 60
    -- Create the sfid table
    ----------------------------------------------------------------------------
    EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_sfid';
@@ -3210,7 +3581,7 @@ BEGIN
    COMMIT;
    
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 70
    -- Load the sfid table
    ----------------------------------------------------------------------------
    str_sql := 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_sfid( '
@@ -3321,7 +3692,7 @@ BEGIN
    COMMIT;
 
    ----------------------------------------------------------------------------
-   -- Step 60
+   -- Step 80
    -- Update the feature tables with new source_joinkeys
    ----------------------------------------------------------------------------
    str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_points a '
@@ -3359,11 +3730,9 @@ BEGIN
            || ') ';
            
    EXECUTE str_sql;
-   
-   COMMIT;
            
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 90
    -- Create the cip results table
    ----------------------------------------------------------------------------
    EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_cip';
@@ -3456,9 +3825,74 @@ BEGIN
    EXECUTE str_sql;
    
    COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 100
+   -- Create the src2cip results table
+   ----------------------------------------------------------------------------
+   EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_src2cip';
+      
+   EXECUTE 'DROP SEQUENCE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq';
+   
+   str_sql := 'CREATE TABLE cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    objectid              INTEGER     NOT NULL '
+           || '   ,source_joinkey        VARCHAR(40) NOT NULL'
+           || '   ,permid_joinkey        VARCHAR(40) NOT NULL '
+           || '   ,cat_joinkey           VARCHAR(40) NOT NULL'
+           || '   ,globalid              VARCHAR(40) NOT NULL '
+           || ') ';
+           
+   EXECUTE str_sql;
+   
+   str_sql := 'GRANT SELECT ON TABLE cipsrv_upload.' || str_dataset_prefix || '_src2cip TO PUBLIC';
+   
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_src2cip_pk '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    source_joinkey '
+           || '   ,permid_joinkey '           
+           || '   ,cat_joinkey '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_src2cip_u01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    objectid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_src2cip_u02 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    globalid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE INDEX ' || str_dataset_prefix || '_src2cip_i01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    source_joinkey '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE INDEX ' || str_dataset_prefix || '_src2cip_i02 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+           || '    permid_joinkey '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE SEQUENCE cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq START WITH 1';
+           
+   EXECUTE str_sql;
+   
+   COMMIT;
 
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 110
    -- Read the control table
    ----------------------------------------------------------------------------
    str_sql := 'SELECT '
@@ -3540,8 +3974,40 @@ BEGIN
    
    ary_geometry_clip := string_to_array(str_geometry_clip,',');
    
+   COMMIT;
+   
    ----------------------------------------------------------------------------
-   -- Step 90
+   -- Step 120
+   -- Update the feature tables with measures
+   ----------------------------------------------------------------------------
+   str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_lines a '
+           || 'SET lengthkm = cipsrv_engine.measure_lengthkm( '
+           || '    a.shape '
+           || '   ,a.nhdplus_version '
+           || '   ,$1 '
+           || '   ,a.known_region '
+           || '   ,$2 '
+           || ') ';
+           
+   EXECUTE str_sql 
+   USING str_default_nhdplus_version,str_default_known_region;
+   
+   str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_areas a '
+           || 'SET areasqkm = cipsrv_engine.measure_areasqkm( '
+           || '    a.shape '
+           || '   ,a.nhdplus_version '
+           || '   ,$1 '
+           || '   ,a.known_region '
+           || '   ,$2 '
+           || ') ';
+           
+   EXECUTE str_sql 
+   USING str_default_nhdplus_version,str_default_known_region;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 130
    -- Clip features if requested
    ----------------------------------------------------------------------------
    IF str_geometry_clip_stage = 'BEFORE'
@@ -3560,7 +4026,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 100
+   -- Step 140
    -- Step through each sfid
    ----------------------------------------------------------------------------
    FOR rec IN EXECUTE 'SELECT a.* FROM cipsrv_upload.' || str_dataset_prefix || '_sfid a '
@@ -3649,6 +4115,7 @@ BEGIN
                   rec3 := cipsrv_nhdplus_m.index_point_simple(
                       p_geometry             := rec2.shape
                      ,p_known_region         := str_known_region
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_point_indexing_return_code    := rec3.out_return_code;
                   str_point_indexing_status_message := rec3.out_status_message;
@@ -3658,6 +4125,7 @@ BEGIN
                   rec3 := cipsrv_nhdplus_h.index_point_simple(
                       p_geometry             := rec2.shape
                      ,p_known_region         := str_known_region
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_point_indexing_return_code    := rec3.out_return_code;
                   str_point_indexing_status_message := rec3.out_status_message;
@@ -3787,11 +4255,12 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
                         
-                     ELSIF str_nhdplus_version = 'nhdplus_h'
+                     ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
                      THEN
                         rec3 := cipsrv_nhdplus_h.index_area_simple(
                             p_geometry             := ST_MakePolygon(geom_part)
@@ -3799,6 +4268,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -3818,6 +4288,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -3830,6 +4301,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -3849,6 +4321,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -3861,6 +4334,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -3920,6 +4394,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -3931,6 +4406,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -3949,6 +4425,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -3960,6 +4437,7 @@ BEGIN
                            ,p_geometry_lengthkm    := NULL
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
+                           ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -4074,6 +4552,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4086,6 +4565,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4105,6 +4585,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4117,6 +4598,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4136,6 +4618,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4148,6 +4631,7 @@ BEGIN
                      ,p_known_region         := str_known_region
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
+                     ,p_permid_joinkey       := rec2.permid_joinkey::UUID
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4219,7 +4703,7 @@ BEGIN
               || ',$6 '
               || ',$7 '
               || ',$8 '
-              || ',a.catchmentstatecode || a.nhdplusid::VARCHAR '
+              || ',a.catchmentstatecode || a.nhdplusid::BIGINT::VARCHAR '
               || ',a.catchmentstatecode '
               || ',a.nhdplusid '
               || ',a.istribal '
@@ -4267,8 +4751,6 @@ BEGIN
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
 
-      EXECUTE 'TRUNCATE TABLE tmp_cip';
-      
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
          int_cat_mr_count := int_count;
@@ -4280,6 +4762,44 @@ BEGIN
          int_cat_hr_count := int_count;
          
       END IF;
+      
+      COMMIT;
+      
+      EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_cip';
+      
+      --************************************************************--
+      str_sql := 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
+              || '    objectid '
+              || '   ,source_joinkey '
+              || '   ,permid_joinkey '
+              || '   ,cat_joinkey '
+              || '   ,globalid '
+              || ') '
+              || 'SELECT '
+              || ' NEXTVAL(''cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq'') AS objectid '
+              || ',$1 '
+              || ',''{'' || a.permid_joinkey::VARCHAR || ''}'' '
+              || ',b.cat_joinkey '
+              || ',''{'' || uuid_generate_v1() || ''}'' '
+              || 'FROM '
+              || 'tmp_cip a '
+              || 'JOIN '
+              || 'cipsrv_upload.' || str_dataset_prefix || '_cip b '
+              || 'ON '
+              || 'b.nhdplusid = a.nhdplusid '
+              || 'ON CONFLICT DO NOTHING ';
+              
+      EXECUTE str_sql 
+      USING rec.source_joinkey;
+
+      GET DIAGNOSTICS int_count = ROW_COUNT;
+      
+      COMMIT;
+      
+      EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_src2cip';
+      
+      --************************************************************--
+      EXECUTE 'TRUNCATE TABLE tmp_cip';
       
       --************************************************************--
       str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_sfid a '
@@ -4324,7 +4844,7 @@ BEGIN
    END LOOP;
    
    ----------------------------------------------------------------------------
-   -- Step 110
+   -- Step 150
    -- Clip features AFTER if requested
    ----------------------------------------------------------------------------
    IF str_geometry_clip_stage = 'AFTER'
