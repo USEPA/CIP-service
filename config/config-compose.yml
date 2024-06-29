@@ -4,6 +4,7 @@ services:
       build:
          context: .
          dockerfile: config-compose.df
+      user: "${CURRENT_UID}"
       hostname: quickpython
       container_name: cip-service-config-quickpython
       environment:

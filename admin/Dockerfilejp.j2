@@ -8,11 +8,15 @@ ENV JUPYTER_TOKEN=$ARG_JUPYTER_TOKEN
 ENV NB_USER=jovyan
 ENV GRANT_SUDO=yes
 
+USER root
+
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update                                       &&\
     apt-get install -y --no-install-recommends             \
        wget                                                \
+       curl                                                \
+       less                                                \
        dos2unix                                            \
        openssh-client                                      \
        sshpass                                             \
@@ -23,10 +27,10 @@ RUN apt-get update                                       &&\
        build-essential                                     \
        vim                                                 \
        epiphany                                            \
+       python3                                             \
        python3-pip                                         \
        python3-dev                                         \
-       libspatialindex-dev                                 \
-       jupyter-notebook                                  &&\ 
+       python3-venv                                      &&\
     rm -rf /var/lib/apt/lists/*
 
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list &&\
@@ -39,15 +43,17 @@ RUN apt-get update                              &&\
     rm -rf /var/lib/apt/lists/*                 &&\
     rm -rf /var/cache/apt/*
 
-RUN useradd -m -s /bin/bash -N -u 1001 ${NB_USER}           &&\
-    mkdir /home/${NB_USER}/notebooks                        &&\
-    mkdir /home/${NB_USER}/notebooks/sql                    &&\
-    mkdir /home/${NB_USER}/notebooks/upload                 &&\
-    mkdir /home/${NB_USER}/loading_dock                     &&\
-    mkdir -p /home/${NB_USER}/.ssh                          &&\
-    chown -R ${NB_USER}:users /home/${NB_USER}/notebooks    &&\
-    chown -R ${NB_USER}:users /home/${NB_USER}/loading_dock &&\
-    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
+RUN python3 -m venv /opt/venv
+ENV PATH /opt/venv/bin:${PATH}
+
+RUN useradd -m -s /bin/bash -N -u 1001 ${NB_USER}
+RUN mkdir -p /home/${NB_USER}/.ssh
+COPY ./jupyter/known_hosts.txt /home/${NB_USER}/.ssh/known_hosts  
+COPY ./jupyter/jupyter_notebook_config.py /home/${NB_USER}/.jupyter/jupyter_notebook_config.py
+COPY ./jupyter/notebook.json              /home/${NB_USER}/.jupyter/nbconfig/notebook.json
+COPY ./jupyter/notebooks                  /home/${NB_USER}/notebooks
+
+RUN chmod 0644 /home/${NB_USER}/.ssh/known_hosts
 
 {%- set ghrep = components.cip_jp.github_repo %}
 {%- set ghkey = github_repo[ghrep].add_deploy_key %}
@@ -59,65 +65,69 @@ RUN chmod 0400 /home/${NB_USER}/.ssh/id_rsa                 &&\
     chmod 0400 /home/${NB_USER}/.ssh/id_rsa.pub
 {%- endif %}
 
-COPY /jupyter/known_hosts.txt /home/${NB_USER}/.ssh/known_hosts
-RUN chmod 0644 /home/${NB_USER}/.ssh/known_hosts            &&\
-    chown -R ${NB_USER}:users /home/${NB_USER}/.ssh
+RUN chown -R ${NB_USER}:users /home/${NB_USER}              &&\
+    chown -R ${NB_USER}:users /opt/venv
 
 USER ${NB_USER}
-COPY ./jupyter/jupyter_notebook_config.py /home/jovyan/.jupyter/jupyter_notebook_config.py
 
 {%- if ghkey == true %}
 RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
 {%- endif %}
-RUN pip3 install --break-system-packages --upgrade numpy
 
-RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels           \
-      fiona                                                \
-      awscli                                               \
-      folium                                               \
-      geocoder                                             \
-      geopandas                                            \
-      geopy                                                \
-      psycopg2-binary                                      \
-      ipywidgets                                           \
-      pyproj                                               \
-      pysal                                                \
-      rtree                                                \
-      shapely                                              \
-      solara                                               \
-      wget                                                 \
+RUN mkdir -p /home/${NB_USER}/notebooks                     &&\
+    mkdir -p /home/${NB_USER}/notebooks/sql                 &&\
+    mkdir -p /home/${NB_USER}/notebooks/upload              &&\
+    mkdir -p /home/${NB_USER}/loading_dock
+
+RUN python3 -m venv /opt/venv                               &&\
+    pip3 install --upgrade numpy
+
+RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
+      ipython[all]                                            \
+      jupyter                                                 \
+      jupyter_server                                          \
+      fiona                                                   \
+      awscli                                                  \
+      folium                                                  \
+      geocoder                                                \
+      geopandas                                               \
+      geopy                                                   \
+      psycopg2-binary                                         \
+      ipywidgets                                              \
+      ipywidgets-jsonschema                                   \
+      pyproj                                                  \
+      pysal                                                   \
+      rtree                                                   \
+      shapely                                                 \
+      solara                                                  \
+      wget                                                    \
+      openpyxl
+      
+RUN pip3 install                                              \
+      ipython[all]                                            \
+      jupyter                                                 \
+      jupyter_server                                          \
+      fiona                                                   \
+      awscli                                                  \
+      folium                                                  \
+      boto3                                                   \
+      geocoder                                                \
+      geopandas                                               \
+      geopy                                                   \
+      gitpython                                               \
+      ipywidgets                                              \
+      ipywidgets-jsonschema                                   \
+      psycopg2-binary                                         \
+      pyproj                                                  \
+      pysal                                                   \
+      rtree                                                   \
+      shapely                                                 \
+      solara                                                  \
+      wget                                                    \
       openpyxl
 
-RUN pip3 install --break-system-packages                   \
-      fiona                                                \
-      awscli                                               \
-      folium                                               \
-      boto3                                                \
-      geocoder                                             \
-      geopandas                                            \
-      geopy                                                \
-      gitpython                                            \
-      psycopg2-binary                                      \
-      ipywidgets                                           \
-      pyproj                                               \
-      pysal                                                \
-      rtree                                                \
-      shapely                                              \
-      solara                                               \
-      wget                                                 \
-      openpyxl
-
-USER root
-
-COPY ./jupyter/notebooks /home/${NB_USER}/notebooks
-
-RUN  chown -R ${NB_USER}:users /home/${NB_USER}/notebooks &&\
-     chown -R ${NB_USER}:users /home/${NB_USER}/loading_dock
-
-COPY ./jupyter/notebook.json /opt/conda/etc/jupyter/nbconfig/notebook.json
+RUN pip3 install jupyterlab
 
 EXPOSE 8888
-
-USER ${NB_USER}
 
 CMD ["sh", "-c", "jupyter notebook --port=8888 --no-browser --ip=* --notebook-dir=/home/${NB_USER}/notebooks"]
