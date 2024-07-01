@@ -1,0 +1,270 @@
+{
+    "$id": "https://epa.gov/cip_service_batch.schema.json"
+   ,"$schema": "https://json-schema.org/draft/2020-12/schema"
+   ,"title": "CIP-service Batch Indexing"
+   ,"$ref": "#/$defs/batch"
+   ,"$defs": {
+       "batch": {
+          "type": "object"
+         ,"properties": {
+             "source_originator": {
+                "type": "string"
+               ,"description": "Optional source_originator designator for batch."
+             }
+            ,"source_series": {
+                "type": "string"
+               ,"description": "Optional source_series designator for batch."
+             }
+            ,"dataset_prefix": {
+                "type": "string"
+               ,"description": "Required identifier for identifying and tracking batch indexing."
+             }
+            ,"geometry_clip": {
+                "$ref": "#/$defs/geometry_clip"
+             }
+            ,"geometry_clip_stage": {
+                "$ref": "#/$defs/geometry_clip_stage"
+             }
+            ,"catchment_filter": {
+                "$ref": "#/$defs/catchment_filter"
+             }
+            ,"nhdplus_version": {
+                "$ref": "#/$defs/nhdplus_version"
+               ,"description": "NHDPlus version used in CIP indexing.  Will not override expressly marked nhdplus version values on source or individual records."
+             }
+            ,"xwalk_huc12_version": {
+                "$ref": "#/$defs/xwalk_huc12_version"
+             }
+            ,"default_point_indexing_method": {
+                "$ref": "#/$defs/point_indexing_method"
+             }
+            ,"default_line_indexing_method": {
+                "$ref": "#/$defs/line_indexing_method"
+             }
+            ,"default_line_threshold": {
+                "$ref": "#/$defs/line_threshold"
+             }
+            ,"default_ring_indexing_method": {
+                "$ref": "#/$defs/ring_indexing_method"
+             }
+            ,"default_ring_areacat_threshold": {
+                "$ref": "#/$defs/areacat_threshold"
+             }
+            ,"default_ring_areaevt_threshold": {
+                "$ref": "#/$defs/areaevt_threshold"
+             }
+            ,"default_area_indexing_method": {
+                "$ref": "#/$defs/area_indexing_method"
+             }
+            ,"default_areacat_threshold": {
+                "$ref": "#/$defs/areacat_threshold"
+             }
+            ,"default_areaevt_threshold": {
+                "$ref": "#/$defs/areaevt_threshold"
+             }
+            ,"known_region": {
+                "$ref": "#/$defs/known_region"
+             }
+            ,"username": {
+                "type": "string"
+               ,"description": "Username submitting batch indexing."
+             }
+            ,"datecreated": {
+                "type": "string"
+               ,"format": "date"
+               ,"description": "Date of batch indexing."
+             }
+            ,"points": {
+                "type": "array"
+               ,"items": {"$ref": "#/$defs/source"}
+             }
+            ,"lines": {
+                "type": "array"
+               ,"items": {"$ref": "#/$defs/source"}
+             }
+            ,"areas": {
+                "type": "array"
+               ,"items": {"$ref": "#/$defs/source"}
+             }
+            ,"geometry": {
+                "type": "array"
+               ,"items": {"$ref": "#/$defs/source"}
+             }
+          }
+         ,"required": ["dataset_prefix"] 
+         ,"oneOf": [
+             {
+                "anyOf": [
+                   {
+                      "required": [
+                         "points"
+                      ]
+                   }
+                  ,{
+                      "required": [
+                         "lines"
+                      ]
+                   }
+                  ,{
+                      "required": [
+                         "areas"
+                      ]
+                   }
+                  ,{
+                      "required": [
+                         "geometry"
+                      ]
+                   }
+                ]
+             }
+          ]
+       }
+      ,"geometry_clip": {
+          "type": "array"
+         ,"items": {
+            "type": "string"
+          }
+         ,"description": "Array of clip items to apply to the incoming features."
+       }
+      ,"geometry_clip_stage": {
+          "type": "string"
+         ,"enum": [
+             "BEFORE"
+            ,"AFTER"
+          ]
+         ,"description": "Flag to control whether to clip features before or after indexing."
+       }
+      ,"catchment_filter": {
+          "type": "array"
+         ,"items": {
+            "type": "string"
+          }
+         ,"description": "Array of filter items to apply to indexing results."
+       }
+      ,"nhdplus_version": {
+          "type": "string"
+         ,"enum": [
+             "nhdplus_m"
+            ,"nhdplus_h"
+          ]
+         ,"default": "nhdplus_h"
+         ,"example": "nhdplus_h"
+         ,"description": "NHDPlus version used in CIP indexing."
+       }
+      ,"xwalk_huc12_version": {
+          "type": "string"
+         ,"description": "WBD version used in CIP indexing. Currently non-functional."
+       }
+      ,"point_indexing_method": {
+          "type": "string"
+         ,"enum": [
+            "point_simple"
+          ]
+       }
+      ,"line_indexing_method": {
+          "type": "string"
+         ,"enum": [
+             "line_levelpath"
+            ,"line_simple"
+          ]
+         ,"default": "line_levelpath"
+         ,"example": "line_levelpath"
+       }
+      ,"line_threshold": {
+          "type": "number"
+         ,"minimum": 0
+         ,"maximum": 100
+       }
+      ,"ring_indexing_method": {
+          "type": "string"
+         ,"enum": [
+             "area_artpath"
+            ,"area_centroid"
+            ,"area_simple"
+            ,"treat_as_lines"
+          ]
+         ,"default": "treat_as_lines"
+         ,"example": "treat_as_lines"
+       }
+      ,"area_indexing_method": {
+          "type": "string"
+         ,"enum": [
+             "area_artpath"
+            ,"area_centroid"
+            ,"area_simple"
+          ]
+         ,"default": "area_artpath"
+         ,"example": "area_artpath"
+       }
+      ,"areacat_threshold": {
+          "type": "number"
+         ,"minimum": 0
+         ,"maximum": 100
+       }
+      ,"areaevt_threshold": {
+          "type": "number"
+         ,"minimum": 0
+         ,"maximum": 100
+       }
+      ,"known_region": {
+          "type": "string"
+         ,"description": "Provided value to use in determining the proper spatial reference system for geometric analysis.  Providing an SRID value such as 5070 or a US state code such as MN will skip the determination of the correct SRID for the feature providing a small performance boost.  However, if the feature does not actually apply to the provided known_region hint, then indexing may fail or return incorrect results. If in doubt, leave this parameter blank."
+       }
+      ,"source": {
+          "type": "object"
+         ,"properties": {
+             "gdal_source": {
+                "type": "string"
+               ,"description": "Relative reference to data source, should match equivalent ogr2ogr source dataset value."
+             }
+            ,"override_nhdplus_version": {
+                "$ref": "#/$defs/nhdplus_version"
+               ,"description": "nhdplus version value to apply to all records of this source."
+             }
+            ,"override_known_region": {
+                "$ref": "#/$defs/known_region"
+               ,"description": "known region value to apply to all records of this source."
+             }
+            ,"override_point_indexing_method": {
+                "$ref": "#/$defs/point_indexing_method"
+               ,"description": "point indexing method value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_line_indexing_method": {
+                "$ref": "#/$defs/line_indexing_method"
+               ,"description": "line indexing method value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_line_threshold": {
+                "$ref": "#/$defs/line_threshold"
+               ,"description": "line thresold value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_ring_indexing_method": {
+                "$ref": "#/$defs/ring_indexing_method"
+               ,"description": "ring indexing method value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_ring_areacat_threshold": {
+                "$ref": "#/$defs/areacat_threshold"
+               ,"description": "ring areacat threshold value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_ring_areaevt_threshold": {
+                "$ref": "#/$defs/areaevt_threshold"
+               ,"description": "ring areaevt value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_area_indexing_method": {
+                "$ref": "#/$defs/area_indexing_method"
+               ,"description": "area indexing method value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_areacat_threshold": {
+                "$ref": "#/$defs/areacat_threshold"
+               ,"description": "areacat value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+            ,"override_areaevt_threshold": {
+                "$ref": "#/$defs/areaevt_threshold"
+               ,"description": "areaevt value to apply to all records of the source.  Will not override settings for individual records if so marked."
+             }
+          }
+         ,"required": [
+             "gdal_source"
+          ]
+       }
+    }
+}

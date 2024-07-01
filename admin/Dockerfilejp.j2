@@ -48,8 +48,8 @@ ENV PATH /opt/venv/bin:${PATH}
 
 RUN useradd -m -s /bin/bash -N -u 1001 ${NB_USER}
 RUN mkdir -p /home/${NB_USER}/.ssh
-COPY ./jupyter/known_hosts.txt /home/${NB_USER}/.ssh/known_hosts  
-COPY ./jupyter/jupyter_notebook_config.py /home/${NB_USER}/.jupyter/jupyter_notebook_config.py
+COPY ./jupyter/known_hosts.txt            /home/${NB_USER}/.ssh/known_hosts  
+COPY ./jupyter/jupyter_server_config.py   /home/${NB_USER}/.jupyter/jupyter_server_config.py
 COPY ./jupyter/notebook.json              /home/${NB_USER}/.jupyter/nbconfig/notebook.json
 COPY ./jupyter/notebooks                  /home/${NB_USER}/notebooks
 
@@ -93,13 +93,15 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
       geopandas                                               \
       geopy                                                   \
       psycopg2-binary                                         \
+      ipyleaflet                                              \
       ipywidgets                                              \
-      ipywidgets-jsonschema                                   \
+      panel                                                   \
       pyproj                                                  \
       pysal                                                   \
       rtree                                                   \
       shapely                                                 \
       solara                                                  \
+      voila                                                   \
       wget                                                    \
       openpyxl
       
@@ -115,14 +117,15 @@ RUN pip3 install                                              \
       geopandas                                               \
       geopy                                                   \
       gitpython                                               \
+      ipyleaflet                                              \
       ipywidgets                                              \
-      ipywidgets-jsonschema                                   \
-      psycopg2-binary                                         \
+      panel                                                   \
       pyproj                                                  \
       pysal                                                   \
       rtree                                                   \
       shapely                                                 \
       solara                                                  \
+      voila                                                   \
       wget                                                    \
       openpyxl
 
