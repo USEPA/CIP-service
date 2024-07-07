@@ -6,6 +6,8 @@ The Catchment Index Processing Service provides the ability to associate hydrolo
 2. **Admin**: The admin bundle provides a set of Jupyter notebooks used in the deployment of CIP data and code to the engine.  The admin notebooks also provide a simple interface for batch processing.
 3. **Demo**: The demo bundle provides a simple Nginx web server that hosts simple examples of CIP indexing.
 
+[Streamlined Installation Instructions](docs/streamlined_installation.md)
+
 ### Capabilities
 
 To explore the CIP-service API capabilities, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. For example, see the [Swagger Next Editor](https://editor-next.swagger.io/?spec=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
