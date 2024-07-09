@@ -85,10 +85,10 @@ for file in os.listdir(templates):
          with open(os.path.join(outdir,output),"w") as file:
             file.write(outrender);
 
-   if os.path.basename(str(file)) == '.env':
+   if str(file) == '.env':
       has_env = True;
       
-   if os.path.basename(str(file)) == 'sample.env':
+   if str(file) == 'env.example':
       has_sample_env = True;
 
 if has_env is True:
@@ -98,7 +98,7 @@ elif has_env is False and has_sample_env is True:
    print(".   creating new .env file, secrets will need to be populated.");
    
    shutil.copyfile(
-       os.path.join(outdir,'sample.env')
+       os.path.join(outdir,'env.example')
       ,os.path.join(outdir,'.env')
    );
    
