@@ -45,25 +45,28 @@ The project uses the following containers which are standard, stable, trusted do
 
 ### Profile Configuration
 
-- inspect the provided profiles or generate a new profile meeting your host specifications.  Generally for testing purposes the desktop.yml profile is expected to work for most users.
+- inspect the provided profiles or generate a new profile meeting your host specifications.  Generally for testing purposes the default keyword will choose a profile which will work for most users.
 
 - generate the needed compose artifacts against the selected profile:
-  - windows: 
-    - ./config/config-compose.ps1 engine desktop
-    - ./config/config-compose.ps1 admin admin_local
-    - ./config/config-compose.ps1 demo nginx_demo
-  - linux:   
-    - ./config/config-compose.sh  engine desktop
-    - ./config/config-compose.sh  admin admin_local
-    - ./config/config-compose.sh  demo nginx_demo
-  - python:  
-    - ./config/config-compose.py --bundle engine --bprofile desktop
-    - ./config/config-compose.py --bundle admin  --bprofile admin_local
-    - ./config/config-compose.py --bundle demo   --bprofile nginx_demo
-  
-these steps will generate the needed docker-compose.yml and Dockerfiles in each bundle directory.  Note running the Python configuration code directly on your host is the quickest and simplest of the above methods but requires Python 3 with the jinja2 package installed.
 
-- next create .env files in the engine and admin bundle directories that contains needed security values.  See the [sample .env files](/engine/env.example) for typcial values to provide.
+  cd config
+
+  - windows powershell: 
+    - config-compose.ps1 engine default
+    - config-compose.ps1 admin  default
+    - config-compose.ps1 demo   default
+  - linux shell:   
+    - config-compose.sh  engine default
+    - config-compose.sh  admin  default
+    - config-compose.sh  demo   default
+  - python 3:  
+    - python config-compose.py --bundle engine --bprofile default
+    - python config-compose.py --bundle admin  --bprofile default
+    - python config-compose.py --bundle demo   --bprofile default
+
+Note running the Python configuration code directly on your host is the quickest and simplest of the above methods but requires Python 3 with the jinja2 package installed.
+
+These steps will generate the needed docker-compose.yml and Dockerfiles in each bundle directory.  If no existing .env secrets file is found, the env.sample file will be deployed.  Make sure to inspect the resulting .env files for appropriate settings.  No changes will be made to existing .env files.
 
 ### Typical Deployment Steps
 
@@ -89,11 +92,11 @@ __[Demo](./docs/demo.md)__
 
 2. then type **docker compose -p demo up --detach**. 
 
-### Typical Configuration Steps
+### Typical Engine Setup Steps
 
 1. open the admin bundle jupyter notebook using the token you provided, e.g. http://localhost:8888/?token=easy
 
-2. pilot to the **utilities** folder.
+2. pilot to the **setup** folder.
 
 3. for a straightforward load of the medium resolution NHDPlus, choose the **recipe_quick_setup_medonly** notebook and execute all cells.  This will download and stage the data and logic required.  Alternatively the **recipe_quick_setup_all** notebook will load the same plus the high resolution NHDPlus.  Note the high resolution datasets will require significant disk and time to stage and load.
 
