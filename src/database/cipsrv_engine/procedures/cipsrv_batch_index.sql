@@ -80,7 +80,7 @@ DECLARE
    
 BEGIN
 
-   out_return_code := cipsrv_engine.create_cip_temp_tables();
+   out_return_code := cipsrv_engine.create_cip_batch_temp_tables();
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters
@@ -546,6 +546,10 @@ BEGIN
            || '   ,source_joinkey        VARCHAR(40) NOT NULL'
            || '   ,permid_joinkey        VARCHAR(40) NOT NULL '
            || '   ,cat_joinkey           VARCHAR(40) NOT NULL'
+           || '   ,cip_method            VARCHAR(255) '
+           || '   ,cip_parms             VARCHAR(255) '
+           || '   ,cip_date              DATE '
+           || '   ,cip_version           VARCHAR(255) '
            || '   ,globalid              VARCHAR(40) NOT NULL '
            || ') ';
            
@@ -1480,6 +1484,10 @@ BEGIN
               || '   ,source_joinkey '
               || '   ,permid_joinkey '
               || '   ,cat_joinkey '
+              || '   ,cip_method '
+              || '   ,cip_parms '
+              || '   ,cip_date '
+              || '   ,cip_version '
               || '   ,globalid '
               || ') '
               || 'SELECT '
@@ -1487,6 +1495,10 @@ BEGIN
               || ',$1 '
               || ',''{'' || a.permid_joinkey::VARCHAR || ''}'' '
               || ',b.cat_joinkey '
+              || ',$2 '
+              || ',$3 '
+              || ',$4 '
+              || ',$5 '
               || ',''{'' || uuid_generate_v1() || ''}'' '
               || 'FROM '
               || 'tmp_cip a '
@@ -1497,7 +1509,9 @@ BEGIN
               || 'ON CONFLICT DO NOTHING ';
               
       EXECUTE str_sql 
-      USING rec.source_joinkey;
+      USING
+       rec.source_joinkey
+      ,;
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
       
@@ -1507,6 +1521,7 @@ BEGIN
       
       --************************************************************--
       EXECUTE 'TRUNCATE TABLE tmp_cip';
+      EXECUTE 'TRUNCATE TABLE tmp_permid';
       
       --************************************************************--
       str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_sfid a '

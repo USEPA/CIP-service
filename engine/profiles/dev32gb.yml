@@ -1,7 +1,7 @@
-profile_name: desktop 
+profile_name: dev32gb
 #
 # Example profile to create a host bundle
-# having modest, typically Windows desktop (16GB), resources
+# having low-end server resources
 #
 last updated: 20221212
 #
@@ -11,14 +11,14 @@ components:
    cip_pg:
       type:             container
 #     config references predetermined configuration in the _common.yml file
-      config:           desktop
+      config:           dev32gb
 #     host, port and db determine how the API component accesses the database
 #     in a full container profile this is usually the internal network address
       host:             cip_pg
       port:             5432
       db:               cipsrv
-#     passwords used in the database setup
       su_user:          postgres
+#     passwords used in the database setup
       su_pass:          env.POSTGRESQL_SU_PASS
       cip_pass:         env.POSTGRESQL_CIP_PASS
       usr_pass:         env.POSTGRESQL_USR_PASS
@@ -35,4 +35,5 @@ components:
       external_port:    3000
       log_level:        info
       add_host_gateway: false
+
 
