@@ -85,10 +85,10 @@ for file in os.listdir(templates):
          with open(os.path.join(outdir,output),"w") as file:
             file.write(outrender);
 
-   if os.path.basename(file) == '.env':
+   if os.path.basename(str(file)) == '.env':
       has_env = True;
       
-   if os.path.basename(file) == 'sample.env':
+   if os.path.basename(str(file)) == 'sample.env':
       has_sample_env = True;
 
 if has_env is True:
