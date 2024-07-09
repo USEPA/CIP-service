@@ -1,7 +1,7 @@
 ## Current Indexing Methods:
 
 1. [Point Simple](#point-simple) ([code](../src/database/cipsrv_nhdplus_m/functions/index_point_simple.sql))
-2. [Line Simple](#line-sSimple) ([code](../src/database/cipsrv_nhdplus_m/functions/index_line_simple.sql))
+2. [Line Simple](#line-simple) ([code](../src/database/cipsrv_nhdplus_m/functions/index_line_simple.sql))
 3. [Line LevelPath](#line-levelpath) ([code](../src/database/cipsrv_nhdplus_m/functions/index_line_levelpath.sql))
 4. [Area Simple](#area-simple) ([code](../src/database/cipsrv_nhdplus_m/functions/index_area_simple.sql))
 5. [Area Centroid](#area-centroid) ([code](../src/database/cipsrv_nhdplus_m/functions/index_area_centroid.sql))
