@@ -1,5 +1,5 @@
 #
-default: local_desktop
+default: admin_local
 #
 github_repo:
    # Note use the https port 443 endpoints
