@@ -84,7 +84,7 @@ for file in os.listdir(templates):
       has_env = True;
       
    if file == 'sample.env':
-      has sample_env = True;
+      has_sample_env = True;
 
 if has_env is True:
    print(".   ignoring existing .env file, please make sure existing secrets are appropriate.");
