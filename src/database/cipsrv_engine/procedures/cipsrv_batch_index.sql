@@ -1357,6 +1357,14 @@ BEGIN
                
             END IF;
             
+            INSERT INTO tmp_permid(
+                permid_joinkey
+               ,cip_method
+               ,cip_parms 
+            ) VALUES (
+                
+            );
+            
          END LOOP;
       
       END IF;
@@ -1495,10 +1503,10 @@ BEGIN
               || ',$1 '
               || ',''{'' || a.permid_joinkey::VARCHAR || ''}'' '
               || ',b.cat_joinkey '
+              || ',c.cip_method '
+              || ',c.cip_parms '
               || ',$2 '
               || ',$3 '
-              || ',$4 '
-              || ',$5 '
               || ',''{'' || uuid_generate_v1() || ''}'' '
               || 'FROM '
               || 'tmp_cip a '
@@ -1506,12 +1514,17 @@ BEGIN
               || 'cipsrv_upload.' || str_dataset_prefix || '_cip b '
               || 'ON '
               || 'b.nhdplusid = a.nhdplusid '
+              || 'JOIN '
+              || 'tmp_permid c '
+              || 'ON '
+              || 'a.permid_joinkey = c.permid_joinkey '
               || 'ON CONFLICT DO NOTHING ';
               
       EXECUTE str_sql 
       USING
        rec.source_joinkey
-      ,;
+      ,CURRENT_TIMESTAMP()
+      ,cipsrv_engine.cipsrv_version();
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
       

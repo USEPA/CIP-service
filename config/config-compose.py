@@ -54,10 +54,15 @@ if os.path.exists(os.path.join(profiles,"_common.yml")):
       else:
          raise Exception('unable to determine default profile.');
    
-print(".  reading " + bprofile_yml);
-with open(os.path.join(profiles,bprofile_yml),'r') as file:
-   stream = yaml.safe_load(file.read());
+   print(".  reading " + bprofile_yml);
+   with open(os.path.join(profiles,bprofile_yml),'r') as file:
+      stream = common | yaml.safe_load(file.read());
 
+else:
+   print(".  reading " + bprofile_yml);
+   with open(os.path.join(profiles,bprofile_yml),'r') as file:
+      stream = yaml.safe_load(file.read());
+      
 has_env = False;
 has_sample_env = False;
 for file in os.listdir(templates):
