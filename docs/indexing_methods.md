@@ -75,11 +75,13 @@ Parameters:
 - Area Event Threshold Percentage
 - Area Catchment Threshold Percentage
 
-This method allocates catchments to polygon or multi-polygon using spatial intersection against a catchment universe limited to catchments having a partner flowline where that
-flowline has an NHD FCode of 55800 (Artificial Path).   Providing an area event threshold value will eliminate 
-catchments whereby the event overlap area divided by the size of the event is less than the threshold.  The area event threshold is provided as a whole
-number between 0 and 100.  Providing an area catchment threshold value will eliminate catchments whereby the overlap area divided by the size of the catchment is less than the 
-threshold.  The area catchment threshold is provided as a whole number.
+This method allocates catchments to polygon or multi-polygons intersecting the catchment universe limited to catchments:
 
-Caveats:
-- By definition this method will only select catchments having a partner flowline and that flowline being an artificial path.  It will never select ocean catchments or sinks.
+- having a partner flowline where that flowline has an NHD FCode of 55800 (Artificial Path).
+or
+- meeting the event overlap threshold
+or
+- meeting the catchment overlap threshold
+
+
+
