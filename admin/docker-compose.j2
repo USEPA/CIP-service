@@ -91,7 +91,7 @@ services:
 {%- if join_existing_network == true %}
          - {{ existing_network_name }}
 {%- else %}
-         - cip
+         - cipsrv-net
 {%- endif %}
 {%-   if 'add_host_gateway' in components.cip_jp and components.cip_jp.add_host_gateway == true %}
       extra_hosts:
@@ -110,7 +110,7 @@ networks:
    {{ existing_network_name }}:
       external: true
 {%- else %}
-   cip:
+   cipsrv-net:
       driver: bridge
 {%- endif %}
 {%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}
