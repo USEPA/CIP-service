@@ -1,3 +1,5 @@
+#
+default: desktop
 # Canned PostgreSQL database configurations
 postgresql_config:
    server:
@@ -18,6 +20,24 @@ postgresql_config:
       max_par_work_per_gat: 4
       max_par_workers:      16
       max_par_maint_work:   4
+   dev32gb:
+      shm_size:             32gb
+      max_connections:      30
+      shared_buffers:       8GB
+      effective_cache_size: 24GB
+      maintenance_work_mem: 1GB
+      checkpoint_comp_targ: 0.9
+      wal_buffers:          16MB
+      def_statistics_targ:  100
+      random_page_cost:     1.1
+      effective_io_conc:    200
+      work_mem:             104856kB
+      min_wal_size:         1GB
+      max_wal_size:         4GB
+      max_worker_processes: 4
+      max_par_work_per_gat: 2
+      max_par_workers:      4
+      max_par_maint_work:   2
    desktop:
       shm_size:             16gb
       max_connections:      30

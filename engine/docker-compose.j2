@@ -139,7 +139,7 @@ services:
            published: {{ components.cip_pg.external_port }}
 {%-    endif %}
       networks:
-         - cip
+         - cipsrv-net
       volumes:
          - type: volume
            source: pgdata
@@ -184,7 +184,7 @@ services:
            published: {{ components.cip_pr.external_port }}
 {%-    endif %}
       networks:
-         - cip
+         - cipsrv-net
 {%-    if 'add_host_gateway' in components.cip_pr and components.cip_pr.add_host_gateway == true %}
       extra_hosts:
          - host.docker.internal:host-gateway
@@ -192,8 +192,9 @@ services:
 
 {%- endif %}
 networks:
-   cip:
+   cipsrv-net:
       driver: bridge
+      name: cipsrv-net
 {%- if 'type' in components.cip_pg and components.cip_pg.type == "container" %}
 volumes:
    tblspdata:

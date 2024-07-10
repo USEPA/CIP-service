@@ -72,7 +72,7 @@ services:
 {%-   else %}
          POSTGRESQL_CIP_PASS:     {{ cip_pg_cip_pass }}
 {%-   endif %}
-{%-   if cip_pg_cip_pass == "env.POSTGRESQL_UPL_PASS"  %}
+{%-   if cip_pg_upl_pass == "env.POSTGRESQL_UPL_PASS"  %}
          POSTGRESQL_UPL_PASS:     $POSTGRESQL_UPL_PASS
 {%-   else %}
          POSTGRESQL_UPL_PASS:     {{ cip_pg_upl_pass }}
@@ -91,7 +91,7 @@ services:
 {%- if join_existing_network == true %}
          - {{ existing_network_name }}
 {%- else %}
-         - cip
+         - cipsrv-net
 {%- endif %}
 {%-   if 'add_host_gateway' in components.cip_jp and components.cip_jp.add_host_gateway == true %}
       extra_hosts:
@@ -110,7 +110,7 @@ networks:
    {{ existing_network_name }}:
       external: true
 {%- else %}
-   cip:
+   cipsrv-net:
       driver: bridge
 {%- endif %}
 {%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}

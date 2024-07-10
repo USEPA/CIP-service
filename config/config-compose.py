@@ -1,4 +1,4 @@
-import os,sys,jinja2,yaml,argparse,datetime;
+import os,sys,jinja2,yaml,argparse,datetime,shutil;
 
 script_root = os.path.realpath(os.path.dirname(__file__));
 parser = argparse.ArgumentParser(description='configuration script for cipsrv');
@@ -18,9 +18,14 @@ if bundle is None:
    
 if bprofile is None:
    raise Exception("bprofile parameter is empty");
+
 else:
-   if bprofile[-4:] != '.yml':
-      bprofile = bprofile + '.yml';
+   if bprofile[-4:] == '.yml':
+      bprofile     = bprofile[:-4];
+      bprofile_yml = bprofile;
+   
+   else:
+      bprofile_yml = bprofile + '.yml';
    
 if templates is None:
    templates = os.path.join('..',bundle);
@@ -41,15 +46,25 @@ if os.path.exists(os.path.join(profiles,"_common.yml")):
    with open(os.path.join(profiles,"_common.yml"),'r') as file:
       common = yaml.safe_load(file.read());
 
-   print(".  reading " + bprofile);
-   with open(os.path.join(profiles,bprofile),'r') as file:
+   if bprofile == 'default':
+      if 'default' in common:
+         bprofile_yml = common['default'] + '.yml';
+         print('.  using ' + bprofile_yml + ' as default profile.');
+         
+      else:
+         raise Exception('unable to determine default profile.');
+   
+   print(".  reading " + bprofile_yml);
+   with open(os.path.join(profiles,bprofile_yml),'r') as file:
       stream = common | yaml.safe_load(file.read());
 
 else:
-   print(".  reading " + bprofile);
-   with open(os.path.join(profiles,bprofile),'r') as file:
+   print(".  reading " + bprofile_yml);
+   with open(os.path.join(profiles,bprofile_yml),'r') as file:
       stream = yaml.safe_load(file.read());
       
+has_env = False;
+has_sample_env = False;
 for file in os.listdir(templates):
 
    if file.endswith('.j2'):
@@ -70,4 +85,21 @@ for file in os.listdir(templates):
          with open(os.path.join(outdir,output),"w") as file:
             file.write(outrender);
 
+   if str(file) == '.env':
+      has_env = True;
+      
+   if str(file) == 'env.example':
+      has_sample_env = True;
+
+if has_env is True:
+   print(".  ignoring existing .env file, please make sure existing secrets are appropriate.");
+
+elif has_env is False and has_sample_env is True:
+   print(".  creating new .env file, secrets will need to be populated.");
+   
+   shutil.copyfile(
+       os.path.join(outdir,'env.example')
+      ,os.path.join(outdir,'.env')
+   );
+   
 print(".  configuration complete.");
