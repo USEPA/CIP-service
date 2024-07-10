@@ -72,7 +72,7 @@ services:
 {%-   else %}
          POSTGRESQL_CIP_PASS:     {{ cip_pg_cip_pass }}
 {%-   endif %}
-{%-   if cip_pg_cip_pass == "env.POSTGRESQL_UPL_PASS"  %}
+{%-   if cip_pg_upl_pass == "env.POSTGRESQL_UPL_PASS"  %}
          POSTGRESQL_UPL_PASS:     $POSTGRESQL_UPL_PASS
 {%-   else %}
          POSTGRESQL_UPL_PASS:     {{ cip_pg_upl_pass }}
