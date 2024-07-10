@@ -11,6 +11,7 @@ cip_pg_port:     5432
 cip_pg_db:       cipsrv
 cip_pg_is_rds:   false
 cip_pg_cip_pass: env.POSTGRESQL_CIP_PASS
+cip_pg_upl_pass: env.POSTGRESQL_UPL_PASS
 join_existing_network: true
 existing_network_name: engine_cip
 #
