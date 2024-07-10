@@ -74,6 +74,7 @@ DECLARE
    boo_return_indexing_summary        BOOLEAN;
    ary_state_filters                  VARCHAR[];
    boo_filter_by_tribal               BOOLEAN;
+   boo_filter_by_notribal             BOOLEAN;
    
 BEGIN
 
@@ -105,9 +106,10 @@ BEGIN
    rec := cipsrv_engine.parse_catchment_filter(
       p_catchment_filter := p_catchment_filter
    );
-   boo_filter_by_state  := rec.out_filter_by_state;
-   ary_state_filters    := rec.out_state_filters;
-   boo_filter_by_tribal := rec.out_filter_by_tribal;
+   boo_filter_by_state    := rec.out_filter_by_state;
+   ary_state_filters      := rec.out_state_filters;
+   boo_filter_by_tribal   := rec.out_filter_by_tribal;
+   boo_filter_by_notribal := rec.out_filter_by_notribal;
    
    IF p_nhdplus_version IS NULL
    THEN
@@ -587,8 +589,9 @@ BEGIN
       cipsrv_nhdplus_m.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal OR a.istribal = 'Y');
+      AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+      AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
+      AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
    ELSIF p_nhdplus_version = 'nhdplus_h'
    THEN
@@ -615,8 +618,9 @@ BEGIN
       cipsrv_nhdplus_h.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal OR a.istribal = 'Y');
+      AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+      AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
+      AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
    ELSE
       RAISE EXCEPTION 'err';

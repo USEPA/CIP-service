@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.parse_catchment_filter(
    ,OUT out_filter_by_state            BOOLEAN
    ,OUT out_state_filters              VARCHAR[]
    ,OUT out_filter_by_tribal           BOOLEAN
+   ,OUT out_filter_by_notribal         BOOLEAN
    ,OUT out_return_code                INTEGER
    ,OUT out_status_message             VARCHAR
 )
@@ -17,9 +18,10 @@ DECLARE
    
 BEGIN
 
-   out_return_code      := 0;
-   out_filter_by_state  := FALSE;
-   out_filter_by_tribal := FALSE;
+   out_return_code        := 0;
+   out_filter_by_state    := FALSE;
+   out_filter_by_tribal   := FALSE;
+   out_filter_by_notribal := FALSE;
    
    ----------------------------------------------------------------------------
    -- Step 10
@@ -40,7 +42,13 @@ BEGIN
       LOOP
          IF UPPER(p_catchment_filter[i]) IN ('ALLTRIBES','TRIBAL')
          THEN
-            out_filter_by_tribal := TRUE;
+            out_filter_by_tribal   := TRUE;
+            out_filter_by_notribal := FALSE;
+            
+         ELSIF UPPER(p_catchment_filter[i]) IN ('NOTRIBES','NOTRIBAL')
+         THEN
+            out_filter_by_tribal   := FALSE;
+            out_filter_by_notribal := TRUE;
             
          ELSIF UPPER(p_catchment_filter[i]) = ANY(ary_states)
          THEN

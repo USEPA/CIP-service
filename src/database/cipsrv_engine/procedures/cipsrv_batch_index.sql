@@ -62,6 +62,7 @@ DECLARE
    boo_filter_by_state                BOOLEAN;
    ary_state_filters                  VARCHAR[];
    boo_filter_by_tribal               BOOLEAN;
+   boo_filter_by_notribal             BOOLEAN;
    int_count                          INTEGER;
    boo_isring                         BOOLEAN;
    num_point_indexing_return_code     INTEGER;
@@ -679,9 +680,10 @@ BEGIN
    rec := cipsrv_engine.parse_catchment_filter(
       p_catchment_filter := ary_catchment_filter
    );
-   boo_filter_by_state  := rec.out_filter_by_state;
-   ary_state_filters    := rec.out_state_filters;
-   boo_filter_by_tribal := rec.out_filter_by_tribal;
+   boo_filter_by_state    := rec.out_filter_by_state;
+   ary_state_filters      := rec.out_state_filters;
+   boo_filter_by_tribal   := rec.out_filter_by_tribal;
+   boo_filter_by_notribal := rec.out_filter_by_notribal;
    
    ary_geometry_clip := string_to_array(str_geometry_clip,',');
    
@@ -1451,7 +1453,8 @@ BEGIN
               || 'WHERE '
               || 'EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid) '
               || 'AND (NOT $10 OR a.catchmentstatecode = ANY($11) ) '
-              || 'AND (NOT $12 OR a.istribal = ''Y'')';
+              || 'AND (NOT $12 OR a.istribal = ''Y'')'
+              || 'AND (NOT $13 OR a.istribal = ''N'')';
               
       EXECUTE str_sql 
       USING 
@@ -1466,7 +1469,8 @@ BEGIN
       ,str_catchment_resolution
       ,boo_filter_by_state
       ,ary_state_filters
-      ,boo_filter_by_tribal;
+      ,boo_filter_by_tribal
+      ,boo_filter_by_notribal;
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
 

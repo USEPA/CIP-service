@@ -552,7 +552,8 @@
                      var tribes = obj["tribes"];
                      
                      var catfilter = document.getElementById("dzCatchmentFilters");
-                     var load = '<option value="TRIBES">Tribes</option>';
+                     var load = '<option value="TRIBAL">Tribal Only</option>';
+                     load    += '<option value="NOTRIBAL">No Tribal</option>';
                      for (let i=0; i < states.length; i++) {
                         load += '<option value="' + states[i].stusps + '">' + states[i].name + '</option>';
                      }
