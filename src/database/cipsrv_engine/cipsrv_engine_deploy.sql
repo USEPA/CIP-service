@@ -388,6 +388,104 @@ ALTER FUNCTION cipsrv_engine.create_cip_temp_tables() OWNER TO cipsrv;
 GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_temp_tables() TO PUBLIC;
 
 --******************************--
+----- functions/create_cip_batch_temp_tables.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.create_cip_batch_temp_tables()
+RETURNS INT4
+VOLATILE
+AS $BODY$
+DECLARE
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create tmp_cip temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_cip')
+   THEN
+      TRUNCATE TABLE tmp_cip;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_cip(
+          permid_joinkey       UUID
+         ,nhdplusid            BIGINT
+      );
+
+      CREATE UNIQUE INDEX tmp_cip_pk 
+      ON tmp_cip(
+          permid_joinkey
+         ,nhdplusid
+      );
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Create tmp_permid temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_permid')
+   THEN
+      TRUNCATE TABLE tmp_permid;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_permid(
+          permid_joinkey       UUID
+         ,cip_method           VARCHAR(255)
+         ,cip_parms            VARCHAR(255) 
+      );
+
+      CREATE UNIQUE INDEX tmp_permid_pk 
+      ON tmp_permid(
+          permid_joinkey
+      );
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   RETURN 0;
+   
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.create_cip_batch_temp_tables() OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_batch_temp_tables() TO PUBLIC;
+
+--******************************--
+----- functions/cipsrv_version.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_version';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.cipsrv_version()
+RETURNS VARCHAR
+STABLE
+AS $BODY$
+DECLARE
+BEGIN
+
+   RETURN '1.0';
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.cipsrv_version()
+OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_version()
+TO PUBLIC;
+
+--******************************--
 ----- functions/featurecat.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.featurecat(
@@ -2483,6 +2581,7 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.parse_catchment_filter(
    ,OUT out_filter_by_state            BOOLEAN
    ,OUT out_state_filters              VARCHAR[]
    ,OUT out_filter_by_tribal           BOOLEAN
+   ,OUT out_filter_by_notribal         BOOLEAN
    ,OUT out_return_code                INTEGER
    ,OUT out_status_message             VARCHAR
 )
@@ -2497,9 +2596,10 @@ DECLARE
    
 BEGIN
 
-   out_return_code      := 0;
-   out_filter_by_state  := FALSE;
-   out_filter_by_tribal := FALSE;
+   out_return_code        := 0;
+   out_filter_by_state    := FALSE;
+   out_filter_by_tribal   := FALSE;
+   out_filter_by_notribal := FALSE;
    
    ----------------------------------------------------------------------------
    -- Step 10
@@ -2520,7 +2620,13 @@ BEGIN
       LOOP
          IF UPPER(p_catchment_filter[i]) IN ('ALLTRIBES','TRIBAL')
          THEN
-            out_filter_by_tribal := TRUE;
+            out_filter_by_tribal   := TRUE;
+            out_filter_by_notribal := FALSE;
+            
+         ELSIF UPPER(p_catchment_filter[i]) IN ('NOTRIBES','NOTRIBAL')
+         THEN
+            out_filter_by_tribal   := FALSE;
+            out_filter_by_notribal := TRUE;
             
          ELSIF UPPER(p_catchment_filter[i]) = ANY(ary_states)
          THEN
@@ -2626,6 +2732,7 @@ DECLARE
    boo_return_indexing_summary        BOOLEAN;
    ary_state_filters                  VARCHAR[];
    boo_filter_by_tribal               BOOLEAN;
+   boo_filter_by_notribal             BOOLEAN;
    
 BEGIN
 
@@ -2657,9 +2764,10 @@ BEGIN
    rec := cipsrv_engine.parse_catchment_filter(
       p_catchment_filter := p_catchment_filter
    );
-   boo_filter_by_state  := rec.out_filter_by_state;
-   ary_state_filters    := rec.out_state_filters;
-   boo_filter_by_tribal := rec.out_filter_by_tribal;
+   boo_filter_by_state    := rec.out_filter_by_state;
+   ary_state_filters      := rec.out_state_filters;
+   boo_filter_by_tribal   := rec.out_filter_by_tribal;
+   boo_filter_by_notribal := rec.out_filter_by_notribal;
    
    IF p_nhdplus_version IS NULL
    THEN
@@ -3139,8 +3247,9 @@ BEGIN
       cipsrv_nhdplus_m.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal OR a.istribal = 'Y');
+      AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+      AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
+      AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
    ELSIF p_nhdplus_version = 'nhdplus_h'
    THEN
@@ -3167,8 +3276,9 @@ BEGIN
       cipsrv_nhdplus_h.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (NOT boo_filter_by_state  OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal OR a.istribal = 'Y');
+      AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+      AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
+      AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
    ELSE
       RAISE EXCEPTION 'err';
@@ -3355,6 +3465,7 @@ DECLARE
    boo_filter_by_state                BOOLEAN;
    ary_state_filters                  VARCHAR[];
    boo_filter_by_tribal               BOOLEAN;
+   boo_filter_by_notribal             BOOLEAN;
    int_count                          INTEGER;
    boo_isring                         BOOLEAN;
    num_point_indexing_return_code     INTEGER;
@@ -3373,7 +3484,7 @@ DECLARE
    
 BEGIN
 
-   out_return_code := cipsrv_engine.create_cip_temp_tables();
+   out_return_code := cipsrv_engine.create_cip_batch_temp_tables();
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters
@@ -3839,6 +3950,10 @@ BEGIN
            || '   ,source_joinkey        VARCHAR(40) NOT NULL'
            || '   ,permid_joinkey        VARCHAR(40) NOT NULL '
            || '   ,cat_joinkey           VARCHAR(40) NOT NULL'
+           || '   ,cip_method            VARCHAR(255) '
+           || '   ,cip_parms             VARCHAR(255) '
+           || '   ,cip_date              DATE '
+           || '   ,cip_version           VARCHAR(255) '
            || '   ,globalid              VARCHAR(40) NOT NULL '
            || ') ';
            
@@ -3968,9 +4083,10 @@ BEGIN
    rec := cipsrv_engine.parse_catchment_filter(
       p_catchment_filter := ary_catchment_filter
    );
-   boo_filter_by_state  := rec.out_filter_by_state;
-   ary_state_filters    := rec.out_state_filters;
-   boo_filter_by_tribal := rec.out_filter_by_tribal;
+   boo_filter_by_state    := rec.out_filter_by_state;
+   ary_state_filters      := rec.out_state_filters;
+   boo_filter_by_tribal   := rec.out_filter_by_tribal;
+   boo_filter_by_notribal := rec.out_filter_by_notribal;
    
    ary_geometry_clip := string_to_array(str_geometry_clip,',');
    
@@ -4646,6 +4762,14 @@ BEGIN
                
             END IF;
             
+            INSERT INTO tmp_permid(
+                permid_joinkey
+               ,cip_method
+               ,cip_parms 
+            ) VALUES (
+                
+            );
+            
          END LOOP;
       
       END IF;
@@ -4732,7 +4856,8 @@ BEGIN
               || 'WHERE '
               || 'EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid) '
               || 'AND (NOT $10 OR a.catchmentstatecode = ANY($11) ) '
-              || 'AND (NOT $12 OR a.istribal = ''Y'')';
+              || 'AND (NOT $12 OR a.istribal = ''Y'')'
+              || 'AND (NOT $13 OR a.istribal = ''N'')';
               
       EXECUTE str_sql 
       USING 
@@ -4747,7 +4872,8 @@ BEGIN
       ,str_catchment_resolution
       ,boo_filter_by_state
       ,ary_state_filters
-      ,boo_filter_by_tribal;
+      ,boo_filter_by_tribal
+      ,boo_filter_by_notribal;
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
 
@@ -4773,6 +4899,10 @@ BEGIN
               || '   ,source_joinkey '
               || '   ,permid_joinkey '
               || '   ,cat_joinkey '
+              || '   ,cip_method '
+              || '   ,cip_parms '
+              || '   ,cip_date '
+              || '   ,cip_version '
               || '   ,globalid '
               || ') '
               || 'SELECT '
@@ -4780,6 +4910,10 @@ BEGIN
               || ',$1 '
               || ',''{'' || a.permid_joinkey::VARCHAR || ''}'' '
               || ',b.cat_joinkey '
+              || ',c.cip_method '
+              || ',c.cip_parms '
+              || ',$2 '
+              || ',$3 '
               || ',''{'' || uuid_generate_v1() || ''}'' '
               || 'FROM '
               || 'tmp_cip a '
@@ -4787,10 +4921,17 @@ BEGIN
               || 'cipsrv_upload.' || str_dataset_prefix || '_cip b '
               || 'ON '
               || 'b.nhdplusid = a.nhdplusid '
+              || 'JOIN '
+              || 'tmp_permid c '
+              || 'ON '
+              || 'a.permid_joinkey = c.permid_joinkey '
               || 'ON CONFLICT DO NOTHING ';
               
       EXECUTE str_sql 
-      USING rec.source_joinkey;
+      USING
+       rec.source_joinkey
+      ,CURRENT_TIMESTAMP()
+      ,cipsrv_engine.cipsrv_version();
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
       
@@ -4800,6 +4941,7 @@ BEGIN
       
       --************************************************************--
       EXECUTE 'TRUNCATE TABLE tmp_cip';
+      EXECUTE 'TRUNCATE TABLE tmp_permid';
       
       --************************************************************--
       str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_sfid a '

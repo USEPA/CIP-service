@@ -28,6 +28,8 @@
             ,"functions/field_exists.sql"
             ,"functions/index_exists.sql"
             ,"functions/create_cip_temp_tables.sql"
+            ,"functions/create_cip_batch_temp_tables.sql"
+            ,"functions/cipsrv_version.sql"
             ,"functions/featurecat.sql"
             ,"functions/measure_lengthkm.sql"
             ,"functions/measure_areasqkm.sql"

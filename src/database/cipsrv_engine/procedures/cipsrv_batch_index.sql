@@ -1364,7 +1364,9 @@ BEGIN
                ,cip_method
                ,cip_parms 
             ) VALUES (
-                
+                rec2.permid_joinkey::UUID
+               ,str_area_indexing_method
+               ,num_areacat_threshold::VARCHAR || ',' || num_areaevt_threshold::VARCHAR
             );
             
          END LOOP;
