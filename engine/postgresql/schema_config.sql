@@ -19,8 +19,8 @@ GRANT  USAGE ON SCHEMA cipsrv_support   TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_h TO cipsrv_upload;
 
-CREATE FUNCTION cipsrv_pgrest.test() RETURNS JSON AS $$ BEGIN RETURN json_object_agg('works',TRUE); END; $$ LANGUAGE 'plpgsql';
-ALTER  FUNCTION cipsrv_pgrest.test() OWNER TO cipsrv_pgrest;
+CREATE FUNCTION cipsrv_pgrest.healthcheck() RETURNS JSON AS $$ BEGIN RETURN json_object_agg('works',TRUE); END; $$ LANGUAGE 'plpgsql';
+ALTER  FUNCTION cipsrv_pgrest.healthcheck() OWNER TO cipsrv_pgrest;
 
 CREATE TABLE cipsrv_upload.batch_control(
     dataset_prefix     VARCHAR(255)
