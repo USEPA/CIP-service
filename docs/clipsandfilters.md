@@ -15,4 +15,9 @@ In general the recommendation would be:
 
 ## Filtering
 
-The CIP-service engine allows catchment indexing results to be filtered down to catchments assigned to one or more state-equivalent entities and/or a __tribal__ condition.  Unlike Clipping which can trim input features to specific tribal geography, filtering only allows the results to be limited to a broader definition of tribal-associated catchment.  
+The CIP-service engine allows catchment indexing results to be filtered down to catchments assigned to one or more state-equivalent entities and/or a __tribal__ condition.  Unlike Clipping which can trim input features to specific tribal geography, filtering only allows the results to be limited to a broader definition of tribal-associated catchment. 
+
+- TRIBAL filter keyword will limit catchment results to only those with tribal designation.
+- NOTRIBAL filter keyword will limit catchment results to only those without tribal designation.
+
+example: to filter such that the state of Wisconsin returns results limited to state jurisdiction minus tribal associated catchments, use __NOTRIBAL,WI__.  Order is not important but contradictory keywords will honor the last in the list.
