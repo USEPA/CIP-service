@@ -42,6 +42,7 @@ services:
          context: .
          dockerfile: Dockerfile.jp
          args:
+      image: cip-service-admin-cip_jp
 {%-   set ghrep = components.cip_jp.github_repo %}
 {%-   set ghkey = github_repo[components.cip_jp.github_repo].add_deploy_key %}
 {%-   if 'github_repo' in components.cip_jp and components.cip_jp.github_repo == true %}
