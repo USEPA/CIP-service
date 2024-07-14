@@ -2576,6 +2576,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.determine_grid_srid(
 --******************************--
 ----- functions/parse_catchment_filter.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.parse_catchment_filter';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.parse_catchment_filter(
     IN  p_catchment_filter             VARCHAR[]
    ,OUT out_filter_by_state            BOOLEAN
@@ -4767,7 +4776,9 @@ BEGIN
                ,cip_method
                ,cip_parms 
             ) VALUES (
-                
+                rec2.permid_joinkey::UUID
+               ,str_area_indexing_method
+               ,num_areacat_threshold::VARCHAR || ',' || num_areaevt_threshold::VARCHAR
             );
             
          END LOOP;
