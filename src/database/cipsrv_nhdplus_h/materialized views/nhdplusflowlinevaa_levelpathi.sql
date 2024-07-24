@@ -48,4 +48,4 @@ ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(tonode);
 
 ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi;
 
---VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_nocat;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi;
