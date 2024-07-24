@@ -45,6 +45,7 @@ services:
 {%-      else %}
             ARG_POSTGREST_PORT: {{ cip_pr_port }}
 {%-      endif %}
+      image: cip-service-admin-cip_ng
       hostname: cip_ng
       container_name: cip-service-demo-cip_ng
 {%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}

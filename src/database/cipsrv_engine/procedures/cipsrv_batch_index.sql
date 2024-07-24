@@ -1529,7 +1529,7 @@ BEGIN
       EXECUTE str_sql 
       USING
        rec.source_joinkey
-      ,CURRENT_TIMESTAMP()
+      ,CURRENT_TIMESTAMP
       ,cipsrv_engine.cipsrv_version();
 
       GET DIAGNOSTICS int_count = ROW_COUNT;

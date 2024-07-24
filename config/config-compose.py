@@ -95,7 +95,7 @@ if has_env is True:
    print(".  ignoring existing .env file, please make sure existing secrets are appropriate.");
 
 elif has_env is False and has_sample_env is True:
-   print(".  creating new .env file, secrets will need to be populated.");
+   print(".  creating new .env file, secrets defaults should be reviewed and strengthened per your requirements.");
    
    shutil.copyfile(
        os.path.join(outdir,'env.example')
