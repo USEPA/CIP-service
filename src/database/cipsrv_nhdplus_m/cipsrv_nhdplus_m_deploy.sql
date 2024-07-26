@@ -1971,16 +1971,18 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
     IN  p_geometry                GEOMETRY
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                 RECORD;
-   str_known_region    VARCHAR;
-   int_srid            INTEGER;
-   geom_input          GEOMETRY;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -2004,15 +2006,18 @@ BEGIN
 
    IF str_known_region = '5070'
    THEN
-      geom_input := ST_Transform(p_geometry,5070);
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
 
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )
       SELECT
        p_permid_joinkey
       ,a.nhdplusid
+      ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_5070 a
       WHERE
@@ -2024,15 +2029,18 @@ BEGIN
 
    ELSIF str_known_region = '3338'
    THEN
-      geom_input := ST_Transform(p_geometry,3338);
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
 
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )
       SELECT
        p_permid_joinkey
       ,a.nhdplusid
+      ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_3338 a
       WHERE
@@ -2044,15 +2052,18 @@ BEGIN
 
    ELSIF str_known_region = '26904'
    THEN
-      geom_input := ST_Transform(p_geometry,26904);
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
 
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )
       SELECT
        p_permid_joinkey
       ,a.nhdplusid
+      ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_26904 a
       WHERE
@@ -2064,15 +2075,18 @@ BEGIN
 
    ELSIF str_known_region = '32161'
    THEN
-      geom_input := ST_Transform(p_geometry,32161);
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
 
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )
       SELECT
        p_permid_joinkey
       ,a.nhdplusid
+      ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_32161 a
       WHERE
@@ -2084,15 +2098,18 @@ BEGIN
 
    ELSIF str_known_region = '32655'
    THEN
-      geom_input := ST_Transform(p_geometry,32655);
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
 
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )
       SELECT
        p_permid_joinkey
       ,a.nhdplusid
+      ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_32655 a
       WHERE
@@ -2104,15 +2121,18 @@ BEGIN
 
    ELSIF str_known_region = '32702'
    THEN
-      geom_input := ST_Transform(p_geometry,32702);
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
 
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )
       SELECT
        p_permid_joinkey
       ,a.nhdplusid
+      ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_32702 a
       WHERE
@@ -2138,12 +2158,14 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_point_simple(
     GEOMETRY
    ,VARCHAR
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
     GEOMETRY
    ,VARCHAR
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--
@@ -2164,6 +2186,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -2177,6 +2200,7 @@ DECLARE
    num_line_threshold     NUMERIC;
    int_count              INTEGER;
    num_geometry_lengthkm  NUMERIC;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -2221,15 +2245,18 @@ BEGIN
 
    IF str_known_region = '5070'
    THEN
-      geom_input := ST_Transform(p_geometry,5070);
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -2264,7 +2291,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,2
                 ) AS geom_overlap
@@ -2285,15 +2312,18 @@ BEGIN
 
    ELSIF str_known_region = '3338'
    THEN
-      geom_input := ST_Transform(p_geometry,3338);
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -2328,7 +2358,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,2
                 ) AS geom_overlap
@@ -2349,15 +2379,18 @@ BEGIN
    
    ELSIF str_known_region = '26904'
    THEN
-      geom_input := ST_Transform(p_geometry,26904);
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -2392,7 +2425,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,2
                 ) AS geom_overlap
@@ -2413,15 +2446,18 @@ BEGIN
       
    ELSIF str_known_region = '32161'
    THEN
-      geom_input := ST_Transform(p_geometry,32161);
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -2456,7 +2492,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,2
                 ) AS geom_overlap
@@ -2477,15 +2513,18 @@ BEGIN
       
    ELSIF str_known_region = '32655'
    THEN
-      geom_input := ST_Transform(p_geometry,32655);
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -2520,7 +2559,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,2
                 ) AS geom_overlap
@@ -2541,15 +2580,18 @@ BEGIN
       
    ELSIF str_known_region = '32702'
    THEN
-      geom_input := ST_Transform(p_geometry,32702);
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -2584,7 +2626,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,2
                 ) AS geom_overlap
@@ -2623,6 +2665,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_line_simple(
    ,VARCHAR
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_simple(
@@ -2631,6 +2674,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_simple(
    ,VARCHAR
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--
@@ -2651,6 +2695,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
    ,IN  p_known_region            VARCHAR
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -2679,6 +2724,7 @@ DECLARE
    str_debug              VARCHAR;
    int_geom_count         INTEGER;   
    num_geometry_lengthkm  NUMERIC;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -2747,7 +2793,8 @@ BEGIN
    ----------------------------------------------------------------------------      
       IF str_known_region = '5070'
       THEN
-         geom_input := ST_Transform(geom_part,5070);
+         geom_input      := ST_Transform(geom_part,5070);
+         permid_geometry := ST_Transform(p_permid_geometry,5070);
          
          INSERT INTO tmp_line(
              nhdplusid
@@ -2829,7 +2876,7 @@ BEGIN
                   ,ST_CollectionExtract(
                      ST_Intersection(
                          aaaa.shape
-                        ,geom_input
+                        ,permid_geometry
                       )
                      ,2
                    ) AS geom_overlap
@@ -2857,7 +2904,8 @@ BEGIN
          
       ELSIF str_known_region = '3338'
       THEN
-         geom_input := ST_Transform(geom_part,3338);
+         geom_input      := ST_Transform(geom_part,3338);
+         permid_geometry := ST_Transform(p_permid_geometry,3338);
          
          INSERT INTO tmp_line(
              nhdplusid
@@ -2939,7 +2987,7 @@ BEGIN
                   ,ST_CollectionExtract(
                      ST_Intersection(
                          aaaa.shape
-                        ,geom_input
+                        ,permid_geometry
                       )
                      ,2
                    ) AS geom_overlap
@@ -2967,7 +3015,8 @@ BEGIN
       
       ELSIF str_known_region = '26904'
       THEN
-         geom_input := ST_Transform(geom_part,26904);
+         geom_input      := ST_Transform(geom_part,26904);
+         permid_geometry := ST_Transform(p_permid_geometry,26904);
          
          INSERT INTO tmp_line(
              nhdplusid
@@ -3049,7 +3098,7 @@ BEGIN
                   ,ST_CollectionExtract(
                      ST_Intersection(
                          aaaa.shape
-                        ,geom_input
+                        ,permid_geometry
                       )
                      ,2
                    ) AS geom_overlap
@@ -3077,7 +3126,8 @@ BEGIN
          
       ELSIF str_known_region = '32161'
       THEN
-         geom_input := ST_Transform(geom_part,32161);
+         geom_input      := ST_Transform(geom_part,32161);
+         permid_geometry := ST_Transform(p_permid_geometry,32161);
          
          INSERT INTO tmp_line(
              nhdplusid
@@ -3159,7 +3209,7 @@ BEGIN
                   ,ST_CollectionExtract(
                      ST_Intersection(
                          aaaa.shape
-                        ,geom_input
+                        ,permid_geometry
                       )
                      ,2
                    ) AS geom_overlap
@@ -3187,7 +3237,8 @@ BEGIN
          
       ELSIF str_known_region = '32655'
       THEN
-         geom_input := ST_Transform(geom_part,32655);
+         geom_input      := ST_Transform(geom_part,32655);
+         permid_geometry := ST_Transform(p_permid_geometry,32655);
          
          INSERT INTO tmp_line(
              nhdplusid
@@ -3269,7 +3320,7 @@ BEGIN
                   ,ST_CollectionExtract(
                      ST_Intersection(
                          aaaa.shape
-                        ,geom_input
+                        ,permid_geometry
                       )
                      ,2
                    ) AS geom_overlap
@@ -3297,7 +3348,8 @@ BEGIN
          
       ELSIF str_known_region = '32702'
       THEN
-         geom_input := ST_Transform(geom_part,32702);
+         geom_input      := ST_Transform(geom_part,32702);
+         permid_geometry := ST_Transform(p_permid_geometry,32702);
          
          INSERT INTO tmp_line(
              nhdplusid
@@ -3379,7 +3431,7 @@ BEGIN
                   ,ST_CollectionExtract(
                      ST_Intersection(
                          aaaa.shape
-                        ,geom_input
+                        ,permid_geometry
                       )
                      ,2
                    ) AS geom_overlap
@@ -3513,12 +3565,18 @@ BEGIN
          INSERT INTO tmp_cip(
              permid_joinkey
             ,nhdplusid
+            ,overlap_measure
          ) 
          SELECT
-          p_permid_joinkey         
+          p_permid_joinkey
          ,a.nhdplusid
+         ,COALESCE(b.overlapmeasure,0)
          FROM
          cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes a
+         LEFT JOIN
+         tmp_line b
+         ON
+         a.nhdplusid = b.nhdplusid
          WHERE
              a.levelpathi = num_main_levelpathi
          AND a.hydroseq >= num_min_hydroseq
@@ -3534,10 +3592,12 @@ BEGIN
             INSERT INTO tmp_cip(
                 permid_joinkey
                ,nhdplusid
+               ,overlap_measure
             ) 
             SELECT 
              p_permid_joinkey
             ,a.nhdplusid
+            ,a.overlapmeasure
             FROM
             tmp_line a
             WHERE
@@ -3632,12 +3692,18 @@ BEGIN
                      INSERT INTO tmp_cip(
                          permid_joinkey
                         ,nhdplusid
+                        ,overlap_measure
                      ) 
                      SELECT
                       p_permid_joinkey
                      ,a.nhdplusid
+                     ,COALESCE(b.overlapmeasure,0)
                      FROM
                      cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes a
+                     JOIN
+                     tmp_line b
+                     ON 
+                     a.nhdplusid = b.nhdplusid
                      WHERE
                          a.levelpathi = rec.levelpathi
                      AND a.hydroseq >= rec.min_hydroseq
@@ -3671,6 +3737,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
    ,VARCHAR
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
@@ -3679,6 +3746,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
    ,VARCHAR
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--
@@ -3700,19 +3768,21 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_simple(
    ,IN  p_cat_threshold_perc      NUMERIC
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                   RECORD;
-   str_known_region      VARCHAR;
-   int_srid              INTEGER;
-   geom_input            GEOMETRY;
-   num_cat_threshold     NUMERIC;
-   num_evt_threshold     NUMERIC;
-   num_geometry_areasqkm NUMERIC;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -3766,15 +3836,18 @@ BEGIN
       
    IF str_known_region = '5070'
    THEN
-      geom_input := ST_Transform(p_geometry,5070);
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -3805,7 +3878,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -3826,15 +3899,18 @@ BEGIN
    
    ELSIF str_known_region = '3338'
    THEN
-      geom_input := ST_Transform(p_geometry,3338);
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )  
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -3865,7 +3941,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -3886,15 +3962,18 @@ BEGIN
    
    ELSIF str_known_region = '26904'
    THEN
-      geom_input := ST_Transform(p_geometry,26904);
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -3925,7 +4004,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -3946,15 +4025,18 @@ BEGIN
       
    ELSIF str_known_region = '32161'
    THEN
-      geom_input := ST_Transform(p_geometry,32161);
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -3985,7 +4067,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4006,15 +4088,18 @@ BEGIN
       
    ELSIF str_known_region = '32655'
    THEN
-      geom_input := ST_Transform(p_geometry,32655);
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )  
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4045,7 +4130,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4066,15 +4151,18 @@ BEGIN
       
    ELSIF str_known_region = '32702'
    THEN
-      geom_input := ST_Transform(p_geometry,32702);
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       )  
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4105,7 +4193,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4143,6 +4231,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_area_simple(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_simple(
@@ -4152,6 +4241,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_simple(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--
@@ -4173,19 +4263,21 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_centroid(
    ,IN  p_cat_threshold_perc      NUMERIC
    ,IN  p_evt_threshold_perc      NUMERIC   
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                   RECORD;
-   str_known_region      VARCHAR;
-   int_srid              INTEGER;
-   geom_input            GEOMETRY;
-   num_cat_threshold     NUMERIC;
-   num_evt_threshold     NUMERIC;
-   num_geometry_areasqkm NUMERIC;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -4239,15 +4331,18 @@ BEGIN
       
    IF str_known_region = '5070'
    THEN
-      geom_input := ST_Transform(p_geometry,5070);
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
-      )
+         ,overlap_measure
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4272,7 +4367,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4295,15 +4390,18 @@ BEGIN
    
    ELSIF str_known_region = '3338'
    THEN
-      geom_input := ST_Transform(p_geometry,3338);
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
-      )
+         ,overlap_measure
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4328,7 +4426,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4351,15 +4449,18 @@ BEGIN
    
    ELSIF str_known_region = '26904'
    THEN
-      geom_input := ST_Transform(p_geometry,26904);
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
-      )
+         ,overlap_measure
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4384,7 +4485,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4407,15 +4508,18 @@ BEGIN
       
    ELSIF str_known_region = '32161'
    THEN
-      geom_input := ST_Transform(p_geometry,32161);
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
-      )
-      SELECT
+         ,overlap_measure
+      ) 
+      SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4440,7 +4544,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4463,15 +4567,18 @@ BEGIN
       
    ELSIF str_known_region = '32655'
    THEN
-      geom_input := ST_Transform(p_geometry,32655);
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
-      )
+         ,overlap_measure
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4496,7 +4603,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4519,15 +4626,18 @@ BEGIN
       
    ELSIF str_known_region = '32702'
    THEN
-      geom_input := ST_Transform(p_geometry,32702);
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4552,7 +4662,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4592,6 +4702,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_area_centroid(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_centroid(
@@ -4601,6 +4712,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_centroid(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--
@@ -4622,19 +4734,21 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
    ,IN  p_cat_threshold_perc      NUMERIC
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                   RECORD;
-   str_known_region      VARCHAR;
-   int_srid              INTEGER;
-   geom_input            GEOMETRY;
-   num_cat_threshold     NUMERIC;
-   num_evt_threshold     NUMERIC;
-   num_geometry_areasqkm NUMERIC;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -4688,15 +4802,18 @@ BEGIN
       
    IF str_known_region = '5070'
    THEN
-      geom_input := ST_Transform(p_geometry,5070);
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4724,7 +4841,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4748,15 +4865,18 @@ BEGIN
    
    ELSIF str_known_region = '3338'
    THEN
-      geom_input := ST_Transform(p_geometry,3338);
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4784,7 +4904,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4808,15 +4928,18 @@ BEGIN
    
    ELSIF str_known_region = '26904'
    THEN
-      geom_input := ST_Transform(p_geometry,26904);
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4844,7 +4967,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4868,15 +4991,18 @@ BEGIN
       
    ELSIF str_known_region = '32161'
    THEN
-      geom_input := ST_Transform(p_geometry,32161);
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4904,7 +5030,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4928,15 +5054,18 @@ BEGIN
       
    ELSIF str_known_region = '32655'
    THEN
-      geom_input := ST_Transform(p_geometry,32655);
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -4964,7 +5093,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -4988,15 +5117,18 @@ BEGIN
       
    ELSIF str_known_region = '32702'
    THEN
-      geom_input := ST_Transform(p_geometry,32702);
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -5024,7 +5156,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -5065,6 +5197,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_area_artpath(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_artpath(
@@ -5074,6 +5207,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_artpath(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--

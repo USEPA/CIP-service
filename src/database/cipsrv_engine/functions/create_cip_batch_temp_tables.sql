@@ -17,6 +17,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
          ,nhdplusid            BIGINT
+         ,overlap_measure      NUMERIC
       );
 
       CREATE UNIQUE INDEX tmp_cip_pk 
@@ -29,28 +30,31 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 20
-   -- Create tmp_permid temp table
+   -- Create tmp_src2cip temp table
    ----------------------------------------------------------------------------
-   IF cipsrv_engine.temp_table_exists('tmp_permid')
+   IF cipsrv_engine.temp_table_exists('tmp_src2cip')
    THEN
-      TRUNCATE TABLE tmp_permid;
+      TRUNCATE TABLE tmp_src2cip;
       
    ELSE
-      CREATE TEMPORARY TABLE tmp_permid(
+      CREATE TEMPORARY TABLE tmp_src2cip(
           permid_joinkey       UUID
+         ,nhdplusid            BIGINT
          ,cip_method           VARCHAR(255)
-         ,cip_parms            VARCHAR(255) 
+         ,cip_parms            VARCHAR(255)
+         ,overlap_measure      NUMERIC
       );
 
-      CREATE UNIQUE INDEX tmp_permid_pk 
-      ON tmp_permid(
+      CREATE UNIQUE INDEX tmp_src2cip_pk 
+      ON tmp_src2cip(
           permid_joinkey
+         ,nhdplusid
       );
 
    END IF;
 
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 30
    -- I guess that went okay
    ----------------------------------------------------------------------------
    RETURN 0;

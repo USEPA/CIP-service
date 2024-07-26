@@ -14,19 +14,21 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_artpath(
    ,IN  p_cat_threshold_perc      NUMERIC
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
 AS $BODY$
 DECLARE
-   rec                   RECORD;
-   str_known_region      VARCHAR;
-   int_srid              INTEGER;
-   geom_input            GEOMETRY;
-   num_cat_threshold     NUMERIC;
-   num_evt_threshold     NUMERIC;
-   num_geometry_areasqkm NUMERIC;
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
+   permid_geometry        GEOMETRY;
 
 BEGIN
 
@@ -80,15 +82,18 @@ BEGIN
       
    IF str_known_region = '5070'
    THEN
-      geom_input := ST_Transform(p_geometry,5070);
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -116,7 +121,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -140,15 +145,18 @@ BEGIN
    
    ELSIF str_known_region = '3338'
    THEN
-      geom_input := ST_Transform(p_geometry,3338);
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -176,7 +184,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -200,15 +208,18 @@ BEGIN
    
    ELSIF str_known_region = '26904'
    THEN
-      geom_input := ST_Transform(p_geometry,26904);
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -236,7 +247,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -260,15 +271,18 @@ BEGIN
       
    ELSIF str_known_region = '32161'
    THEN
-      geom_input := ST_Transform(p_geometry,32161);
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -296,7 +310,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -320,15 +334,18 @@ BEGIN
       
    ELSIF str_known_region = '32655'
    THEN
-      geom_input := ST_Transform(p_geometry,32655);
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -356,7 +373,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -380,15 +397,18 @@ BEGIN
       
    ELSIF str_known_region = '32702'
    THEN
-      geom_input := ST_Transform(p_geometry,32702);
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
       
       INSERT INTO tmp_cip(
           permid_joinkey
          ,nhdplusid
+         ,overlap_measure
       ) 
-      SELECT
-       p_permid_joinkey      
+      SELECT 
+       p_permid_joinkey
       ,a.nhdplusid
+      ,a.overlapmeasure
       FROM (
          SELECT
           aa.nhdplusid
@@ -416,7 +436,7 @@ BEGIN
                ,ST_CollectionExtract(
                   ST_Intersection(
                       aaaa.shape
-                     ,geom_input
+                     ,permid_geometry
                    )
                   ,3
                 ) AS geom_overlap
@@ -457,6 +477,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_area_artpath(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_artpath(
@@ -466,5 +487,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_area_artpath(
    ,NUMERIC
    ,NUMERIC
    ,UUID
+   ,GEOMETRY
 ) TO PUBLIC;
 

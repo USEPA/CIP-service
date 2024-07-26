@@ -340,6 +340,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
          ,nhdplusid            BIGINT
+         ,overlap_measure      NUMERIC
       );
 
       CREATE UNIQUE INDEX tmp_cip_pk 
@@ -409,6 +410,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
          ,nhdplusid            BIGINT
+         ,overlap_measure      NUMERIC
       );
 
       CREATE UNIQUE INDEX tmp_cip_pk 
@@ -421,28 +423,31 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 20
-   -- Create tmp_permid temp table
+   -- Create tmp_src2cip temp table
    ----------------------------------------------------------------------------
-   IF cipsrv_engine.temp_table_exists('tmp_permid')
+   IF cipsrv_engine.temp_table_exists('tmp_src2cip')
    THEN
-      TRUNCATE TABLE tmp_permid;
+      TRUNCATE TABLE tmp_src2cip;
       
    ELSE
-      CREATE TEMPORARY TABLE tmp_permid(
+      CREATE TEMPORARY TABLE tmp_src2cip(
           permid_joinkey       UUID
+         ,nhdplusid            BIGINT
          ,cip_method           VARCHAR(255)
-         ,cip_parms            VARCHAR(255) 
+         ,cip_parms            VARCHAR(255)
+         ,overlap_measure      NUMERIC
       );
 
-      CREATE UNIQUE INDEX tmp_permid_pk 
-      ON tmp_permid(
+      CREATE UNIQUE INDEX tmp_src2cip_pk 
+      ON tmp_src2cip(
           permid_joinkey
+         ,nhdplusid
       );
 
    END IF;
 
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 30
    -- I guess that went okay
    ----------------------------------------------------------------------------
    RETURN 0;
@@ -2999,6 +3004,7 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_known_region           := str_known_region
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3009,6 +3015,7 @@ BEGIN
                    p_geometry               := (ary_features[i]).geometry
                   ,p_known_region           := str_known_region
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3028,6 +3035,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3040,6 +3048,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3061,6 +3070,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3073,6 +3083,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3095,6 +3106,7 @@ BEGIN
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3108,6 +3120,7 @@ BEGIN
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3131,6 +3144,7 @@ BEGIN
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3144,6 +3158,7 @@ BEGIN
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3167,6 +3182,7 @@ BEGIN
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3180,6 +3196,7 @@ BEGIN
                   ,p_cat_threshold_perc     := (ary_features[i]).areacat_threshold
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
+                  ,p_permid_geometry        := (ary_features[i]).geometry
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -3956,9 +3973,12 @@ BEGIN
    
    str_sql := 'CREATE TABLE cipsrv_upload.' || str_dataset_prefix || '_src2cip( '
            || '    objectid              INTEGER     NOT NULL '
-           || '   ,source_joinkey        VARCHAR(40) NOT NULL'
+           || '   ,source_joinkey        VARCHAR(40) NOT NULL '
            || '   ,permid_joinkey        VARCHAR(40) NOT NULL '
-           || '   ,cat_joinkey           VARCHAR(40) NOT NULL'
+           || '   ,cat_joinkey           VARCHAR(40) NOT NULL '
+           || '   ,catchmentstatecode    VARCHAR(2)  NOT NULL '
+           || '   ,nhdplusid             NUMERIC     NOT NULL '
+           || '   ,overlap_measure       NUMERIC '
            || '   ,cip_method            VARCHAR(255) '
            || '   ,cip_parms             VARCHAR(255) '
            || '   ,cip_date              DATE '
@@ -4241,6 +4261,7 @@ BEGIN
                       p_geometry             := rec2.shape
                      ,p_known_region         := str_known_region
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_point_indexing_return_code    := rec3.out_return_code;
                   str_point_indexing_status_message := rec3.out_status_message;
@@ -4251,6 +4272,7 @@ BEGIN
                       p_geometry             := rec2.shape
                      ,p_known_region         := str_known_region
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_point_indexing_return_code    := rec3.out_return_code;
                   str_point_indexing_status_message := rec3.out_status_message;
@@ -4263,7 +4285,25 @@ BEGIN
             ELSE
                RAISE EXCEPTION 'err %',str_point_indexing_method;
                
-            END IF;            
+            END IF;
+
+            INSERT INTO tmp_src2cip(
+                permid_joinkey
+               ,nhdplusid
+               ,cip_method
+               ,cip_parms
+               ,overlap_measure               
+            ) 
+            SELECT
+             a.permid_joinkey
+            ,a.nhdplusid
+            ,str_point_indexing_method
+            ,NULL
+            ,a.overlap_measure
+            FROM
+            tmp_cip a
+            WHERE
+            a.permid_joinkey = rec2.permid_joinkey::UUID;            
             
          END LOOP;
          
@@ -4381,6 +4421,7 @@ BEGIN
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := ST_MakePolygon(geom_part)
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -4394,6 +4435,7 @@ BEGIN
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := ST_MakePolygon(geom_part)
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -4414,6 +4456,7 @@ BEGIN
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := ST_MakePolygon(geom_part)
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -4427,6 +4470,7 @@ BEGIN
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := ST_MakePolygon(geom_part)
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -4447,6 +4491,7 @@ BEGIN
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := ST_MakePolygon(geom_part)
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -4460,6 +4505,7 @@ BEGIN
                            ,p_cat_threshold_perc   := num_ring_areacat_threshold
                            ,p_evt_threshold_perc   := num_ring_areaevt_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := ST_MakePolygon(geom_part)
                         );
                         num_ring_indexing_return_code    := rec3.out_return_code;
                         str_ring_indexing_status_message := rec3.out_status_message;
@@ -4520,6 +4566,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := rec2.shape
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -4532,6 +4579,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := rec2.shape
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -4551,6 +4599,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := rec2.shape
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -4563,6 +4612,7 @@ BEGIN
                            ,p_known_region         := str_known_region
                            ,p_line_threshold_perc  := num_line_threshold
                            ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                           ,p_permid_geometry      := rec2.shape
                         );
                         num_line_indexing_return_code    := rec3.out_return_code;
                         str_line_indexing_status_message := rec3.out_status_message;
@@ -4577,9 +4627,27 @@ BEGIN
                      
                   END IF;
 
-               END IF; 
+               END IF;
 
-            END LOOP;               
+            END LOOP;
+            
+            INSERT INTO tmp_src2cip(
+                permid_joinkey
+               ,nhdplusid
+               ,cip_method
+               ,cip_parms
+               ,overlap_measure               
+            ) 
+            SELECT
+             a.permid_joinkey
+            ,a.nhdplusid
+            ,str_line_indexing_method
+            ,num_line_threshold::VARCHAR
+            ,a.overlap_measure
+            FROM
+            tmp_cip a
+            WHERE
+            a.permid_joinkey = rec2.permid_joinkey::UUID; 
 
          END LOOP;
       
@@ -4678,6 +4746,7 @@ BEGIN
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4691,6 +4760,7 @@ BEGIN
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4711,6 +4781,7 @@ BEGIN
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4724,6 +4795,7 @@ BEGIN
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4744,6 +4816,7 @@ BEGIN
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4757,6 +4830,7 @@ BEGIN
                      ,p_cat_threshold_perc   := num_areacat_threshold
                      ,p_evt_threshold_perc   := num_areaevt_threshold
                      ,p_permid_joinkey       := rec2.permid_joinkey::UUID
+                     ,p_permid_geometry      := rec2.shape
                   );
                   num_area_indexing_return_code    := rec3.out_return_code;
                   str_area_indexing_status_message := rec3.out_status_message;
@@ -4771,15 +4845,23 @@ BEGIN
                
             END IF;
             
-            INSERT INTO tmp_permid(
+            INSERT INTO tmp_src2cip(
                 permid_joinkey
+               ,nhdplusid
                ,cip_method
-               ,cip_parms 
-            ) VALUES (
-                rec2.permid_joinkey::UUID
-               ,str_area_indexing_method
-               ,num_areacat_threshold::VARCHAR || ',' || num_areaevt_threshold::VARCHAR
-            );
+               ,cip_parms
+               ,overlap_measure               
+            ) 
+            SELECT
+             a.permid_joinkey
+            ,a.nhdplusid
+            ,str_area_indexing_method
+            ,num_areacat_threshold::VARCHAR || ',' || num_areaevt_threshold::VARCHAR
+            ,a.overlap_measure
+            FROM
+            tmp_cip a
+            WHERE
+            a.permid_joinkey = rec2.permid_joinkey::UUID; 
             
          END LOOP;
       
@@ -4910,6 +4992,9 @@ BEGIN
               || '   ,source_joinkey '
               || '   ,permid_joinkey '
               || '   ,cat_joinkey '
+              || '   ,catchmentstatecode '
+              || '   ,nhdplusid '
+              || '   ,overlap_measure '
               || '   ,cip_method '
               || '   ,cip_parms '
               || '   ,cip_date '
@@ -4918,31 +5003,32 @@ BEGIN
               || ') '
               || 'SELECT '
               || ' NEXTVAL(''cipsrv_upload.' || str_dataset_prefix || '_src2cip_seq'') AS objectid '
-              || ',$1 '
+              || ',b.source_joinkey '
               || ',''{'' || a.permid_joinkey::VARCHAR || ''}'' '
               || ',b.cat_joinkey '
-              || ',c.cip_method '
-              || ',c.cip_parms '
+              || ',b.catchmentstatecode '
+              || ',b.nhdplusid '
+              || ',a.overlap_measure '
+              || ',a.cip_method '
+              || ',a.cip_parms '
+              || ',$1 '
               || ',$2 '
-              || ',$3 '
               || ',''{'' || uuid_generate_v1() || ''}'' '
               || 'FROM '
-              || 'tmp_cip a '
+              || 'tmp_src2cip a '
               || 'JOIN '
               || 'cipsrv_upload.' || str_dataset_prefix || '_cip b '
               || 'ON '
-              || 'b.nhdplusid = a.nhdplusid '
-              || 'JOIN '
-              || 'tmp_permid c '
-              || 'ON '
-              || 'a.permid_joinkey = c.permid_joinkey '
+              || 'a.nhdplusid = b.nhdplusid '
+              || 'WHERE '
+              || 'b.source_joinkey = $3 '
               || 'ON CONFLICT DO NOTHING ';
               
       EXECUTE str_sql 
       USING
-       rec.source_joinkey
-      ,CURRENT_TIMESTAMP
-      ,cipsrv_engine.cipsrv_version();
+       CURRENT_TIMESTAMP
+      ,cipsrv_engine.cipsrv_version()
+      ,rec.source_joinkey;
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
       
@@ -4952,7 +5038,7 @@ BEGIN
       
       --************************************************************--
       EXECUTE 'TRUNCATE TABLE tmp_cip';
-      EXECUTE 'TRUNCATE TABLE tmp_permid';
+      EXECUTE 'TRUNCATE TABLE tmp_src2cip';
       
       --************************************************************--
       str_sql := 'UPDATE cipsrv_upload.' || str_dataset_prefix || '_sfid a '

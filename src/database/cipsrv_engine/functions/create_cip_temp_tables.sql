@@ -17,6 +17,7 @@ BEGIN
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
          ,nhdplusid            BIGINT
+         ,overlap_measure      NUMERIC
       );
 
       CREATE UNIQUE INDEX tmp_cip_pk 
