@@ -570,7 +570,7 @@
             if (response.catchments !== null ) {
                tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
                        + '<TR>'
-                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
+                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + roundNumber(response.catchment_areasqkm,2) + ' SqKm</TH>'
                        + '<TR>'
                        + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
@@ -595,8 +595,8 @@
                   tbl_cnt += '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.istribal_areasqkm + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.areasqkm,4) + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4) + '</TD>'
                           +  '</TR>';
                   }       
                
@@ -652,6 +652,15 @@
             }
             return null;
          }
+         
+         function roundNumber(number, digits) {
+            if (number === null || number === undefined ) {
+               return null;
+            }
+            var multiple = Math.pow(10, digits);
+            var rndedNum = Math.round(number * multiple) / multiple;
+            return rndedNum;
+        }
          
       </script>
    </body>
