@@ -570,12 +570,13 @@
             if (response.catchments !== null ) {
                tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
                        + '<TR>'
-                       + '<TH colspan="4" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
+                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(2) + ' SqKm</TH>'
                        + '<TR>'
                        + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
+                       + '<TH style="font-family: Arial; font-size: 14px;">Tribal SqKm</TH>'
                        + '</TR>';
                tbl_end = '</TABLE>';
 
@@ -595,6 +596,7 @@
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.istribal_areasqkm + '</TD>'
                           +  '</TR>';
                   }       
                

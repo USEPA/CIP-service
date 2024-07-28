@@ -583,6 +583,8 @@ BEGIN
          ,catchmentstatecode
          ,xwalk_huc12
          ,areasqkm
+         ,istribal
+         ,istribal_areasqkm
          ,shape
       )
       SELECT
@@ -590,6 +592,8 @@ BEGIN
       ,a.catchmentstatecode
       ,a.xwalk_huc12_mr
       ,a.areasqkm
+      ,a.istribal
+      ,a.istribal_areasqkm
       ,CASE
        WHEN boo_return_geometry
        THEN
@@ -612,6 +616,8 @@ BEGIN
          ,catchmentstatecode
          ,xwalk_huc12
          ,areasqkm
+         ,istribal
+         ,istribal_areasqkm
          ,shape
       )
       SELECT
@@ -619,6 +625,8 @@ BEGIN
       ,a.catchmentstatecode
       ,a.xwalk_huc12_mr
       ,a.areasqkm
+      ,a.istribal
+      ,a.istribal_areasqkm
       ,CASE
        WHEN boo_return_geometry
        THEN

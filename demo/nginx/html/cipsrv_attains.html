@@ -733,12 +733,13 @@
 
                tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
                        + '<TR>'
-                       + '<TH colspan="4" style="font-family: Arial; font-size: 14px;' + color + '">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(3) + ' SqKm</TH>'
+                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;' + color + '">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(3) + ' SqKm</TH>'
                        + '<TR>'
                        + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
+                       + '<TH style="font-family: Arial; font-size: 14px;">Tribal SqKm</TH>'
                        + '</TR>';
                tbl_end = '</TABLE>';
 
@@ -758,6 +759,7 @@
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.istribal_areasqkm + '</TD>'
                           +  '</TR>';
                   }
 
@@ -1350,16 +1352,19 @@
                cell2 = row.insertCell(1);
                cell3 = row.insertCell(2);
                cell4 = row.insertCell(3);
+               cell5 = row.insertCell(4);
                
                cell1.style = cell_style;
                cell2.style = cell_style;
                cell3.style = cell_style;
                cell4.style = cell_style;
+               cell5.style = cell_style;
                
                cell1.innerHTML = i + 1;
                cell2.innerHTML = response.features[i].properties.catchmentstatecode;
                cell3.innerHTML = response.features[i].properties.nhdplusid;
                cell4.innerHTML = response.features[i].properties.areasqkm.toFixed(8);
+               cell5.innerHTML = response.features[i].properties.tribal_areasqkm.toFixed(8);
                
             }
             document.getElementById("dzMeas").value = meas.toFixed(3);
