@@ -365,7 +365,8 @@ BEGIN
          ,catchmentstatecode   VARCHAR(2)
          ,xwalk_huc12          VARCHAR(12)
          ,areasqkm             NUMERIC
-         ,tribal               BOOLEAN
+         ,istribal             VARCHAR(1)
+         ,istribal_areasqkm    NUMERIC
          ,shape                GEOMETRY
       );
 
@@ -3255,6 +3256,8 @@ BEGIN
          ,catchmentstatecode
          ,xwalk_huc12
          ,areasqkm
+         ,istribal
+         ,istribal_areasqkm
          ,shape
       )
       SELECT
@@ -3262,6 +3265,8 @@ BEGIN
       ,a.catchmentstatecode
       ,a.xwalk_huc12_mr
       ,a.areasqkm
+      ,a.istribal
+      ,a.istribal_areasqkm
       ,CASE
        WHEN boo_return_geometry
        THEN
@@ -3284,6 +3289,8 @@ BEGIN
          ,catchmentstatecode
          ,xwalk_huc12
          ,areasqkm
+         ,istribal
+         ,istribal_areasqkm
          ,shape
       )
       SELECT
@@ -3291,6 +3298,8 @@ BEGIN
       ,a.catchmentstatecode
       ,a.xwalk_huc12_mr
       ,a.areasqkm
+      ,a.istribal
+      ,a.istribal_areasqkm
       ,CASE
        WHEN boo_return_geometry
        THEN
@@ -3890,6 +3899,7 @@ BEGIN
            || '   ,catchmentstatecode    VARCHAR(2)  NOT NULL '
            || '   ,nhdplusid             NUMERIC     NOT NULL '
            || '   ,istribal              VARCHAR(1)  NOT NULL '
+           || '   ,istribal_areasqkm     NUMERIC '
            || '   ,catchmentresolution   VARCHAR(2)  NOT NULL '
            || '   ,catchmentareasqkm     NUMERIC     NOT NULL '
            || '   ,xwalk_huc12           VARCHAR(12) '
@@ -4895,6 +4905,7 @@ BEGIN
               || '   ,catchmentstatecode '
               || '   ,nhdplusid '
               || '   ,istribal '
+              || '   ,istribal_areasqkm '
               || '   ,catchmentresolution '
               || '   ,catchmentareasqkm '
               || '   ,xwalk_huc12 '
@@ -4924,6 +4935,7 @@ BEGIN
               || ',a.catchmentstatecode '
               || ',a.nhdplusid '
               || ',a.istribal '
+              || ',a.istribal_areasqkm '
               || ',$9 '
               || ',a.areasqkm AS catchmentareasqkm '
               || ',a.xwalk_huc12_mr '

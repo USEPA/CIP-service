@@ -654,6 +654,8 @@ BEGIN
             ,a.catchmentstatecode
             ,a.xwalk_huc12
             ,a.areasqkm
+            ,a.istribal
+            ,a.istribal_areasqkm
             ,CASE WHEN boo_return_catchment_geometry
              THEN
                ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
