@@ -147,7 +147,7 @@ BEGIN
          LEFT JOIN
          cipsrv_support.tribal_crosswalk b
          ON
-         SUBSTR(a.geoid,1,4) = b.aiannha_geoid_stem 
+         SUBSTR(a.geoid,1,4) = b.aiannhns_stem 
          WHERE
          ST_Intersects(
             a.shape
@@ -160,10 +160,10 @@ BEGIN
          )
          AND (
                boo_all_tribal IS TRUE
-            OR ( str_tiger_aiannhns IS NOT NULL         AND b.aiannha_aiannhns   = str_tiger_aiannhns )
-            OR ( str_geoid IS NOT NULL                  AND b.aiannha_geoid_stem = str_geoid )
-            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id = int_epa_tribal_id )
-            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code = str_bia_tribal_code )
+            OR ( str_tiger_aiannhns IS NOT NULL         AND a.aiannhns               = str_tiger_aiannhns )
+            OR ( str_geoid IS NOT NULL                  AND b.aiannhns_stem          = str_geoid )
+            OR ( int_epa_tribal_id IS NOT NULL          AND b.epa_tribal_id          = int_epa_tribal_id )
+            OR ( str_bia_tribal_code IS NOT NULL        AND b.bia_tribal_code        = str_bia_tribal_code )
             OR ( str_attains_organizationid IS NOT NULL AND b.attains_organizationid = str_attains_organizationid )
          )
       )
