@@ -727,13 +727,13 @@
                var attains_meas  = Number(document.getElementById("dzMeas").value);
 
                var color = " color: red; font-weight: bold;";
-               if (response.catchment_count == attains_count && response.catchment_areasqkm.toFixed(1) == attains_meas.toFixed(1)) {
+               if (response.catchment_count == attains_count && roundNumber(response.catchment_areasqkm,2) == attains_meas.toFixed(1)) {
                   color = " color: green; font-weight: bold;";
                }
 
                tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
                        + '<TR>'
-                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;' + color + '">' + response.catchment_count + ' Catchments Indexed - ' + response.catchment_areasqkm.toFixed(3) + ' SqKm</TH>'
+                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;' + color + '">' + response.catchment_count + ' Catchments Indexed - ' + roundNumber(response.catchment_areasqkm,3) + ' SqKm</TH>'
                        + '<TR>'
                        + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                        + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
@@ -758,8 +758,8 @@
                   tbl_cnt += '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.areasqkm + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.istribal_areasqkm + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.areasqkm,4) + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4) + '</TD>'
                           +  '</TR>';
                   }
 
@@ -1363,8 +1363,8 @@
                cell1.innerHTML = i + 1;
                cell2.innerHTML = response.features[i].properties.catchmentstatecode;
                cell3.innerHTML = response.features[i].properties.nhdplusid;
-               cell4.innerHTML = response.features[i].properties.areasqkm.toFixed(8);
-               cell5.innerHTML = response.features[i].properties.tribal_areasqkm.toFixed(8);
+               cell4.innerHTML = roundNumber(response.features[i].properties.areasqkm,4);
+               cell5.innerHTML = roundNumber(response.features[i].properties.tribal_areasqkm,4);
                
             }
             document.getElementById("dzMeas").value = meas.toFixed(3);
@@ -1509,6 +1509,16 @@
             }
             return null;
          }
+         
+         function roundNumber(number, digits) {
+            if (number === null || number === undefined ) {
+               return null;
+            }
+            var multiple = Math.pow(10, digits);
+            var rndedNum = Math.round(number * multiple) / multiple;
+            return rndedNum;
+        }
+         
          
       </script>
    </body>
