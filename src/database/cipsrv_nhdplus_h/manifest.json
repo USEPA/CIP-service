@@ -36,6 +36,7 @@
             ,"materialized views/nhdflowline_32161.sql"
             ,"materialized views/nhdflowline_32655.sql"
             ,"materialized views/nhdflowline_32702.sql"
+            ,"materialized views/nhdplusflowlinevaa_nav.sql"
             ,"types/flowline.sql"
             ,"functions/generic_common_mbr.sql"
             ,"functions/query_generic_common_mbr.sql"
