@@ -2603,7 +2603,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
+          num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
 
    ELSIF str_known_region = '3338'
@@ -2670,7 +2672,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
    
    ELSIF str_known_region = '26904'
@@ -2737,7 +2741,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32161'
@@ -2804,7 +2810,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32655'
@@ -2871,7 +2879,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32702'
@@ -2938,7 +2948,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-      num_line_threshold IS NULL OR a.nhdpercentage >= num_line_threshold
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
    
    ELSE
