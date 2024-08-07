@@ -76,6 +76,8 @@ DECLARE
    boo_filter_by_tribal               BOOLEAN;
    boo_filter_by_notribal             BOOLEAN;
    
+   str_nhdplus_version                VARCHAR;
+   
 BEGIN
 
    ----------------------------------------------------------------------------
@@ -111,7 +113,15 @@ BEGIN
    boo_filter_by_tribal   := rec.out_filter_by_tribal;
    boo_filter_by_notribal := rec.out_filter_by_notribal;
    
-   IF p_nhdplus_version IS NULL
+   IF UPPER(p_nhdplus_version) IN ('MR')
+   THEN
+      str_nhdplus_version := 'nhdplus_m';
+   
+   ELSIF UPPER(p_nhdplus_version) IN ('HR')
+   THEN
+      str_nhdplus_version := 'nhdplus_h';
+   
+   ELSIF p_nhdplus_version IS NULL
    THEN
       out_return_code    := -10;
       out_status_message := 'nhdplus version cannot be null';
@@ -122,6 +132,9 @@ BEGIN
       out_return_code    := -10;
       out_status_message := 'invalid nhdplus version';
       RETURN;
+   
+   ELSE
+      str_nhdplus_version := p_nhdplus_version;
    
    END IF;
    
@@ -255,7 +268,7 @@ BEGIN
       ,p_lines                          := p_lines
       ,p_areas                          := p_areas
       ,p_geometry                       := p_geometry 
-      ,p_nhdplus_version                := p_nhdplus_version
+      ,p_nhdplus_version                := str_nhdplus_version
       ,p_known_region                   := str_known_region
       ,p_int_srid                       := NULL
       
@@ -326,7 +339,7 @@ BEGIN
          THEN
             ary_features[i].indexing_method_used := 'point_simple';
             
-            IF p_nhdplus_version = 'nhdplus_m'
+            IF str_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_point_simple(
                    p_geometry               := (ary_features[i]).geometry
@@ -337,7 +350,7 @@ BEGIN
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                         
-            ELSIF p_nhdplus_version = 'nhdplus_h'
+            ELSIF str_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_point_simple(
                    p_geometry               := (ary_features[i]).geometry
@@ -355,7 +368,7 @@ BEGIN
          THEN
             ary_features[i].indexing_method_used := 'line_simple';
             
-            IF p_nhdplus_version = 'nhdplus_m'
+            IF str_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_line_simple(
                    p_geometry               := (ary_features[i]).geometry
@@ -368,7 +381,7 @@ BEGIN
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
-            ELSIF p_nhdplus_version = 'nhdplus_h'
+            ELSIF str_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_line_simple(
                    p_geometry               := (ary_features[i]).geometry
@@ -390,7 +403,7 @@ BEGIN
          THEN
             ary_features[i].indexing_method_used := 'line_levelpath';
             
-            IF p_nhdplus_version = 'nhdplus_m'
+            IF str_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_line_levelpath(
                    p_geometry               := (ary_features[i]).geometry
@@ -403,7 +416,7 @@ BEGIN
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
-            ELSIF p_nhdplus_version = 'nhdplus_h'
+            ELSIF str_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_line_levelpath(
                    p_geometry               := (ary_features[i]).geometry
@@ -425,7 +438,7 @@ BEGIN
          THEN
             ary_features[i].indexing_method_used := 'area_artpath';
             
-            IF p_nhdplus_version = 'nhdplus_m'
+            IF str_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_artpath(
                    p_geometry               := (ary_features[i]).geometry
@@ -439,7 +452,7 @@ BEGIN
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
             
-            ELSIF p_nhdplus_version = 'nhdplus_h'
+            ELSIF str_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_artpath(
                    p_geometry               := (ary_features[i]).geometry
@@ -463,7 +476,7 @@ BEGIN
          THEN
             ary_features[i].indexing_method_used := 'area_simple';
             
-            IF p_nhdplus_version = 'nhdplus_m'
+            IF str_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_simple(
                    p_geometry               := (ary_features[i]).geometry
@@ -477,7 +490,7 @@ BEGIN
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
 
-            ELSIF p_nhdplus_version = 'nhdplus_h'
+            ELSIF str_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_simple(
                    p_geometry               := (ary_features[i]).geometry
@@ -501,7 +514,7 @@ BEGIN
          THEN
             ary_features[i].indexing_method_used := 'area_centroid';
             
-            IF p_nhdplus_version = 'nhdplus_m'
+            IF str_nhdplus_version = 'nhdplus_m'
             THEN
                rec := cipsrv_nhdplus_m.index_area_centroid(
                    p_geometry               := (ary_features[i]).geometry
@@ -515,7 +528,7 @@ BEGIN
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
-            ELSIF p_nhdplus_version = 'nhdplus_h'
+            ELSIF str_nhdplus_version = 'nhdplus_h'
             THEN
                rec := cipsrv_nhdplus_h.index_area_centroid(
                    p_geometry               := (ary_features[i]).geometry
@@ -576,7 +589,7 @@ BEGIN
    -- Step 70
    -- Return filtered catchment results
    ----------------------------------------------------------------------------
-   IF p_nhdplus_version = 'nhdplus_m'
+   IF str_nhdplus_version = 'nhdplus_m'
    THEN
       INSERT INTO tmp_cip_out(
           nhdplusid
@@ -609,7 +622,7 @@ BEGIN
       AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
       AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
-   ELSIF p_nhdplus_version = 'nhdplus_h'
+   ELSIF str_nhdplus_version = 'nhdplus_h'
    THEN
       INSERT INTO tmp_cip_out(
           nhdplusid
