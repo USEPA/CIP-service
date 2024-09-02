@@ -64,7 +64,7 @@ SELECT
 /* ++++++++++ */
 ,b.lengthkm
 ,CASE
- WHEN a.totma = -9999
+ WHEN a.totma IN (-9999,-9998)
  THEN
    NULL
  ELSE
@@ -72,7 +72,7 @@ SELECT
  END AS totma
 ,a.pathlength
 ,CASE
- WHEN a.pathtimema = -9999
+ WHEN a.pathtimema IN (-9999,-9998)
  THEN
    NULL
  ELSE
@@ -132,7 +132,7 @@ cipsrv_nhdplus_h.nhdflowline b
 ON
 a.nhdplusid = b.nhdplusid
 WHERE
-    a.pathlength <> -9999
+    a.pathlength NOT IN (-9999,-9998)
 AND b.fcode <> 56600;
 
 ALTER TABLE cipsrv_nhdplus_h.nhdplusflowlinevaa_nav OWNER TO cipsrv;

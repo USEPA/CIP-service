@@ -20,6 +20,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
    ,enabled
    ,fmeasure
    ,tmeasure
+   ,hasvaa
+   ,isnavigable
    ,shape
 )
 AS
@@ -43,9 +45,28 @@ SELECT
 ,a.enabled
 ,a.fmeasure
 ,a.tmeasure
+,CASE 
+ WHEN b.nhdplusid IS NOT NULL
+ THEN
+   TRUE
+ ELSE
+   FALSE
+ END AS hasvaa
+,CASE
+ WHEN b.nhdplusid IS NOT NULL
+ AND a.fcode NOT IN (56600)
+ THEN
+   TRUE
+ ELSE
+   FALSE
+ END AS isnavigable
 ,ST_Transform(a.shape,32161) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
+LEFT JOIN
+cipsrv_nhdplus_h.nhdplusflowlinevaa b
+ON
+a.nhdplusid = b.nhdplusid
 WHERE
 SUBSTR(a.vpuid,1,2) IN ('21');
 
@@ -57,6 +78,12 @@ ON cipsrv_nhdplus_h.nhdflowline_32161(nhdplusid);
 
 CREATE INDEX nhdflowline_32161_02i
 ON cipsrv_nhdplus_h.nhdflowline_32161(fcode);
+
+CREATE INDEX nhdflowline_32161_03i
+ON cipsrv_nhdplus_h.nhdflowline_32161(hasvaa);
+
+CREATE INDEX nhdflowline_32161_04i
+ON cipsrv_nhdplus_h.nhdflowline_32161(isnavigable);
 
 CREATE INDEX nhdflowline_32161_spx
 ON cipsrv_nhdplus_h.nhdflowline_32161 USING GIST(shape);

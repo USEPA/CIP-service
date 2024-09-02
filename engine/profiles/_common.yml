@@ -3,7 +3,7 @@ default: desktop
 # Canned PostgreSQL database configurations
 postgresql_config:
    server:
-      shm_size:             96gb
+      shm_size:             6gb
       max_connections:      30
       shared_buffers:       24GB
       effective_cache_size: 72GB
@@ -21,7 +21,7 @@ postgresql_config:
       max_par_workers:      16
       max_par_maint_work:   4
    dev32gb:
-      shm_size:             32gb
+      shm_size:             2gb
       max_connections:      30
       shared_buffers:       8GB
       effective_cache_size: 24GB
@@ -39,7 +39,7 @@ postgresql_config:
       max_par_workers:      4
       max_par_maint_work:   2
    desktop:
-      shm_size:             16gb
+      shm_size:             1gb
       max_connections:      30
       shared_buffers:       4GB
       effective_cache_size: 12GB
