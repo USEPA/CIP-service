@@ -319,6 +319,168 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.index_exists(
 ) TO PUBLIC;
 
 --******************************--
+----- functions/column_has_single_index.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.column_has_single_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.column_has_single_index(
+    IN  p_schema_name  VARCHAR
+   ,IN  p_table_name   VARCHAR
+   ,IN  p_column_name  VARCHAR
+   ,IN  p_unique       BOOLEAN DEFAULT FALSE
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   boo_results BOOLEAN;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for table
+   ----------------------------------------------------------------------------
+   SELECT
+   TRUE
+   INTO boo_results
+   FROM 
+   pg_class t
+   JOIN
+   pg_namespace ns
+   ON
+   t.relnamespace = ns.oid
+   JOIN
+   pg_index ix
+   ON
+   t.oid = ix.indrelid
+   JOIN
+   pg_class i
+   ON
+   i.oid = ix.indexrelid
+   JOIN
+   pg_attribute a
+   ON
+       a.attrelid = t.oid
+   AND a.attnum = ANY(ix.indkey)
+   WHERE 
+       t.relkind  = 'r'
+   AND ns.nspname = p_schema_name
+   AND t.relname  = p_table_name
+   AND attname    = p_column_name
+   AND (NOT p_unique OR ix.indisunique)
+   GROUP BY
+    a.attname
+   ,i.relname
+   HAVING 
+   COUNT(*) = 1;
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   RETURN COALESCE(boo_results,FALSE);
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.column_has_single_index(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.column_has_single_index(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/adjust_point_extent.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.adjust_point_extent';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.adjust_point_extent(
+    IN  p_extent_value      NUMERIC
+   ,IN  p_direction         VARCHAR
+   ,IN  p_flowline_amount   NUMERIC
+   ,IN  p_flowline_fmeasure NUMERIC
+   ,IN  p_flowline_tmeasure NUMERIC
+   ,IN  p_event_measure     NUMERIC
+) RETURNS NUMERIC 
+IMMUTABLE 
+AS $BODY$
+DECLARE
+   str_direction VARCHAR := UPPER(p_direction);
+   num_amount    NUMERIC;
+
+BEGIN
+   
+   IF str_direction IN ('UT','UM','U')
+   THEN
+      IF p_flowline_tmeasure = p_event_measure
+      THEN
+         RETURN p_extent_value;
+
+      END IF;
+      
+      num_amount := p_flowline_amount * ((p_flowline_tmeasure - p_event_measure) / (p_flowline_tmeasure - p_flowline_fmeasure));
+      
+   ELSIF str_direction IN ('DM','DD','PP','D')
+   THEN
+      IF p_flowline_fmeasure = p_event_measure
+      THEN
+         RETURN p_extent_value;
+
+      END IF;
+      
+      num_amount := p_flowline_amount * ((p_event_measure - p_flowline_fmeasure) / (p_flowline_tmeasure - p_flowline_fmeasure));
+      
+   ELSE
+      RAISE EXCEPTION 'err';
+      
+   END IF;
+   
+   RETURN p_extent_value - num_amount;
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.adjust_point_extent(
+    NUMERIC
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.adjust_point_extent(
+    NUMERIC
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
 ----- functions/create_cip_temp_tables.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.create_cip_temp_tables()
@@ -5138,5 +5300,1096 @@ ALTER PROCEDURE cipsrv_engine.cipsrv_batch_index(
 GRANT EXECUTE ON PROCEDURE cipsrv_engine.cipsrv_batch_index(
     VARCHAR
    ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- procedures/point_batch_index_table.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.point_batch_index_table';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP PROCEDURE IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE PROCEDURE cipsrv_engine.point_batch_index_table(
+    IN  p_cipsrv_upload_table              VARCHAR
+   ,IN  p_nhdplus_version                  VARCHAR
+   ,IN  p_point_indexing_method            VARCHAR
+   ,OUT out_return_code                    INTEGER
+   ,OUT out_status_message                 VARCHAR
+   ,IN  p_fcode_allow                      INTEGER[] DEFAULT NULL
+   ,IN  p_fcode_deny                       INTEGER[] DEFAULT NULL
+   ,IN  p_distance_max_dist_km             NUMERIC   DEFAULT 15
+   ,IN  p_return_link_path                 BOOLEAN   DEFAULT NULL
+   ,IN  p_limit_innetwork                  BOOLEAN   DEFAULT FALSE
+   ,IN  p_limit_navigable                  BOOLEAN   DEFAULT FALSE
+   ,IN  p_known_region                     VARCHAR   DEFAULT NULL
+   ,IN  p_commit_limit                     INTEGER   DEFAULT 2000
+)
+AS $BODY$ 
+DECLARE
+   rec                                RECORD;
+   rec2                               RECORD;
+   str_nhdplus_version                VARCHAR;
+   str_point_indexing_method          VARCHAR;
+   str_cipsrv_upload_table            VARCHAR;
+   num_nhdplusid                      NUMERIC;
+   str_reachcode                      VARCHAR;
+   num_snap_measure                   NUMERIC;
+   num_snap_distancekm                NUMERIC;
+   int_return_code                    INTEGER;
+   str_status_message                 VARCHAR;
+   int_counter                        INTEGER;
+   geo_snap_point                     GEOMETRY;
+   
+BEGIN
+
+   out_return_code := cipsrv_engine.create_cip_batch_temp_tables();
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_cipsrv_upload_table IS NULL
+   THEN
+      RAISE EXCEPTION 'p_cipsrv_upload_table required';
+   
+   ELSE
+      str_cipsrv_upload_table := LOWER(REPLACE(p_cipsrv_upload_table,';',''));
+      
+      IF NOT cipsrv_engine.table_exists('cipsrv_upload',str_cipsrv_upload_table)
+      THEN
+         RAISE EXCEPTION 'missing %.%','cipsrv_upload',str_cipsrv_upload_table;
+      
+      END IF;
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      RAISE EXCEPTION 'p_nhdplus_version required';
+   
+   ELSIF UPPER(p_nhdplus_version) IN ('MEDIUM','MR','3')
+   THEN
+      str_nhdplus_version := 'MR';
+      
+   ELSIF UPPER(p_nhdplus_version) IN ('HIGH','HR','2')
+   THEN
+      str_nhdplus_version := 'HR';
+      
+   END IF;
+   
+   IF p_point_indexing_method IS NULL
+   THEN
+      RAISE EXCEPTION 'p_point_indexing_method required';
+   
+   ELSIF UPPER(p_point_indexing_method) IN ('CATCHMENT CONSTRAINED','CATCONSTRAINED')
+   THEN
+      str_point_indexing_method := 'CATCONSTRAINED';
+      
+   ELSIF UPPER(p_point_indexing_method) IN ('DISTANCE')
+   THEN
+      str_point_indexing_method := 'DISTANCE';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Add or clear output fields
+   ----------------------------------------------------------------------------
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_guid')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_guid VARCHAR(40)';
+   
+   END IF;
+   
+   EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_guid = ''{'' || uuid_generate_v1() || ''}''';
+   COMMIT;
+   
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_cipsrv_upload_table,'idx_guid',TRUE)
+   THEN
+      EXECUTE 'CREATE UNIQUE INDEX ' || str_cipsrv_upload_table || '_u99 ON cipsrv_upload.' || str_cipsrv_upload_table || '(idx_guid)';
+   
+   END IF;
+      
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_nhdplusid')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_nhdplusid NUMERIC';
+   
+   ELSE
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_nhdplusid = NULL';
+      COMMIT;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_reachcode')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_reachcode VARCHAR(14)';
+   
+   ELSE
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_reachcode = NULL';
+      COMMIT;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_snap_measure')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_snap_measure NUMERIC';
+   
+   ELSE
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_snap_measure = NULL';
+      COMMIT;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_snap_distancekm')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_snap_distancekm NUMERIC';
+   
+   ELSE
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_snap_distancekm = NULL';
+      COMMIT;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_return_code')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_return_code INTEGER';
+   
+   ELSE
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_return_code = NULL';
+      COMMIT;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_cipsrv_upload_table,'idx_status_message')
+   THEN
+      EXECUTE 'ALTER TABLE cipsrv_upload.' || str_cipsrv_upload_table || ' ADD COLUMN idx_status_message VARCHAR';
+   
+   ELSE
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' SET idx_status_message = NULL';
+      COMMIT;
+      
+   END IF;
+   
+   COMMIT;
+   EXECUTE 'ANALYZE cipsrv_upload.' || str_cipsrv_upload_table;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Index Each record
+   ----------------------------------------------------------------------------
+   int_counter := 1;
+   FOR rec IN EXECUTE 'SELECT a.* FROM cipsrv_upload.' || str_cipsrv_upload_table || ' a '
+   LOOP
+      IF rec.shape IS NOT NULL
+      AND NOT ST_ISEMPTY(rec.shape)
+      THEN
+         num_nhdplusid       := NULL;
+         str_reachcode       := NULL;
+         num_snap_measure    := NULL;
+         num_snap_distancekm := NULL;
+         int_return_code     := NULL;
+         str_status_message  := NULL;
+         geo_snap_point      := NULL;
+         
+         IF str_nhdplus_version = 'MR'
+         THEN
+            IF str_point_indexing_method = 'CATCONSTRAINED'
+            THEN
+               rec2 := cipsrv_nhdplus_m.catconstrained_reach_index(
+                   p_geometry               := rec.shape
+                  ,p_catchment_nhdplusid    := NULL
+                  ,p_known_region           := p_known_region
+               );
+               num_nhdplusid       := rec2.out_nhdplusid;
+               str_reachcode       := rec2.out_reachcode;
+               num_snap_measure    := rec2.out_snap_measure;
+               geo_snap_point      := rec2.out_snap_point;
+               num_snap_distancekm := rec2.out_snap_distancekm;
+               int_return_code     := rec2.out_return_code;
+               str_status_message  := rec2.out_status_message;
+            
+            ELSIF str_point_indexing_method = 'DISTANCE'
+            THEN
+               rec2 := cipsrv_nhdplus_m.distance_reach_index(
+                   p_geometry               := rec.shape
+                  ,p_fcode_allow            := p_fcode_allow
+                  ,p_fcode_deny             := p_fcode_deny
+                  ,p_distance_max_dist_km   := p_distance_max_dist_km
+                  ,p_limit_innetwork        := p_limit_innetwork
+                  ,p_limit_navigable        := p_limit_navigable
+                  ,p_known_region           := p_known_region
+               );
+               num_nhdplusid       := rec2.out_nhdplusid;
+               str_reachcode       := rec2.out_reachcode;
+               num_snap_measure    := rec2.out_snap_measure;
+               geo_snap_point      := rec2.out_snap_point;
+               num_snap_distancekm := rec2.out_snap_distancekm;
+               int_return_code     := rec2.out_return_code;
+               str_status_message  := rec2.out_status_message;
+            
+            ELSE
+               RAISE EXCEPTION 'err2';
+
+            END IF;
+            
+         ELSIF str_nhdplus_version = 'HR'
+         THEN
+            IF str_point_indexing_method = 'CATCONSTRAINED'
+            THEN
+               rec2 := cipsrv_nhdplus_h.catconstrained_reach_index(
+                   p_geometry               := rec.shape
+                  ,p_catchment_nhdplusid    := NULL
+                  ,p_known_region           := p_known_region
+               );
+               num_nhdplusid       := rec2.out_nhdplusid;
+               str_reachcode       := rec2.out_reachcode;
+               num_snap_measure    := rec2.out_snap_measure;
+               geo_snap_point      := rec2.out_snap_point;
+               num_snap_distancekm := rec2.out_snap_distancekm;
+               int_return_code     := rec2.out_return_code;
+               str_status_message  := rec2.out_status_message;
+            
+            ELSIF str_point_indexing_method = 'DISTANCE'
+            THEN
+               rec2 := cipsrv_nhdplus_h.distance_reach_index(
+                   p_geometry               := rec.shape
+                  ,p_fcode_allow            := p_fcode_allow
+                  ,p_fcode_deny             := p_fcode_deny
+                  ,p_distance_max_dist_km   := p_distance_max_dist_km
+                  ,p_limit_innetwork        := p_limit_innetwork
+                  ,p_limit_navigable        := p_limit_navigable
+                  ,p_known_region           := p_known_region
+               );
+               num_nhdplusid       := rec2.out_nhdplusid;
+               str_reachcode       := rec2.out_reachcode;
+               num_snap_measure    := rec2.out_snap_measure;
+               geo_snap_point      := rec2.out_snap_point;
+               num_snap_distancekm := rec2.out_snap_distancekm;
+               int_return_code     := rec2.out_return_code;
+               str_status_message  := rec2.out_status_message;
+           
+            ELSE
+               RAISE EXCEPTION 'err2';
+
+            END IF;
+         
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+         
+      END IF;
+      
+      EXECUTE 'UPDATE cipsrv_upload.' || str_cipsrv_upload_table || ' a '
+           || 'SET '
+           || ' idx_nhdplusid       = $1 '
+           || ',idx_reachcode       = $2 '
+           || ',idx_snap_measure    = $3 '
+           || ',idx_snap_distancekm = $4 '
+           || ',shape               = $5 '
+           || ',idx_return_code     = $6 '
+           || ',idx_status_message  = $7 '
+           || 'WHERE '
+           || 'a.idx_guid = $8 '
+      USING
+       num_nhdplusid
+      ,str_reachcode
+      ,num_snap_measure
+      ,num_snap_distancekm
+      ,geo_snap_point
+      ,int_return_code
+      ,str_status_message     
+      ,rec.idx_guid;
+      
+      int_counter := int_counter + 1;
+      IF int_counter > p_commit_limit
+      THEN
+         COMMIT;
+         int_counter := 1;
+         
+      END IF;
+
+   END LOOP;
+   
+   COMMIT;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER PROCEDURE cipsrv_engine.point_batch_index_table(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON PROCEDURE cipsrv_engine.point_batch_index_table(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+   ,INTEGER
+) TO PUBLIC;
+
+--******************************--
+----- procedures/updn_batch_search.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.updn_batch_search';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP PROCEDURE IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE PROCEDURE cipsrv_engine.updn_batch_search(
+    IN  p_cip_updn_prefix                  VARCHAR
+   ,IN  p_nhdplus_version                  VARCHAR
+   ,IN  p_points_to_process_id             VARCHAR
+   ,IN  p_points_to_process_nhdplusid      VARCHAR
+   ,IN  p_points_to_process_measure        VARCHAR
+   ,IN  p_points_to_search_id              VARCHAR
+   ,IN  p_points_to_search_nhdplusid       VARCHAR
+   ,IN  p_points_to_search_measure         VARCHAR
+   ,IN  p_updn_search_type                 VARCHAR
+   ,IN  p_updn_maximum_dist_km             NUMERIC
+   ,IN  p_updn_gather_streams              BOOLEAN
+   ,IN  p_updn_streams_between             VARCHAR
+   ,IN  p_ignore_matching_ids              BOOLEAN
+   ,OUT out_return_code                    INTEGER
+   ,OUT out_status_message                 VARCHAR
+   ,IN  p_known_region                     VARCHAR   DEFAULT NULL
+   ,IN  p_commit_limit                     INTEGER   DEFAULT 2000
+)
+AS $BODY$ 
+DECLARE
+   rec                                RECORD;
+   rec2                               RECORD;
+   str_sql                            VARCHAR;
+   str_nhdplus_version                VARCHAR;
+   str_dataset_prefix                 VARCHAR;
+   str_points_to_process_id           VARCHAR;
+   str_points_to_search_id            VARCHAR;
+   str_search_type                    VARCHAR;
+   boo_updn_gather_streams            BOOLEAN;
+   num_max_distancekm                 NUMERIC;
+   str_updn_streams_between           VARCHAR;
+   boo_ignore_matching_ids            BOOLEAN;
+   boo_return_flowline_details        BOOLEAN;
+   boo_return_flowline_geometry       BOOLEAN;
+   int_grid_srid                      INTEGER;
+   int_flowline_count                 INTEGER;
+   int_return_code                    INTEGER;
+   str_status_message                 VARCHAR;
+   int_commit_limit                   INTEGER;
+   int_counter                        INTEGER;
+   
+   c_analyze_threshold                INTEGER := 500;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_cip_updn_prefix IS NULL
+   THEN
+      RAISE EXCEPTION 'err';
+   
+   END IF;
+   
+   str_dataset_prefix       := LOWER(p_cip_updn_prefix);
+   str_points_to_process_id := LOWER(p_points_to_process_id);
+   str_points_to_search_id  := LOWER(p_points_to_search_id);
+   str_search_type          := UPPER(p_updn_search_type);
+   num_max_distancekm       := p_updn_maximum_dist_km;
+   int_commit_limit         := p_commit_limit;
+   
+   IF int_commit_limit IS NULL
+   OR int_commit_limit < 1
+   THEN
+      int_commit_limit := 2000;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.table_exists('cipsrv_upload',str_dataset_prefix || '_pointstoprocess')
+   THEN
+      RAISE EXCEPTION 'missing %.%','cipsrv_upload',str_dataset_prefix || '_pointstoprocess';
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_dataset_prefix || '_pointstoprocess',str_points_to_process_id)
+   THEN
+      RAISE EXCEPTION 'missing %.%.%','cipsrv_upload',str_dataset_prefix || '_pointstoprocess',str_points_to_process_id;
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.table_exists('cipsrv_upload',str_dataset_prefix || '_pointstosearch')
+   THEN
+      RAISE EXCEPTION 'missing %.%','cipsrv_upload',str_dataset_prefix || '_pointstosearch';
+      
+   END IF;
+   
+   IF NOT cipsrv_engine.field_exists('cipsrv_upload',str_dataset_prefix || '_pointstosearch',str_points_to_search_id)
+   THEN
+      RAISE EXCEPTION 'missing %.%.%','cipsrv_upload',str_dataset_prefix || '_pointstosearch',str_points_to_search_id;
+      
+   END IF;
+   
+   IF UPPER(p_nhdplus_version) IN ('MR','NHDPLUS_M')
+   THEN
+      str_nhdplus_version := 'nhdplus_m';
+      
+   ELSIF UPPER(p_nhdplus_version) IN ('HR','NHDPLUS_H')
+   THEN
+      str_nhdplus_version := 'nhdplus_h';
+   
+   ELSE
+      RAISE EXCEPTION 'unknown nhdplus resolution %',p_nhdplus_version;
+   
+   END IF;
+   
+   boo_updn_gather_streams := p_updn_gather_streams;
+   str_updn_streams_between := UPPER(p_updn_streams_between);
+   IF boo_updn_gather_streams
+   OR str_updn_streams_between IN ('PP','PPALL')
+   THEN
+      boo_return_flowline_details  := TRUE;
+      boo_return_flowline_geometry := TRUE;
+      
+   ELSE
+      IF str_updn_streams_between IS NULL
+      THEN
+         str_updn_streams_between := 'NONE';
+      
+      
+      END IF;
+      
+      boo_return_flowline_details  := FALSE;
+      boo_return_flowline_geometry := FALSE;
+
+   END IF;
+
+   boo_ignore_matching_ids := p_ignore_matching_ids;
+   IF boo_ignore_matching_ids IS NULL
+   THEN
+      boo_ignore_matching_ids := FALSE;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Index ids if needed
+   ----------------------------------------------------------------------------
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_dataset_prefix || '_pointstoprocess',p_points_to_process_id,TRUE)
+   THEN
+      EXECUTE 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_pointstoprocess_u99 ON cipsrv_upload.' || str_dataset_prefix || '_pointstoprocess(' || str_points_to_process_id || ')';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_dataset_prefix || '_pointstoprocess',p_points_to_process_nhdplusid,FALSE)
+   THEN
+      EXECUTE 'CREATE INDEX ' || str_dataset_prefix || '_pointstoprocess_i88 ON cipsrv_upload.' || str_dataset_prefix || '_pointstoprocess(' || p_points_to_process_nhdplusid || ')';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_dataset_prefix || '_pointstoprocess',p_points_to_process_measure,FALSE)
+   THEN
+      EXECUTE 'CREATE INDEX ' || str_dataset_prefix || '_pointstoprocess_i89 ON cipsrv_upload.' || str_dataset_prefix || '_pointstoprocess(' || p_points_to_process_measure || ')';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_dataset_prefix || '_pointstosearch',p_points_to_search_id,TRUE)
+   THEN
+      EXECUTE 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_pointstosearch_u99 ON cipsrv_upload.' || str_dataset_prefix || '_pointstosearch(' || str_points_to_search_id || ')';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_dataset_prefix || '_pointstosearch',p_points_to_search_nhdplusid,FALSE)
+   THEN
+      EXECUTE 'CREATE INDEX ' || str_dataset_prefix || '_pointstosearch_i88 ON cipsrv_upload.' || str_dataset_prefix || '_pointstosearch(' || p_points_to_search_nhdplusid || ')';
+   
+   END IF;
+   
+   IF NOT cipsrv_engine.column_has_single_index('cipsrv_upload',str_dataset_prefix || '_pointstosearch',p_points_to_search_measure,FALSE)
+   THEN
+      EXECUTE 'CREATE INDEX ' || str_dataset_prefix || '_pointstosearch_i89 ON cipsrv_upload.' || str_dataset_prefix || '_pointstosearch(' || p_points_to_search_measure || ')';
+   
+   END IF;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Analyze incoming tables
+   ----------------------------------------------------------------------------
+   EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_pointstoprocess';
+   EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_pointstosearch';
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Create the results table
+   ----------------------------------------------------------------------------
+   EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_results';
+      
+   EXECUTE 'DROP SEQUENCE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_results_seq';
+   
+   str_sql := 'CREATE TABLE cipsrv_upload.' || str_dataset_prefix || '_results( '
+           || '    objectid                      INTEGER     NOT NULL '
+           || '   ,process_pointid               VARCHAR     NOT NULL '
+           || '   ,process_pointnhdplusid        NUMERIC     NOT NULL '
+           || '   ,process_pointmeasure          NUMERIC     NOT NULL '
+           || '   ,search_pointid                VARCHAR     NOT NULL '
+           || '   ,search_pointnhdplusid         NUMERIC     NOT NULL '
+           || '   ,search_pointmeasure           NUMERIC     NOT NULL '
+           || '   ,network_distancekm            NUMERIC '
+           || '   ,network_flowtimeday           NUMERIC '
+           || '   ,shape                         GEOMETRY '
+           || ') ';
+           
+   EXECUTE str_sql;
+   
+   str_sql := 'GRANT SELECT ON TABLE cipsrv_upload.' || str_dataset_prefix || '_results TO PUBLIC';
+   
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_results_pk '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_results( '
+           || '    process_pointid '
+           || '   ,search_pointid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_results_u01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_results( '
+           || '    objectid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE SEQUENCE cipsrv_upload.' || str_dataset_prefix || '_results_seq START WITH 1';
+           
+   EXECUTE str_sql;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Create the streams table
+   ----------------------------------------------------------------------------
+   EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_streams';
+      
+   EXECUTE 'DROP SEQUENCE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_streams_seq';
+   
+   str_sql := 'CREATE TABLE cipsrv_upload.' || str_dataset_prefix || '_streams( '
+           || '    objectid                      INTEGER     NOT NULL '
+           || '   ,process_pointid               VARCHAR(80) NOT NULL '
+           || '   ,nhdplusid                     NUMERIC     NOT NULL '
+           || '   ,permanent_identifier          VARCHAR(40) NOT NULL '
+           || '   ,reachcode                     VARCHAR(14) '
+           || '   ,fmeasure                      NUMERIC '
+           || '   ,tmeasure                      NUMERIC '
+           || '   ,network_distancekm            NUMERIC '
+           || '   ,network_flowtimeday           NUMERIC '
+           || '   ,lengthkm                      NUMERIC '
+           || '   ,flowtimeday                   NUMERIC '
+           || '   ,ftype                         INTEGER '
+           || '   ,fcode                         INTEGER '
+           || '   ,gnis_id                       VARCHAR '
+           || '   ,gnis_name                     VARCHAR '
+           || '   ,wbarea_permanent_identifier   VARCHAR(40) '
+           || '   ,navtermination_flag           INTEGER '
+           || '   ,nav_order                     INTEGER '
+           || '   ,shape                         GEOMETRY '
+           || ') ';
+           
+   EXECUTE str_sql;
+   
+   str_sql := 'GRANT SELECT ON TABLE cipsrv_upload.' || str_dataset_prefix || '_streams TO PUBLIC';
+   
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_streams_pk '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_streams( '
+           || '    process_pointid '
+           || '   ,nhdplusid '
+           || '   ,fmeasure '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_streams_u01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_streams( '
+           || '    objectid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE SEQUENCE cipsrv_upload.' || str_dataset_prefix || '_streams_seq START WITH 1';
+           
+   EXECUTE str_sql;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Create the between table
+   ----------------------------------------------------------------------------
+   EXECUTE 'DROP TABLE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_between';
+      
+   EXECUTE 'DROP SEQUENCE IF EXISTS cipsrv_upload.' || str_dataset_prefix || '_between_seq';
+   
+   str_sql := 'CREATE TABLE cipsrv_upload.' || str_dataset_prefix || '_between( '
+           || '    objectid                      INTEGER     NOT NULL '
+           || '   ,process_pointid               VARCHAR(80) NOT NULL '
+           || '   ,search_pointid                VARCHAR(80) NOT NULL '
+           || '   ,nhdplusid                     NUMERIC     NOT NULL '
+           || '   ,permanent_identifier          VARCHAR(40) NOT NULL '
+           || '   ,reachcode                     VARCHAR(14) '
+           || '   ,fmeasure                      NUMERIC '
+           || '   ,tmeasure                      NUMERIC '
+           || '   ,network_distancekm            NUMERIC '
+           || '   ,network_flowtimeday           NUMERIC '
+           || '   ,lengthkm                      NUMERIC '
+           || '   ,flowtimeday                   NUMERIC '
+           || '   ,ftype                         INTEGER '
+           || '   ,fcode                         INTEGER '
+           || '   ,gnis_id                       VARCHAR '
+           || '   ,gnis_name                     VARCHAR '
+           || '   ,wbarea_permanent_identifier   VARCHAR(40) '
+           || '   ,navtermination_flag           INTEGER '
+           || '   ,nav_order                     INTEGER '
+           || '   ,shape                         GEOMETRY '
+           || ') ';
+           
+   EXECUTE str_sql;
+   
+   str_sql := 'GRANT SELECT ON TABLE cipsrv_upload.' || str_dataset_prefix || '_between TO PUBLIC';
+   
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_between_pk '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_between( '
+           || '    process_pointid '
+           || '   ,search_pointid '
+           || '   ,nhdplusid '
+           || '   ,fmeasure '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE UNIQUE INDEX ' || str_dataset_prefix || '_between_u01 '
+           || 'ON cipsrv_upload.' || str_dataset_prefix || '_between( '
+           || '    objectid '
+           || ') ';
+           
+   EXECUTE str_sql;
+
+   str_sql := 'CREATE SEQUENCE cipsrv_upload.' || str_dataset_prefix || '_between_seq START WITH 1';
+           
+   EXECUTE str_sql;
+   
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Roll through the points to process
+   ----------------------------------------------------------------------------
+   int_counter := 1;
+   str_sql := 'SELECT '
+   || ' a.' || p_points_to_process_id        || ' AS pointstoprocessid '
+   || ',a.' || p_points_to_process_nhdplusid || ' AS pointstoprocessnhdplusid '
+   || ',a.' || p_points_to_process_measure   || ' AS pointstoprocessmeasure '
+   || 'FROM '
+   || 'cipsrv_upload.' || str_dataset_prefix || '_pointstoprocess a ';
+   
+   FOR rec IN EXECUTE str_sql
+   LOOP
+raise warning '% %',boo_return_flowline_details,boo_return_flowline_geometry;
+      --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+      IF str_nhdplus_version = 'nhdplus_m'
+      THEN
+         rec2 := cipsrv_nhdplus_m.navigate(
+             p_search_type                := str_search_type
+            ,p_start_nhdplusid            := rec.pointstoprocessnhdplusid::BIGINT
+            ,p_start_permanent_identifier := NULL
+            ,p_start_reachcode            := NULL
+            ,p_start_hydroseq             := NULL
+            ,p_start_measure              := rec.pointstoprocessmeasure
+            ,p_stop_nhdplusid             := NULL
+            ,p_stop_permanent_identifier  := NULL
+            ,p_stop_reachcode             := NULL
+            ,p_stop_hydroseq              := NULL
+            ,p_stop_measure               := NULL
+            ,p_max_distancekm             := num_max_distancekm
+            ,p_max_flowtimeday            := NULL
+            ,p_return_flowline_details    := boo_return_flowline_details
+            ,p_return_flowline_geometry   := boo_return_flowline_geometry
+         );
+         int_grid_srid       := rec2.out_grid_srid;
+         int_flowline_count  := rec2.out_flowline_count;
+         int_return_code     := rec2.out_return_code;
+         str_status_message  := rec2.out_status_message;
+         
+      ELSIF str_nhdplus_version = 'nhdplus_h'
+      THEN
+         rec2 := cipsrv_nhdplus_h.navigate(
+             p_search_type                := str_search_type
+            ,p_start_nhdplusid            := rec.pointstoprocessnhdplusid::BIGINT
+            ,p_start_permanent_identifier := NULL
+            ,p_start_reachcode            := NULL
+            ,p_start_hydroseq             := NULL
+            ,p_start_measure              := rec.pointstoprocessmeasure
+            ,p_stop_nhdplusid             := NULL
+            ,p_stop_permanent_identifier  := NULL
+            ,p_stop_reachcode             := NULL
+            ,p_stop_hydroseq              := NULL
+            ,p_stop_measure               := NULL
+            ,p_max_distancekm             := num_max_distancekm
+            ,p_max_flowtimeday            := NULL
+            ,p_return_flowline_details    := boo_return_flowline_details
+            ,p_return_flowline_geometry   := boo_return_flowline_geometry
+         );
+         int_grid_srid       := rec2.out_grid_srid;
+         int_flowline_count  := rec2.out_flowline_count;
+         int_return_code     := rec2.out_return_code;
+         str_status_message  := rec2.out_status_message;
+      
+      ELSE
+         RAISE EXCEPTION 'err %',str_nhdplus_version;
+         
+      END IF;
+      
+      IF int_return_code = 0
+      THEN
+         IF int_flowline_count > c_analyze_threshold
+         THEN
+            EXECUTE 'ANALYZE tmp_navigation_results';
+      
+         END IF;
+      
+         --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+         EXECUTE 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_results( '
+         || '    objectid '
+         || '   ,process_pointid '
+         || '   ,process_pointnhdplusid '
+         || '   ,process_pointmeasure '
+         || '   ,search_pointid '
+         || '   ,search_pointnhdplusid '
+         || '   ,search_pointmeasure '
+         || '   ,network_distancekm '
+         || '   ,network_flowtimeday '
+         || '   ,shape '
+         || ') '
+         || 'SELECT '
+         || ' NEXTVAL(''cipsrv_upload.' || str_dataset_prefix || '_results_seq'') '
+         || ',$1 '
+         || ',$2 '
+         || ',$3 '
+         || ',b.' || p_points_to_search_id        || ' '
+         || ',b.' || p_points_to_search_nhdplusid || ' '
+         || ',b.' || p_points_to_search_measure   || ' '
+         || ',cipsrv_engine.adjust_point_extent( '
+         || '   p_extent_value      := a.network_distancekm '
+         || '  ,p_direction         := $4 '
+         || '  ,p_flowline_amount   := a.lengthkm '
+         || '  ,p_flowline_fmeasure := a.fmeasure '
+         || '  ,p_flowline_tmeasure := a.tmeasure '
+         || '  ,p_event_measure     := b.' || p_points_to_search_measure   || ' '
+         || ' ) AS network_distancekm '
+         || ',cipsrv_engine.adjust_point_extent( '
+         || '   p_extent_value      => a.network_flowtimeday '
+         || '  ,p_direction         => $5 '
+         || '  ,p_flowline_amount   => a.flowtimeday '
+         || '  ,p_flowline_fmeasure => a.fmeasure '
+         || '  ,p_flowline_tmeasure => a.tmeasure '
+         || '  ,p_event_measure     => b.' || p_points_to_search_measure   || ' '
+         || ' ) AS network_flowtimeday '
+         || ',b.shape '
+         || 'FROM '
+         || 'tmp_navigation_results a '
+         || 'JOIN '
+         || 'cipsrv_upload.' || str_dataset_prefix || '_pointstosearch b '
+         || 'ON '
+         || '    b.' || p_points_to_search_nhdplusid || ' =  a.nhdplusid '
+         || 'AND b.' || p_points_to_search_measure   || ' >= a.fmeasure '
+         || 'AND b.' || p_points_to_search_measure   || ' <= a.tmeasure '
+         || 'WHERE '
+         || '$6 IS FALSE OR b.' || p_points_to_search_id || ' != $7 '
+         USING
+          rec.pointstoprocessid
+         ,rec.pointstoprocessnhdplusid
+         ,rec.pointstoprocessmeasure
+         ,str_search_type
+         ,str_search_type
+         ,boo_ignore_matching_ids
+         ,rec.pointstoprocessid;
+
+         IF boo_updn_gather_streams
+         THEN
+            EXECUTE 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_streams( '
+            || '    objectid '
+            || '   ,process_pointid '
+            || '   ,nhdplusid '
+            || '   ,permanent_identifier '
+            || '   ,reachcode '
+            || '   ,fmeasure '
+            || '   ,tmeasure '
+            || '   ,network_distancekm '
+            || '   ,network_flowtimeday '
+            || '   ,lengthkm '
+            || '   ,flowtimeday '
+            || '   ,ftype '
+            || '   ,fcode '
+            || '   ,gnis_id '
+            || '   ,gnis_name '
+            || '   ,wbarea_permanent_identifier '
+            || '   ,navtermination_flag '
+            || '   ,nav_order '
+            || '   ,shape '
+            || ') '
+            || 'SELECT '
+            || ' NEXTVAL(''cipsrv_upload.' || str_dataset_prefix || '_streams_seq'') '
+            || ',$1 '
+            || ',a.nhdplusid '
+            || ',a.permanent_identifier '
+            || ',a.reachcode '
+            || ',a.fmeasure '
+            || ',a.tmeasure '
+            || ',a.network_distancekm '
+            || ',a.network_flowtimeday '
+            || ',a.lengthkm '
+            || ',a.flowtimeday '
+            || ',SUBSTR(a.fcode::VARCHAR,1,3)::INTEGER '
+            || ',a.fcode '
+            || ',a.gnis_id '
+            || ',a.gnis_name '
+            || ',a.wbarea_permanent_identifier '
+            || ',a.navtermination_flag '
+            || ',a.nav_order '
+            || ',a.shape '
+            || 'FROM '
+            || 'tmp_navigation_results a '
+            USING
+            rec.pointstoprocessid;
+           
+         END IF;
+      
+      END IF;
+      
+      --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+      int_counter := int_counter + 1;
+      IF int_counter > int_commit_limit
+      THEN
+         COMMIT;
+         int_counter := 1;
+         
+      END IF;
+   
+   END LOOP;
+   COMMIT;
+   
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Roll through the results for further streams generation
+   ----------------------------------------------------------------------------
+   IF str_updn_streams_between != 'NONE'
+   THEN
+      str_sql := 'SELECT '
+      || ' a.objectid '
+      || ',a.process_pointid '
+      || ',a.process_pointnhdplusid '
+      || ',a.process_pointmeasure '
+      || ',a.search_pointid '
+      || ',a.search_pointnhdplusid '
+      || ',a.search_pointmeasure '
+      || ',a.network_distancekm '
+      || ',a.network_flowtimeday '
+      || 'FROM '
+      || 'cipsrv_upload.' || str_dataset_prefix || '_results a '
+      || 'WHERE '
+      || '    a.network_distancekm IS NOT NULL '
+      || 'AND a.network_distancekm > 0 ';
+   
+      FOR rec IN EXECUTE str_sql
+      LOOP
+      
+         --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+         IF str_nhdplus_version = 'nhdplus_m'
+         THEN
+            rec2 := cipsrv_nhdplus_m.navigate(
+                p_search_type                := str_updn_streams_between
+               ,p_start_nhdplusid            := rec.process_pointnhdplusid::BIGINT
+               ,p_start_permanent_identifier := NULL
+               ,p_start_reachcode            := NULL
+               ,p_start_hydroseq             := NULL
+               ,p_start_measure              := rec.process_pointmeasure
+               ,p_stop_nhdplusid             := rec.search_pointnhdplusid::BIGINT
+               ,p_stop_permanent_identifier  := NULL
+               ,p_stop_reachcode             := NULL
+               ,p_stop_hydroseq              := NULL
+               ,p_stop_measure               := rec.search_pointmeasure
+               ,p_max_distancekm             := NULL
+               ,p_max_flowtimeday            := NULL
+               ,p_return_flowline_details    := boo_return_flowline_details
+               ,p_return_flowline_geometry   := boo_return_flowline_geometry
+            );
+            int_grid_srid       := rec2.out_grid_srid;
+            int_flowline_count  := rec2.out_flowline_count;
+            int_return_code     := rec2.out_return_code;
+            str_status_message  := rec2.out_status_message;
+            
+         ELSIF str_nhdplus_version = 'nhdplus_h'
+         THEN
+            rec2 := cipsrv_nhdplus_h.navigate(
+                p_search_type                := str_updn_streams_between
+               ,p_start_nhdplusid            := rec.process_pointnhdplusid::BIGINT
+               ,p_start_permanent_identifier := NULL
+               ,p_start_reachcode            := NULL
+               ,p_start_hydroseq             := NULL
+               ,p_start_measure              := rec.process_pointmeasure
+               ,p_stop_nhdplusid             := rec.search_pointnhdplusid::BIGINT
+               ,p_stop_permanent_identifier  := NULL
+               ,p_stop_reachcode             := NULL
+               ,p_stop_hydroseq              := NULL
+               ,p_stop_measure               := rec.search_pointmeasure
+               ,p_max_distancekm             := NULL
+               ,p_max_flowtimeday            := NULL
+               ,p_return_flowline_details    := boo_return_flowline_details
+               ,p_return_flowline_geometry   := boo_return_flowline_geometry
+            );
+            int_grid_srid       := rec2.out_grid_srid;
+            int_flowline_count  := rec2.out_flowline_count;
+            int_return_code     := rec2.out_return_code;
+            str_status_message  := rec2.out_status_message;
+         
+         ELSE
+            RAISE EXCEPTION 'err %',str_nhdplus_version;
+            
+         END IF;
+      
+         IF int_return_code = 0
+         THEN
+            IF int_flowline_count > c_analyze_threshold
+            THEN
+               EXECUTE 'ANALYZE tmp_navigation_results';
+         
+            END IF;
+            
+            str_sql := 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_between( '
+            || '    objectid '
+            || '   ,process_pointid '
+            || '   ,search_pointid '
+            || '   ,nhdplusid '
+            || '   ,permanent_identifier '
+            || '   ,reachcode '
+            || '   ,fmeasure '
+            || '   ,tmeasure '
+            || '   ,network_distancekm '
+            || '   ,network_flowtimeday '
+            || '   ,lengthkm '
+            || '   ,flowtimeday '
+            || '   ,ftype '
+            || '   ,fcode '
+            || '   ,gnis_id '
+            || '   ,gnis_name '
+            || '   ,wbarea_permanent_identifier '
+            || '   ,navtermination_flag '
+            || '   ,nav_order '
+            || '   ,shape '
+            || ') '
+            || 'SELECT '
+            || ' NEXTVAL(''cipsrv_upload.' || str_dataset_prefix || '_between_seq'') '
+            || ',$1 '
+            || ',$2 '
+            || ',a.nhdplusid '
+            || ',a.permanent_identifier '
+            || ',a.reachcode '
+            || ',a.fmeasure '
+            || ',a.tmeasure '
+            || ',a.network_distancekm '
+            || ',a.network_flowtimeday '
+            || ',a.lengthkm '
+            || ',a.flowtimeday '
+            || ',SUBSTR(a.fcode::VARCHAR,1,3)::INTEGER '
+            || ',a.fcode '
+            || ',a.gnis_id '
+            || ',a.gnis_name '
+            || ',a.wbarea_permanent_identifier '
+            || ',a.navtermination_flag '
+            || ',a.nav_order '
+            || ',a.shape '
+            || 'FROM '
+            || 'tmp_navigation_results a ';
+            
+            EXECUTE str_sql 
+            USING
+             rec.process_pointid
+            ,rec.search_pointid;
+            
+         END IF;
+      
+      END LOOP;
+      
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER PROCEDURE cipsrv_engine.updn_batch_search(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,BOOLEAN
+   ,VARCHAR
+   ,BOOLEAN
+   ,VARCHAR
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON PROCEDURE cipsrv_engine.updn_batch_search(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,BOOLEAN
+   ,VARCHAR
+   ,BOOLEAN
+   ,VARCHAR
+   ,INTEGER
 ) TO PUBLIC;
 
