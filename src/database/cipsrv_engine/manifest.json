@@ -27,6 +27,8 @@
             ,"functions/table_exists.sql"
             ,"functions/field_exists.sql"
             ,"functions/index_exists.sql"
+            ,"functions/column_has_single_index.sql"
+            ,"functions/adjust_point_extent.sql"
             ,"functions/create_cip_temp_tables.sql"
             ,"functions/create_cip_batch_temp_tables.sql"
             ,"functions/cipsrv_version.sql"
@@ -49,6 +51,8 @@
             ,"functions/parse_catchment_filter.sql"
             ,"functions/cipsrv_index.sql"
             ,"procedures/cipsrv_batch_index.sql"
+            ,"procedures/point_batch_index_table.sql"
+            ,"procedures/updn_batch_search.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [

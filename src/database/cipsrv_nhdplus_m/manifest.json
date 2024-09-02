@@ -54,6 +54,7 @@
             ,"functions/create_nav_temp_tables.sql"
             ,"functions/get_flowline.sql"
             ,"functions/catconstrained_reach_index.sql"
+            ,"functions/distance_reach_index.sql"
             ,"functions/nav_trim_temp.sql"
             ,"functions/nav_single.sql"
             ,"functions/nav_dd.sql"
