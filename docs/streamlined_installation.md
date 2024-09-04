@@ -1,6 +1,6 @@
 ## Streamlined Installation Instructions
 
-CIP-service is designed to be highly flexible to fit a variety of platforms and architectures.  However, that comes at a cost of complexity.  At heart the original vision of the project was a single docker environment hosting all components.  In this deployment, security concerns are lessened as presumably the docker environment is itself secure from outsiders.
+CIP-service is designed to be highly flexible to fit a variety of platforms and architectures.  However, that comes at a cost of complexity.  At heart the original vision of the project was a single containerized environment hosting all components.  In this deployment, security concerns are lessened as presumably the container environment is itself secure from outsiders.
 
 ### Setup Steps
 ```
