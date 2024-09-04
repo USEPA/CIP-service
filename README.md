@@ -29,7 +29,7 @@ __Cloud Hosted__
 ### Prerequisites
 
 - container runtime such as Docker Engine or Kubernetes\
-  (Windows users may wish to utilize container managment software such as [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Rancher Desktop](https://rancherdesktop.io/))
+  (Windows users may wish to utilize container management software such as [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Rancher Desktop](https://rancherdesktop.io/))
 - at least 16 GB of memory
 - at least 80 GB of free disk
 - internet access
