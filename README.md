@@ -1,6 +1,6 @@
 # CIP (Catchment Index Processing) Service
 
-The Catchment Index Processing Service provides the ability to associate hydrologic features with NHDPlus catchments. The current project is divided into three "bundles" providing functionality through several combinations of Docker and standalone resources.
+The Catchment Index Processing Service provides the ability to associate hydrologic features with NHDPlus catchments. The current project is divided into three "bundles" providing functionality through several combinations of containers and standalone resources.
 
 1. **Engine**: The engine bundle provides the core functionality of CIP.  At present there are two components, the database and the middleware API.
 2. **Admin**: The admin bundle provides a set of Jupyter notebooks used in the deployment of CIP data and code to the engine.  The admin notebooks also provide a simple interface for batch processing.
@@ -16,7 +16,7 @@ To explore the CIP-service API capabilities, see the [OpenAPI documentation](doc
 
 At this time hosting options for deploying the CIP-service bundles are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combined with varied profile configurations to dynamically generate the needed compose and dockerfile artifacts that drive each bundle.  
 
-To keep things simple the project promotes two general approaches, a complete local desktop Docker installation and a cloud option where the engine components are hosted in the EPA cloud. 
+To keep things simple the project promotes two general approaches, a complete local desktop containerized installation and a cloud option where the engine components are hosted in the EPA cloud. 
 
 __Local Desktop__
 
@@ -28,15 +28,15 @@ __Cloud Hosted__
 
 ### Prerequisites
 
-- docker engine or docker desktop
-- [docker compose V2](https://docs.docker.com/compose/)
+- container runtime such as Docker Engine or Kubernetes\
+  (Windows users may wish to utilize container managment software such as [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Rancher Desktop](https://rancherdesktop.io/))
 - at least 16 GB of memory
 - at least 80 GB of free disk
 - internet access
 
 ### Containers Utilized
 
-The project uses the following containers which are standard, stable, trusted dockerhub images.  If you have any reason to distrust or find problematic any of the following, please open a ticket.
+The project uses the following containers which are standard, stable and trusted images.  If you have any reason to distrust or find problematic any of the following, please open a ticket.
 
 - postgis/postgis:15-3.4
 - postgrest/postgrest:v12.0.3
@@ -66,7 +66,7 @@ The project uses the following containers which are standard, stable, trusted do
 
 Note running the Python configuration code directly on your host is the quickest and simplest of the above methods but requires Python 3 with the jinja2 package installed.
 
-These steps will generate the needed docker-compose.yml and Dockerfiles in each bundle directory.  If no existing .env secrets file is found, the env.sample file will be deployed.  Make sure to inspect the resulting .env files for appropriate settings.  No changes will be made to existing .env files.
+These steps will generate the needed compose and dockerfiles in each bundle directory.  If no existing .env secrets file is found, the env.sample file will be deployed.  Make sure to inspect the resulting .env files for appropriate settings.  No changes will be made to preexisting .env files.
 
 ### Typical Deployment Steps
 
