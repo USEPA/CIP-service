@@ -10,8 +10,8 @@ parser.add_argument("--output",    required = False);
 def main(
     bundle
    ,bprofile
-   ,templates
-   ,outdir
+   ,templates = None
+   ,outdir    = None
 ):
    if bundle is None:
       raise Exception("bundle parameter is empty");
