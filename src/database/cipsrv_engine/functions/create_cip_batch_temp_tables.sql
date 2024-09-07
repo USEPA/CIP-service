@@ -25,6 +25,16 @@ BEGIN
           permid_joinkey
          ,nhdplusid
       );
+      
+      CREATE INDEX tmp_cip_01i
+      ON tmp_cip(
+         permid_joinkey
+      );
+      
+      CREATE INDEX tmp_cip_02i
+      ON tmp_cip(
+         nhdplusid
+      );
 
    END IF;
    

@@ -12,6 +12,7 @@ CREATE OR REPLACE PROCEDURE cipsrv_engine.cipsrv_batch_index(
    ,OUT out_return_code                    INTEGER
    ,OUT out_status_message                 VARCHAR
    ,IN  p_override_default_nhdplus_version VARCHAR DEFAULT NULL
+   ,IN  p_debug                            BOOLEAN DEFAULT FALSE
 )
 AS $BODY$ 
 DECLARE
@@ -438,6 +439,10 @@ BEGIN
            || ') ';
            
    EXECUTE str_sql;
+   
+   EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_points';
+   EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_lines';
+   EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_areas';
            
    ----------------------------------------------------------------------------
    -- Step 90
@@ -606,6 +611,12 @@ BEGIN
    EXECUTE str_sql;
    
    COMMIT;
+   
+   IF p_debug
+   THEN
+      RAISE WARNING 'setup complete';
+      
+   END IF;
 
    ----------------------------------------------------------------------------
    -- Step 110
@@ -723,6 +734,12 @@ BEGIN
    
    COMMIT;
    
+   IF p_debug
+   THEN
+      RAISE WARNING 'measuring complete';
+      
+   END IF;
+   
    ----------------------------------------------------------------------------
    -- Step 130
    -- Clip features if requested
@@ -740,6 +757,12 @@ BEGIN
       out_status_message := rec.out_status_message;
       COMMIT;
 
+   END IF;
+   
+   IF p_debug
+   THEN
+      RAISE WARNING 'BEFORE clip complete';
+      
    END IF;
    
    ----------------------------------------------------------------------------
@@ -1439,6 +1462,12 @@ BEGIN
       
       END IF;
       
+      IF p_debug
+      THEN
+         RAISE WARNING 'indexing complete';
+      
+      END IF;
+      
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
          str_catchment_resolution := 'MR';
@@ -1451,6 +1480,8 @@ BEGIN
          str_catchment_resolution := str_nhdplus_version;
       
       END IF;
+      
+      EXECUTE 'ANALYZE tmp_cip';
       
       --************************************************************--
       str_sql := 'INSERT INTO cipsrv_upload.' || str_dataset_prefix || '_cip( '
@@ -1608,6 +1639,12 @@ BEGIN
       
       COMMIT;
       
+      IF p_debug
+      THEN
+         RAISE WARNING 'src2cip complete';
+         
+      END IF;
+      
       EXECUTE 'ANALYZE cipsrv_upload.' || str_dataset_prefix || '_src2cip';
       
       --************************************************************--
@@ -1682,10 +1719,12 @@ LANGUAGE plpgsql;
 ALTER PROCEDURE cipsrv_engine.cipsrv_batch_index(
     VARCHAR
    ,VARCHAR
+   ,BOOLEAN
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON PROCEDURE cipsrv_engine.cipsrv_batch_index(
     VARCHAR
    ,VARCHAR
+   ,BOOLEAN
 ) TO PUBLIC;
 
