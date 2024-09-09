@@ -1,6 +1,15 @@
 --******************************--
 ----- functions/cipsrv_domains.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_domains';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_domains()
 RETURNS JSONB
 VOLATILE
@@ -75,6 +84,15 @@ TO PUBLIC;
 
 --******************************--
 ----- functions/cipsrv_index.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_index(
    JSONB
@@ -728,6 +746,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_pgrest.cipsrv_index(
 --******************************--
 ----- functions/cipsrv_nav.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_nav';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_nav(
    JSONB
 ) RETURNS JSONB
@@ -1077,6 +1104,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_pgrest.cipsrv_nav(
 
 --******************************--
 ----- functions/point_catreach_index.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_pgrest.point_catreach_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.point_catreach_index(
    JSONB
@@ -1749,6 +1785,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_pgrest.point_catreach_index(
 --******************************--
 ----- functions/healthcheck.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_pgrest.healthcheck';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck()
 RETURNS JSONB
 IMMUTABLE
@@ -1757,7 +1802,7 @@ $BODY$
 DECLARE
 BEGIN
    
-   RETURN JSON_BUILD_OBJECT(
+   RETURN JSONB_BUILD_OBJECT(
        'status', 'ok'
    );
       
