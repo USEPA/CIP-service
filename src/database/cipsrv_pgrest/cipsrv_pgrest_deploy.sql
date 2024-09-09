@@ -1097,7 +1097,7 @@ DECLARE
    int_nhdplusid                     BIGINT;
    int_hydroseq                      BIGINT;
    int_fcode                         INTEGER;
-   boo_istribal                      BOOLEAN;
+   str_istribal                      VARCHAR;
    boo_isnavigable                   BOOLEAN;
    boo_iscoastal                     BOOLEAN;
    boo_isocean                       BOOLEAN;
@@ -1245,7 +1245,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1274,7 +1274,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1303,7 +1303,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1332,7 +1332,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1361,7 +1361,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1390,7 +1390,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1426,7 +1426,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1455,7 +1455,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1484,7 +1484,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1513,7 +1513,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1542,7 +1542,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1571,7 +1571,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -1745,4 +1745,29 @@ ALTER FUNCTION cipsrv_pgrest.point_catreach_index(
 GRANT EXECUTE ON FUNCTION cipsrv_pgrest.point_catreach_index(
    JSONB
 ) TO PUBLIC;
+
+--******************************--
+----- functions/healthcheck.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck()
+RETURNS JSONB
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+BEGIN
+   
+   RETURN JSON_BUILD_OBJECT(
+       'status', 'ok'
+   );
+      
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_pgrest.healthcheck() 
+OWNER TO cipsrv_pgrest;
+
+GRANT EXECUTE ON FUNCTION cipsrv_pgrest.healthcheck() 
+TO PUBLIC;
 
