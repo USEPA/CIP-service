@@ -49,32 +49,32 @@ def dzproc(cmd):
       
 ###############################################################################
 print("Downing any existing compose services");
-if args.down_volumes:
+
+os.chdir('../engine');
+if os.path.exists("docker-compose.yml"):
    print(".  engine");
-   os.chdir('../engine');
-   cmd = ["docker","compose","down","-v"];
-   dzproc(cmd);
-   print(".  admin");
-   os.chdir('../admin');
-   cmd = ["docker","compose","down","-v"];
-   dzproc(cmd);
-   print(".  demo");
-   os.chdir('../demo');
-   cmd = ["docker","compose","down","-v"];
+   if args.down_volumes:
+      cmd = ["docker","compose","down","-v"];
+   else:
+      cmd = ["docker","compose","down"];
    dzproc(cmd);
    
-else:
-   print(".  engine");
-   os.chdir('../engine');
-   cmd = ["docker","compose","down"];
-   dzproc(cmd);
+os.chdir('../admin');
+if os.path.exists("docker-compose.yml"):
    print(".  admin");
-   os.chdir('../admin');
-   cmd = ["docker","compose","down"];
+   if args.down_volumes:
+      cmd = ["docker","compose","down","-v"];
+   else:
+      cmd = ["docker","compose","down"];
    dzproc(cmd);
+   
+os.chdir('../demo');
+if os.path.exists("docker-compose.yml"):
    print(".  demo");
-   os.chdir('../demo');
-   cmd = ["docker","compose","down"];
+   if args.down_volumes:
+      cmd = ["docker","compose","down","-v"];
+   else:
+      cmd = ["docker","compose","down"];
    dzproc(cmd);
    
 os.chdir('../config');
