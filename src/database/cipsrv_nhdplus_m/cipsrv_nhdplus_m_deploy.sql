@@ -203,7 +203,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'F' THEN 1 WHEN aa.istribal = 'P' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1]
+   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
@@ -329,7 +329,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'F' THEN 1 WHEN aa.istribal = 'P' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1]
+   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
@@ -455,7 +455,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'F' THEN 1 WHEN aa.istribal = 'P' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1]
+   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
@@ -581,7 +581,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'F' THEN 1 WHEN aa.istribal = 'P' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1]
+   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
@@ -707,7 +707,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'F' THEN 1 WHEN aa.istribal = 'P' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1]
+   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
@@ -833,7 +833,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'F' THEN 1 WHEN aa.istribal = 'P' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1]
+   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
