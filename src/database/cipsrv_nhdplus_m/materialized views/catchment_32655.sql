@@ -57,7 +57,7 @@ SELECT
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,bool_or(CASE WHEN aa.istribal    = 'Y' THEN TRUE ELSE FALSE END) AS istribal
+   ,aa.istribal
    ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
    ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
    ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink

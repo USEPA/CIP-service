@@ -51,7 +51,6 @@ RUN mkdir -p /home/${NB_USER}/.ssh
 COPY ./jupyter/known_hosts.txt            /home/${NB_USER}/.ssh/known_hosts  
 COPY ./jupyter/jupyter_server_config.py   /home/${NB_USER}/.jupyter/jupyter_server_config.py
 COPY ./jupyter/notebook.json              /home/${NB_USER}/.jupyter/nbconfig/notebook.json
-COPY ./jupyter/notebooks                  /home/${NB_USER}/notebooks
 
 RUN chmod 0644 /home/${NB_USER}/.ssh/known_hosts
 
@@ -131,6 +130,8 @@ RUN pip3 install                                              \
       openpyxl
 
 RUN pip3 install jupyterlab
+
+COPY ./jupyter/notebooks /home/${NB_USER}/notebooks
 
 EXPOSE 8888
 

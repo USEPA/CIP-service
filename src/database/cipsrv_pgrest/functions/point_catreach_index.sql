@@ -17,7 +17,7 @@ DECLARE
    int_nhdplusid                     BIGINT;
    int_hydroseq                      BIGINT;
    int_fcode                         INTEGER;
-   boo_istribal                      BOOLEAN;
+   str_istribal                      VARCHAR;
    boo_isnavigable                   BOOLEAN;
    boo_iscoastal                     BOOLEAN;
    boo_isocean                       BOOLEAN;
@@ -165,7 +165,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -194,7 +194,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -223,7 +223,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -252,7 +252,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -281,7 +281,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -310,7 +310,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -346,7 +346,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -375,7 +375,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -404,7 +404,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -433,7 +433,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -462,7 +462,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean
@@ -491,7 +491,7 @@ BEGIN
           int_nhdplusid
          ,int_hydroseq
          ,int_fcode
-         ,boo_istribal
+         ,str_istribal
          ,boo_isnavigable
          ,boo_iscoastal
          ,boo_isocean

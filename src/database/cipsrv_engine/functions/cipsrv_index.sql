@@ -619,7 +619,7 @@ BEGIN
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
+      AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
       AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
    ELSIF str_nhdplus_version = 'nhdplus_h'
@@ -652,7 +652,7 @@ BEGIN
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal   OR a.istribal = 'Y')
+      AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
       AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
    
    ELSE
