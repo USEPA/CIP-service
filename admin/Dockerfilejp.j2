@@ -133,6 +133,10 @@ RUN pip3 install jupyterlab
 
 COPY ./jupyter/notebooks /home/${NB_USER}/notebooks
 
+USER root
+RUN chown -R ${NB_USER}:users /home/${NB_USER}
+USER ${NB_USER}
+
 EXPOSE 8888
 
 CMD ["sh", "-c", "jupyter notebook --port=8888 --no-browser --ip=* --notebook-dir=/home/${NB_USER}/notebooks"]

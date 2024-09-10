@@ -81,7 +81,12 @@ os.chdir('../config');
 
 ###############################################################################
 if args.recipe is None:
-   args.recipe = 'MRONLY';   
+   args.recipe = 'MRONLY'; 
+
+elif args.recipe == 'VPU09':
+   print("using recipe VPU09");
+   args.mr_dumpfile = 'cipsrv_nhdplus_m_3_vpu09.dmp';
+   args.hr_dumpfile = 'cipsrv_nhdplus_h_3_vpu09.dmp';
 
 ###############################################################################
 print("Configuring compose for engine containers using default settings.");
@@ -190,8 +195,9 @@ dzproc(cmd);
 cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_support.py"];
 dzproc(cmd);
 
+z = 0;
 ###############################################################################
-if args.recipe in ['MRONLY','ALL']:
+if args.recipe in ['MRONLY','ALL','VPU09']:
    cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus_m.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus_m.py"];
    dzproc(cmd);
 
@@ -219,9 +225,10 @@ if args.recipe in ['MRONLY','ALL']:
    dzproc(cmd);
    cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_nhdplus_m.py"];
    dzproc(cmd);
+   z += 1;
 
 ###############################################################################
-if args.recipe in ['HRONLY','ALL']:
+if args.recipe in ['HRONLY','ALL','VPU09']:
    cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus_h.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus_h.py"];
    dzproc(cmd);
 
@@ -249,6 +256,12 @@ if args.recipe in ['HRONLY','ALL']:
    dzproc(cmd);
    cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_nhdplus_h.py"];
    dzproc(cmd);
+   z += 1;
+
+###############################################################################
+if z == 0:
+   print("Error no NHDPlus datasets loaded using these parameters");
+   sys.exit(-50);
 
 ###############################################################################
 print("Fetching and loading CIP Engine logic.");
