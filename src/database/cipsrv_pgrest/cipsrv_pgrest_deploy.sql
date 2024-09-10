@@ -9,7 +9,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_domains';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_domains()
@@ -95,7 +95,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_index';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_index(
@@ -758,7 +758,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_nav';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_nav(
@@ -1119,7 +1119,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.point_catreach_index';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.point_catreach_index(
@@ -1801,7 +1801,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.healthcheck';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck()
