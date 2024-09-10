@@ -5,41 +5,49 @@ CIP-service is designed to be highly flexible to fit a variety of platforms and 
 ### Windows Setup Steps
 
 1. Install [Rancher Desktop](https://rancherdesktop.io/) or [Docker Desktop](https://www.docker.com/products/docker-desktop/).\
-   Note the Docker Desktop licensing requirements.
+   Note the Docker Desktop licensing requirements.  For Rancher Desktop set the container runtime to [dockerd](https://docs.rancherdesktop.io/ui/preferences/container-engine/general).
 
 2. Set your WSL to a distro with Python 3.\
    You can't go wrong with [Ubuntu](https://canonical-ubuntu-wsl.readthedocs-hosted.com/en/latest/guides/install-ubuntu-wsl2/).
 
-3. Configure [Rancher Desktop](https://docs.rancherdesktop.io/ui/preferences/wsl/integrations) or [Docker Desktop](https://docs.docker.com/desktop/wsl/#enabling-docker-support-in-wsl-2-distros) to integrate with WSL.
+3. Configure [Rancher Desktop](https://docs.rancherdesktop.io/ui/preferences/wsl/integrations) or [Docker Desktop](https://docs.docker.com/desktop/wsl/#enabling-docker-support-in-wsl-2-distros) to integrate with your WSL distro.
 
-4. Add the Python library jinja2 to Python via
+4. Log into dockerhub using your credentials via
+```
+    docker login 
+```
+5. Add the Python library jinja2 to Python via
 ```
     pip3 install jinja2
 ```
-5. Checkout the CIP-service project and navigate to the project root.
+6. Checkout the CIP-service project and navigate to the project root.
   
-6. Then launch the quickconfig.py script
+7. Then launch the quickconfig.py script
 ```
     cd config
     python3 quickconfig.py --recipe=VPU09
 ```
 ### Linux Setup Steps
 
-1. Install [Docker Engine](https://docs.docker.com/engine/install/).
-   
-2.  Add the Python library jinja2 to you local Python via
+1. Install [Docker Engine](https://docs.docker.com/engine/install/).\
+   Note the engine itself is [open source](https://docs.docker.com/engine/).
+2. Log into dockerhub using your credentials via
+```
+    docker login 
+```
+3.  Add the Python library jinja2 to your local Python via
 ```
     pip3 install jinja2
 ```
-3. Checkout the CIP-service project and navigate to the project root.
+4. Checkout the CIP-service project and navigate to the project root.
 
-4. Then launch the quickconfig.py script
+5. Then launch the quickconfig.py script
 ```
     cd config
     python3 quickconfig.py --recipe=VPU09
 ```
 ### quickconfig script Options
-
+docker 
 * **--recipe** set to \
     **ALL** - load both the high and medium resolution NHDPlus datasets. \
     **MRONLY** - load only the medium resolution NHDPlus dataset. \
