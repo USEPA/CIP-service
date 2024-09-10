@@ -6,7 +6,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_support.query_generic_common_mbr';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_support.query_generic_common_mbr(
