@@ -12,7 +12,7 @@ CIP-service is designed to be highly flexible to fit a variety of platforms and 
 
 3. Configure [Rancher Desktop](https://docs.rancherdesktop.io/ui/preferences/wsl/integrations) or [Docker Desktop](https://docs.docker.com/desktop/wsl/#enabling-docker-support-in-wsl-2-distros) to integrate with your WSL distro.
 
-4. Log into dockerhub using your credentials via
+4. While all CIP-service images are public, dockerhub may argue with your desire for anonymous access.  If presented with authentication problems, log into dockerhub using your credentials via
 ```
     docker login 
 ```
@@ -31,7 +31,7 @@ CIP-service is designed to be highly flexible to fit a variety of platforms and 
 
 1. Install [Docker Engine](https://docs.docker.com/engine/install/).\
    Note the engine itself is [open source](https://docs.docker.com/engine/).
-2. Log into dockerhub using your credentials via
+2. While all CIP-service images are public, dockerhub may argue with your desire for anonymous access.  If presented with authentication problems, log into dockerhub using your credentials via
 ```
     docker login 
 ```
