@@ -1,6 +1,18 @@
 --******************************--
 ----- functions/generic_common_mbr.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
+
+
 CREATE OR REPLACE FUNCTION cipsrv_support.generic_common_mbr(
    IN  p_input  VARCHAR
 ) RETURNS GEOMETRY 
@@ -60,6 +72,17 @@ GRANT EXECUTE ON FUNCTION cipsrv_support.generic_common_mbr(
 
 --******************************--
 ----- functions/query_generic_common_mbr.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.query_generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_support.query_generic_common_mbr(
    IN  p_input  GEOMETRY
@@ -143,6 +166,18 @@ GRANT EXECUTE ON FUNCTION cipsrv_support.query_generic_common_mbr(
 
 --******************************--
 ----- functions/determine_grid_srid.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.determine_grid_srid';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
+
 
 CREATE OR REPLACE FUNCTION cipsrv_support.determine_grid_srid(
     IN  p_geometry          GEOMETRY
@@ -259,8 +294,11 @@ BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_support.determine_states';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
 END$$;
+
 
 CREATE OR REPLACE FUNCTION cipsrv_support.determine_states(
     IN  p_geometry             GEOMETRY
@@ -452,6 +490,17 @@ GRANT EXECUTE ON FUNCTION cipsrv_support.determine_states(
 --******************************--
 ----- functions/clip_by_state.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.clip_by_state';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_state(
     IN  p_geometry             GEOMETRY
    ,IN  p_known_region         VARCHAR
@@ -581,6 +630,17 @@ GRANT EXECUTE ON FUNCTION cipsrv_support.clip_by_state(
 
 --******************************--
 ----- functions/clip_by_tribe.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.clip_by_tribe';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_tribe(
     IN  p_geometry                  GEOMETRY
@@ -992,6 +1052,17 @@ GRANT EXECUTE ON FUNCTION cipsrv_support.clip_by_tribe(
 
 --******************************--
 ----- functions/geometry_clip.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.geometry_clip';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_support.geometry_clip(
     IN  p_geometry             GEOMETRY
