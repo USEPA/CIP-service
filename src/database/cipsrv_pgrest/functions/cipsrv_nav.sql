@@ -6,7 +6,7 @@ BEGIN
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.cipsrv_nav';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_nav(
