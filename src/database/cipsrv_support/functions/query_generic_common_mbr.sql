@@ -1,3 +1,14 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.query_generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s()',a);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_support.query_generic_common_mbr(
    IN  p_input  GEOMETRY
 ) RETURNS VARCHAR

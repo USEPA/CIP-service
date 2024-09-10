@@ -19,7 +19,7 @@ GRANT  USAGE ON SCHEMA cipsrv_support   TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_h TO cipsrv_upload;
 
-CREATE FUNCTION cipsrv_pgrest.healthcheck() RETURNS JSONB AS $$ BEGIN RETURN jsonb_object_agg('works',TRUE); END; $$ LANGUAGE 'plpgsql';
+CREATE FUNCTION cipsrv_pgrest.healthcheck() RETURNS JSONB IMMUTABLE AS $$BEGIN RETURN JSONB_BUILD_OBJECT('status','ok'); END;$$ LANGUAGE 'plpgsql';
 ALTER  FUNCTION cipsrv_pgrest.healthcheck() OWNER TO cipsrv_pgrest;
 
 CREATE TABLE cipsrv_upload.batch_control(
