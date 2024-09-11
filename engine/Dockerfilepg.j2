@@ -14,9 +14,10 @@ RUN apt-get update                                       &&\
        parallel                                            \
        unzip                                               \
        vim                                                 \
-       postgresql-15-pgrouting*                          &&\ 
+       postgresql-15-pgtap*                                \
+       postgresql-15-pgrouting*                          &&\
     rm -rf /var/lib/apt/lists/*
-    
+
 COPY ./postgresql/init-pg.sh        /docker-entrypoint-initdb.d/init.sh
 COPY ./postgresql/alter_pg.sed      /home/postgres/alter_pg.sed
 COPY ./postgresql/user_creation.sql /home/postgres/user_creation.sql
