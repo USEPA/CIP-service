@@ -10,6 +10,6 @@
         }
     },
     "postAttachCommand": {
-        "setup": ".devcontainer/setup.sh"
+        "setup": "chmod +x .devcontainer/setup.sh && .devcontainer/setup.sh"
     }
 }
