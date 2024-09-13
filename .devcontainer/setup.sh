@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd config
+cd ../config
 chmod +x config-compose.sh
 ./config-compose.sh engine default
 ./config-compose.sh admin default
