@@ -1,0 +1,15 @@
+{
+    "name": "CIP as a Service",
+    "image": "mcr.microsoft.com/devcontainers/universal",
+    "forwardPorts": [
+        8080
+    ],
+    "portsAttributes": {
+        "8080": {
+            "label": "CIP Server"
+        }
+    },
+    "postAttachCommand": {
+        "setup": "./setup.sh"
+    }
+}
