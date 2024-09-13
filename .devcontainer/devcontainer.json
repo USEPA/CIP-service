@@ -10,6 +10,6 @@
         }
     },
     "postAttachCommand": {
-        "setup": "./setup.sh"
+        "setup": ".devcontainer/setup.sh"
     }
 }
