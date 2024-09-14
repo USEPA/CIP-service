@@ -14,6 +14,7 @@ RUN apt-get update                                       &&\
        parallel                                            \
        unzip                                               \
        vim                                                 \
+       postgresql-15-plprofiler*                           \
        postgresql-15-pgtap*                                \
        postgresql-15-pgrouting*                          &&\
     rm -rf /var/lib/apt/lists/*
