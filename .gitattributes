@@ -2,3 +2,4 @@
 *.sh    text eol=lf
 *.sql   text eol=lf
 *.ipynb text eol=lf
+*.j2    text eol=lf

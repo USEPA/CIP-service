@@ -224,8 +224,8 @@
                <td width="150px;">
                <span style="font-family: Arial; font-size: 11px;">Lines:</span><br/>
                <select name="dzDefaultLineIndexingMethod" id="dzDefaultLineIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
-                  <option value="line_simple">Line - Simple</option>
-                  <option value="line_levelpath" SELECTED>Line - LevelPath</option>
+                  <option value="line_simple" SELECTED>Line - Simple</option>
+                  <option value="line_levelpath">Line - LevelPath</option>
                </select>
                </td>
                </tr>
@@ -252,7 +252,7 @@
                
                <br/>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
-               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="10" />
+               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <br/>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Catchment Thold:</span>
@@ -263,10 +263,10 @@
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <br/>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
-               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="50" />
+               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Event Thold:</span>
-               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px" value="1" />
+               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
                <span style="font-family: Arial; font-size: 11px;"> %</span>
                <br/>
                <br/>
@@ -727,7 +727,7 @@
                var attains_meas  = Number(document.getElementById("dzMeas").value);
 
                var color = " color: red; font-weight: bold;";
-               if (response.catchment_count == attains_count && roundNumber(response.catchment_areasqkm,2) == attains_meas.toFixed(1)) {
+               if (response.catchment_count == attains_count && roundNumber(response.catchment_areasqkm,2) == attains_meas.toFixed(2)) {
                   color = " color: green; font-weight: bold;";
                }
 
@@ -755,11 +755,18 @@
                      tbl_cnt += (i+1);
                   }
 
+                  tcat = roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4);
+                  if (tcat == null ) {
+                     stcat = '';
+                  } else {
+                     stcat = tcat.toString();
+                  }
+                  
                   tbl_cnt += '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
                           +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.areasqkm,4) + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4) + '</TD>'
+                          +  '<TD style="font-family: Arial; font-size: 14px;">' + stcat + '</TD>'
                           +  '</TR>';
                   }
 
@@ -839,22 +846,11 @@
             var def_line_threshold;
             var def_areaevt_threshold;
             var def_areacat_threshold;
+            
             if (val == "AKDECWQ" ) {
                state = "AK";
-               def_point = "point_simple";
-               def_line  = "line_simple";
-               def_area  = "area_simple";
-               def_line_threshold = "";
-               def_areaevt_threshold = "1";
-               def_areacat_threshold = "50";
             } else if (val == "21AWIC") {
                state = "AL";
-               def_point = "point_simple";
-               def_line  = "line_levelpath";
-               def_area  = "area_artpath";
-               def_line_threshold = "10";
-               def_areaevt_threshold = "1";
-               def_areacat_threshold = "50";
             } else if (val == "ARDEQH2O") {
                state = "AR";
             } else if (val == "21AS") {
@@ -995,12 +991,6 @@
                state = "WV";
             } else if (val == "WIDNR") {
                state = "WI";
-               def_point = "point_simple";
-               def_line  = "line_levelpath";
-               def_area  = "area_simple";
-               def_line_threshold = "10";
-               def_areaevt_threshold = "1";
-               def_areacat_threshold = "10";
             } else if (val == "WYDEQ") {
                state = "WY";
             }

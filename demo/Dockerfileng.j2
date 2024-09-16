@@ -15,6 +15,13 @@ ARG ARG_POSTGREST_PORT
 {%-    set postgrest_port = cip_pr_port %}
 {%- endif %}
 
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update                                       &&\
+    apt-get install -y --no-install-recommends             \
+       vim                                               &&\
+    rm -rf /var/lib/apt/lists/*
+
 COPY ./nginx/html       /usr/share/nginx/html
 COPY ./nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
