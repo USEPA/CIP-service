@@ -403,4 +403,4 @@ BEGIN
       ,'test 6 - check state code'
    );
 
-END;$$
+END;$$;

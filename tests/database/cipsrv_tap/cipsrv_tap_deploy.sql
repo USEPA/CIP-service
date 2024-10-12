@@ -284,7 +284,7 @@ BEGIN
       ,'test 3 - check state code 1'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- area_artpath_mr.sql 
 
@@ -571,7 +571,7 @@ BEGIN
       ,'test 3 - check state code 1'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- area_centroid_hr.sql 
 
@@ -859,7 +859,7 @@ BEGIN
       ,'test 3 - check state code 1'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- area_centroid_mr.sql 
 
@@ -1147,7 +1147,7 @@ BEGIN
       ,'test 3 - check state code 1'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- area_simple_hr.sql 
 
@@ -1544,7 +1544,7 @@ BEGIN
       ,'test 4 - check state code 2'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- area_simple_mr.sql 
 
@@ -1940,7 +1940,7 @@ BEGIN
       ,'test 4 - check state code 2'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- line_levelpath_hr.sql 
 
@@ -2393,7 +2393,7 @@ BEGIN
       ,'test 5 - check state code 2'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- line_levelpath_mr.sql 
 
@@ -2846,7 +2846,7 @@ BEGIN
       ,'test 5 - check state code 2'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- line_simple_hr.sql 
 
@@ -3297,7 +3297,7 @@ BEGIN
       ,'test 5 - check state code 2'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- line_simple_mr.sql 
 
@@ -3748,7 +3748,7 @@ BEGIN
       ,'test 5 - check state code 2'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- point_simple_hr.sql 
 
@@ -4157,7 +4157,7 @@ BEGIN
       ,'test 6 - check state code'
    );
 
-END;$$
+END;$$;
 --******************************--
 ----- point_simple_mr.sql 
 
@@ -4566,4 +4566,4 @@ BEGIN
       ,'test 6 - check state code'
    );
 
-END;$$
+END;$$;

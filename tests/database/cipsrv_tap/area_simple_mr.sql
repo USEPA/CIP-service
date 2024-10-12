@@ -390,4 +390,4 @@ BEGIN
       ,'test 4 - check state code 2'
    );
 
-END;$$
+END;$$;
