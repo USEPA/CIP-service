@@ -74,6 +74,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF JSONB_PATH_EXISTS(json_input,'$.points')
    AND json_input->>'points' IS NOT NULL
+   AND json_input->>'points' != ''
    THEN
       json_points := json_input->'points';
 
@@ -81,6 +82,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.lines')
    AND json_input->>'lines' IS NOT NULL
+   AND json_input->>'lines' != ''
    THEN
       json_lines := json_input->'lines';
       
@@ -88,6 +90,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.areas')
    AND json_input->>'areas' IS NOT NULL
+   AND json_input->>'areas' != ''
    THEN
       json_areas := json_input->'areas';
       
@@ -95,6 +98,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.geometry')
    AND json_input->>'geometry' IS NOT NULL
+   AND json_input->>'geometry' != ''
    THEN
       json_geometry := json_input->'geometry';
       

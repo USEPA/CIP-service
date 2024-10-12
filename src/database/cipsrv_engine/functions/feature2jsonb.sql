@@ -27,6 +27,7 @@ BEGIN
    json_properties := (p_feature).properties;
    
    IF json_properties IS NULL
+   OR JSONB_TYPEOF(json_properties) = 'null'
    THEN
       json_properties := '{}'::JSONB;
       

@@ -182,7 +182,7 @@ BEGIN
    THEN
       str_default_ring_indexing_method := 'area_simple';
       
-   ELSIF str_default_ring_indexing_method NOT IN ('area_simple','area_centroid','area_artpath')
+   ELSIF str_default_ring_indexing_method NOT IN ('treat_as_lines','area_simple','area_centroid','area_artpath')
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP ring indexing method';

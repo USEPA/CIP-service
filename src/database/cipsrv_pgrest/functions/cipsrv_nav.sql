@@ -55,6 +55,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF JSONB_PATH_EXISTS(json_input,'$.nhdplus_version')
    AND json_input->>'nhdplus_version' IS NOT NULL
+   AND json_input->>'nhdplus_version' != ''
    THEN
       str_nhdplus_version := json_input->>'nhdplus_version';
 
@@ -71,13 +72,16 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.search_type')
    AND json_input->>'search_type' IS NOT NULL
+   AND json_input->>'search_type' != ''
    THEN
+      
       str_search_type := json_input->>'search_type';
 
    END IF;
    
    IF JSONB_PATH_EXISTS(json_input,'$.start_nhdplusid')
    AND json_input->'start_nhdplusid' IS NOT NULL
+   AND json_input->>'start_nhdplusid' != ''
    THEN
       int_start_nhdplusid := cipsrv_engine.json2bigint(json_input->'start_nhdplusid');
       
@@ -85,6 +89,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.start_permanent_identifier')
    AND json_input->>'start_permanent_identifier' IS NOT NULL
+   AND json_input->>'start_permanent_identifier' != ''
    THEN
       str_start_permanent_identifier := json_input->>'start_permanent_identifier';
       
@@ -92,6 +97,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.start_reachcode')
    AND json_input->>'start_reachcode' IS NOT NULL
+   AND json_input->>'start_reachcode' != ''
    THEN
       str_start_reachcode := json_input->>'start_reachcode';
       
@@ -99,6 +105,7 @@ BEGIN
 
    IF JSONB_PATH_EXISTS(json_input,'$.start_hydroseq')
    AND json_input->'start_hydroseq' IS NOT NULL
+   AND json_input->>'start_hydroseq' != ''
    THEN
       int_start_hydroseq := cipsrv_engine.json2numeric(json_input->'start_hydroseq');
       
@@ -106,6 +113,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.start_measure')
    AND json_input->'start_measure' IS NOT NULL
+   AND json_input->>'start_measure' != ''
    THEN
       num_start_measure := cipsrv_engine.json2numeric(json_input->'start_measure');
       
@@ -113,6 +121,7 @@ BEGIN
 
    IF JSONB_PATH_EXISTS(json_input,'$.stop_nhdplusid')
    AND json_input->'stop_nhdplusid' IS NOT NULL
+   AND json_input->>'stop_nhdplusid' != ''
    THEN
       int_stop_nhdplusid := cipsrv_engine.json2bigint(json_input->'stop_nhdplusid');
       
@@ -120,6 +129,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.stop_permanent_identifier')
    AND json_input->>'stop_permanent_identifier' IS NOT NULL
+   AND json_input->>'stop_permanent_identifier' != ''
    THEN
       str_stop_permanent_identifier := json_input->>'stop_permanent_identifier';
       
@@ -127,6 +137,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.stop_reachcode')
    AND json_input->>'stop_reachcode' IS NOT NULL
+   AND json_input->>'stop_reachcode' != ''
    THEN
       str_stop_reachcode := json_input->>'stop_reachcode';
       
@@ -134,6 +145,7 @@ BEGIN
 
    IF JSONB_PATH_EXISTS(json_input,'$.stop_hydroseq')
    AND json_input->'stop_hydroseq' IS NOT NULL
+   AND json_input->>'stop_hydroseq' != ''
    THEN
       int_stop_hydroseq := cipsrv_engine.json2bigint(json_input->'stop_hydroseq');
       
@@ -141,6 +153,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.stop_measure')
    AND json_input->'stop_measure' IS NOT NULL
+   AND json_input->>'stop_measure' != ''
    THEN
       num_stop_measure := cipsrv_engine.json2numeric(json_input->'stop_measure');
       
@@ -148,6 +161,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.max_distancekm')
    AND json_input->'max_distancekm' IS NOT NULL 
+   AND json_input->>'max_distancekm' != ''
    THEN
       num_max_distancekm := cipsrv_engine.json2numeric(json_input->'max_distancekm');
       
@@ -155,6 +169,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.max_flowtimeday')
    AND json_input->'max_flowtimeday' IS NOT NULL 
+   AND json_input->>'max_flowtimeday' != ''
    THEN
       num_max_flowtimeday := cipsrv_engine.json2numeric(json_input->'max_flowtimeday');
       
@@ -162,6 +177,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.return_flowline_details')
    AND json_input->'return_flowline_details' IS NOT NULL
+   AND json_input->>'return_flowline_details' != ''
    THEN
       boo_return_flowline_details := (json_input->'return_flowline_details')::BOOLEAN;
       
@@ -169,6 +185,7 @@ BEGIN
    
    IF JSONB_PATH_EXISTS(json_input,'$.return_flowline_geometry')
    AND json_input->'return_flowline_geometry' IS NOT NULL
+   AND json_input->>'return_flowline_geometry' != ''
    THEN
       boo_return_flowline_geometry := (json_input->'return_flowline_geometry')::BOOLEAN;
       
