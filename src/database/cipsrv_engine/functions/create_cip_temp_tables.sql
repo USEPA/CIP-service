@@ -16,14 +16,26 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
-         ,nhdplusid            BIGINT
+         ,catchmentstatecodes  VARCHAR[]
+         ,nhdplusid            BIGINT    NOT NULL
          ,overlap_measure      NUMERIC
       );
 
-      CREATE UNIQUE INDEX tmp_cip_pk 
+      CREATE UNIQUE INDEX tmp_cip_pk
       ON tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
+      ) NULLS NOT DISTINCT;
+      
+      CREATE INDEX tmp_cip_i01
+      ON tmp_cip(
+         permid_joinkey
+      );
+      
+      CREATE INDEX tmp_cip_i02
+      ON tmp_cip(
+         nhdplusid
       );
 
    END IF;
@@ -38,17 +50,20 @@ BEGIN
       
    ELSE
       CREATE TEMPORARY TABLE tmp_cip_out(
-          nhdplusid            BIGINT
-         ,catchmentstatecode   VARCHAR(2)
+          nhdplusid            BIGINT      NOT NULL
+         ,catchmentstatecode   VARCHAR(2)  NOT NULL
          ,xwalk_huc12          VARCHAR(12)
          ,areasqkm             NUMERIC
-         ,istribal             VARCHAR(1)
+         ,istribal             VARCHAR(1)  NOT NULL
          ,istribal_areasqkm    NUMERIC
          ,shape                GEOMETRY
       );
 
       CREATE UNIQUE INDEX tmp_cip_out_pk 
       ON tmp_cip_out(catchmentstatecode,nhdplusid);
+      
+      CREATE INDEX tmp_cip_out_01i
+      ON tmp_cip_out(nhdplusid);
 
    END IF;
 

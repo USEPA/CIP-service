@@ -77,16 +77,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -107,13 +110,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -124,7 +129,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_5070 aaaa
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -134,7 +139,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-          num_line_threshold IS NULL 
+         num_line_threshold IS NULL 
       OR a.nhdpercentage >= num_line_threshold
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
@@ -146,16 +151,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -176,13 +184,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -193,7 +203,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_3338 aaaa
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -215,16 +225,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -245,13 +258,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -262,7 +277,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_26904 aaaa
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -284,16 +299,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -314,13 +332,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -331,7 +351,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_32161 aaaa
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -353,16 +373,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -383,13 +406,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -400,7 +425,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_32655 aaaa
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -422,16 +447,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -452,13 +480,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -469,7 +499,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_32702 aaaa
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape

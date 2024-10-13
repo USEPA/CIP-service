@@ -208,7 +208,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_h.catchment_5070 aaaa
+                  cipsrv_nhdplus_h.catchment_5070_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -319,7 +319,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_h.catchment_3338 aaaa
+                  cipsrv_nhdplus_h.catchment_3338_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -430,7 +430,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_h.catchment_26904 aaaa
+                  cipsrv_nhdplus_h.catchment_26904_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -541,7 +541,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_h.catchment_32161 aaaa
+                  cipsrv_nhdplus_h.catchment_32161_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -652,7 +652,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_h.catchment_32655 aaaa
+                  cipsrv_nhdplus_h.catchment_32655_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -763,7 +763,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_h.catchment_32702 aaaa
+                  cipsrv_nhdplus_h.catchment_32702_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape

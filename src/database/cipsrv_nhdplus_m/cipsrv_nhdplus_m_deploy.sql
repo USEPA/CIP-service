@@ -160,6 +160,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -172,6 +173,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
@@ -188,6 +191,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -200,26 +204,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,3338)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,3338) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('AK')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,3338)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_m.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode IN ('AK')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
@@ -234,34 +289,46 @@ ALTER TABLE cipsrv_nhdplus_m.catchment_3338 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_3338 TO public;
 
 CREATE UNIQUE INDEX catchment_3338_01u
-ON cipsrv_nhdplus_m.catchment_3338(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_3338(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_3338_02u
-ON cipsrv_nhdplus_m.catchment_3338(hydroseq);
+ON cipsrv_nhdplus_m.catchment_3338(catchmentstatecodes,hydroseq);
 
 CREATE INDEX catchment_3338_01i
-ON cipsrv_nhdplus_m.catchment_3338(levelpathi);
+ON cipsrv_nhdplus_m.catchment_3338(nhdplusid);
 
 CREATE INDEX catchment_3338_02i
-ON cipsrv_nhdplus_m.catchment_3338(fcode);
+ON cipsrv_nhdplus_m.catchment_3338(hydroseq);
 
 CREATE INDEX catchment_3338_03i
-ON cipsrv_nhdplus_m.catchment_3338(istribal);
+ON cipsrv_nhdplus_m.catchment_3338(levelpathi);
 
 CREATE INDEX catchment_3338_04i
-ON cipsrv_nhdplus_m.catchment_3338(isnavigable);
+ON cipsrv_nhdplus_m.catchment_3338(fcode);
 
 CREATE INDEX catchment_3338_05i
-ON cipsrv_nhdplus_m.catchment_3338(iscoastal);
+ON cipsrv_nhdplus_m.catchment_3338(istribal);
 
 CREATE INDEX catchment_3338_06i
+ON cipsrv_nhdplus_m.catchment_3338(isnavigable);
+
+CREATE INDEX catchment_3338_07i
+ON cipsrv_nhdplus_m.catchment_3338(iscoastal);
+
+CREATE INDEX catchment_3338_08i
 ON cipsrv_nhdplus_m.catchment_3338(isocean);
+
+CREATE INDEX catchment_3338_09i
+ON cipsrv_nhdplus_m.catchment_3338(statesplit);
 
 CREATE INDEX catchment_3338_spx
 ON cipsrv_nhdplus_m.catchment_3338 USING GIST(shape);
 
 CREATE INDEX catchment_3338_spx2
 ON cipsrv_nhdplus_m.catchment_3338 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_3338_gin
+ON cipsrv_nhdplus_m.catchment_3338 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_m.catchment_3338;
 
@@ -286,6 +353,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -298,6 +366,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
@@ -314,6 +384,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -326,26 +397,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,5070)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,5070) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,5070)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_m.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
@@ -360,34 +482,46 @@ ALTER TABLE cipsrv_nhdplus_m.catchment_5070 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_5070 TO public;
 
 CREATE UNIQUE INDEX catchment_5070_01u
-ON cipsrv_nhdplus_m.catchment_5070(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_5070(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_5070_02u
-ON cipsrv_nhdplus_m.catchment_5070(hydroseq);
+ON cipsrv_nhdplus_m.catchment_5070(catchmentstatecodes,hydroseq);
 
 CREATE INDEX catchment_5070_01i
-ON cipsrv_nhdplus_m.catchment_5070(levelpathi);
+ON cipsrv_nhdplus_m.catchment_5070(nhdplusid);
 
 CREATE INDEX catchment_5070_02i
-ON cipsrv_nhdplus_m.catchment_5070(fcode);
+ON cipsrv_nhdplus_m.catchment_5070(hydroseq);
 
 CREATE INDEX catchment_5070_03i
-ON cipsrv_nhdplus_m.catchment_5070(istribal);
+ON cipsrv_nhdplus_m.catchment_5070(levelpathi);
 
 CREATE INDEX catchment_5070_04i
-ON cipsrv_nhdplus_m.catchment_5070(isnavigable);
+ON cipsrv_nhdplus_m.catchment_5070(fcode);
 
 CREATE INDEX catchment_5070_05i
-ON cipsrv_nhdplus_m.catchment_5070(iscoastal);
+ON cipsrv_nhdplus_m.catchment_5070(istribal);
 
 CREATE INDEX catchment_5070_06i
+ON cipsrv_nhdplus_m.catchment_5070(isnavigable);
+
+CREATE INDEX catchment_5070_07i
+ON cipsrv_nhdplus_m.catchment_5070(iscoastal);
+
+CREATE INDEX catchment_5070_08i
 ON cipsrv_nhdplus_m.catchment_5070(isocean);
+
+CREATE INDEX catchment_5070_09i
+ON cipsrv_nhdplus_m.catchment_5070(statesplit);
 
 CREATE INDEX catchment_5070_spx
 ON cipsrv_nhdplus_m.catchment_5070 USING GIST(shape);
 
 CREATE INDEX catchment_5070_spx2
 ON cipsrv_nhdplus_m.catchment_5070 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_5070_gin
+ON cipsrv_nhdplus_m.catchment_5070 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_m.catchment_5070;
 
@@ -412,6 +546,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_26904(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -424,6 +559,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_26904(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
@@ -440,6 +577,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -452,26 +590,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,26904)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,26904) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('HI')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,26904)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_m.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode IN ('HI')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
@@ -486,34 +675,46 @@ ALTER TABLE cipsrv_nhdplus_m.catchment_26904 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_26904 TO public;
 
 CREATE UNIQUE INDEX catchment_26904_01u
-ON cipsrv_nhdplus_m.catchment_26904(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_26904(nhdplusid,statesplit);
 
 CREATE UNIQUE INDEX catchment_26904_02u
-ON cipsrv_nhdplus_m.catchment_26904(hydroseq);
+ON cipsrv_nhdplus_m.catchment_26904(hydroseq,statesplit);
 
 CREATE INDEX catchment_26904_01i
-ON cipsrv_nhdplus_m.catchment_26904(levelpathi);
+ON cipsrv_nhdplus_m.catchment_26904(nhdplusid);
 
 CREATE INDEX catchment_26904_02i
-ON cipsrv_nhdplus_m.catchment_26904(fcode);
+ON cipsrv_nhdplus_m.catchment_26904(hydroseq);
 
 CREATE INDEX catchment_26904_03i
-ON cipsrv_nhdplus_m.catchment_26904(istribal);
+ON cipsrv_nhdplus_m.catchment_26904(levelpathi);
 
 CREATE INDEX catchment_26904_04i
-ON cipsrv_nhdplus_m.catchment_26904(isnavigable);
+ON cipsrv_nhdplus_m.catchment_26904(fcode);
 
 CREATE INDEX catchment_26904_05i
-ON cipsrv_nhdplus_m.catchment_26904(iscoastal);
+ON cipsrv_nhdplus_m.catchment_26904(istribal);
 
 CREATE INDEX catchment_26904_06i
+ON cipsrv_nhdplus_m.catchment_26904(isnavigable);
+
+CREATE INDEX catchment_26904_07i
+ON cipsrv_nhdplus_m.catchment_26904(iscoastal);
+
+CREATE INDEX catchment_26904_08i
 ON cipsrv_nhdplus_m.catchment_26904(isocean);
+
+CREATE INDEX catchment_26904_09i
+ON cipsrv_nhdplus_m.catchment_26904(statesplit);
 
 CREATE INDEX catchment_26904_spx
 ON cipsrv_nhdplus_m.catchment_26904 USING GIST(shape);
 
 CREATE INDEX catchment_26904_spx2
 ON cipsrv_nhdplus_m.catchment_26904 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_26904_gin
+ON cipsrv_nhdplus_m.catchment_26904 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_m.catchment_26904;
 
@@ -538,6 +739,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -550,6 +752,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
@@ -566,6 +770,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -578,26 +783,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,32161) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('PR','VI')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,32161)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_m.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode IN ('PR','VI')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
@@ -612,34 +868,46 @@ ALTER TABLE cipsrv_nhdplus_m.catchment_32161 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_32161 TO public;
 
 CREATE UNIQUE INDEX catchment_32161_01u
-ON cipsrv_nhdplus_m.catchment_32161(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32161(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32161_02u
-ON cipsrv_nhdplus_m.catchment_32161(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32161(catchmentstatecodes,hydroseq);
 
 CREATE INDEX catchment_32161_01i
-ON cipsrv_nhdplus_m.catchment_32161(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32161(nhdplusid);
 
 CREATE INDEX catchment_32161_02i
-ON cipsrv_nhdplus_m.catchment_32161(fcode);
+ON cipsrv_nhdplus_m.catchment_32161(hydroseq);
 
 CREATE INDEX catchment_32161_03i
-ON cipsrv_nhdplus_m.catchment_32161(istribal);
+ON cipsrv_nhdplus_m.catchment_32161(levelpathi);
 
 CREATE INDEX catchment_32161_04i
-ON cipsrv_nhdplus_m.catchment_32161(isnavigable);
+ON cipsrv_nhdplus_m.catchment_32161(fcode);
 
 CREATE INDEX catchment_32161_05i
-ON cipsrv_nhdplus_m.catchment_32161(iscoastal);
+ON cipsrv_nhdplus_m.catchment_32161(istribal);
 
 CREATE INDEX catchment_32161_06i
+ON cipsrv_nhdplus_m.catchment_32161(isnavigable);
+
+CREATE INDEX catchment_32161_07i
+ON cipsrv_nhdplus_m.catchment_32161(iscoastal);
+
+CREATE INDEX catchment_32161_08i
 ON cipsrv_nhdplus_m.catchment_32161(isocean);
+
+CREATE INDEX catchment_32161_09i
+ON cipsrv_nhdplus_m.catchment_32161(statesplit);
 
 CREATE INDEX catchment_32161_spx
 ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape);
 
 CREATE INDEX catchment_32161_spx2
 ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_32161_gin
+ON cipsrv_nhdplus_m.catchment_32161 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_m.catchment_32161;
 
@@ -664,6 +932,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32655(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -676,6 +945,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32655(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
@@ -692,6 +963,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -704,26 +976,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,32655)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,32655) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('GU','MP')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,32655)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_m.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode IN ('GU','MP')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
@@ -738,34 +1061,46 @@ ALTER TABLE cipsrv_nhdplus_m.catchment_32655 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_32655 TO public;
 
 CREATE UNIQUE INDEX catchment_32655_01u
-ON cipsrv_nhdplus_m.catchment_32655(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32655(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32655_02u
-ON cipsrv_nhdplus_m.catchment_32655(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32655(catchmentstatecodes,hydroseq);
 
 CREATE INDEX catchment_32655_01i
-ON cipsrv_nhdplus_m.catchment_32655(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32655(nhdplusid);
 
 CREATE INDEX catchment_32655_02i
-ON cipsrv_nhdplus_m.catchment_32655(fcode);
+ON cipsrv_nhdplus_m.catchment_32655(hydroseq);
 
 CREATE INDEX catchment_32655_03i
-ON cipsrv_nhdplus_m.catchment_32655(istribal);
+ON cipsrv_nhdplus_m.catchment_32655(levelpathi);
 
 CREATE INDEX catchment_32655_04i
-ON cipsrv_nhdplus_m.catchment_32655(isnavigable);
+ON cipsrv_nhdplus_m.catchment_32655(fcode);
 
 CREATE INDEX catchment_32655_05i
-ON cipsrv_nhdplus_m.catchment_32655(iscoastal);
+ON cipsrv_nhdplus_m.catchment_32655(istribal);
 
 CREATE INDEX catchment_32655_06i
+ON cipsrv_nhdplus_m.catchment_32655(isnavigable);
+
+CREATE INDEX catchment_32655_07i
+ON cipsrv_nhdplus_m.catchment_32655(iscoastal);
+
+CREATE INDEX catchment_32655_08i
 ON cipsrv_nhdplus_m.catchment_32655(isocean);
+
+CREATE INDEX catchment_32655_09i
+ON cipsrv_nhdplus_m.catchment_32655(statesplit);
 
 CREATE INDEX catchment_32655_spx
 ON cipsrv_nhdplus_m.catchment_32655 USING GIST(shape);
 
 CREATE INDEX catchment_32655_spx2
 ON cipsrv_nhdplus_m.catchment_32655 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_32655_gin
+ON cipsrv_nhdplus_m.catchment_32655 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_m.catchment_32655;
 
@@ -790,6 +1125,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -802,6 +1138,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
@@ -818,6 +1156,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -830,26 +1169,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,32702)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,32702) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('AS')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,32702)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_m.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode IN ('AS')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
@@ -864,34 +1254,46 @@ ALTER TABLE cipsrv_nhdplus_m.catchment_32702 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_32702 TO public;
 
 CREATE UNIQUE INDEX catchment_32702_01u
-ON cipsrv_nhdplus_m.catchment_32702(nhdplusid);
+ON cipsrv_nhdplus_m.catchment_32702(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32702_02u
-ON cipsrv_nhdplus_m.catchment_32702(hydroseq);
+ON cipsrv_nhdplus_m.catchment_32702(catchmentstatecodes,hydroseq);
 
 CREATE INDEX catchment_32702_01i
-ON cipsrv_nhdplus_m.catchment_32702(levelpathi);
+ON cipsrv_nhdplus_m.catchment_32702(nhdplusid);
 
 CREATE INDEX catchment_32702_02i
-ON cipsrv_nhdplus_m.catchment_32702(fcode);
+ON cipsrv_nhdplus_m.catchment_32702(hydroseq);
 
 CREATE INDEX catchment_32702_03i
-ON cipsrv_nhdplus_m.catchment_32702(istribal);
+ON cipsrv_nhdplus_m.catchment_32702(levelpathi);
 
 CREATE INDEX catchment_32702_04i
-ON cipsrv_nhdplus_m.catchment_32702(isnavigable);
+ON cipsrv_nhdplus_m.catchment_32702(fcode);
 
 CREATE INDEX catchment_32702_05i
-ON cipsrv_nhdplus_m.catchment_32702(iscoastal);
+ON cipsrv_nhdplus_m.catchment_32702(istribal);
 
 CREATE INDEX catchment_32702_06i
+ON cipsrv_nhdplus_m.catchment_32702(isnavigable);
+
+CREATE INDEX catchment_32702_07i
+ON cipsrv_nhdplus_m.catchment_32702(iscoastal);
+
+CREATE INDEX catchment_32702_08i
 ON cipsrv_nhdplus_m.catchment_32702(isocean);
+
+CREATE INDEX catchment_32702_09i
+ON cipsrv_nhdplus_m.catchment_32702(statesplit);
 
 CREATE INDEX catchment_32702_spx
 ON cipsrv_nhdplus_m.catchment_32702 USING GIST(shape);
 
 CREATE INDEX catchment_32702_spx2
 ON cipsrv_nhdplus_m.catchment_32702 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_32702_gin
+ON cipsrv_nhdplus_m.catchment_32702 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_m.catchment_32702;
 
@@ -1776,6 +2178,174 @@ ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_nav;
 --VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_nav;
 
 --******************************--
+----- views/catchment_3338_full.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_3338_full
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_3338 a
+WHERE
+a.statesplit IN (0,2);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_3338_full OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_3338_full TO public;
+--******************************--
+----- views/catchment_3338_state.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_3338_state
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_3338 a
+WHERE
+a.statesplit IN (0,1);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_3338_state OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_3338_state TO public;
+--******************************--
+----- views/catchment_5070_full.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_5070_full
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_5070 a
+WHERE
+a.statesplit IN (0,2);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_5070_full OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_5070_full TO public;
+--******************************--
+----- views/catchment_5070_state.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_5070_state
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_5070 a
+WHERE
+a.statesplit IN (0,1);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_5070_state OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_5070_state TO public;
+--******************************--
+----- views/catchment_26904_full.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_26904_full
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_26904 a
+WHERE
+a.statesplit IN (0,2);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_26904_full OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_26904_full TO public;
+--******************************--
+----- views/catchment_26904_state.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_26904_state
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_26904 a
+WHERE
+a.statesplit IN (0,1);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_26904_state OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_26904_state TO public;
+--******************************--
+----- views/catchment_32161_full.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_32161_full
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_32161 a
+WHERE
+a.statesplit IN (0,2);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_32161_full OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32161_full TO public;
+--******************************--
+----- views/catchment_32161_state.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_32161_state
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_32161 a
+WHERE
+a.statesplit IN (0,1);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_32161_state OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32161_state TO public;
+--******************************--
+----- views/catchment_32655_full.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_32655_full
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_32655 a
+WHERE
+a.statesplit IN (0,2);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_32655_full OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32655_full TO public;
+--******************************--
+----- views/catchment_32655_state.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_32655_state
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_32655 a
+WHERE
+a.statesplit IN (0,1);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_32655_state OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32655_state TO public;
+--******************************--
+----- views/catchment_32702_full.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_32702_full
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_32702 a
+WHERE
+a.statesplit IN (0,2);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_32702_full OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32702_full TO public;
+--******************************--
+----- views/catchment_32702_state.sql 
+
+CREATE OR REPLACE VIEW cipsrv_nhdplus_m.catchment_32702_state
+AS
+SELECT
+a.*
+FROM
+cipsrv_nhdplus_m.catchment_32702 a
+WHERE
+a.statesplit IN (0,1);
+
+ALTER TABLE cipsrv_nhdplus_m.catchment_32702_state OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.catchment_32702_state TO public;
+--******************************--
 ----- types/flowline.sql 
 
 DROP TYPE IF EXISTS cipsrv_nhdplus_m.flowline CASCADE;
@@ -2430,6 +3000,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN DEFAULT TRUE
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -2441,6 +3012,7 @@ DECLARE
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
@@ -2461,6 +3033,16 @@ BEGIN
    END IF;
 
    str_known_region := int_srid::VARCHAR;
+   
+   IF p_return_full_catchment IS NULL
+   OR p_return_full_catchment
+   THEN
+      int_splitselector := 2;
+      
+   ELSE
+      int_splitselector := 1;
+   
+   END IF;
 
    IF str_known_region = '5070'
    THEN
@@ -2469,17 +3051,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_5070 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -2492,17 +3077,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_3338 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -2515,17 +3103,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_26904 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -2538,17 +3129,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_32161 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -2561,17 +3155,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_32655 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -2584,17 +3181,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_m.catchment_32702 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -2617,6 +3217,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.index_point_simple(
    ,VARCHAR
    ,UUID
    ,GEOMETRY
+   ,BOOLEAN
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
@@ -2624,6 +3225,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
    ,VARCHAR
    ,UUID
    ,GEOMETRY
+   ,BOOLEAN
 ) TO PUBLIC;
 
 --******************************--
@@ -2708,16 +3310,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -2738,13 +3343,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -2755,7 +3362,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_5070 aaaa
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -2765,7 +3372,7 @@ BEGIN
          ) aa 
       ) a
       WHERE
-          num_line_threshold IS NULL 
+         num_line_threshold IS NULL 
       OR a.nhdpercentage >= num_line_threshold
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
@@ -2777,16 +3384,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -2807,13 +3417,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -2824,7 +3436,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_3338 aaaa
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -2846,16 +3458,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -2876,13 +3491,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -2893,7 +3510,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_26904 aaaa
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -2915,16 +3532,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -2945,13 +3565,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -2962,7 +3584,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_32161 aaaa
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -2984,16 +3606,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -3014,13 +3639,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -3031,7 +3658,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_32655 aaaa
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -3053,16 +3680,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,CASE
           WHEN aa.overlapmeasure >= num_geometry_lengthkm
@@ -3083,13 +3713,15 @@ BEGIN
           END AS nhdpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
             ,aaa.lengthkm
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -3100,7 +3732,7 @@ BEGIN
                 ) AS geom_overlap
                ,aaaa.lengthkm
                FROM
-               cipsrv_nhdplus_m.catchment_32702 aaaa
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -3360,7 +3992,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_m.catchment_5070 aaaa
+                  cipsrv_nhdplus_m.catchment_5070_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -3471,7 +4103,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_m.catchment_3338 aaaa
+                  cipsrv_nhdplus_m.catchment_3338_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -3582,7 +4214,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_m.catchment_26904 aaaa
+                  cipsrv_nhdplus_m.catchment_26904_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -3693,7 +4325,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_m.catchment_32161 aaaa
+                  cipsrv_nhdplus_m.catchment_32161_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -3804,7 +4436,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_m.catchment_32655 aaaa
+                  cipsrv_nhdplus_m.catchment_32655_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -3915,7 +4547,7 @@ BEGIN
                   ,aaaa.fcode
                   ,aaaa.isnavigable
                   FROM
-                  cipsrv_nhdplus_m.catchment_32702 aaaa
+                  cipsrv_nhdplus_m.catchment_32702_full aaaa
                   WHERE
                   ST_Intersects(
                       aaaa.shape
@@ -4311,16 +4943,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4332,7 +4967,8 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,CASE
              WHEN aaa.geom_overlap IS NULL
@@ -4343,7 +4979,8 @@ BEGIN
              END AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4353,7 +4990,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_5070 aaaa
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -4374,16 +5011,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )  
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4395,7 +5035,8 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,CASE
              WHEN aaa.geom_overlap IS NULL
@@ -4406,7 +5047,8 @@ BEGIN
              END AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4416,7 +5058,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_3338 aaaa
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -4437,16 +5079,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4458,7 +5103,8 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,CASE
              WHEN aaa.geom_overlap IS NULL
@@ -4469,7 +5115,8 @@ BEGIN
              END AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4479,7 +5126,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_26904 aaaa
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -4500,16 +5147,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4521,7 +5171,8 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,CASE
              WHEN aaa.geom_overlap IS NULL
@@ -4532,7 +5183,8 @@ BEGIN
              END AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4542,7 +5194,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32161 aaaa
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -4563,16 +5215,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )  
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4584,7 +5239,8 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,CASE
              WHEN aaa.geom_overlap IS NULL
@@ -4595,7 +5251,8 @@ BEGIN
              END AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4605,7 +5262,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32655 aaaa
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -4626,16 +5283,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )  
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4647,7 +5307,8 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,CASE
              WHEN aaa.geom_overlap IS NULL
@@ -4658,7 +5319,8 @@ BEGIN
              END AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4668,7 +5330,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32702 aaaa
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -4806,16 +5468,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4827,12 +5492,14 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4842,7 +5509,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_5070 aaaa
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape_centroid
@@ -4865,16 +5532,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4886,12 +5556,14 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4901,7 +5573,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_3338 aaaa
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape_centroid
@@ -4924,16 +5596,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -4945,12 +5620,14 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -4960,7 +5637,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_26904 aaaa
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape_centroid
@@ -4983,16 +5660,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5004,12 +5684,14 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -5019,7 +5701,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32161 aaaa
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape_centroid
@@ -5042,16 +5724,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5063,12 +5748,14 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -5078,7 +5765,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32655 aaaa
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape_centroid
@@ -5101,16 +5788,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5122,12 +5812,14 @@ BEGIN
           END AS eventpercentage
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,ST_CollectionExtract(
                   ST_Intersection(
@@ -5137,7 +5829,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32702 aaaa
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape_centroid
@@ -5277,16 +5969,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5299,13 +5994,15 @@ BEGIN
          ,aa.fcode
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,aaaa.fcode
                ,ST_CollectionExtract(
@@ -5316,7 +6013,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_5070 aaaa
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -5340,16 +6037,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5362,13 +6062,15 @@ BEGIN
          ,aa.fcode
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,aaaa.fcode
                ,ST_CollectionExtract(
@@ -5379,7 +6081,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_3338 aaaa
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -5403,16 +6105,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5425,13 +6130,15 @@ BEGIN
          ,aa.fcode
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,aaaa.fcode
                ,ST_CollectionExtract(
@@ -5442,7 +6149,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_26904 aaaa
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -5466,16 +6173,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5488,13 +6198,15 @@ BEGIN
          ,aa.fcode
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,aaaa.fcode
                ,ST_CollectionExtract(
@@ -5505,7 +6217,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32161 aaaa
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -5529,16 +6241,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5551,13 +6266,15 @@ BEGIN
          ,aa.fcode
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,aaaa.fcode
                ,ST_CollectionExtract(
@@ -5568,7 +6285,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32655 aaaa
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -5592,16 +6309,19 @@ BEGIN
       
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       ) 
       SELECT 
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,a.overlapmeasure
       FROM (
          SELECT
-          aa.nhdplusid
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
          ,aa.overlapmeasure
          ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
@@ -5614,13 +6334,15 @@ BEGIN
          ,aa.fcode
          FROM (
             SELECT
-             aaa.nhdplusid
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
             ,aaa.areasqkm
             ,aaa.fcode
             ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
-                aaaa.nhdplusid
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
                ,aaaa.areasqkm
                ,aaaa.fcode
                ,ST_CollectionExtract(
@@ -5631,7 +6353,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_m.catchment_32702 aaaa
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape

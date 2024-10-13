@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_point_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN DEFAULT TRUE
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -23,6 +24,7 @@ DECLARE
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
@@ -43,6 +45,16 @@ BEGIN
    END IF;
 
    str_known_region := int_srid::VARCHAR;
+   
+   IF p_return_full_catchment IS NULL
+   OR p_return_full_catchment
+   THEN
+      int_splitselector := 2;
+      
+   ELSE
+      int_splitselector := 1;
+   
+   END IF;
 
    IF str_known_region = '5070'
    THEN
@@ -51,17 +63,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_h.catchment_5070 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -74,17 +89,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_h.catchment_3338 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -97,17 +115,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_h.catchment_26904 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -120,17 +141,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_h.catchment_32161 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -143,17 +167,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_h.catchment_32655 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -166,17 +193,20 @@ BEGIN
 
       INSERT INTO tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
       )
       SELECT
        p_permid_joinkey
+      ,a.catchmentstatecodes
       ,a.nhdplusid
       ,NULL
       FROM
       cipsrv_nhdplus_h.catchment_32702 a
       WHERE
-      ST_Intersects(
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
           a.shape
          ,geom_input
       )
@@ -199,6 +229,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.index_point_simple(
    ,VARCHAR
    ,UUID
    ,GEOMETRY
+   ,BOOLEAN
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_point_simple(
@@ -206,5 +237,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.index_point_simple(
    ,VARCHAR
    ,UUID
    ,GEOMETRY
+   ,BOOLEAN
 ) TO PUBLIC;
 
