@@ -1,6 +1,6 @@
-CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.tmp_seq START WITH 1;
-
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_3338 CASCADE;
+
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_3338_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
     objectid
@@ -35,7 +35,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
 )
 AS
 SELECT
- NEXTVAL('cipsrv_nhdplus_h.tmp_seq') AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.catchment_3338_seq') AS objectid
 ,a.nhdplusid
 ---
 ,b.hydroseq

@@ -20,7 +20,8 @@ SELECT
 ,a.levelpathilengthkm 
 FROM (
    SELECT
-    aa.levelpathi
+    MAX(aa.objectid) AS objectid
+   ,aa.levelpathi
    ,MAX(aa.hydroseq) AS max_hydroseq
    ,MIN(aa.hydroseq) AS min_hydroseq
    ,SUM(aa.lengthkm) AS levelpathilengthkm

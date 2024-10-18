@@ -51,6 +51,7 @@ def load_sqlfile(conn,sqlfile,echo=False):
          "^CREATE .*"
         ,"^ALTER .*"
         ,"^GRANT .*"
+        ,"^DROP .*"
     ];
     splitmatch = "(" + ")|(".join(splitters) + ")";
     

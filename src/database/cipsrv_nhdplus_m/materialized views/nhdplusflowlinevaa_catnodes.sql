@@ -1,6 +1,6 @@
-CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_m.tmp_seq START WITH 1;
-
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
+
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(
     objectid
@@ -41,7 +41,7 @@ WITH cat AS (
    NOT EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
 ) 
 SELECT
- NEXTVAL('cipsrv_nhdplus_m.tmp_seq') AS objectid
+ NEXTVAL('cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes_seq') AS objectid
 ,a.nhdplusid
 ,a.hydroseq
 ,a.levelpathi
