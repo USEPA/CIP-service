@@ -1,7 +1,10 @@
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.tmp_seq START WITH 1;
+
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(
-    nhdplusid
+    objectid
+   ,nhdplusid
    ,hydroseq
    ,levelpathi
    ,fromnode
@@ -38,7 +41,8 @@ WITH cat AS (
    NOT EXISTS (SELECT 1 FROM cipsrv_nhdplus_h.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
 ) 
 SELECT
- a.nhdplusid
+ NEXTVAL('cipsrv_nhdplus_h.tmp_seq') AS objectid
+,a.nhdplusid
 ,a.hydroseq
 ,a.levelpathi
 ,a.fromnode
@@ -65,6 +69,9 @@ ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(nhdplusid);
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_catnodes_02u
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(hydroseq);
+
+CREATE UNIQUE INDEX nhdplusflowlinevaa_catnodes_03u
+ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(objectid);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_01i
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(levelpathi);

@@ -1,7 +1,10 @@
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.tmp_seq START WITH 1;
+
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_3338 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
-    nhdplusid
+    objectid
+   ,nhdplusid
    ---
    ,hydroseq
    ,levelpathi
@@ -32,7 +35,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
 )
 AS
 SELECT
- a.nhdplusid
+ NEXTVAL('cipsrv_nhdplus_h.tmp_seq') AS objectid
+,a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -147,6 +151,9 @@ ON cipsrv_nhdplus_h.catchment_3338(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_3338_02u
 ON cipsrv_nhdplus_h.catchment_3338(catchmentstatecodes,hydroseq);
+
+CREATE UNIQUE INDEX catchment_3338_03u
+ON cipsrv_nhdplus_h.catchment_3338(objectid);
 
 CREATE INDEX catchment_3338_01i
 ON cipsrv_nhdplus_h.catchment_3338(nhdplusid);
