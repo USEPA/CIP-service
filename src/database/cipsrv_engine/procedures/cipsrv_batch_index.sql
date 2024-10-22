@@ -1531,7 +1531,7 @@ BEGIN
               || ',a.istribal_areasqkm '
               || ',$9 '
               || ',a.areasqkm AS catchmentareasqkm '
-              || ',a.xwalk_huc12_mr '
+              || ',a.xwalk_huc12 '
               || ',NULL '
               || ',NULL '
               || ',a.isnavigable '

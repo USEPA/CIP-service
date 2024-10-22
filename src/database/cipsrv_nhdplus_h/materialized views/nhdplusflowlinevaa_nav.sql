@@ -1,7 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_nav;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(
-    nhdplusid
+    objectid
+   ,nhdplusid
    ,hydroseq
    ,fmeasure
    ,tmeasure
@@ -31,7 +32,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(
 )
 AS
 SELECT
- CAST(a.nhdplusid  AS BIGINT) AS nhdplusid
+ CAST(a.objectid AS INTEGER) AS objectid
+,CAST(a.nhdplusid  AS BIGINT) AS nhdplusid
 ,CAST(a.hydroseq   AS BIGINT) AS hydroseq 
 ,b.fmeasure
 ,b.tmeasure
@@ -143,6 +145,9 @@ ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(nhdplusid);
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_nav_02u
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(hydroseq);
+
+CREATE UNIQUE INDEX nhdplusflowlinevaa_nav_03u
+ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(objectid);
 
 CREATE INDEX nhdplusflowlinevaa_nav_01i
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(levelpathi);

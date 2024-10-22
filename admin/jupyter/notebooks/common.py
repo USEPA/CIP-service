@@ -51,6 +51,7 @@ def load_sqlfile(conn,sqlfile,echo=False):
          "^CREATE .*"
         ,"^ALTER .*"
         ,"^GRANT .*"
+        ,"^DROP .*"
     ];
     splitmatch = "(" + ")|(".join(splitters) + ")";
     
@@ -85,5 +86,16 @@ def load_sqlfile(conn,sqlfile,echo=False):
                         None;
                     else:
                         sqlbuf.append(line);
+                        
+            if len(sqlbuf) > 0:
+               sqltxt = ''.join(sqlbuf);
+               cursor.execute(sqltxt);
+               sm = cursor.statusmessage;
+               resp.append(sm);
+               
+               if echo:
+                   print(sm);
+               
+               conn.commit();
     
     return resp;

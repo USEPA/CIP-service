@@ -1,7 +1,10 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_32161 CASCADE;
 
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_32161_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
-    nhdplusid
+    objectid
+   ,nhdplusid
    ---
    ,hydroseq
    ,levelpathi
@@ -14,6 +17,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
    ,fcode
    ---
    ,istribal
+   ,istribal_areasqkm
    ,isnavigable
    ,hasvaa
    ,issink
@@ -26,10 +30,13 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
    ,areasqkm
    ,shape
    ,shape_centroid
+   ,catchmentstatecodes
+   ,statesplit
 )
 AS
 SELECT
- a.nhdplusid
+ NEXTVAL('cipsrv_nhdplus_h.catchment_32161_seq') AS objectid
+,a.nhdplusid
 ---
 ,b.hydroseq
 ,b.levelpathi
@@ -42,6 +49,7 @@ SELECT
 ,c.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
+,a.istribal_areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -54,26 +62,77 @@ SELECT
 ,a.areasqkm
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
+,a.catchmentstatecodes
+,a.statesplit
 FROM (
    SELECT
-    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
-   ,(array_agg(aa.istribal ORDER BY CASE WHEN aa.istribal = 'P' THEN 1 WHEN aa.istribal = 'F' THEN 2 WHEN aa.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
-   ,bool_or(CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
-   ,bool_or(CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
-   ,bool_or(CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
-   ,bool_or(CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
-   ,bool_or(CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
-   ,bool_or(CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
-   ,'N' AS isalaskan
-   ,MAX(aa.h3hexagonaddr) AS h3hexagonaddr
-   ,SUM(aa.areasqkm) AS areasqkm
-   ,ST_UNION(ST_Transform(aa.shape,32161)) AS shape
+    aa.nhdplusid::BIGINT AS nhdplusid
+   ,aa.istribal
+   ,aa.istribal_areasqkm
+   ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
+   ,CASE WHEN aa.hasvaa      = 'Y' THEN TRUE ELSE FALSE END AS hasvaa
+   ,CASE WHEN aa.issink      = 'Y' THEN TRUE ELSE FALSE END AS issink
+   ,CASE WHEN aa.isheadwater = 'Y' THEN TRUE ELSE FALSE END AS isheadwater
+   ,CASE WHEN aa.iscoastal   = 'Y' THEN TRUE ELSE FALSE END AS iscoastal
+   ,CASE WHEN aa.isocean     = 'Y' THEN TRUE ELSE FALSE END AS isocean
+   ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
+   ,aa.h3hexagonaddr
+   ,aa.areasqkm
+   ,ST_Transform(aa.shape,32161) AS shape
+   ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,CASE
+    WHEN aa.state_count = 1
+    THEN
+      0::INTEGER 
+    ELSE
+      1::INTEGER
+    END AS statesplit
    FROM
    cipsrv_nhdplus_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('PR','VI')
-   GROUP BY
-   aa.nhdplusid::BIGINT
+   UNION ALL 
+   SELECT
+    bb.nhdplusid
+   ,bb.istribal
+   ,bb.istribal_areasqkm
+   ,bb.isnavigable
+   ,bb.hasvaa
+   ,bb.issink
+   ,bb.isheadwater
+   ,bb.iscoastal
+   ,bb.isocean
+   ,bb.isalaskan
+   ,bb.h3hexagonaddr
+   ,bb.areasqkm
+   ,bb.shape
+   ,bb.catchmentstatecodes
+   ,bb.statesplit
+   FROM (
+      SELECT
+       bbb.nhdplusid::BIGINT AS nhdplusid
+      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
+      ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
+      ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
+      ,bool_or(CASE WHEN bbb.issink      = 'Y' THEN TRUE ELSE FALSE END) AS issink
+      ,bool_or(CASE WHEN bbb.isheadwater = 'Y' THEN TRUE ELSE FALSE END) AS isheadwater
+      ,bool_or(CASE WHEN bbb.iscoastal   = 'Y' THEN TRUE ELSE FALSE END) AS iscoastal
+      ,bool_or(CASE WHEN bbb.isocean     = 'Y' THEN TRUE ELSE FALSE END) AS isocean
+      ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
+      ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
+      ,SUM(bbb.areasqkm) AS areasqkm
+      ,ST_UNION(ST_Transform(bbb.shape,32161)) AS shape
+      ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,2::INTEGER AS statesplit
+      FROM
+      cipsrv_nhdplus_h.catchment_fabric bbb
+      WHERE
+          bbb.catchmentstatecode IN ('PR','VI')
+      AND bbb.state_count > 1
+      GROUP BY
+      bbb.nhdplusid::BIGINT
+   ) bb
 ) a
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
@@ -88,34 +147,49 @@ ALTER TABLE cipsrv_nhdplus_h.catchment_32161 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_32161 TO public;
 
 CREATE UNIQUE INDEX catchment_32161_01u
-ON cipsrv_nhdplus_h.catchment_32161(nhdplusid);
+ON cipsrv_nhdplus_h.catchment_32161(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_32161_02u
-ON cipsrv_nhdplus_h.catchment_32161(hydroseq);
+ON cipsrv_nhdplus_h.catchment_32161(catchmentstatecodes,hydroseq);
+
+CREATE UNIQUE INDEX catchment_32161_03u
+ON cipsrv_nhdplus_h.catchment_32161(objectid);
 
 CREATE INDEX catchment_32161_01i
-ON cipsrv_nhdplus_h.catchment_32161(levelpathi);
+ON cipsrv_nhdplus_h.catchment_32161(nhdplusid);
 
 CREATE INDEX catchment_32161_02i
-ON cipsrv_nhdplus_h.catchment_32161(fcode);
+ON cipsrv_nhdplus_h.catchment_32161(hydroseq);
 
 CREATE INDEX catchment_32161_03i
-ON cipsrv_nhdplus_h.catchment_32161(istribal);
+ON cipsrv_nhdplus_h.catchment_32161(levelpathi);
 
 CREATE INDEX catchment_32161_04i
-ON cipsrv_nhdplus_h.catchment_32161(isnavigable);
+ON cipsrv_nhdplus_h.catchment_32161(fcode);
 
 CREATE INDEX catchment_32161_05i
-ON cipsrv_nhdplus_h.catchment_32161(iscoastal);
+ON cipsrv_nhdplus_h.catchment_32161(istribal);
 
 CREATE INDEX catchment_32161_06i
+ON cipsrv_nhdplus_h.catchment_32161(isnavigable);
+
+CREATE INDEX catchment_32161_07i
+ON cipsrv_nhdplus_h.catchment_32161(iscoastal);
+
+CREATE INDEX catchment_32161_08i
 ON cipsrv_nhdplus_h.catchment_32161(isocean);
+
+CREATE INDEX catchment_32161_09i
+ON cipsrv_nhdplus_h.catchment_32161(statesplit);
 
 CREATE INDEX catchment_32161_spx
 ON cipsrv_nhdplus_h.catchment_32161 USING GIST(shape);
 
 CREATE INDEX catchment_32161_spx2
 ON cipsrv_nhdplus_h.catchment_32161 USING GIST(shape_centroid);
+
+CREATE INDEX catchment_32161_gin
+ON cipsrv_nhdplus_h.catchment_32161 USING GIN(catchmentstatecodes);
 
 ANALYZE cipsrv_nhdplus_h.catchment_32161;
 

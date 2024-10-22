@@ -501,14 +501,26 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
-         ,nhdplusid            BIGINT
+         ,catchmentstatecodes  VARCHAR[]
+         ,nhdplusid            BIGINT    NOT NULL
          ,overlap_measure      NUMERIC
       );
 
-      CREATE UNIQUE INDEX tmp_cip_pk 
+      CREATE UNIQUE INDEX tmp_cip_pk
       ON tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
+      ) NULLS NOT DISTINCT;
+      
+      CREATE INDEX tmp_cip_i01
+      ON tmp_cip(
+         permid_joinkey
+      );
+      
+      CREATE INDEX tmp_cip_i02
+      ON tmp_cip(
+         nhdplusid
       );
 
    END IF;
@@ -523,17 +535,20 @@ BEGIN
       
    ELSE
       CREATE TEMPORARY TABLE tmp_cip_out(
-          nhdplusid            BIGINT
-         ,catchmentstatecode   VARCHAR(2)
+          nhdplusid            BIGINT      NOT NULL
+         ,catchmentstatecode   VARCHAR(2)  NOT NULL
          ,xwalk_huc12          VARCHAR(12)
          ,areasqkm             NUMERIC
-         ,istribal             VARCHAR(1)
+         ,istribal             VARCHAR(1)  NOT NULL
          ,istribal_areasqkm    NUMERIC
          ,shape                GEOMETRY
       );
 
       CREATE UNIQUE INDEX tmp_cip_out_pk 
       ON tmp_cip_out(catchmentstatecode,nhdplusid);
+      
+      CREATE INDEX tmp_cip_out_01i
+      ON tmp_cip_out(nhdplusid);
 
    END IF;
 
@@ -572,22 +587,24 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
-         ,nhdplusid            BIGINT
+         ,catchmentstatecodes  VARCHAR[]
+         ,nhdplusid            BIGINT    NOT NULL
          ,overlap_measure      NUMERIC
       );
 
-      CREATE UNIQUE INDEX tmp_cip_pk 
+      CREATE UNIQUE INDEX tmp_cip_pk
       ON tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
-      );
+      ) NULLS NOT DISTINCT;
       
-      CREATE INDEX tmp_cip_01i
+      CREATE INDEX tmp_cip_i01
       ON tmp_cip(
          permid_joinkey
       );
       
-      CREATE INDEX tmp_cip_02i
+      CREATE INDEX tmp_cip_i02
       ON tmp_cip(
          nhdplusid
       );
@@ -1716,6 +1733,7 @@ BEGIN
    json_properties := (p_feature).properties;
    
    IF json_properties IS NULL
+   OR JSONB_TYPEOF(json_properties) = 'null'
    THEN
       json_properties := '{}'::JSONB;
       
@@ -3027,7 +3045,7 @@ BEGIN
    THEN
       str_default_ring_indexing_method := 'area_simple';
       
-   ELSIF str_default_ring_indexing_method NOT IN ('area_simple','area_centroid','area_artpath')
+   ELSIF str_default_ring_indexing_method NOT IN ('treat_as_lines','area_simple','area_centroid','area_artpath')
    THEN
       out_return_code    := -10;
       out_status_message := 'unknown CIP ring indexing method';
@@ -3448,7 +3466,7 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.catchmentstatecode
-      ,a.xwalk_huc12_mr
+      ,a.xwalk_huc12
       ,a.areasqkm
       ,a.istribal
       ,a.istribal_areasqkm
@@ -3481,7 +3499,7 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.catchmentstatecode
-      ,a.xwalk_huc12_mr
+      ,a.xwalk_huc12
       ,a.areasqkm
       ,a.istribal
       ,a.istribal_areasqkm
@@ -5154,7 +5172,7 @@ BEGIN
               || ',a.istribal_areasqkm '
               || ',$9 '
               || ',a.areasqkm AS catchmentareasqkm '
-              || ',a.xwalk_huc12_mr '
+              || ',a.xwalk_huc12 '
               || ',NULL '
               || ',NULL '
               || ',a.isnavigable '

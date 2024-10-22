@@ -1,7 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdflowline_32161 CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32161(
-    permanent_identifier
+    objectid
+   ,permanent_identifier
    ,fdate
    ,resolution
    ,gnis_id
@@ -26,7 +27,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32161(
 )
 AS
 SELECT
- a.permanent_identifier
+ CAST(a.objectid AS INTEGER) AS objectid
+,a.permanent_identifier
 ,a.fdate
 ,a.resolution
 ,a.gnis_id
@@ -75,6 +77,9 @@ GRANT SELECT ON cipsrv_nhdplus_m.nhdflowline_32161 TO public;
 
 CREATE UNIQUE INDEX nhdflowline_32161_01u
 ON cipsrv_nhdplus_m.nhdflowline_32161(nhdplusid);
+
+CREATE UNIQUE INDEX nhdflowline_32161_02u
+ON cipsrv_nhdplus_m.nhdflowline_32161(objectid);
 
 CREATE INDEX nhdflowline_32161_02i
 ON cipsrv_nhdplus_m.nhdflowline_32161(fcode);

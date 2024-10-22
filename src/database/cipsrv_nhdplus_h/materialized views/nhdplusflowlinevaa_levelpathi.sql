@@ -1,7 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi CASCADE;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(
-    levelpathi
+    objectid
+   ,levelpathi
    ,max_hydroseq
    ,min_hydroseq
    ,fromnode
@@ -10,7 +11,8 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(
 )
 AS
 SELECT
- a.levelpathi
+ CAST(a.objectid AS INTEGER) AS objectid
+,a.levelpathi
 ,a.max_hydroseq
 ,a.min_hydroseq
 ,(SELECT c.fromnode FROM cipsrv_nhdplus_h.nhdplusflowlinevaa c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
@@ -18,7 +20,8 @@ SELECT
 ,a.levelpathilengthkm 
 FROM (
    SELECT
-    aa.levelpathi
+    MAX(aa.objectid) AS objectid
+   ,aa.levelpathi
    ,MAX(aa.hydroseq) AS max_hydroseq
    ,MIN(aa.hydroseq) AS min_hydroseq
    ,SUM(aa.lengthkm) AS levelpathilengthkm
@@ -33,6 +36,9 @@ GRANT SELECT ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi TO public;
 
 CREATE UNIQUE INDEX nhdplusflowlinevaa_levelpathi_01u
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(levelpathi);
+
+CREATE UNIQUE INDEX nhdplusflowlinevaa_levelpathi_02u
+ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(objectid);
 
 CREATE INDEX nhdplusflowlinevaa_levelpathi_01i
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(max_hydroseq);

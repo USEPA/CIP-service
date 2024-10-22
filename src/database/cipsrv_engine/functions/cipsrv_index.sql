@@ -603,7 +603,7 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.catchmentstatecode
-      ,a.xwalk_huc12_mr
+      ,a.xwalk_huc12
       ,a.areasqkm
       ,a.istribal
       ,a.istribal_areasqkm
@@ -636,7 +636,7 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.catchmentstatecode
-      ,a.xwalk_huc12_mr
+      ,a.xwalk_huc12
       ,a.areasqkm
       ,a.istribal
       ,a.istribal_areasqkm

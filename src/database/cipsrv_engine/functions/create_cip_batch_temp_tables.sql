@@ -16,22 +16,24 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_cip(
           permid_joinkey       UUID
-         ,nhdplusid            BIGINT
+         ,catchmentstatecodes  VARCHAR[]
+         ,nhdplusid            BIGINT    NOT NULL
          ,overlap_measure      NUMERIC
       );
 
-      CREATE UNIQUE INDEX tmp_cip_pk 
+      CREATE UNIQUE INDEX tmp_cip_pk
       ON tmp_cip(
           permid_joinkey
+         ,catchmentstatecodes
          ,nhdplusid
-      );
+      ) NULLS NOT DISTINCT;
       
-      CREATE INDEX tmp_cip_01i
+      CREATE INDEX tmp_cip_i01
       ON tmp_cip(
          permid_joinkey
       );
       
-      CREATE INDEX tmp_cip_02i
+      CREATE INDEX tmp_cip_i02
       ON tmp_cip(
          nhdplusid
       );
