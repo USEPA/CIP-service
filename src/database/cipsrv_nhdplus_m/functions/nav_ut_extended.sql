@@ -332,7 +332,7 @@ BEGIN
          FROM
          ut a
          WHERE
-         a.nhdplusid <> r.nhdplusid
+         a.nhdplusid <> rec.nhdplusid
          ON CONFLICT DO NOTHING;
          
          -- At some point this should be removed

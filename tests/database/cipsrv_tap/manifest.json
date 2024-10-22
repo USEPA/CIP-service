@@ -34,6 +34,8 @@
             ,"line_simple_mr.sql"
             ,"point_simple_hr.sql"
             ,"point_simple_mr.sql"
+            ,"nav_ut_shorty.sql"
+            ,"nav_ut_350.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
