@@ -64,21 +64,21 @@ SELECT
 ,CAST(a.fromnode AS BIGINT)   AS fromnode
 ,CAST(a.tonode AS BIGINT)     AS tonode
 /* ++++++++++ */
-,b.lengthkm
+,CAST(b.lengthkm AS NUMERIC) AS lengthkm
 ,CASE
  WHEN a.totma IN (-9999,-9998)
  THEN
-   NULL
+   CAST(NULL AS NUMERIC)
  ELSE
-   a.totma
+   CAST(a.totma AS NUMERIC)
  END AS totma
-,a.pathlength
+,CAST(a.pathlength AS NUMERIC) AS pathlength
 ,CASE
  WHEN a.pathtimema IN (-9999,-9998)
  THEN
-   NULL
+   CAST(NULL AS NUMERIC)
  ELSE
-   a.pathtimema
+   CAST(a.pathtimema AS NUMERIC)
  END AS pathtimema
 /* ++++++++++ */
 ,CASE
