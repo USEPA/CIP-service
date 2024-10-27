@@ -64,6 +64,51 @@ services:
          - host.docker.internal:host-gateway
 {%-    endif %}
 {%- endif %}
+{%- if 'cip_gs' in components and 'type' in components.cip_gs and components.cip_gs.type == "container" %}
+   cip_gs:
+      build:
+         context: .
+         dockerfile: Dockerfile.gs
+      image: cip-service-demo-cip_gs
+      hostname: cip_gs
+      container_name: cip-service-demo-cip_gs
+      environment:
+{%-   if cip_pg_db == "env.POSTGRESQL_DB"  %}
+         POSTGRESQL_DB:           $POSTGRESQL_DB
+{%-   else %}
+         POSTGRESQL_DB:           {{ cip_pg_db   }}
+{%-   endif %}
+{%-   if cip_pg_host == "env.POSTGRESQL_HOST"  %}
+         POSTGRESQL_HOST:         $POSTGRESQL_HOST
+{%-   else %}
+         POSTGRESQL_HOST:         {{ cip_pg_host }}
+{%-   endif %}
+{%-   if cip_pg_port == "env.POSTGRESQL_PORT"  %}
+         POSTGRESQL_PORT:         $POSTGRESQL_PORT
+{%-   else %}
+         POSTGRESQL_PORT:         {{ cip_pg_port }}
+{%-   endif %}
+{%-   if cip_pg_cip_pass == "env.POSTGRESQL_CIP_PASS"  %}
+         POSTGRESQL_CIP_PASS:     $POSTGRESQL_CIP_PASS
+{%-   else %}
+         POSTGRESQL_CIP_PASS:     {{ cip_pg_cip_pass }}
+{%-   endif %}
+{%-    if 'external_port' in components.cip_gs and components.cip_gs.external_port is not none %}
+      ports:
+         - target: 8080
+{%-      if components.cip_gs.external_port == "env.GEOSERVER_PORT" %}
+           published: ${GEOSERVER_PORT:-8081}
+{%-      else %}
+           published: {{ components.cip_gs.external_port }}
+{%-      endif %}
+{%-    endif %}
+      networks:
+         - cip
+{%-    if 'add_host_gateway' in components.cip_gs and components.cip_gs.add_host_gateway == true %}
+      extra_hosts:
+         - host.docker.internal:host-gateway
+{%-    endif %}
+{%- endif %}
 networks:
    cip:
       driver: bridge
