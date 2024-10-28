@@ -69,6 +69,17 @@ services:
       build:
          context: .
          dockerfile: Dockerfile.gs
+         args:
+{%-      if cip_gs_host == "env.GEOSERVER_HOST" %}
+            ARG_GEOSERVER_HOST: ${GEOSERVER_HOST:-localhost}
+{%-      else %}
+            ARG_GEOSERVER_HOST: {{ cip_gs_host }}
+{%-      endif %}
+{%-      if cip_gs_port == "env.GEOSERVER_PORT" %}
+            ARG_GEOSERVER_PORT: ${GEOSERVER_PORT:-8081}
+{%-      else %}
+            ARG_GEOSERVER_PORT: {{ cip_gs_port }}
+{%-      endif %}
       image: cip-service-demo-cip_gs
       hostname: cip_gs
       container_name: cip-service-demo-cip_gs
@@ -88,11 +99,16 @@ services:
 {%-   else %}
          POSTGRESQL_PORT:         {{ cip_pg_port }}
 {%-   endif %}
-{%-   if cip_pg_cip_pass == "env.POSTGRESQL_CIP_PASS"  %}
-         POSTGRESQL_CIP_PASS:     $POSTGRESQL_CIP_PASS
+{%-   if cip_gs_cip_pass == "env.POSTGRESQL_GSV_PASS"  %}
+         POSTGRESQL_PASSWORD:     $POSTGRESQL_GSV_PASS
 {%-   else %}
-         POSTGRESQL_CIP_PASS:     {{ cip_pg_cip_pass }}
+         POSTGRESQL_PASSWORD:     {{ cip_gs_cip_pass }}
 {%-   endif %}
+         POSTGRES_JNDI_ENABLED: true
+         POSTGRES_DB: cipsrv
+         POSTGRES_JNDI_RESOURCE_NAME: cipsrv_jndi
+         GEOSERVER_ADMIN_USER: cipsrv_geoserver
+         GEOSERVER_ADMIN_PASSWORD: cip123
 {%-    if 'external_port' in components.cip_gs and components.cip_gs.external_port is not none %}
       ports:
          - target: 8080

@@ -34,6 +34,7 @@
 # POSTGRESQL_CIP_PASS : cip user password
 # POSTGRESQL_USR_PASS : cipsrv_user user password
 # POSTGRESQL_UPL_PASS : cipsrv_upload user password
+# POSTGRESQL_GSV_PASS : cipsrv_geoserver user password
 # POSTGREST_PASS      : cipsrv_pgrest user password
 #
 #
@@ -109,6 +110,13 @@ services:
          POSTGRESQL_UPL_PASS:     ${POSTGRESQL_UPL_PASS}
 {%-      else %}
          POSTGRESQL_UPL_PASS:     {{ components.cip_pg.upl_pass }}
+{%-      endif %}
+{%-   endif %} 
+{%-   if 'gsv_pass' in components.cip_pg %}
+{%-      if components.cip_pg.gsv_pass == "env.POSTGRESQL_GSV_PASS" %}
+         POSTGRESQL_GSV_PASS:     ${POSTGRESQL_GSV_PASS}
+{%-      else %}
+         POSTGRESQL_GSV_PASS:     {{ components.cip_pg.gsv_pass }}
 {%-      endif %}
 {%-   endif %} 
 {%-   if 'prst_pass' in components.cip_pg %}

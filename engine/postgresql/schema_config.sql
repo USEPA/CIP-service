@@ -8,12 +8,14 @@ CREATE SCHEMA cipsrv_support   AUTHORIZATION cipsrv;
 CREATE SCHEMA cipsrv_tap       AUTHORIZATION cipsrv;
 CREATE SCHEMA cipsrv_pgrest    AUTHORIZATION cipsrv_pgrest;
 CREATE SCHEMA cipsrv_upload    AUTHORIZATION cipsrv_upload;
+CREATE SCHEMA cipsrv_geoserver AUTHORIZATION cipsrv_geoserver;
 
 GRANT  USAGE ON SCHEMA cipsrv_engine    TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_support   TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_h TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_pgrest    TO cipsrv;
+GRANT  ALL   ON SCHEMA cipsrv_geoserver TO cipsrv;
 GRANT  USAGE ON SCHEMA cipsrv_upload    TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_engine    TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_support   TO cipsrv_upload;
