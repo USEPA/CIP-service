@@ -4,3 +4,4 @@
 *.ipynb text eol=lf
 *.j2    text eol=lf
 *.json  text eol=lf
+*.xml   text eol=lf

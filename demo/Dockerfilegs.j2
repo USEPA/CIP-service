@@ -2,5 +2,10 @@ FROM docker.osgeo.org/geoserver:2.26.0
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
+ENV WEBAPP_CONTEXT=""
+ENV SKIP_DEMO_DATA=true
+
+COPY ./geoserver /opt/geoserver_data/workspaces
+
 EXPOSE 8080
 ENTRYPOINT ["bash", "/opt/startup.sh"]

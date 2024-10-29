@@ -4,14 +4,18 @@ profile_name: nginx_demo
 #
 last updated: 20241027
 #
-cip_pg_host:     cip_pg
-cip_pg_port:     5432
-cip_pg_db:       cipsrv
-cip_pg_is_rds:   false
-cip_pg_cip_pass: env.POSTGRESQL_CIP_PASS
 # Provide location of the CIP engine API 
-cip_pr_host:     env.POSTGREST_HOST
-cip_pr_port:     env.POSTGREST_PORT
+cip_pr_host:       env.POSTGREST_HOST
+cip_pr_port:       env.POSTGREST_PORT
+#
+# Provide credentials for geoserver
+cip_pg_host:       cip_pg
+cip_pg_port:       5432
+cip_pg_db:         cipsrv
+cip_pg_is_rds:     false
+cip_pg_gsv_pass:   env.POSTGRESQL_GSV_PASS
+cip_gs_admin_user: cipsrv_geoserver
+cip_gs_admin_pass: env.GEOSERVER_ADMIN_PASSWORD
 #
 components:
    cip_ng:
