@@ -6,5 +6,8 @@ GRANT cipsrv_user TO cipsrv;
 CREATE USER cipsrv_upload  WITH PASSWORD '${POSTGRESQL_UPL_PASS}';
 GRANT cipsrv_upload TO cipsrv;
 
+CREATE USER cipsrv_geoserver  WITH PASSWORD '${POSTGRESQL_GSV_PASS}';
+GRANT cipsrv_geoserver TO cipsrv;
+
 CREATE USER cipsrv_pgrest  WITH PASSWORD '${POSTGREST_PASS}';
 GRANT cipsrv_pgrest TO cipsrv;

@@ -9,6 +9,7 @@ Dockerfile.jp
 Dockerfile.ng
 Dockerfile.pg
 Dockerfile.pr
+Dockerfile.gs
 *.gdb
 ImportLog*
 demo/arcgis/CIP-service/.backups/

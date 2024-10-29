@@ -23,6 +23,7 @@ components:
       cip_pass:         env.POSTGRESQL_CIP_PASS
       usr_pass:         env.POSTGRESQL_USR_PASS
       upl_pass:         env.POSTGRESQL_UPL_PASS
+      gsv_pass:         env.POSTGRESQL_GSV_PASS
       prst_pass:        env.POSTGREST_PASS
 #     development option to add pgrst watch code to renew the cip_pr cache on code change
       add_pgrst_watch:  true

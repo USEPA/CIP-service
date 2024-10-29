@@ -45,7 +45,7 @@ services:
 {%-      else %}
             ARG_POSTGREST_PORT: {{ cip_pr_port }}
 {%-      endif %}
-      image: cip-service-admin-cip_ng
+      image: cip-service-demo-cip_ng
       hostname: cip_ng
       container_name: cip-service-demo-cip_ng
 {%-    if 'external_port' in components.cip_ng and components.cip_ng.external_port is not none %}
@@ -58,12 +58,74 @@ services:
 {%-      endif %}
 {%-    endif %}
       networks:
-         - cip
+         - cipsrv-net
 {%-    if 'add_host_gateway' in components.cip_ng and components.cip_ng.add_host_gateway == true %}
       extra_hosts:
          - host.docker.internal:host-gateway
 {%-    endif %}
 {%- endif %}
+{%- if 'cip_gs' in components and 'type' in components.cip_gs and components.cip_gs.type == "container" %}
+   cip_gs:
+      build:
+         context: .
+         dockerfile: Dockerfile.gs
+      image: cip-service-demo-cip_gs
+      hostname: cip_gs
+      container_name: cip-service-demo-cip_gs
+      environment:
+         GEOSERVER_ADMIN_USER: {{ cip_gs_admin_user if cip_gs_admin_user is not none else 'cipsrv_geoserver' }}
+{%-   if cip_gs_admin_pass == "env.GEOSERVER_ADMIN_PASSWORD"  %}
+         GEOSERVER_ADMIN_PASSWORD: $GEOSERVER_ADMIN_PASSWORD
+{%-   else %}
+         GEOSERVER_ADMIN_PASSWORD: {{ cip_gs_admin_pass }}
+{%-   endif %}
+         POSTGRES_JNDI_ENABLED: true
+         POSTGRES_JNDI_RESOURCE_NAME: jdbc/cipsrv
+{%-   if cip_pg_db == "env.POSTGRESQL_DB"  %}
+         POSTGRES_DB:           $POSTGRESQL_DB
+{%-   else %}
+         POSTGRES_DB:           {{ cip_pg_db   }}
+{%-   endif %}
+{%-   if cip_pg_host == "env.POSTGRESQL_HOST"  %}
+         POSTGRES_HOST:         $POSTGRESQL_HOST
+{%-   else %}
+         POSTGRES_HOST:         {{ cip_pg_host }}
+{%-   endif %}
+{%-   if cip_pg_port == "env.POSTGRESQL_PORT"  %}
+         POSTGRES_PORT:         $POSTGRESQL_PORT
+{%-   else %}
+         POSTGRES_PORT:         {{ cip_pg_port }}
+{%-   endif %}
+         POSTGRES_USERNAME:     cipsrv_geoserver
+{%-   if cip_pg_gsv_pass == "env.POSTGRESQL_GSV_PASS"  %}
+         POSTGRES_PASSWORD:     $POSTGRESQL_GSV_PASS
+{%-   else %}
+         POSTGRES_PASSWORD:     {{ cip_pg_gsv_pass }}
+{%-   endif %}
+{%-    if 'external_port' in components.cip_gs and components.cip_gs.external_port is not none %}
+      volumes:
+         - type: volume
+           source: geoserver-data
+           target: /opt/geoserver/data_dir
+      ports:
+         - target: 8080
+{%-      if components.cip_gs.external_port == "env.GEOSERVER_PORT" %}
+           published: ${GEOSERVER_PORT:-8081}
+{%-      else %}
+           published: {{ components.cip_gs.external_port }}
+{%-      endif %}
+{%-    endif %}
+      networks:
+         - cipsrv-net
+{%-    if 'add_host_gateway' in components.cip_gs and components.cip_gs.add_host_gateway == true %}
+      extra_hosts:
+         - host.docker.internal:host-gateway
+{%-    endif %}
+{%- endif %}
 networks:
-   cip:
-      driver: bridge
+   cipsrv-net:
+      external: true
+{%- if 'cip_gs' in components and 'type' in components.cip_gs and components.cip_gs.type == "container" %}
+volumes:
+   geoserver-data:
+{%- endif %}
