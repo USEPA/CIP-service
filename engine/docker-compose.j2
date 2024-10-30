@@ -34,6 +34,7 @@
 # POSTGRESQL_CIP_PASS : cip user password
 # POSTGRESQL_USR_PASS : cipsrv_user user password
 # POSTGRESQL_UPL_PASS : cipsrv_upload user password
+# POSTGRESQL_GSV_PASS : cipsrv_geoserver user password
 # POSTGREST_PASS      : cipsrv_pgrest user password
 #
 #
@@ -46,7 +47,7 @@ services:
          context: .
          dockerfile: Dockerfile.pg
          shm_size: '2gb'
-      image: cip-service-admin-cip_pg
+      image: cip-service-engine-cip_pg
       shm_size: {{ postgresql_config[configval].shm_size }}
       hostname: cip_pg
       container_name: cip-service-engine-cip_pg
@@ -111,6 +112,13 @@ services:
          POSTGRESQL_UPL_PASS:     {{ components.cip_pg.upl_pass }}
 {%-      endif %}
 {%-   endif %} 
+{%-   if 'gsv_pass' in components.cip_pg %}
+{%-      if components.cip_pg.gsv_pass == "env.POSTGRESQL_GSV_PASS" %}
+         POSTGRESQL_GSV_PASS:     ${POSTGRESQL_GSV_PASS}
+{%-      else %}
+         POSTGRESQL_GSV_PASS:     {{ components.cip_pg.gsv_pass }}
+{%-      endif %}
+{%-   endif %} 
 {%-   if 'prst_pass' in components.cip_pg %}
 {%-      if components.cip_pg.prst_pass == "env.POSTGREST_PASS" %}
          POSTGREST_PASS:          ${POSTGREST_PASS}
@@ -171,7 +179,7 @@ services:
             ARG_POSTGRES_PORT:  {{ components.cip_pg.port }}
 {%-    endif %}
             ARG_POSTGREST_PASS: ${POSTGREST_PASS}
-      image: cip-service-admin-cip_pr
+      image: cip-service-engine-cip_pr
       shm_size: '1gb' 
       hostname: cip_pr
       container_name: cip-service-engine-cip_pr

@@ -1,0 +1,28 @@
+#!powershell
+
+# This will need to be adjusted to a proper windows git location on your machine
+$gitc = "C:\Users\$Env:UserName\AppData\Local\GitHubDesktop\app-3.4.8\resources\app\git\cmd\git"
+
+$tdir = [System.IO.Path]::GetTempPath()
+$cpwd = (Get-Item .).FullName
+
+$dir = & $gitc rev-parse --show-toplevel
+$dir = $dir.Replace('/','\')
+
+if (Test-Path -LiteralPath $tdir\dzSQLBuild) {
+   Remove-Item -LiteralPath "$tdir\dzSQLBuild" -Force -Recurse
+}
+$null = New-Item -Path $tdir\dzSQLBuild -ItemType "directory"
+
+Set-Location -Path $tdir
+& $gitc clone https://github.com/pauldzy/dzSQLBuild.git
+
+Set-Location -Path $tdir\dzSQLBuild
+& ${tdir}dzSQLBuild\rancher.ps1 $dir\src\database\cipsrv_support   $dir
+& ${tdir}dzSQLBuild\rancher.ps1 $dir\src\database\cipsrv_nhdplus_h $dir
+& ${tdir}dzSQLBuild\rancher.ps1 $dir\src\database\cipsrv_nhdplus_m $dir
+& ${tdir}dzSQLBuild\rancher.ps1 $dir\src\database\cipsrv_engine    $dir
+& ${tdir}dzSQLBuild\rancher.ps1 $dir\src\database\cipsrv_pgrest    $dir
+& ${tdir}dzSQLBuild\rancher.ps1 $dir\tests\database\cipsrv_tap     $dir
+
+Set-Location -Path $cpwd

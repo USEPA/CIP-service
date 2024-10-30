@@ -447,4 +447,4 @@ BEGIN
       ,'test 5 - check state code 2'
    );
 
-END;$$
+END;$$;

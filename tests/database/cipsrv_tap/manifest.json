@@ -36,6 +36,11 @@
             ,"point_simple_mr.sql"
             ,"nav_ut_shorty.sql"
             ,"nav_ut_350.sql"
+            ,"nav_um_350.sql"
+            ,"nav_dm_350.sql"
+            ,"nav_dd_350.sql"
+            ,"nav_pp_short.sql"
+            ,"nav_ppall_short.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [

@@ -1,0 +1,18 @@
+#!/bin/sh
+
+cpwd=$(pwd)
+dir=$(git rev-parse --show-toplevel);
+rm -Rf /tmp/dzSQLBuild
+mkdir  /tmp/dzSQLBuild
+cd     /tmp
+git clone https://github.com/pauldzy/dzSQLBuild.git
+
+cd /tmp/dzSQLBuild
+/tmp/dzSQLBuild/linux.sh ${dir}/src/database/cipsrv_support ${dir}
+/tmp/dzSQLBuild/linux.sh ${dir}/src/database/cipsrv_nhdplus_h ${dir}
+/tmp/dzSQLBuild/linux.sh ${dir}/src/database/cipsrv_nhdplus_m ${dir}
+/tmp/dzSQLBuild/linux.sh ${dir}/src/database/cipsrv_engine ${dir}
+/tmp/dzSQLBuild/linux.sh ${dir}/src/database/cipsrv_pgrest ${dir}
+/tmp/dzSQLBuild/linux.sh ${dir}/tests/database/cipsrv_tap ${dir}
+
+cd ${cpwd}

@@ -1,4 +1,4 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-full-3.9.2
+FROM ghcr.io/osgeo/gdal:ubuntu-full-3.9.3
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -92,6 +92,7 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
       geocoder                                                \
       geopandas                                               \
       geopy                                                   \
+      h3                                                      \
       ipyleaflet                                              \
       ipywidgets                                              \
       panel                                                   \
@@ -120,6 +121,7 @@ RUN pip3 install                                              \
       geopandas                                               \
       geopy                                                   \
       gitpython                                               \
+      h3                                                      \
       ipyleaflet                                              \
       ipywidgets                                              \
       panel                                                   \
