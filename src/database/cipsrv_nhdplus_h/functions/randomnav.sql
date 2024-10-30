@@ -11,11 +11,13 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.randomnav(
     IN  p_region               VARCHAR DEFAULT NULL
-   ,IN  p_return_geometry      BOOLEAN DEFAULT NULL
+   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
    ,OUT out_nhdplusid          BIGINT
    ,OUT out_reachcode          VARCHAR
    ,OUT out_measure            NUMERIC
    ,OUT out_shape              GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -34,6 +36,7 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    --------------------------------------------------------------------------
+   out_return_code := 0;
    
    --------------------------------------------------------------------------
    -- Step 20
@@ -250,7 +253,9 @@ BEGIN
       
       IF int_sanity > 25
       THEN
-         RAISE EXCEPTION 'Unable to sample % via %',p_region,num_big_samp;
+         out_return_code := -9;
+         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
+         RETURN;
          
       END IF;
       
