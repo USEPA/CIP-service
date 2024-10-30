@@ -99,8 +99,9 @@ def main(
 
    elif recipe == 'VPU09':
       print("using recipe VPU09");
-      mr_dumpfile = 'cipsrv_nhdplus_m_3_vpu09.dmp';
-      hr_dumpfile = 'cipsrv_nhdplus_h_3_vpu09.dmp';
+      mr_dumpfile      = 'cipsrv_nhdplus_m_3_vpu09.dmp';
+      hr_dumpfile      = 'cipsrv_nhdplus_h_3_vpu09.dmp';
+      support_dumpfile = 'cipsrv_support_1_vpu09.dmp';
 
    ###############################################################################
    print("Configuring compose for engine containers using default settings.");
