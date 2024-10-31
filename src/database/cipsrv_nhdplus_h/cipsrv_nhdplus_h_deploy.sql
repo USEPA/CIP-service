@@ -12353,11 +12353,13 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.randomnav(
     IN  p_region               VARCHAR DEFAULT NULL
-   ,IN  p_return_geometry      BOOLEAN DEFAULT NULL
+   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
    ,OUT out_nhdplusid          BIGINT
    ,OUT out_reachcode          VARCHAR
    ,OUT out_measure            NUMERIC
    ,OUT out_shape              GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -12376,6 +12378,7 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    --------------------------------------------------------------------------
+   out_return_code := 0;
    
    --------------------------------------------------------------------------
    -- Step 20
@@ -12592,7 +12595,9 @@ BEGIN
       
       IF int_sanity > 25
       THEN
-         RAISE EXCEPTION 'Unable to sample % via %',p_region,num_big_samp;
+         out_return_code := -9;
+         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
+         RETURN;
          
       END IF;
       
@@ -12603,6 +12608,7 @@ BEGIN
    -- Determine random measure on flowline
    --------------------------------------------------------------------------
    out_measure := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
+   out_measure := ROUND(out_measure,5);
    
    IF p_return_geometry
    THEN
@@ -12622,6 +12628,682 @@ ALTER FUNCTION cipsrv_nhdplus_h.randomnav(
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.randomnav(
+    VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/randomppnav.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.randomppnav';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.randomppnav(
+    IN  p_region               VARCHAR DEFAULT NULL
+   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
+   ,OUT out_nhdplusid1         BIGINT
+   ,OUT out_reachcode1         VARCHAR
+   ,OUT out_measure1           NUMERIC
+   ,OUT out_shape1             GEOMETRY
+   ,OUT out_nhdplusid2         BIGINT
+   ,OUT out_reachcode2         VARCHAR
+   ,OUT out_measure2           NUMERIC
+   ,OUT out_shape2             GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                RECORD;
+   num_fmeasure       NUMERIC;
+   num_tmeasure       NUMERIC;
+   int_hydroseq       BIGINT;
+   int_dnhydroseq     BIGINT;
+   int_terminalpathid BIGINT;
+   boo_check          BOOLEAN;
+   int_sanity         INTEGER;
+   sdo_flowline       GEOMETRY;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   boo_check := FALSE;
+   int_sanity := 1;
+   
+   WHILE NOT boo_check
+   LOOP
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random navigable flowline
+   --------------------------------------------------------------------------
+      rec := cipsrv_nhdplus_h.randomnav(
+          p_region          := p_region
+         ,p_return_geometry := p_return_geometry
+      );
+      
+      IF rec.out_return_code != 0
+      THEN
+         out_return_code    := rec.out_return_code;
+         out_status_message := rec.out_status_message;
+         RETURN;
+      
+      END IF;
+      
+      out_nhdplusid1  := rec.out_nhdplusid;
+      out_reachcode1  := rec.out_reachcode;
+      out_measure1    := rec.out_measure;
+      out_shape1      := rec.out_shape;
+   
+      SELECT
+       a.hydroseq
+      ,a.dnhydroseq
+      ,a.terminalpa
+      INTO
+       int_hydroseq
+      ,int_dnhydroseq
+      ,int_terminalpathid
+      FROM
+      cipsrv_nhdplus_h.nhdplusflowlinevaa a 
+      WHERE 
+      a.nhdplusid = out_nhdplusid1;
+      
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Select a random downstream location from the start point
+   --------------------------------------------------------------------------
+      WITH RECURSIVE pp(
+         nhdplusid
+        ,hydroseq
+        ,dnhydroseq
+        ,terminalpa
+        ,fmeasure
+        ,tmeasure
+      )
+      AS (
+         SELECT
+          out_nhdplusid1
+         ,int_hydroseq
+         ,int_dnhydroseq
+         ,int_terminalpathid
+         ,0::NUMERIC
+         ,0::NUMERIC
+         UNION
+         SELECT
+          mq.nhdplusid
+         ,mq.hydroseq
+         ,mq.dnhydroseq
+         ,mq.terminalpa
+         ,mq.fmeasure
+         ,mq.tmeasure
+         FROM
+         cipsrv_nhdplus_h.nhdplusflowlinevaa_nav mq
+         CROSS JOIN
+         pp
+         WHERE
+             mq.ary_upstream_hydroseq @> ARRAY[pp.hydroseq]
+         AND mq.terminalpa =  pp.terminalpa
+      )
+      SELECT
+       a.nhdplusid
+      ,b.reachcode
+      ,a.fmeasure
+      ,a.tmeasure
+      ,CASE WHEN p_return_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
+      INTO
+       out_nhdplusid2
+      ,out_reachcode2
+      ,num_fmeasure
+      ,num_tmeasure
+      ,sdo_flowline
+      FROM
+      pp a
+      JOIN
+      cipsrv_nhdplus_h.nhdflowline b
+      ON
+      b.nhdplusid = a.nhdplusid
+      WHERE
+          a.nhdplusid <> out_nhdplusid1
+      AND RANDOM() < 0.01 
+      LIMIT 1;
+      
+      out_measure2 := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
+      out_measure2 := ROUND(out_measure2,5);
+      
+      IF out_nhdplusid2 IS NOT NULL
+      THEN
+         boo_check := TRUE;
+         
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      
+      IF int_sanity > 100
+      THEN
+         out_return_code := -9;
+         out_status_message := 'Sanity check failed';
+         RETURN;
+      
+      END IF;
+      
+   END LOOP;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Build shape2 point if requested
+   --------------------------------------------------------------------------
+   IF p_return_geometry
+   THEN
+      sdo_flowline := ST_TRANSFORM(sdo_flowline,4326);   
+      out_shape2   := ST_Force2D(ST_GeometryN(ST_LocateAlong(sdo_flowline,out_measure2),1));
+      
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_h.randomppnav(
+    VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.randomppnav(
+    VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/randomcatchment.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.randomcatchment';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.randomcatchment(
+    IN  p_region                VARCHAR DEFAULT NULL
+   ,IN  p_include_extended      BOOLEAN DEFAULT FALSE
+   ,IN  p_return_geometry       BOOLEAN DEFAULT FALSE
+   ,OUT out_nhdplusid           BIGINT
+   ,OUT out_areasqkm            NUMERIC
+   ,OUT out_catchmentstatecodes VARCHAR[]
+   ,OUT out_shape               GEOMETRY
+   ,OUT out_centroid            GEOMETRY
+   ,OUT out_return_code         INTEGER
+   ,OUT out_status_message      VARCHAR
+)
+STABLE
+AS $BODY$
+DECLARE
+   boo_search      BOOLEAN;
+   int_sanity      INTEGER;
+   num_big_samp    NUMERIC := 0.001;
+   str_statecode   VARCHAR;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random navigable flowline
+   --------------------------------------------------------------------------
+   boo_search := TRUE;
+   int_sanity := 0;
+   
+   WHILE boo_search
+   LOOP
+      IF p_region IN ('CONUS','5070')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_h.catchment_5070 aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+               
+      ELSIF p_region IN ('ALASKA','AK','3338')
+      THEN     
+         IF NOT p_include_extended
+         THEN
+            out_status_message := 'Alaska is entirely extended H3 catchments.';
+            RETURN;
+            
+         END IF;
+         
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isalaskan
+            FROM
+            cipsrv_nhdplus_h.catchment_3338 aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isalaskan
+         ORDER BY RANDOM()
+         LIMIT 1;
+               
+      ELSIF p_region IN ('HAWAII','HI','26904')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_h.catchment_26904 aa
+            TABLESAMPLE SYSTEM(0.1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('PRVI','32161')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_h.catchment_32161 aa
+            TABLESAMPLE SYSTEM(0.1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('GUAMMAR','GUMP','32655')
+      THEN         
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_h.catchment_32655 aa
+            TABLESAMPLE SYSTEM(1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('AMSAMOA','AS','32702')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_h.catchment_32702 aa
+            TABLESAMPLE SYSTEM(1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSE
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecode
+            ,aa.isocean
+            ,aa.isalaskan
+            FROM
+            cipsrv_nhdplus_h.catchment_fabric aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         p_include_extended OR (a.isocean = 'N' AND a.isalaskan = 'N')
+         ORDER BY RANDOM()
+         LIMIT 1;
+      
+      END IF;
+      
+      IF out_nhdplusid IS NOT NULL
+      THEN
+         boo_search := FALSE;
+         
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      IF int_sanity > 10
+      THEN
+         num_big_samp := num_big_samp * 2;
+         
+      END IF;
+      
+      IF int_sanity > 25
+      THEN
+         out_return_code := -9;
+         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
+         RETURN;
+         
+      END IF;
+      
+   END LOOP;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Get the catchment details
+   --------------------------------------------------------------------------
+   IF str_statecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_h.catchment_5070_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('AK')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_h.catchment_3338_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('HI')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_h.catchment_26904_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('PR','VI')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_h.catchment_32161_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('GU','MP')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_h.catchment_32655_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('AS')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_h.catchment_32702_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSE
+      RAISE EXCEPTION 'err';
+      
+   END IF;   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_h.randomcatchment(
+    VARCHAR
+   ,BOOLEAN
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.randomcatchment(
+    VARCHAR
+   ,BOOLEAN
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/randompoint.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.randompoint';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.randompoint(
+    IN  p_region               VARCHAR DEFAULT NULL
+   ,IN  p_include_extended     BOOLEAN DEFAULT FALSE
+   ,OUT out_shape              GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec             RECORD;
+   sdo_box         GEOMETRY;
+   int_count       INTEGER;
+   num_min_x       NUMERIC;
+   num_min_y       NUMERIC;
+   num_max_x       NUMERIC;
+   num_max_y       NUMERIC;
+   num_rand_x      NUMERIC;
+   num_rand_y      NUMERIC;
+   boo_search      BOOLEAN;
+   int_sanity      INTEGER;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random catchment
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := p_region
+      ,p_include_extended := p_include_extended
+      ,p_return_geometry  := TRUE
+   );
+   
+   IF rec.out_return_code != 0
+   THEN
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      RETURN;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Box the catchment and get bounds
+   --------------------------------------------------------------------------
+   sdo_box   := ST_Extent(rec.out_shape);
+   num_min_x := ST_XMin(sdo_box);
+   num_min_y := ST_YMin(sdo_box);
+   num_max_x := ST_XMax(sdo_box);
+   num_max_y := ST_YMax(sdo_box);
+   
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Limit the point to being within the catchment
+   --------------------------------------------------------------------------
+   boo_search := TRUE;
+   int_sanity := 0;
+   WHILE boo_search
+   LOOP
+      num_rand_x := RANDOM() * (num_max_x - num_min_x) + num_min_x;
+      num_rand_y := RANDOM() * (num_max_y - num_min_y) + num_min_y;
+      out_shape  := ST_SetSRID(ST_Point(num_rand_x,num_rand_y),ST_SRID(rec.out_shape));
+   
+      IF ST_Within(out_shape,rec.out_shape)
+      THEN
+         boo_search := FALSE;
+      
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      IF int_sanity > 25
+      THEN
+         out_return_code    := -9;
+         out_status_message := 'Unable to process ' || int_featureid::VARCHAR || '.';
+         RETURN;
+         
+      END IF;
+   
+   END LOOP;
+   
+   out_shape := ST_Transform(out_shape,4269);
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_h.randompoint(
+    VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.randompoint(
     VARCHAR
    ,BOOLEAN
 ) TO PUBLIC;
