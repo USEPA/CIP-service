@@ -27,6 +27,10 @@
             ,"functions/cipsrv_nav.sql"
             ,"functions/point_catreach_index.sql"
             ,"functions/randomnav.sql"
+            ,"functions/randomppnav.sql"
+            ,"functions/randomcatchment.sql"
+            ,"functions/randompoint.sql"
+            ,"functions/randomhuc12.sql"
             ,"functions/healthcheck.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"

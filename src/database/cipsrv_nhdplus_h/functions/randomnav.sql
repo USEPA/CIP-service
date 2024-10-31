@@ -266,6 +266,7 @@ BEGIN
    -- Determine random measure on flowline
    --------------------------------------------------------------------------
    out_measure := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
+   out_measure := ROUND(out_measure,5);
    
    IF p_return_geometry
    THEN

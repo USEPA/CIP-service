@@ -3,13 +3,13 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_pgrest.randomnav';
+   WHERE p.oid::regproc::text = 'cipsrv_pgrest.randomppnav';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomnav(
+CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomppnav(
    JSONB
 ) RETURNS JSONB
 VOLATILE
@@ -63,7 +63,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF UPPER(str_nhdplus_version) IN ('NHDPLUS_M','MR')
    THEN
-      rec := cipsrv_nhdplus_m.randomnav(
+      rec := cipsrv_nhdplus_m.randomppnav(
           p_region          := str_region
          ,p_return_geometry := boo_return_geometry
       );
@@ -71,7 +71,7 @@ BEGIN
    
    ELSIF UPPER(str_nhdplus_version) IN ('NHDPLUS_H','HR')
    THEN
-      rec := cipsrv_nhdplus_h.randomnav(
+      rec := cipsrv_nhdplus_h.randomppnav(
           p_region          := str_region
          ,p_return_geometry := boo_return_geometry
       );
@@ -84,11 +84,15 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'nhdplusid'      ,rec.out_nhdplusid
-      ,'reachcode'      ,rec.out_reachcode
-      ,'measure'        ,rec.out_measure
+       'nhdplusid1'     ,rec.out_nhdplusid1
+      ,'reachcode1'     ,rec.out_reachcode1
+      ,'measure1'       ,rec.out_measure1
+      ,'shape1'         ,ST_AsGeoJSON(ST_Transform(rec.out_shape1,4326))::JSONB
+      ,'nhdplusid2'     ,rec.out_nhdplusid2
+      ,'reachcode2'     ,rec.out_reachcode2
+      ,'measure2'       ,rec.out_measure2
+      ,'shape2'         ,ST_AsGeoJSON(ST_Transform(rec.out_shape2,4326))::JSONB
       ,'nhdplus_version',str_nhdplus_version
-      ,'shape'          ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
       ,'return_code'    ,rec.out_return_code
       ,'status_message' ,rec.out_status_message
    );
@@ -97,12 +101,12 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_pgrest.randomnav(
+ALTER FUNCTION cipsrv_pgrest.randomppnav(
    JSONB
 ) 
 OWNER TO cipsrv_pgrest;
 
-GRANT EXECUTE ON FUNCTION cipsrv_pgrest.randomnav(
+GRANT EXECUTE ON FUNCTION cipsrv_pgrest.randomppnav(
    JSONB
 ) 
 TO PUBLIC;

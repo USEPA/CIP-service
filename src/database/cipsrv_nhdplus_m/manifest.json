@@ -78,6 +78,9 @@
             ,"functions/nav_ut_extended.sql"
             ,"functions/navigate.sql"
             ,"functions/randomnav.sql"
+            ,"functions/randomppnav.sql"
+            ,"functions/randomcatchment.sql"
+            ,"functions/randompoint.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
