@@ -7,7 +7,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.cipsrv_version()
+CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_version()
 RETURNS VARCHAR
 STABLE
 AS $BODY$

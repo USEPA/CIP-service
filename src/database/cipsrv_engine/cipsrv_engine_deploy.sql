@@ -416,7 +416,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.adjust_point_extent(
+CREATE OR REPLACE FUNCTION cipsrv_engine.adjust_point_extent(
     IN  p_extent_value      NUMERIC
    ,IN  p_direction         VARCHAR
    ,IN  p_flowline_amount   NUMERIC
@@ -662,7 +662,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.cipsrv_version()
+CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_version()
 RETURNS VARCHAR
 STABLE
 AS $BODY$

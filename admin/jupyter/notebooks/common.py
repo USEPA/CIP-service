@@ -45,57 +45,61 @@ def ogr2ogr(cmdstring):
    
 def load_sqlfile(conn,sqlfile,echo=False):
     
-    resp = [];
+   resp = [];
     
-    splitters = [
-         "^CREATE .*"
-        ,"^ALTER .*"
-        ,"^GRANT .*"
-        ,"^DROP .*"
-    ];
-    splitmatch = "(" + ")|(".join(splitters) + ")";
+   splitters = [
+       "^CREATE .*"
+      ,"^ALTER .*"
+      ,"^GRANT .*"
+      ,"^DROP .*"
+      ,"^DO \$\$.*"
+      ,"^ANALYZE .*"
+   ];:q:wq
+   splitmatch = "(" + ")|(".join(splitters) + ")";
     
-    if not os.path.exists(sqlfile):
-        raise Exception(sqlfile + ' not found.');
+   if not os.path.exists(sqlfile):
+      raise Exception(sqlfile + ' not found.');
 
-    with closing(conn.cursor()) as cursor:
+   with closing(conn.cursor()) as cursor:
         
-        with open(sqlfile,'r') as file:
+      with open(sqlfile,'r') as file:
             
-            sqltxt = None;
-            sqlbuf = [];
-            for line in file:
+         sqltxt = None;
+         sqlbuf = [];
+         for line in file:
             
-                if not re.match(r"(^--\*\*\*\*\*\*.*)|(^-----)",line):
+            if not re.match(r"(^--\*\*\*\*\*\*.*)|(^-----)",line):
                     
-                    if re.match(splitmatch,line) and len(sqlbuf) > 0:
+               if re.match(splitmatch,line) and len(sqlbuf) > 0:
                         
-                        sqltxt = ''.join(sqlbuf);
-                        cursor.execute(sqltxt);
-                        sm = cursor.statusmessage;
-                        resp.append(sm);
+                  sqltxt = ''.join(sqlbuf);
+                  cursor.execute(sqltxt);
+                  sm = cursor.statusmessage;
+                  tx = sqlbuf[0][:80].strip() + ' => ' + sm;
+                  resp.append(tx);
                         
-                        if echo:
-                            print(sm);
+                  if echo:
+                     print(tx);
                         
-                        conn.commit();
-                        sqlbuf = [];
+                  conn.commit();
+                  sqlbuf = [];
                     
-                    # remove empty lines outside commands
-                    if len(sqlbuf) == 0 and re.match('^\n',line):
-                        None;
-                    else:
-                        sqlbuf.append(line);
+               # remove empty lines outside commands
+               if len(sqlbuf) == 0 and re.match('^\n',line):
+                  None;
+               else:
+                  sqlbuf.append(line);
                         
-            if len(sqlbuf) > 0:
-               sqltxt = ''.join(sqlbuf);
-               cursor.execute(sqltxt);
-               sm = cursor.statusmessage;
-               resp.append(sm);
+         if len(sqlbuf) > 0:
+            sqltxt = ''.join(sqlbuf);
+            cursor.execute(sqltxt);
+            sm = cursor.statusmessage;
+            tx = sqlbuf[0][:80].strip() + ' => ' + sm;;
+            resp.append(tx);
                
-               if echo:
-                   print(sm);
+            if echo:
+               print(tx);
                
-               conn.commit();
+            conn.commit();
     
-    return resp;
+   return resp;

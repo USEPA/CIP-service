@@ -2640,7 +2640,16 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.determine_grid_srid(
 --******************************--
 ----- functions/temp_table_exists.sql 
 
-CREATE or REPLACE FUNCTION cipsrv_nhdplus_h.temp_table_exists(
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.temp_table_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.temp_table_exists(
    IN p_table_name VARCHAR
 ) RETURNS BOOLEAN 
 STABLE
