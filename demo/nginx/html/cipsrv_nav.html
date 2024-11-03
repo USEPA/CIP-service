@@ -3,7 +3,7 @@
    <head>
       <meta charset="UTF-8">
       <title>CIP Service Navigation</title>
-      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.3/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
       <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
       <style>
          #busy {
@@ -120,8 +120,8 @@
       </div>
       <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
       </div>
-      <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
-      <script src='https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js'></script>
+      <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
          document.getElementById("dz_run_service").disabled = true;
@@ -342,7 +342,7 @@
                   var data = {
                       "point"           : JSON.parse(start_geojsonval)
                      ,"nhdplus_version" : nhdplus_version 
-                     ,"return_snap_path": true
+                     ,"return_link_path": true
                   }
             
                   if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
@@ -366,7 +366,7 @@
                   if (zpostgrest_port == "443" ) {
                      http = "https";
                   }
-                  httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/point_catreach_index",data,pt1_response);
+                  httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/pointindexing",data,pt1_response);
                
                } 
             
@@ -497,7 +497,7 @@
                var data = {
                    "point"           : JSON.parse(stop_geojsonval)
                   ,"nhdplus_version" : nhdplus_version 
-                  ,"return_snap_path": true
+                  ,"return_link_path": true
                }
             
                if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
@@ -521,7 +521,7 @@
                if (zpostgrest_port == "443" ) {
                   http = "https";
                }
-               httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/point_catreach_index",data,pt2_response);
+               httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/pointindexing",data,pt2_response);
             
             } else {
                var search_type      = get_select_values(document.getElementById("pSearchType"));

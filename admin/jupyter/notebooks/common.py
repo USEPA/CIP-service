@@ -48,13 +48,13 @@ def load_sqlfile(conn,sqlfile,echo=False):
    resp = [];
     
    splitters = [
-       "^CREATE .*"
-      ,"^ALTER .*"
-      ,"^GRANT .*"
-      ,"^DROP .*"
-      ,"^DO \$\$.*"
-      ,"^ANALYZE .*"
-   ];:q:wq
+       '^CREATE .*'
+      ,'^ALTER .*'
+      ,'^GRANT .*'
+      ,'^DROP .*'
+      ,'^DO $$.*'
+      ,'^ANALYZE .*'
+   ];
    splitmatch = "(" + ")|(".join(splitters) + ")";
     
    if not os.path.exists(sqlfile):
@@ -94,7 +94,7 @@ def load_sqlfile(conn,sqlfile,echo=False):
             sqltxt = ''.join(sqlbuf);
             cursor.execute(sqltxt);
             sm = cursor.statusmessage;
-            tx = sqlbuf[0][:80].strip() + ' => ' + sm;;
+            tx = sqlbuf[0][:80].strip() + ' => ' + sm;
             resp.append(tx);
                
             if echo:

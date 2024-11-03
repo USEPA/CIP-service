@@ -25,7 +25,7 @@
              "functions/cipsrv_domains.sql"
             ,"functions/cipsrv_index.sql"
             ,"functions/cipsrv_nav.sql"
-            ,"functions/point_catreach_index.sql"
+            ,"functions/pointindexing.sql"
             ,"functions/randomnav.sql"
             ,"functions/randomppnav.sql"
             ,"functions/randomcatchment.sql"
