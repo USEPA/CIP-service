@@ -1,3 +1,4 @@
+DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)

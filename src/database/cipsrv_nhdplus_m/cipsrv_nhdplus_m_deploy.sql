@@ -2666,6 +2666,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
 --******************************--
 ----- functions/determine_grid_srid.sql 
 
+DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
