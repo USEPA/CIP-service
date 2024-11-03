@@ -27,7 +27,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.pointindexing(
    ,IN  p_return_link_path             BOOLEAN
    ,IN  p_known_region                 VARCHAR
    ,IN  p_known_catchment_nhdplusid    BIGINT   DEFAULT NULL
-   ,OUT out_flowlines                  cipsrv_nhdplus_h.flowline[]
+   ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
    ,OUT out_path_distance_km           NUMERIC
    ,OUT out_end_point                  GEOMETRY
    ,OUT out_indexing_line              GEOMETRY
@@ -60,7 +60,7 @@ BEGIN
           p_point                     => p_point
          ,p_fcode_allow               => p_fcode_allow
          ,p_fcode_deny                => p_fcode_deny
-         ,p_max_dist_km               => p_distance_max_distkm
+         ,p_distance_max_distkm       => p_distance_max_distkm
          ,p_limit_innetwork           => p_limit_innetwork
          ,p_limit_navigable           => p_limit_navigable
          ,p_return_link_path          => p_return_link_path

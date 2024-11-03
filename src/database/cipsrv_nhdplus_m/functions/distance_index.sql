@@ -120,7 +120,7 @@ BEGIN
       RETURN;
       
    END IF;
-     
+
    --------------------------------------------------------------------------
    -- Step 30
    -- Project input point if required
@@ -634,7 +634,7 @@ BEGIN
       RAISE EXCEPTION 'err';
    
    END IF;
-   
+
    -------------------------------------------------------------------------
    -- Step 50
    -- Iterate the cursor into array of output type
@@ -708,7 +708,7 @@ BEGIN
    END LOOP; 
    
    CLOSE curs_candidates;
-   
+
    --------------------------------------------------------------------------
    -- Step 60
    -- Bail if no results

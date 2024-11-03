@@ -1375,7 +1375,7 @@ BEGIN
       );
       
    END IF;
-   
+
    --------------------------------------------------------------------------
    -- Step 20
    -- Call the engine
@@ -1452,8 +1452,8 @@ BEGIN
    RETURN JSONB_BUILD_OBJECT(
        'flowlines'           ,TO_JSONB(rec.out_flowlines)
       ,'path_distance_km'    ,rec.out_path_distance_km
-      ,'end_point'           ,ST_AsGeoJSON(ST_Transform(rec.end_point,4326))::JSONB
-      ,'indexing_line'       ,ST_AsGeoJSON(ST_Transform(rec.indexing_line,4326))::JSONB
+      ,'end_point'           ,ST_AsGeoJSON(ST_Transform(rec.out_end_point,4326))::JSONB
+      ,'indexing_line'       ,ST_AsGeoJSON(ST_Transform(rec.out_indexing_line,4326))::JSONB
       ,'region'              ,rec.out_region
       ,'nhdplusid'           ,rec.out_nhdplusid
       ,'return_code'         ,int_return_code

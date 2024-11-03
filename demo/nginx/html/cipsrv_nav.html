@@ -341,7 +341,8 @@
 
                   var data = {
                       "point"           : JSON.parse(start_geojsonval)
-                     ,"nhdplus_version" : nhdplus_version 
+                     ,"nhdplus_version" : nhdplus_version
+                     ,"limit_navigable" : true
                      ,"return_link_path": true
                   }
             
@@ -476,17 +477,17 @@
                document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
             }
             
-            if (response.snap_path !== null && response.snap_path.geometry.type !== null) {
-               snap_path.addData(response.snap_path).setStyle({
+            if (response.indexing_line !== null && response.indexing_line.type !== null) {
+               snap_path.addData(response.indexing_line).setStyle({
                    "color": "#FFA500"
                   ,"fillColor": "#FFA500"
                });
                
-               document.getElementById("pStartNHDPlusID").value = response.nhdplusid;
-               document.getElementById("pStartPermanentIdentifier").value = response.permanent_identifier;
-               document.getElementById("pStartReachCode").value = response.reachcode;
-               document.getElementById("pStartHydroSeq").value = response.hydroseq;
-               document.getElementById("pStartMeasure").value = response.snap_measure;
+               document.getElementById("pStartNHDPlusID").value = response.flowlines[0].nhdplusid;
+               document.getElementById("pStartPermanentIdentifier").value = response.flowlines[0].permanent_identifier;
+               document.getElementById("pStartReachCode").value = response.flowlines[0].reachcode;
+               document.getElementById("pStartHydroSeq").value = null;
+               document.getElementById("pStartMeasure").value = response.flowlines[0].snap_measure;
                
             }
 
@@ -496,7 +497,8 @@
                
                var data = {
                    "point"           : JSON.parse(stop_geojsonval)
-                  ,"nhdplus_version" : nhdplus_version 
+                  ,"nhdplus_version" : nhdplus_version
+                  ,"limit_navigable" : true
                   ,"return_link_path": true
                }
             
@@ -587,17 +589,17 @@
                document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
             }
             
-            if (response.snap_path !== null && response.snap_path.geometry.type !== null) {
-               snap_path.addData(response.snap_path).setStyle({
+            if (response.indexing_line !== null && response.indexing_line.type !== null) {
+               snap_path.addData(response.indexing_line).setStyle({
                    "color": "#FFA500"
                   ,"fillColor": "#FFA500"
                });
                
-               document.getElementById("pStopNHDPlusID").value = response.nhdplusid;
-               document.getElementById("pStopPermanentIdentifier").value = response.permanent_identifier;
-               document.getElementById("pStopReachCode").value = response.reachcode;
-               document.getElementById("pStopHydroSeq").value = response.hydroseq;
-               document.getElementById("pStopMeasure").value = response.snap_measure;
+               document.getElementById("pStopNHDPlusID").value = response.flowlines[0].nhdplusid;
+               document.getElementById("pStopPermanentIdentifier").value = response.flowlines[0].permanent_identifier;
+               document.getElementById("pStopReachCode").value = response.flowlines[0].reachcode;
+               document.getElementById("pStopHydroSeq").value = null;
+               document.getElementById("pStopMeasure").value = response.flowlines[0].snap_measure;
                
             }
             
