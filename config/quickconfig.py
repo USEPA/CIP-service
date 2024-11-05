@@ -11,12 +11,20 @@ cc = importlib.import_module("config-compose");
 script_root = os.path.realpath(os.path.dirname(__file__));
 parser = argparse.ArgumentParser(description='quickconfig script for cipsrv');
 parser.add_argument("--recipe"                  ,required=False,default=None);
+
 parser.add_argument("--mr_dumpfile"             ,required=False,default=None);
 parser.add_argument("--mr_dumpfile_copyin"      ,required=False,default=None);
 parser.add_argument("--hr_dumpfile"             ,required=False,default=None);
 parser.add_argument("--hr_dumpfile_copyin"      ,required=False,default=None);
+
+parser.add_argument("--mrgrid_dumpfile"         ,required=False,default=None);
+parser.add_argument("--mrgrid_dumpfile_copyin"  ,required=False,default=None);
+parser.add_argument("--hrgrid_dumpfile"         ,required=False,default=None);
+parser.add_argument("--hrgrid_dumpfile_copyin"  ,required=False,default=None);
+
 parser.add_argument("--support_dumpfile"        ,required=False,default=None);
 parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
+
 parser.add_argument("--override_postgresql_port",required=False,default=None);
 parser.add_argument("--override_demo_pgrst_host",required=False,default=None);
 parser.add_argument("--down_volumes"            ,required=False,default=False,action=argparse.BooleanOptionalAction);
@@ -24,12 +32,20 @@ parser.add_argument("--build_nocache"           ,required=False,default=False,ac
 
 def main(
     recipe
+    
    ,mr_dumpfile
    ,mr_dumpfile_copyin
    ,hr_dumpfile
    ,hr_dumpfile_copyin
+   
+   ,mrgrid_dumpfile
+   ,mrgrid_dumpfile_copyin
+   ,hrgrid_dumpfile
+   ,hrgrid_dumpfile_copyin
+   
    ,support_dumpfile
    ,support_dumpfile_copyin
+   
    ,override_postgresql_port
    ,override_demo_pgrst_host
    ,down_volumes
@@ -218,7 +234,7 @@ def main(
 
    z = 0;
    ###############################################################################
-   if recipe in ['MRONLY','ALL','VPU09']:
+   if recipe in ['MRONLY','ALL','VPU09','EXTENDED']:
       cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus_m.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus_m.py"];
       dzproc(cmd);
 
@@ -249,7 +265,7 @@ def main(
       z += 1;
 
    ###############################################################################
-   if recipe in ['HRONLY','ALL','VPU09']:
+   if recipe in ['HRONLY','ALL','VPU09','EXTENDED']:
       cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus_h.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus_h.py"];
       dzproc(cmd);
 
@@ -283,6 +299,62 @@ def main(
    if z == 0:
       print("Error no NHDPlus datasets loaded using these parameters");
       sys.exit(-50);
+      
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      cmd = [
+          "docker","compose","exec","cip_jp","jupyter"
+         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplusgrid_m.ipynb"
+         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py"
+      ];
+      dzproc(cmd);
+
+      if mrgrid_dumpfile_copyin is not None:
+         mdf = os.path.basename(mrgrid_dumpfile_copyin);
+         print("Loading local mrgrid dumpfile " + mdf + " into container.");
+         cmd = ["docker","compose","cp",mrgrid_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+         dzproc(cmd);
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py","--use_existing","--mrgrid_dumpfile",mdf];
+         dzproc(cmd);
+         
+      else:
+         if mrgrid_dumpfile is None:
+            print("Downloading and importing default NHDPlus Grid MR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py"];
+            dzproc(cmd);
+            
+         else:
+            print("Downloading and importing " + mrgrid_dumpfile + " NHDPlus Grid MR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py","--mrgrid_dumpfile",mrgrid_dumpfile];
+            dzproc(cmd);
+
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      cmd = [
+          "docker","compose","exec","cip_jp","jupyter"
+         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplusgrid_h.ipynb"
+         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py"
+      ];
+      dzproc(cmd);
+
+      if hrgrid_dumpfile_copyin is not None:
+         mdf = os.path.basename(hrgrid_dumpfile_copyin);
+         print("Loading local hrgrid dumpfile " + mdf + " into container.");
+         cmd = ["docker","compose","cp",hrgrid_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+         dzproc(cmd);
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py","--use_existing","--hrgrid_dumpfile",mdf];
+         dzproc(cmd);
+         
+      else:
+         if hrgrid_dumpfile is None:
+            print("Downloading and importing default NHDPlus Grid HR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py"];
+            dzproc(cmd);
+            
+         else:
+            print("Downloading and importing " + hrgrid_dumpfile + " NHDPlus Grid HR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py","--hrgrid_dumpfile",hrgrid_dumpfile];
+            dzproc(cmd);
 
    ###############################################################################
    print("Fetching and loading CIP Engine logic.");
@@ -307,12 +379,20 @@ if __name__ == '__main__':
 
    main(
        recipe                   = args.recipe
+       
       ,mr_dumpfile              = args.mr_dumpfile
       ,mr_dumpfile_copyin       = args.mr_dumpfile_copyin
       ,hr_dumpfile              = args.hr_dumpfile
       ,hr_dumpfile_copyin       = args.hr_dumpfile_copyin
+      
+      ,mrgrid_dumpfile          = args.mrgrid_dumpfile
+      ,mrgrid_dumpfile_copyin   = args.mrgrid_dumpfile_copyin
+      ,hrgrid_dumpfile          = args.hrgrid_dumpfile
+      ,hrgrid_dumpfile_copyin   = args.hrgrid_dumpfile_copyin
+      
       ,support_dumpfile         = args.support_dumpfile
       ,support_dumpfile_copyin  = args.support_dumpfile_copyin
+      
       ,override_postgresql_port = args.override_postgresql_port
       ,override_demo_pgrst_host = args.override_demo_pgrst_host
       ,down_volumes             = args.down_volumes

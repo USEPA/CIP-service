@@ -486,7 +486,7 @@
                document.getElementById("pStartNHDPlusID").value = response.flowlines[0].nhdplusid;
                document.getElementById("pStartPermanentIdentifier").value = response.flowlines[0].permanent_identifier;
                document.getElementById("pStartReachCode").value = response.flowlines[0].reachcode;
-               document.getElementById("pStartHydroSeq").value = null;
+               document.getElementById("pStartHydroSeq").value = response.flowlines[0].hydroseq;
                document.getElementById("pStartMeasure").value = response.flowlines[0].snap_measure;
                
             }
@@ -598,7 +598,7 @@
                document.getElementById("pStopNHDPlusID").value = response.flowlines[0].nhdplusid;
                document.getElementById("pStopPermanentIdentifier").value = response.flowlines[0].permanent_identifier;
                document.getElementById("pStopReachCode").value = response.flowlines[0].reachcode;
-               document.getElementById("pStopHydroSeq").value = null;
+               document.getElementById("pStopHydroSeq").value = response.flowlines[0].hydroseq;
                document.getElementById("pStopMeasure").value = response.flowlines[0].snap_measure;
                
             }

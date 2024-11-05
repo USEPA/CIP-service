@@ -161,6 +161,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -184,6 +185,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -243,6 +245,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -266,6 +269,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -325,6 +329,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -348,6 +353,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -407,6 +413,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -430,6 +437,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -489,6 +497,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -512,6 +521,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -571,6 +581,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -594,6 +605,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -663,6 +675,7 @@ BEGIN
       rec_candidate.enabled                     := rec_flowline.enabled;
       rec_candidate.fmeasure                    := rec_flowline.fmeasure;
       rec_candidate.tmeasure                    := rec_flowline.tmeasure;
+      rec_candidate.hydroseq                    := rec_flowline.hydroseq;
       rec_candidate.shape                       := ST_Transform(rec_flowline.shape,4269);
       
       rec_candidate.snap_measure := ROUND(ST_InterpolatePoint(

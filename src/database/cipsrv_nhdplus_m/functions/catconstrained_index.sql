@@ -279,6 +279,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -314,6 +315,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -339,6 +341,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -376,6 +379,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -411,6 +415,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -436,6 +441,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -473,6 +479,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -508,6 +515,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -533,6 +541,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -570,6 +579,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -605,6 +615,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -630,6 +641,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -667,6 +679,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -702,6 +715,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -727,6 +741,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -764,6 +779,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -799,6 +815,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -824,6 +841,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape

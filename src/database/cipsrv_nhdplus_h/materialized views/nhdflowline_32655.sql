@@ -23,6 +23,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32655(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -62,6 +63,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,32655) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -89,6 +91,9 @@ ON cipsrv_nhdplus_h.nhdflowline_32655(hasvaa);
 
 CREATE INDEX nhdflowline_32655_04i
 ON cipsrv_nhdplus_h.nhdflowline_32655(isnavigable);
+
+CREATE INDEX nhdflowline_32655_05i
+ON cipsrv_nhdplus_h.nhdflowline_32655(hydroseq);
 
 CREATE INDEX nhdflowline_32655_spx
 ON cipsrv_nhdplus_h.nhdflowline_32655 USING GIST(shape);

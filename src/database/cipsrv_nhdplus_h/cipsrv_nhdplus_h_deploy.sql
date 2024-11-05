@@ -1382,6 +1382,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_3338(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -1421,6 +1422,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,3338) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -1448,6 +1450,9 @@ ON cipsrv_nhdplus_h.nhdflowline_3338(hasvaa);
 
 CREATE INDEX nhdflowline_3338_04i
 ON cipsrv_nhdplus_h.nhdflowline_3338(isnavigable);
+
+CREATE INDEX nhdflowline_3338_05i
+ON cipsrv_nhdplus_h.nhdflowline_3338(hydroseq);
 
 CREATE INDEX nhdflowline_3338_spx
 ON cipsrv_nhdplus_h.nhdflowline_3338 USING GIST(shape);
@@ -1484,6 +1489,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_5070(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -1523,6 +1529,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,5070) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -1550,6 +1557,9 @@ ON cipsrv_nhdplus_h.nhdflowline_5070(hasvaa);
 
 CREATE INDEX nhdflowline_5070_04i
 ON cipsrv_nhdplus_h.nhdflowline_5070(isnavigable);
+
+CREATE INDEX nhdflowline_5070_05i
+ON cipsrv_nhdplus_h.nhdflowline_5070(hydroseq);
 
 CREATE INDEX nhdflowline_5070_spx
 ON cipsrv_nhdplus_h.nhdflowline_5070 USING GIST(shape);
@@ -1586,6 +1596,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_26904(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -1625,6 +1636,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,26904) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -1652,6 +1664,9 @@ ON cipsrv_nhdplus_h.nhdflowline_26904(hasvaa);
 
 CREATE INDEX nhdflowline_26904_04i
 ON cipsrv_nhdplus_h.nhdflowline_26904(isnavigable);
+
+CREATE INDEX nhdflowline_26904_05i
+ON cipsrv_nhdplus_h.nhdflowline_26904(hydroseq);
 
 CREATE INDEX nhdflowline_26904_spx
 ON cipsrv_nhdplus_h.nhdflowline_26904 USING GIST(shape);
@@ -1688,6 +1703,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -1727,6 +1743,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,32161) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -1754,6 +1771,9 @@ ON cipsrv_nhdplus_h.nhdflowline_32161(hasvaa);
 
 CREATE INDEX nhdflowline_32161_04i
 ON cipsrv_nhdplus_h.nhdflowline_32161(isnavigable);
+
+CREATE INDEX nhdflowline_32161_05i
+ON cipsrv_nhdplus_h.nhdflowline_32161(hydroseq);
 
 CREATE INDEX nhdflowline_32161_spx
 ON cipsrv_nhdplus_h.nhdflowline_32161 USING GIST(shape);
@@ -1790,6 +1810,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32655(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -1829,6 +1850,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,32655) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -1856,6 +1878,9 @@ ON cipsrv_nhdplus_h.nhdflowline_32655(hasvaa);
 
 CREATE INDEX nhdflowline_32655_04i
 ON cipsrv_nhdplus_h.nhdflowline_32655(isnavigable);
+
+CREATE INDEX nhdflowline_32655_05i
+ON cipsrv_nhdplus_h.nhdflowline_32655(hydroseq);
 
 CREATE INDEX nhdflowline_32655_spx
 ON cipsrv_nhdplus_h.nhdflowline_32655 USING GIST(shape);
@@ -1892,6 +1917,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32702(
    ,tmeasure
    ,hasvaa
    ,isnavigable
+   ,hydroseq
    ,shape
 )
 AS
@@ -1931,6 +1957,7 @@ SELECT
  ELSE
    FALSE
  END AS isnavigable
+,b.hydroseq
 ,ST_Transform(a.shape,32702) AS shape
 FROM
 cipsrv_nhdplus_h.nhdflowline a
@@ -1958,6 +1985,9 @@ ON cipsrv_nhdplus_h.nhdflowline_32702(hasvaa);
 
 CREATE INDEX nhdflowline_32702_04i
 ON cipsrv_nhdplus_h.nhdflowline_32702(isnavigable);
+
+CREATE INDEX nhdflowline_32702_05i
+ON cipsrv_nhdplus_h.nhdflowline_32702(hydroseq);
 
 CREATE INDEX nhdflowline_32702_spx
 ON cipsrv_nhdplus_h.nhdflowline_32702 USING GIST(shape);
@@ -2411,6 +2441,7 @@ AS(
    ,enabled                     INTEGER
    ,fmeasure                    NUMERIC
    ,tmeasure                    NUMERIC
+   ,hydroseq                    BIGINT
    ,shape                       GEOMETRY
    -----
    ,snap_measure                NUMERIC
@@ -13088,7 +13119,7 @@ BEGIN
       RETURN;
       
    END IF;
-     
+
    --------------------------------------------------------------------------
    -- Step 30
    -- Project input point if required
@@ -13129,6 +13160,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -13152,6 +13184,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -13211,6 +13244,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -13234,6 +13268,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -13293,6 +13328,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -13316,6 +13352,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -13375,6 +13412,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -13398,6 +13436,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -13457,6 +13496,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -13480,6 +13520,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -13539,6 +13580,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,a.snap_distancekm
       FROM (
@@ -13562,6 +13604,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_Distance(
               ST_Transform(aa.shape,4326)::GEOGRAPHY
@@ -13602,7 +13645,7 @@ BEGIN
       RAISE EXCEPTION 'err';
    
    END IF;
-   
+
    -------------------------------------------------------------------------
    -- Step 50
    -- Iterate the cursor into array of output type
@@ -13631,6 +13674,7 @@ BEGIN
       rec_candidate.enabled                     := rec_flowline.enabled;
       rec_candidate.fmeasure                    := rec_flowline.fmeasure;
       rec_candidate.tmeasure                    := rec_flowline.tmeasure;
+      rec_candidate.hydroseq                    := rec_flowline.hydroseq;
       rec_candidate.shape                       := ST_Transform(rec_flowline.shape,4269);
       
       rec_candidate.snap_measure := ROUND(ST_InterpolatePoint(
@@ -13676,7 +13720,7 @@ BEGIN
    END LOOP; 
    
    CLOSE curs_candidates;
-   
+
    --------------------------------------------------------------------------
    -- Step 60
    -- Bail if no results
@@ -14017,6 +14061,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -14052,6 +14097,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -14077,6 +14123,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -14114,6 +14161,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -14149,6 +14197,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -14174,6 +14223,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -14211,6 +14261,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -14246,6 +14297,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -14271,6 +14323,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -14308,6 +14361,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -14343,6 +14397,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -14368,6 +14423,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -14405,6 +14461,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -14440,6 +14497,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -14465,6 +14523,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape
@@ -14502,6 +14561,7 @@ BEGIN
       ,a.enabled
       ,a.fmeasure
       ,a.tmeasure
+      ,a.hydroseq
       ,a.shape
       ,ROUND(
            a.snap_measure::NUMERIC
@@ -14537,6 +14597,7 @@ BEGIN
       ,rec_candidate.enabled
       ,rec_candidate.fmeasure
       ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
       ,rec_candidate.shape
       ,rec_candidate.snap_measure
       ,rec_candidate.snap_distancekm
@@ -14562,6 +14623,7 @@ BEGIN
          ,aa.enabled
          ,aa.fmeasure
          ,aa.tmeasure
+         ,aa.hydroseq
          ,aa.shape
          ,ST_InterpolatePoint(
               aa.shape

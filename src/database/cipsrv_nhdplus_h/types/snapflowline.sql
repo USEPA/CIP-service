@@ -21,6 +21,7 @@ AS(
    ,enabled                     INTEGER
    ,fmeasure                    NUMERIC
    ,tmeasure                    NUMERIC
+   ,hydroseq                    BIGINT
    ,shape                       GEOMETRY
    -----
    ,snap_measure                NUMERIC
