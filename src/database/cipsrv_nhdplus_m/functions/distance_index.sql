@@ -114,6 +114,7 @@ BEGIN
    int_raster_srid    := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
+   out_region         := rec.out_srid::VARCHAR;
    
    IF out_return_code != 0
    THEN
@@ -742,6 +743,7 @@ BEGIN
    --------------------------------------------------------------------------
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005

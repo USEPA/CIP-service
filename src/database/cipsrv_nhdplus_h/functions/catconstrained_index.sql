@@ -865,7 +865,8 @@ BEGIN
    --------------------------------------------------------------------------
    out_flowlines[1]     := rec_candidate;
    out_path_distance_km := out_flowlines[1].snap_distancekm;
-   out_end_point        := out_flowlines[1].snap_point;
+   out_end_point        := out_flowlines[1].snap_point; 
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005

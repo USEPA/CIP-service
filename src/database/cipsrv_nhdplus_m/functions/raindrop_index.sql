@@ -46,7 +46,7 @@ DECLARE
    l_nearest_flowline_dist_km   NUMERIC := 0;
    l_traveled_distance_km       NUMERIC := 0;
    l_distance_tmp_km            NUMERIC := 0;
-   l_permanent_identifier       INTEGER;
+   l_permanent_identifier       BIGINT;
    l_raster                     RASTER;
    l_raster_rid                 INTEGER;
    l_columnX                    INTEGER;
@@ -126,7 +126,7 @@ BEGIN
       ,p_known_region   := p_known_region
    );
    int_raster_srid    := rec.out_srid;
-   num_cell_width_km  := rec.out_grid_size;
+   num_cell_width_km  := rec.out_grid_size / 1000;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
    out_region         := rec.out_srid::VARCHAR;
@@ -257,7 +257,7 @@ BEGIN
          ,p_limit_navigable     := boo_limit_navigable
          ,p_known_region        := int_raster_srid::VARCHAR
       );
-      
+
       IF rec.out_return_code <> 0
       THEN
          out_return_code    := rec.out_return_code;
@@ -272,7 +272,7 @@ BEGIN
          RETURN;
       
       END IF;
-      
+
       l_nearest_flowline_dist_km := rec.out_path_distance_km;
       l_permanent_identifier     := rec.out_nhdplusid;
       --RAISE WARNING '% %', l_nearest_flowline_dist_km, l_permanent_identifier;
@@ -424,7 +424,7 @@ BEGIN
          --^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
          IF boo_return_link_path
          THEN
-            l_point := nhdplus.raindrop_st_pixelascentroid(
+            l_point := cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
                 p_raster     := l_raster
                ,p_column_x   := l_columnX
                ,p_row_y      := l_rowY 
@@ -494,7 +494,7 @@ BEGIN
        p_point               := l_point
       ,p_fcode_allow         := p_fcode_allow
       ,p_fcode_deny          := p_fcode_deny
-      ,p_distance_max_distkm := num_snapping_max_km
+      ,p_distance_max_distkm := num_raindrop_snap_max_distkm
       ,p_limit_innetwork     := boo_limit_innetwork
       ,p_limit_navigable     := boo_limit_navigable
       ,p_return_link_path    := boo_return_link_path
@@ -548,6 +548,7 @@ BEGIN
        l_point
       ,sdo_temporary
    ) / 1000;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF boo_return_link_path
    AND out_path_distance_km > 0.00005

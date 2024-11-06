@@ -83,15 +83,25 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSON_BUILD_OBJECT(
-       'nhdplusid1'     ,rec.out_nhdplusid1
-      ,'reachcode1'     ,rec.out_reachcode1
-      ,'measure1'       ,rec.out_measure1
-      ,'shape1'         ,ST_AsGeoJSON(ST_Transform(rec.out_shape1,4326))::JSONB
-      ,'nhdplusid2'     ,rec.out_nhdplusid2
-      ,'reachcode2'     ,rec.out_reachcode2
-      ,'measure2'       ,rec.out_measure2
-      ,'shape2'         ,ST_AsGeoJSON(ST_Transform(rec.out_shape2,4326))::JSONB
+   RETURN JSONB_BUILD_OBJECT(
+       'navpoint1'      ,JSONB_BUILD_OBJECT(
+          'type'      ,'Feature'
+         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape1,4326))::JSONB
+         ,'properties',JSONB_BUILD_OBJECT(
+             'nhdplusid' ,rec.out_nhdplusid1
+            ,'reachcode' ,rec.out_reachcode1
+            ,'measure'   ,rec.out_measure1
+          )
+       )
+      ,'navpoint2'      ,JSONB_BUILD_OBJECT(
+          'type'      ,'Feature'
+         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape2,4326))::JSONB
+         ,'properties',JSONB_BUILD_OBJECT(
+             'nhdplusid' ,rec.out_nhdplusid2
+            ,'reachcode' ,rec.out_reachcode2
+            ,'measure'   ,rec.out_measure2
+          )
+       )
       ,'nhdplus_version',str_nhdplus_version
       ,'return_code'    ,rec.out_return_code
       ,'status_message' ,rec.out_status_message

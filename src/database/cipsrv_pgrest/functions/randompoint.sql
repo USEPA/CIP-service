@@ -84,8 +84,11 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'nhdplus_version'    ,str_nhdplus_version
-      ,'shape'              ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
+       'point'              ,JSONB_BUILD_OBJECT(
+          'type'      ,'Feature'
+         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
+       )
+      ,'nhdplus_version'    ,str_nhdplus_version
       ,'return_code'        ,rec.out_return_code
       ,'status_message'     ,rec.out_status_message
    );

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" >
+   <head>
+      <meta charset="UTF-8">
+      <title>CIP Service Navigation</title>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <style>
+         #busy {
+           position: absolute;
+           top: 15%;
+           left: 820px;
+           z-index: 100;
+         }
+      </style>
+      <script src="./config.js" onerror="return null;"></script>
+   </head>
+   <body>
+      <div id="busy">
+         <svg width="57" height="57" viewBox="0 0 57 57" xmlns="http://www.w3.org/2000/svg" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+               <g transform="translate(1 1)" stroke-width="2">
+                  <circle cx="5" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;5;50;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" values="5;27;49;5" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="27" cy="5" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" from="5" to="5" values="5;50;50;5" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" from="27" to="27" values="27;49;5;27" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="49" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;50;5;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" from="49" to="49" begin="0s" dur="2.2s" values="49;5;27;49" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+               </g>
+            </g>
+         </svg>
+      </div>
+      <div id="container" style="width: 1400px;">
+         <div id="map" class="map" style="height: 700px; width: 800px; float: left;"></div>
+         <div id="righty" style="width: 600px; float: left;">
+            <div id="top" style="text-align: center;">
+               <h2>&nbsp;</h2>
+               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Point Indexing Test Harness</h2>
+               <span style="font-family: Arial; font-size: 11px;">Add a point to the map or enter GeoJSON text:</span>
+               <br />
+               <input id="p_point" name="p_point" type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);" />
+
+               <br />
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <select name="p_nhdplus_version" id="p_nhdplus_version" style="font-family: Arial; font-size: 11px; width:170px">
+                  <option value="nhdplus_m" SELECTED>Medium Resolution</option>
+                  <option value="nhdplus_h">High Resolution</option>
+               </select>
+               
+               <br />
+               <br />
+               <select name="p_indexing_engine" id="p_indexing_engine" onchange="menuOptions(this.value)" style="width:170px">
+                  <option value="DISTANCE">Distance Snap</option>
+                  <option value="RAINDROP">Raindrop Flow</option>
+                  <option value="CATCONSTRAINED" SELECTED>Catchment Constrained</option>
+               </select>
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Max:</span>
+               <input name="p_distance_max_distkm" type="text" class="text" id="p_distance_max_distkm" style="display:inline; width:30px" value="25" />
+               <span style="font-family: Arial; font-size: 11px;"> km
+                 &nbsp; &nbsp; Rd Max: </span>
+               <input name="p_raindrop_snap_max_distkm" type="text" class="text" id="p_raindrop_snap_max_distkm" style="display:inline; width:30px" value="0.75" />
+               <span style="font-family: Arial; font-size: 11px;"> km</span>
+
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">FCodes to Allow: </span><input name="p_fcode_allow" type="text" class="text" id="p_fcode_allow" style="display:inline; width:180px" />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">FCodes to Deny: </span><input name="p_fcode_deny" type="text" class="text" id="p_fcode_deny" style="display:inline; width:180px" />
+               <br />
+               <br />
+               <input name="p_limit_innetwork" id="p_limit_innetwork" type="checkbox" CHECKED>
+               <span style="font-family: Arial; font-size: 11px;">Limit to InNetwork&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+               <input name="p_limit_navigable" id="p_limit_navigable" type="checkbox">
+               <span style="font-family: Arial; font-size: 11px;">Limit to Navigable</span>
+
+               <br />
+               <br />
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
+
+            </div>
+         </div>
+         <div id="output" style="width: 1200px; text-align: center; font-family: Arial; font-size: 15px;"></div>
+         
+      </div>
+
+      <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.10/dist/esri-leaflet.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script>
+   document.getElementById("dz_run_service").disabled = true;
+
+   document.getElementById("busy").style.visibility = "hidden";
+
+   var map = L.map("map").setView([46.874626,-96.782341],12);
+   mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; " + mapLink,
+      maxZoom: 18
+   }).addTo(map);
+
+   var drawnItems = new L.FeatureGroup().addTo(map);
+   var drawControl = new L.Control.Draw({
+      draw: {
+         polygon: false,
+         polyline: false,
+         rectangle: false,
+         circle: false,
+         marker: true,
+         circlemarker: false
+      },
+      edit: {
+         featureGroup: drawnItems,
+         edit: false,
+         remove: true
+      }
+   });
+   map.addControl(drawControl);
+
+   map.on(L.Draw.Event.CREATED, function (e) {
+      var type = e.layerType;
+      var layer = e.layer;
+
+      drawnItems.clearLayers();
+
+      geojsonval = e.layer.toGeoJSON().geometry;
+
+      if (type === "marker") {
+         document.getElementById("p_point").value = JSON.stringify(geojsonval);
+      }
+
+      drawnItems.addLayer(layer);
+      document.getElementById("dz_run_service").disabled = false;
+   });
+
+   map.on(L.Draw.Event.DELETED, function (e) {
+      document.getElementById("p_point").value = "";
+      document.getElementById("dz_run_service").disabled = true;
+   });
+
+   var snapline = L.geoJson().addTo(map);
+         
+   var flowlines = new L.GeoJSON(null, {
+      onEachFeature: onEachFeature_flowlines
+   }).addTo(map);
+         
+   var layer_items = {
+      "Snap Line": snapline
+   };
+   L.control.layers(null, layer_items).addTo(map);
+   
+   function onEachFeature_flowlines(feature,layer) {
+      if (feature.properties && feature.properties.nhdplusid) {
+         layer.bindPopup(
+            "NHDPlusID: " +
+            feature.properties.nhdplusid.toString() +
+            "<BR/>" +
+            "Perm ID: " +
+            feature.properties.permanent_identifier +
+            "<BR/>" +
+            "Reach Code: " +
+            feature.properties.reachcode +
+            "<BR/>" +
+            "Hydro Seq: " +
+            feature.properties.hydroseq.toString() +
+            "<BR/>" +
+            "FMeasure: " +
+            feature.properties.fmeasure.toString() +
+            "<BR/>" +
+            "TMeasure: " +
+            feature.properties.tmeasure.toString() +
+            "<BR/>" +
+            "GNIS Name: " +
+            feature.properties.gnis_name +
+            "<BR/>" +
+            "Length (Km): " +
+            feature.properties.lengthkm +
+            "<BR/>" +
+            "Network Distance (Km): " +
+            feature.properties.network_distancekm +
+            "<BR/>" 
+         );
+      }
+   }
+
+   function run_service() {
+      dz_clear();
+      busy_on();
+
+      var pmethod = document.getElementById("p_indexing_engine");
+      var resolution = document.getElementById("p_nhdplus_version");
+
+      var data = {
+         point: geojsonval,
+         indexing_engine: pmethod.options[pmethod.selectedIndex].value,
+         fcode_allow: document.getElementById("p_fcode_allow").value,
+         fcode_deny: document.getElementById("p_fcode_deny").value,
+         distance_max_distkm: document.getElementById("p_distance_max_distkm").value,
+         raindrop_snap_max_distkm: document.getElementById(
+           "p_raindrop_snap_max_distkm"
+         ).value,
+         raindrop_path_max_distkm: document.getElementById("p_distance_max_distkm").value,
+         return_link_path: "TRUE",
+         limit_innetwork: document.getElementById("p_limit_innetwork").checked,
+         limit_navigable: document.getElementById("p_limit_navigable").checked,
+         nhdplus_version: resolution.options[resolution.selectedIndex].value
+      };
+
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      httpPost(
+         http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port +
+         "/rpc/pointindexing",
+         data,
+         ptresponse
+      );
+   }
+
+   function ptresponse(error, response) {
+      busy_off();
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+
+      var srv_rez = response;
+
+      if (
+         srv_rez == null ||
+         srv_rez.flowlines == null ||
+         srv_rez.return_code != 0
+      ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+         if (srv_rez.return_code != -20011) {
+            return false;
+         }
+      }
+
+      snapline.addData(srv_rez.indexing_line).setStyle({
+         color: "#FF0000",
+         fillColor: "#FF0000"
+      });
+
+      map.fitBounds(snapline.getBounds(), {
+         maxZoom: 16
+      });
+
+      if (srv_rez.return_code == -20011) {
+         return true;
+      }
+
+      var comid     = srv_rez.flowlines.features[0].properties.nhdplusid.toString();
+      var permid    = srv_rez.flowlines.features[0].properties.permanent_identifier;
+      var reachcode = srv_rez.flowlines.features[0].properties.reachcode;
+      var hydroseq  = srv_rez.flowlines.features[0].properties.hydrosequence;
+      var measure   = srv_rez.flowlines.features[0].properties.snap_measure.toString();
+      var fcode     = srv_rez.flowlines.features[0].properties.fcode.toString();
+      var pathkm    = srv_rez.flowlines.features[0].properties.snap_distancekm.toString();
+      pathkm        = Math.round(pathkm * 100) / 100;
+
+      document.getElementById("output").innerHTML =
+       "<span style='font-family: Arial;font-size: 14px;text-align:center;'>" + 
+       "<BR/>&nbsp;" +
+       "<BR/>NHDPlusID: " +
+       "<B>" + comid + "</B>" +
+       "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perm ID: " +
+       "<B>" + permid + "</B>" +
+       "<BR/>Reach Code: " +
+       "<B>" + reachcode + "</B>" +
+       "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Measure: " +
+       "<B>" + measure + "</B>" +
+       "<BR/>FCode: " +
+       "<B>" + fcode + "</B>" +
+       "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Indexing Path Length: " +
+       "<B>" + pathkm + " km</B>" +
+       "</span>";
+   }
+
+   function httpPost(url, data, callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("POST", url, true);
+      xmlHttp.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+      xmlHttp.responseType = "json";
+      xmlHttp.onreadystatechange = function () {
+         if (xmlHttp.readyState === 4) {
+            if (xmlHttp.status === 200) {
+               response = xmlHttp.response;
+               callback(null, response);
+            } else {
+               callback(xmlHttp.statusText, null);
+            }
+         }
+      };
+      xmlHttp.send(JSON.stringify(data));
+   }
+
+   function run_random_point() {
+      var randomy = document.getElementById("randomy");
+      var dzhost = document.getElementById("dz_host");
+      if (dzhost.options[dzhost.selectedIndex].value == "DOI") {
+         random_point_url = random_point_doi;
+      } else {
+         random_point_url = random_point_ncc;
+      }
+
+      var data = {
+         pRegion: randomy.options[randomy.selectedIndex].value,
+         api_key: api_key
+      };
+
+      L.esri.get(random_point_url, data, rand_response);
+   }
+
+   function rand_response(error, response) {
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         busy_off();
+         return false;
+      }
+
+      geojsonval = response;
+      drawnItems.clearLayers();
+      drawnItems.addLayer(L.geoJson({ type: "Feature", geometry: geojsonval }));
+
+      drawnItems.bindPopup(JSON.stringify(geojsonval));
+      document.getElementById("p_point").value = JSON.stringify(geojsonval);
+
+      run_service();
+   }
+   
+   function dz_reset() {
+      document.getElementById("output").innerHTML = "";
+      snapline.clearLayers();
+      blank_pts();
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   //Function to clear map on new request or Clear button
+   function dz_clear() {
+      document.getElementById("output").innerHTML = "";
+      snapline.clearLayers();
+      busy_off();
+   }
+
+   //Function to turn on the dorky animation
+   function busy_on() {
+      document.getElementById("busy").style.visibility = "visible";
+      document.body.style.cursor = "wait";
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   //Function to turn off the dorky animation
+   function busy_off() {
+      document.getElementById("busy").style.visibility = "hidden";
+      document.body.style.cursor = "auto";
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   function blank_pts() {
+      drawnItems.clearLayers();
+      document.getElementById("p_point").value = "";
+   }
+
+   function menuOptions(choice) {
+      if (choice == "DISTANCE" || choice == "DISTANCE_GEO") {
+         document.getElementById("p_fcode_allow").disabled = false;
+         document.getElementById("p_fcode_deny").disabled = false;
+         document.getElementById("p_limit_innetwork").disabled = false;
+         document.getElementById("p_limit_navigable").disabled = false;
+         document.getElementById("p_distance_max_distkm").disabled = false;
+         document.getElementById("p_raindrop_snap_max_distkm").disabled = true;
+      } else if (choice == "RAINDROP") {
+         document.getElementById("p_fcode_allow").disabled = false;
+         document.getElementById("p_fcode_deny").disabled = false;
+         document.getElementById("p_limit_innetwork").disabled = false;
+         document.getElementById("p_limit_navigable").disabled = false;
+         document.getElementById("p_distance_max_distkm").disabled = false;
+         document.getElementById("p_raindrop_snap_max_distkm").disabled = false;
+      } else if (choice == "CATCONSTRAINED" || choice == "CATCONSTRAINED_GEO") {
+         document.getElementById("p_fcode_allow").disabled = true;
+         document.getElementById("p_fcode_deny").disabled = true;
+         document.getElementById("p_limit_innetwork").disabled = true;
+         document.getElementById("p_limit_navigable").disabled = true;
+         document.getElementById("p_distance_max_distkm").disabled = true;
+         document.getElementById("p_raindrop_snap_max_distkm").disabled = true;
+      }
+   }
+  
+   function get_url_parameter(param_key) {
+      var page_url = window.location.search.substring(1);
+      var url_variables = page_url.split('&');
+      for (var i = 0; i < url_variables.length; i++) {
+         var parameter_name = url_variables[i].split('=');
+         if (parameter_name[0] == param_key) {
+           return parameter_name[1];
+         }
+      }
+      return null;
+   }
+   
+      </script>
+   </body>
+</html>

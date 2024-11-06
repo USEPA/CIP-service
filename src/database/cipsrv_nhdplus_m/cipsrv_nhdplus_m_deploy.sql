@@ -10290,6 +10290,111 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_ut_extended(
 )  TO PUBLIC;
 
 --******************************--
+----- functions/snapflowline2geojson.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snapflowline2geojson';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
+    IN  p_input                        cipsrv_nhdplus_m.snapflowline
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+BEGIN
+
+   RETURN JSONB_BUILD_OBJECT(
+       'type'                ,'Feature'
+      ,'geometry'            ,ST_AsGeoJSON(ST_Transform(p_input.shape,4326))::JSONB
+      ,'properties'          ,JSONB_BUILD_OBJECT(
+          'permanent_identifier'       ,p_input.permanent_identifier
+         ,'fdate'                      ,p_input.fdate
+         ,'resolution'                 ,p_input.resolution
+         ,'gnis_id'                    ,p_input.gnis_id
+         ,'gnis_name'                  ,p_input.gnis_name
+         ,'lengthkm'                   ,p_input.lengthkm
+         ,'reachcode'                  ,p_input.reachcode
+         ,'flowdir'                    ,p_input.flowdir
+         ,'wbarea_permanent_identifier',p_input.wbarea_permanent_identifier
+         ,'ftype'                      ,p_input.ftype
+         ,'fcode'                      ,p_input.fcode
+         ,'mainpath'                   ,p_input.mainpath
+         ,'innetwork'                  ,p_input.innetwork
+         ,'visibilityfilter'           ,p_input.visibilityfilter
+         ,'nhdplusid'                  ,p_input.nhdplusid
+         ,'vpuid'                      ,p_input.vpuid
+         ,'enabled'                    ,p_input.enabled
+         ,'fmeasure'                   ,p_input.fmeasure
+         ,'tmeasure'                   ,p_input.tmeasure
+         ,'hydroseq'                   ,p_input.hydroseq
+         ,'snap_measure'               ,p_input.snap_measure
+         ,'snap_distancekm'            ,p_input.snap_distancekm
+      )
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
+    cipsrv_nhdplus_m.snapflowline
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
+    cipsrv_nhdplus_m.snapflowline
+) TO PUBLIC;
+--******************************--
+----- functions/snapflowlines2geojson.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snapflowlines2geojson';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
+    IN  p_input                        cipsrv_nhdplus_m.snapflowline[]
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+BEGIN
+
+   RETURN JSONB_BUILD_OBJECT(
+       'type'                ,'FeatureCollection'
+      ,'features'            ,ARRAY[(
+         SELECT
+         cipsrv_nhdplus_m.snapflowline2geojson(x)
+         FROM
+         UNNEST(p_input) AS x
+      )]
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
+    cipsrv_nhdplus_m.snapflowline[]
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
+    cipsrv_nhdplus_m.snapflowline[]
+) TO PUBLIC;
+--******************************--
 ----- functions/navigate.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.navigate(
@@ -11987,13 +12092,13 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplusgrid_m.raindrop_st_pixelascentroid';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_st_pixelascentroid';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplusgrid_m.raindrop_st_pixelascentroid(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
     IN  p_raster                 RASTER
    ,IN  p_column_x               INTEGER
    ,IN  p_row_y                  INTEGER
@@ -12015,7 +12120,7 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplusgrid_m.raindrop_st_pixelascentroid(
+ALTER FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
     RASTER
    ,INTEGER
    ,INTEGER
@@ -12023,7 +12128,60 @@ ALTER FUNCTION cipsrv_nhdplusgrid_m.raindrop_st_pixelascentroid(
    ,INTEGER
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplusgrid_m.raindrop_st_pixelascentroid(
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) TO PUBLIC;
+--******************************--
+----- functions/raindrop_st_value.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_st_value';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
+    IN  p_raster                 RASTER
+   ,IN  p_column_x               INTEGER
+   ,IN  p_row_y                  INTEGER
+   ,IN  p_offset_x               INTEGER
+   ,IN  p_offset_y               INTEGER
+) RETURNS INTEGER
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+BEGIN
+
+   RETURN ST_Value(
+       rast     := p_raster
+      ,band     := 1
+      ,x        := p_column_x - p_offset_x + 1
+      ,y        := p_row_y    - p_offset_y + 1
+      ,exclude_nodata_value := true
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
     RASTER
    ,INTEGER
    ,INTEGER
@@ -12330,7 +12488,7 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    --------------------------------------------------------------------------
-   num_corner_km := pGridSizeKm * SQRT(2);
+   num_corner_km := p_grid_size_km * SQRT(2);
 
    --------------------------------------------------------------------------
    -- Step 20
@@ -12352,7 +12510,7 @@ BEGIN
    WHEN 1
    THEN
       inout_column_x  := inout_column_x + 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 2
    THEN
@@ -12363,7 +12521,7 @@ BEGIN
    WHEN 4
    THEN
       inout_row_y     := inout_row_y    + 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 8
    THEN
@@ -12374,7 +12532,7 @@ BEGIN
    WHEN 16
    THEN
       inout_column_x  := inout_column_x - 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 32
    THEN
@@ -12385,7 +12543,7 @@ BEGIN
    WHEN 64
    THEN
       inout_row_y     := inout_row_y    - 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 128
    THEN
@@ -13211,6 +13369,7 @@ BEGIN
    int_raster_srid    := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
+   out_region         := rec.out_srid::VARCHAR;
    
    IF out_return_code != 0
    THEN
@@ -13839,6 +13998,7 @@ BEGIN
    --------------------------------------------------------------------------
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005
@@ -14746,6 +14906,7 @@ BEGIN
    out_flowlines[1]     := rec_candidate;
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005
@@ -14838,7 +14999,7 @@ DECLARE
    l_nearest_flowline_dist_km   NUMERIC := 0;
    l_traveled_distance_km       NUMERIC := 0;
    l_distance_tmp_km            NUMERIC := 0;
-   l_permanent_identifier       INTEGER;
+   l_permanent_identifier       BIGINT;
    l_raster                     RASTER;
    l_raster_rid                 INTEGER;
    l_columnX                    INTEGER;
@@ -14918,7 +15079,7 @@ BEGIN
       ,p_known_region   := p_known_region
    );
    int_raster_srid    := rec.out_srid;
-   num_cell_width_km  := rec.out_grid_size;
+   num_cell_width_km  := rec.out_grid_size / 1000;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
    out_region         := rec.out_srid::VARCHAR;
@@ -15049,7 +15210,7 @@ BEGIN
          ,p_limit_navigable     := boo_limit_navigable
          ,p_known_region        := int_raster_srid::VARCHAR
       );
-      
+
       IF rec.out_return_code <> 0
       THEN
          out_return_code    := rec.out_return_code;
@@ -15064,7 +15225,7 @@ BEGIN
          RETURN;
       
       END IF;
-      
+
       l_nearest_flowline_dist_km := rec.out_path_distance_km;
       l_permanent_identifier     := rec.out_nhdplusid;
       --RAISE WARNING '% %', l_nearest_flowline_dist_km, l_permanent_identifier;
@@ -15216,7 +15377,7 @@ BEGIN
          --^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
          IF boo_return_link_path
          THEN
-            l_point := nhdplus.raindrop_st_pixelascentroid(
+            l_point := cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
                 p_raster     := l_raster
                ,p_column_x   := l_columnX
                ,p_row_y      := l_rowY 
@@ -15286,7 +15447,7 @@ BEGIN
        p_point               := l_point
       ,p_fcode_allow         := p_fcode_allow
       ,p_fcode_deny          := p_fcode_deny
-      ,p_distance_max_distkm := num_snapping_max_km
+      ,p_distance_max_distkm := num_raindrop_snap_max_distkm
       ,p_limit_innetwork     := boo_limit_innetwork
       ,p_limit_navigable     := boo_limit_navigable
       ,p_return_link_path    := boo_return_link_path
@@ -15340,6 +15501,7 @@ BEGIN
        l_point
       ,sdo_temporary
    ) / 1000;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF boo_return_link_path
    AND out_path_distance_km > 0.00005

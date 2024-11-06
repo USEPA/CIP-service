@@ -16,7 +16,8 @@ VOLATILE
 AS
 $BODY$ 
 DECLARE
-   rec                               RECORD;
+   rec1                              RECORD;
+   rec2                              RECORD;
    json_input                        JSONB := $1;
    sdo_point                         GEOMETRY;
    str_nhdplus_version               VARCHAR;
@@ -248,7 +249,7 @@ BEGIN
    --------------------------------------------------------------------------
    IF str_nhdplus_version = 'nhdplus_m'
    THEN
-      rec := cipsrv_nhdplus_m.pointindexing(
+      rec1 := cipsrv_nhdplus_m.pointindexing(
           p_point                        := sdo_point
          ,p_indexing_engine              := str_indexing_engine
          ,p_fcode_allow                  := ary_fcode_allow
@@ -267,12 +268,38 @@ BEGIN
          ,p_known_region                 := str_known_region
          ,p_known_catchment_nhdplusid    := bint_known_catchment_nhdplusid
       );
-      int_return_code    := rec.out_return_code;
-      str_status_message := rec.out_status_message;
+      int_return_code    := rec1.out_return_code;
+      str_status_message := rec1.out_status_message;
+      
+      IF int_return_code != 0
+      THEN
+         RETURN JSONB_BUILD_OBJECT(
+             'return_code',    int_return_code
+            ,'status_message', str_status_message
+         );
+      
+      END IF;
+      
+      RETURN JSONB_BUILD_OBJECT(
+          'flowlines'           ,cipsrv_nhdplus_m.snapflowlines2geojson(rec1.out_flowlines)
+         ,'path_distance_km'    ,rec1.out_path_distance_km
+         ,'end_point'           ,JSONB_BUILD_OBJECT(
+             'type'    ,'Feature'
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_end_point,4326))::JSONB
+          )
+         ,'indexing_line'       ,JSONB_BUILD_OBJECT(
+             'type'    ,'Feature'
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_indexing_line,4326))::JSONB
+          )
+         ,'region'              ,rec1.out_region
+         ,'nhdplusid'           ,rec1.out_nhdplusid
+         ,'return_code'         ,int_return_code
+         ,'status_message'      ,str_status_message
+      );
       
    ELSIF str_nhdplus_version = 'nhdplus_h'
    THEN
-      rec := cipsrv_nhdplus_h.pointindexing(
+      rec2 := cipsrv_nhdplus_h.pointindexing(
           p_point                        := sdo_point
          ,p_indexing_engine              := str_indexing_engine
          ,p_fcode_allow                  := ary_fcode_allow
@@ -291,8 +318,34 @@ BEGIN
          ,p_known_region                 := str_known_region
          ,p_known_catchment_nhdplusid    := bint_known_catchment_nhdplusid
       );
-      int_return_code    := rec.out_return_code;
-      str_status_message := rec.out_status_message;
+      int_return_code    := rec2.out_return_code;
+      str_status_message := rec2.out_status_message;
+      
+      IF int_return_code != 0
+      THEN
+         RETURN JSONB_BUILD_OBJECT(
+             'return_code',    int_return_code
+            ,'status_message', str_status_message
+         );
+      
+      END IF;
+      
+      RETURN JSONB_BUILD_OBJECT(
+          'flowlines'           ,cipsrv_nhdplus_h.snapflowlines2geojson(rec2.out_flowlines)
+         ,'path_distance_km'    ,rec2.out_path_distance_km
+         ,'end_point'           ,JSONB_BUILD_OBJECT(
+             'type'    ,'Feature'
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_end_point,4326))::JSONB
+          )
+         ,'indexing_line'       ,JSONB_BUILD_OBJECT(
+             'type'    ,'Feature'
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_indexing_line,4326))::JSONB
+          )
+         ,'region'              ,rec2.out_region
+         ,'nhdplusid'           ,rec2.out_nhdplusid
+         ,'return_code'         ,int_return_code
+         ,'status_message'      ,str_status_message
+      );
       
    ELSE
       RETURN JSONB_BUILD_OBJECT(
@@ -301,30 +354,6 @@ BEGIN
       );
    
    END IF;
-   
-   IF int_return_code != 0
-   THEN
-      RETURN JSONB_BUILD_OBJECT(
-          'return_code',    int_return_code
-         ,'status_message', str_status_message
-      );
-   
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Return what we got
-   --------------------------------------------------------------------------   
-   RETURN JSONB_BUILD_OBJECT(
-       'flowlines'           ,TO_JSONB(rec.out_flowlines)
-      ,'path_distance_km'    ,rec.out_path_distance_km
-      ,'end_point'           ,ST_AsGeoJSON(ST_Transform(rec.out_end_point,4326))::JSONB
-      ,'indexing_line'       ,ST_AsGeoJSON(ST_Transform(rec.out_indexing_line,4326))::JSONB
-      ,'region'              ,rec.out_region
-      ,'nhdplusid'           ,rec.out_nhdplusid
-      ,'return_code'         ,int_return_code
-      ,'status_message'      ,str_status_message
-   );
 
 END;
 $BODY$

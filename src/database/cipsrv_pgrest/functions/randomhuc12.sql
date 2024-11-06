@@ -72,10 +72,15 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'huc12'          ,rec.out_huc12
-      ,'huc12_name'     ,rec.out_huc12_name
+       'huc12'          ,JSONB_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
+         ,'properties'  ,JSONB_BUILD_OBJECT(
+             'huc12'        ,rec.out_huc12
+            ,'huc12_name'   ,rec.out_huc12_name
+          )
+       )
       ,'source_dataset' ,rec.out_source_dataset
-      ,'shape'          ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
       ,'return_code'    ,rec.out_return_code
       ,'status_message' ,rec.out_status_message
    );

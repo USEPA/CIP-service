@@ -97,12 +97,20 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'nhdplusid'          ,rec.out_nhdplusid
-      ,'areasqkm'           ,rec.out_areasqkm
-      ,'catchmentstatecodes',rec.out_catchmentstatecodes
+       'catchment'          ,JSONB_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
+         ,'properties'  ,JSONB_BUILD_OBJECT(
+             'nhdplusid'          ,rec.out_nhdplusid
+            ,'areasqkm'           ,rec.out_areasqkm
+            ,'catchmentstatecodes',rec.out_catchmentstatecodes
+          )
+       )
+      ,'centroid'           ,JSONB_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_centroid,4326))::JSONB
+       )
       ,'nhdplus_version'    ,str_nhdplus_version
-      ,'shape'              ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-      ,'centroid'           ,ST_AsGeoJSON(ST_Transform(rec.out_centroid,4326))::JSONB
       ,'return_code'        ,rec.out_return_code
       ,'status_message'     ,rec.out_status_message
    );

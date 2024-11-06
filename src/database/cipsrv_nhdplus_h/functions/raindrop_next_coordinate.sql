@@ -32,7 +32,7 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    --------------------------------------------------------------------------
-   num_corner_km := pGridSizeKm * SQRT(2);
+   num_corner_km := p_grid_size_km * SQRT(2);
 
    --------------------------------------------------------------------------
    -- Step 20
@@ -54,7 +54,7 @@ BEGIN
    WHEN 1
    THEN
       inout_column_x  := inout_column_x + 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 2
    THEN
@@ -65,7 +65,7 @@ BEGIN
    WHEN 4
    THEN
       inout_row_y     := inout_row_y    + 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 8
    THEN
@@ -76,7 +76,7 @@ BEGIN
    WHEN 16
    THEN
       inout_column_x  := inout_column_x - 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 32
    THEN
@@ -87,7 +87,7 @@ BEGIN
    WHEN 64
    THEN
       inout_row_y     := inout_row_y    - 1;
-      out_distance_km := pGridSizeKm;
+      out_distance_km := p_grid_size_km;
       
    WHEN 128
    THEN
