@@ -359,9 +359,12 @@
 
    function run_random_point() {
       var randomy = document.getElementById("randomy");
-
+      
+      var resolution = document.getElementById("p_nhdplus_version");
+      
       var data = {
          region: randomy.options[randomy.selectedIndex].value
+        ,nhdplus_version: resolution.options[resolution.selectedIndex].value
       };
 
       if (
