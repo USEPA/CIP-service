@@ -10277,12 +10277,12 @@ BEGIN
 
    RETURN JSONB_BUILD_OBJECT(
        'type'                ,'FeatureCollection'
-      ,'features'            ,ARRAY[(
+      ,'features'            ,(
          SELECT
-         cipsrv_nhdplus_h.snapflowline2geojson(x)
+         array_agg(cipsrv_nhdplus_h.snapflowline2geojson(x))
          FROM
          UNNEST(p_input) AS x
-      )]
+      )
    );
 
 END;

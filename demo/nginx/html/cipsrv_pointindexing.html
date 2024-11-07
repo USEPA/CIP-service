@@ -2,7 +2,7 @@
 <html lang="en" >
    <head>
       <meta charset="UTF-8">
-      <title>CIP Service Navigation</title>
+      <title>CIP Service Point Indexing</title>
       <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
       <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
       <style>
@@ -83,6 +83,20 @@
                <br />
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
                <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
+               
+               <br />
+               <br />
+               <br />
+               <br />
+               <input type="button" onclick="run_random_point();" value="Random Point" name="dz_random" id="dz_random" />&nbsp;
+               <select name="randomy" id="randomy" style="font-size: 9px;">
+                  <option value="ALL" SELECTED>Random All</option>
+                  <option value="CONUS" >Contiguous US</option>
+                  <option value="HAWAII">Hawaii</option>
+                  <option value="PRVI"  >Puerto Rico / VI</option>
+                  <option value="GUMP"  >Guam / Marianas</option>
+                  <option value="AS"    >American Samoa</option>
+               </select>
 
             </div>
          </div>
@@ -198,19 +212,19 @@
       var resolution = document.getElementById("p_nhdplus_version");
 
       var data = {
-         point: geojsonval,
-         indexing_engine: pmethod.options[pmethod.selectedIndex].value,
-         fcode_allow: document.getElementById("p_fcode_allow").value,
-         fcode_deny: document.getElementById("p_fcode_deny").value,
-         distance_max_distkm: document.getElementById("p_distance_max_distkm").value,
-         raindrop_snap_max_distkm: document.getElementById(
-           "p_raindrop_snap_max_distkm"
-         ).value,
-         raindrop_path_max_distkm: document.getElementById("p_distance_max_distkm").value,
-         return_link_path: "TRUE",
-         limit_innetwork: document.getElementById("p_limit_innetwork").checked,
-         limit_navigable: document.getElementById("p_limit_navigable").checked,
-         nhdplus_version: resolution.options[resolution.selectedIndex].value
+          point: JSON.parse(document.getElementById("p_point").value)
+         ,indexing_engine: pmethod.options[pmethod.selectedIndex].value
+         ,fcode_allow: document.getElementById("p_fcode_allow").value
+         ,fcode_deny: document.getElementById("p_fcode_deny").value
+         ,distance_max_distkm: document.getElementById("p_distance_max_distkm").value
+         ,raindrop_snap_max_distkm: document.getElementById(
+            "p_raindrop_snap_max_distkm"
+          ).value
+         ,raindrop_path_max_distkm: document.getElementById("p_distance_max_distkm").value
+         ,return_link_path: "TRUE"
+         ,limit_innetwork: document.getElementById("p_limit_innetwork").checked
+         ,limit_navigable: document.getElementById("p_limit_navigable").checked
+         ,nhdplus_version: resolution.options[resolution.selectedIndex].value
       };
 
       if (
@@ -280,19 +294,24 @@
          }
       }
 
+      if (srv_rez.return_code == -20011) {
+         return true;
+      }
+      
       snapline.addData(srv_rez.indexing_line).setStyle({
          color: "#FF0000",
          fillColor: "#FF0000"
       });
-
-      map.fitBounds(snapline.getBounds(), {
-         maxZoom: 16
+      
+      flowlines.addData(srv_rez.flowlines.features[0]).setStyle({
+         color: "#0000FF",
+         fillColor: "#0000FF"
       });
 
-      if (srv_rez.return_code == -20011) {
-         return true;
-      }
-
+      map.fitBounds(snapline.getBounds(), {
+         maxZoom: 15
+      });
+      
       var comid     = srv_rez.flowlines.features[0].properties.nhdplusid.toString();
       var permid    = srv_rez.flowlines.features[0].properties.permanent_identifier;
       var reachcode = srv_rez.flowlines.features[0].properties.reachcode;
@@ -307,7 +326,7 @@
        "<BR/>&nbsp;" +
        "<BR/>NHDPlusID: " +
        "<B>" + comid + "</B>" +
-       "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Perm ID: " +
+       "<BR/>Perm ID: " +
        "<B>" + permid + "</B>" +
        "<BR/>Reach Code: " +
        "<B>" + reachcode + "</B>" +
@@ -340,19 +359,50 @@
 
    function run_random_point() {
       var randomy = document.getElementById("randomy");
-      var dzhost = document.getElementById("dz_host");
-      if (dzhost.options[dzhost.selectedIndex].value == "DOI") {
-         random_point_url = random_point_doi;
-      } else {
-         random_point_url = random_point_ncc;
-      }
 
       var data = {
-         pRegion: randomy.options[randomy.selectedIndex].value,
-         api_key: api_key
+         region: randomy.options[randomy.selectedIndex].value
       };
 
-      L.esri.get(random_point_url, data, rand_response);
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      httpPost(
+         http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port +
+         "/rpc/randompoint",
+         data,
+         rand_response
+      );
    }
 
    function rand_response(error, response) {
@@ -362,12 +412,13 @@
          return false;
       }
 
-      geojsonval = response;
+      var srv_rez = response;
+      
       drawnItems.clearLayers();
-      drawnItems.addLayer(L.geoJson({ type: "Feature", geometry: geojsonval }));
+      drawnItems.addLayer(L.geoJson(srv_rez.point));
 
-      drawnItems.bindPopup(JSON.stringify(geojsonval));
-      document.getElementById("p_point").value = JSON.stringify(geojsonval);
+      drawnItems.bindPopup(JSON.stringify(srv_rez.point.geometry));
+      document.getElementById("p_point").value = JSON.stringify(srv_rez.point.geometry);
 
       run_service();
    }
@@ -375,6 +426,7 @@
    function dz_reset() {
       document.getElementById("output").innerHTML = "";
       snapline.clearLayers();
+      flowlines.clearLayers();
       blank_pts();
       busy_off();
       document.getElementById("dz_run_service").disabled = true;
@@ -384,6 +436,7 @@
    function dz_clear() {
       document.getElementById("output").innerHTML = "";
       snapline.clearLayers();
+      flowlines.clearLayers();
       busy_off();
    }
 
@@ -404,6 +457,32 @@
    function blank_pts() {
       drawnItems.clearLayers();
       document.getElementById("p_point").value = "";
+   }
+   
+   function updatept(txtval) {
+      drawnItems.clearLayers();
+
+      if (txtval == null || txtval == undefined || txtval == "") {
+         document.getElementById("dz_run_service").disabled = true;
+         drawnItems.clearLayers();
+         flowlines.clearLayers();
+         snapline.clearLayers();
+         
+      } else {
+         var layer;
+
+         layer = L.geoJSON({
+             type: "Feature"
+            ,geometry: JSON.parse(txtval)
+         });
+         drawnItems.addLayer(layer);
+         
+         document.getElementById("dz_run_service").disabled = false;
+         layer.bindPopup(txtval);
+         map.fitBounds(drawnItems.getBounds(), {
+            maxZoom: 15
+         });
+      }
    }
 
    function menuOptions(choice) {
