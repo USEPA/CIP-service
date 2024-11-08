@@ -123,733 +123,705 @@
       <script src='https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
-         document.getElementById("dz_run_service").disabled = true;
-         document.getElementById("busy").style.visibility = "hidden";
-         update_form();
-         
-         var map = L.map("map").setView([46.874626,-96.782341],12);
-         mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
-
-         basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "Map data &copy; " + mapLink,
-            maxZoom: 18
-         });
-         basemap.addTo(map);
-         
-         var drawnItems = new L.FeatureGroup().addTo(map);
-         var drawControl = new L.Control.Draw({
-            draw: {
-                polygon: false
-               ,polyline: false
-               ,rectangle: false
-               ,circle: false
-               ,marker: true
-               ,circlemarker: false
-            },
-            edit: {
-               featureGroup: drawnItems,
-               edit: false,
-               remove: true
-            }
-         });
-         map.addControl(drawControl);
-         
-         map.on(L.Draw.Event.CREATED, function(e) {
-            var type = e.layerType;
-            var layer = e.layer;
-
-            var search_menu = document.getElementById("pSearchType");
-            var search_type = search_menu.options[search_menu.selectedIndex].value;
-            var layer_count = drawnItems.getLayers().length;
-
-            if (search_type == "PP" || search_type == "PPALL") {
-               if (layer_count == 2) {
-                  drawnItems.clearLayers();
-                  blank_pts();
-                  blank_nhdplusids();
-                  document.getElementById("dz_run_service").disabled = true;
-               } 
-            } else {
-               if (layer_count == 1) {
-                  drawnItems.clearLayers();
-                  blank_pts();
-                  blank_nhdplusids();
-                  document.getElementById("dz_run_service").disabled = true;
-               }
-            }
-
-            if (type === "marker") {
-               if (search_type == "PP" || search_type == "PPALL") {
-                  if (layer_count != 1) {
-                     var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
-
-                     document.getElementById("pPoint").value = start_geojsonval;
-                     layer.bindPopup(start_geojsonval);
-                     blank_start_nhdplusids();
-                     
-                  } else if (layer_count == 1) {
-                     var stop_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
-                     
-                     document.getElementById("pPoint2").value = stop_geojsonval;
-                     layer.bindPopup(stop_geojsonval);
-                     blank_stop_nhdplusids();
-
-                     document.getElementById("dz_run_service").disabled = false;
-                  }
-                  
-               } else {
-                  var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
-
-                  document.getElementById("pPoint").value = start_geojsonval;
-                  layer.bindPopup(start_geojsonval);
-                  blank_start_nhdplusids();
-
-                  document.getElementById("dz_run_service").disabled = false;
-               }
-            }
-
-            drawnItems.addLayer(layer);
-            check_start();
-         });
-
-         map.on(L.Draw.Event.DELETED, function(e) {
-            var layer_count = drawnItems.getLayers().length;
-
-            if (layer_count == 1) {
-               document.getElementById("pPoint2").value = "";
-            } else {
-               document.getElementById("pPoint").value = "";
-            }
-
-            document.getElementById("dz_run_service").disabled = true;
-         });
-         
-         var snap_path = L.geoJson(null, {
-            onEachFeature: onEachFeature_snap_path
-         }).addTo(map);
-         
-         var flowlines = new L.GeoJSON(null, {
-            onEachFeature: onEachFeature_flowlines
-         }).addTo(map);
-         
-         var layer_items = {
-           "Snap path": snap_path,
-           "Returned Streams": flowlines
-         };
-         L.control.layers(null, layer_items).addTo(map);
-         
-         function onEachFeature_snap_path(feature,layer) {
-            if (feature.properties && feature.properties.snap_distancekm) {
-               layer.bindPopup(
-                  "Length (Km): " +
-                  feature.properties.snap_distancekm.toString()
-               );
-            }
-         }
-         
-         function onEachFeature_flowlines(feature,layer) {
-            if (feature.properties && feature.properties.nhdplusid) {
-               layer.bindPopup(
-                  "NHDPlusID: " +
-                  feature.properties.nhdplusid.toString() +
-                  "<BR/>" +
-                  "Perm ID: " +
-                  feature.properties.permanent_identifier +
-                  "<BR/>" +
-                  "Reach Code: " +
-                  feature.properties.reachcode +
-                  "<BR/>" +
-                  "Hydro Seq: " +
-                  feature.properties.hydroseq.toString() +
-                  "<BR/>" +
-                  "FMeasure: " +
-                  feature.properties.fmeasure.toString() +
-                  "<BR/>" +
-                  "TMeasure: " +
-                  feature.properties.tmeasure.toString() +
-                  "<BR/>" +
-                  "GNIS Name: " +
-                  feature.properties.gnis_name +
-                  "<BR/>" +
-                  "Length (Km): " +
-                  feature.properties.lengthkm +
-                  "<BR/>" +
-                  "Network Distance (Km): " +
-                  feature.properties.network_distancekm +
-                  "<BR/>" 
-               );
-            }
-         }
-
-         function run_service() {
-            dz_clear_old();
-            busy_on();
-
-            var start_geojsonval = document.getElementById("pPoint").value;
-            var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
-            if (start_geojsonval == "" ) {
-               
-               var search_type      = get_select_values(document.getElementById("pSearchType"));
-               
-               var data = {
-                   "search_type"               : search_type
-                  ,"nhdplus_version"           : nhdplus_version
-                   
-                  ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
-                  ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
-                  ,"start_reachcode"           : document.getElementById("pStartReachCode").value
-                  ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
-                  ,"start_measure"             : document.getElementById("pStartMeasure").value
-                  
-                  ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
-                  ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
-                  ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
-                  ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
-                  ,"stop_measure"              : document.getElementById("pStopMeasure").value
-                  
-                  ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
-                  ,"return_flowline_details"   : true
-                  ,"return_flowline_geometry"  : true
-               }
-            
-               if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-                  zpostgrest_host = get_url_parameter("postgrest_host");
-               } else {
-                  zpostgrest_host = postgrest_host;
-               }
-
-               if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-                  zpostgrest_port = get_url_parameter("postgrest_port");
-               } else {
-                  zpostgrest_port = postgrest_port;
-               }
-
-               if (zpostgrest_host === null) {
-                  console.log("no PostgREST API server location defined.");
-                  return;
-               }
-            
-               var http = "http";
-               if (zpostgrest_port == "443" ) {
-                  http = "https";
-               }
-               httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_nav",data,nav_response);
-            
-            } else {
-               if (start_geojsonval !== "") {
-
-                  var data = {
-                      "point"           : JSON.parse(start_geojsonval)
-                     ,"nhdplus_version" : nhdplus_version
-                     ,"limit_navigable" : true
-                     ,"return_link_path": true
-                  }
-            
-                  if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-                     zpostgrest_host = get_url_parameter("postgrest_host");
-                  } else {
-                     zpostgrest_host = postgrest_host;
-                  }
-
-                  if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-                     zpostgrest_port = get_url_parameter("postgrest_port");
-                  } else {
-                     zpostgrest_port = postgrest_port;
-                  }
-
-                  if (zpostgrest_host === null) {
-                     console.log("no PostgREST API server location defined.");
-                     return;
-                  }
-                  
-                  var http = "http";
-                  if (zpostgrest_port == "443" ) {
-                     http = "https";
-                  }
-                  httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/pointindexing",data,pt1_response);
-               
-               } 
-            
-            }
-            
-         }
-         
-         function httpPost(url,data,callback) {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.open("POST",url,true);
-            xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
-            xmlHttp.responseType = 'json';
-            xmlHttp.onreadystatechange = function() {
-               if(xmlHttp.readyState === 4) {
-                  if(xmlHttp.status === 200) {
-                     response = xmlHttp.response;
-                     callback(null,response);
-                  } else {
-                     callback(xmlHttp.statusText,null);
-                  }
-               }
-            };
-            xmlHttp.send(JSON.stringify(data));
-         }
-
-         function get_select_values(select){
-            var result = null;
-            
-            if ( select == null ) {
-               return result;
-            }
-            
-            if ( select.options == null ) {
-               return result;
-            }
-            
-            if ( select.selectedIndex == null ) {
-               return result;
-            }
-            
-            return select.options[select.selectedIndex].value;
-         
-         }
-         
-         function get_mselect_values(select){
-            var result = [];
-            var options = select && select.options;
-            var opt;
-            
-            if ( options == null ) {
-               return result;
-            }
-
-            for (var i=0, iLen=options.length; i<iLen; i++) {
-               opt = options[i];
-
-               if (opt.selected) {
-                  result.push(opt.value || opt.text);
-               }
-            }
-            return result;
-         }
-         
-         function nav_response(error,response) {
-            busy_off();
+   document.getElementById("dz_run_service").disabled = true;
+   document.getElementById("busy").style.visibility = "hidden";
+   update_form();
    
-            if (error) {
-               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
-               return false;
-            } else if (response == null) {
-               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
-               return false;
-            } else if (response.return_code != 0) {
-               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
-               return false;
-            } else if (response.catchment_count == 0) {
-               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
-            }
-            
-            if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
-               flowlines.addData(response.flowlines).setStyle({
-                   "color": "#0000FF"
-                  ,"fillColor": "#0000FF"
-                  ,"weight": 4
-               });
-               
-               map.fitBounds(flowlines.getBounds(), {
-                  maxZoom: 16
-               });
-               
-               document.getElementById("output").innerHTML = "<P>&nbsp;</P><P align='center'>Flowline Count: " + response.flowline_count + "</P>";
-               
-            }            
-         }
-         
-         function pt1_response(error,response) {
-            if (error) {
-               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
-               return false;
-            } else if (response == null) {
-               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
-               return false;
-            } else if (response.return_code != 0) {
-               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
-               return false;
-            } else if (response.catchment_count == 0) {
-               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
-            }
-            
-            if (response.indexing_line !== null && response.indexing_line.type !== null) {
-               snap_path.addData(response.indexing_line).setStyle({
-                   "color": "#FFA500"
-                  ,"fillColor": "#FFA500"
-               });
-               
-               document.getElementById("pStartNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
-               document.getElementById("pStartPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
-               document.getElementById("pStartReachCode").value           = response.flowlines.features[0].properties.reachcode;
-               document.getElementById("pStartHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
-               document.getElementById("pStartMeasure").value             = response.flowlines.features[0].properties.snap_measure;
-               
-            }
+   var map = L.map("map").setView([46.874626,-96.782341],12);
+   mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
 
-            var stop_geojsonval  = document.getElementById("pPoint2").value;
-            var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
-            if (stop_geojsonval !== "") {
-               
-               var data = {
-                   "point"           : JSON.parse(stop_geojsonval)
-                  ,"nhdplus_version" : nhdplus_version
-                  ,"limit_navigable" : true
-                  ,"return_link_path": true
-               }
-            
-               if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-                  zpostgrest_host = get_url_parameter("postgrest_host");
-               } else {
-                  zpostgrest_host = postgrest_host;
-               }
+   basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; " + mapLink,
+      maxZoom: 18
+   });
+   basemap.addTo(map);
+   
+   var drawnItems = new L.FeatureGroup().addTo(map);
+   var drawControl = new L.Control.Draw({
+      draw: {
+          polygon: false
+         ,polyline: false
+         ,rectangle: false
+         ,circle: false
+         ,marker: true
+         ,circlemarker: false
+      },
+      edit: {
+         featureGroup: drawnItems,
+         edit: false,
+         remove: true
+      }
+   });
+   map.addControl(drawControl);
+   
+   map.on(L.Draw.Event.CREATED, function(e) {
+      var type = e.layerType;
+      var layer = e.layer;
 
-               if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-                  zpostgrest_port = get_url_parameter("postgrest_port");
-               } else {
-                  zpostgrest_port = postgrest_port;
-               }
+      var search_menu = document.getElementById("pSearchType");
+      var search_type = search_menu.options[search_menu.selectedIndex].value;
+      var layer_count = drawnItems.getLayers().length;
 
-               if (zpostgrest_host === null) {
-                  console.log("no PostgREST API server location defined.");
-                  return;
-               }
-               
-               var http = "http";
-               if (zpostgrest_port == "443" ) {
-                  http = "https";
-               }
-               httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/pointindexing",data,pt2_response);
-            
-            } else {
-               var search_type      = get_select_values(document.getElementById("pSearchType"));
-            
-               var data = {
-                   "search_type"               : search_type
-                  ,"nhdplus_version"           : nhdplus_version
-                   
-                  ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
-                  ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
-                  ,"start_reachcode"           : document.getElementById("pStartReachCode").value
-                  ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
-                  ,"start_measure"             : document.getElementById("pStartMeasure").value
-                  
-                  ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
-                  ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
-                  ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
-                  ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
-                  ,"stop_measure"              : document.getElementById("pStopMeasure").value
-                  
-                  ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
-                  ,"return_flowline_details"   : true
-                  ,"return_flowline_geometry"  : true
-               }
-            
-               if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-                  zpostgrest_host = get_url_parameter("postgrest_host");
-               } else {
-                  zpostgrest_host = postgrest_host;
-               }
-
-               if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-                  zpostgrest_port = get_url_parameter("postgrest_port");
-               } else {
-                  zpostgrest_port = postgrest_port;
-               }
-
-               if (zpostgrest_host === null) {
-                  console.log("no PostgREST API server location defined.");
-                  return;
-               }
-            
-               var http = "http";
-               if (zpostgrest_port == "443" ) {
-                  http = "https";
-               }
-               httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_nav",data,nav_response);
-            }
-            
-         }
-         
-         function pt2_response(error,response) {
-            if (error) {
-               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
-               return false;
-            } else if (response == null) {
-               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
-               return false;
-            } else if (response.return_code != 0) {
-               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
-               return false;
-            } else if (response.catchment_count == 0) {
-               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
-            }
-            
-            if (response.indexing_line !== null && response.indexing_line.type !== null) {
-               snap_path.addData(response.indexing_line).setStyle({
-                   "color": "#FFA500"
-                  ,"fillColor": "#FFA500"
-               });
-               
-               document.getElementById("pStopNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
-               document.getElementById("pStopPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
-               document.getElementById("pStopReachCode").value           = response.flowlines.features[0].properties.reachcode;
-               document.getElementById("pStopHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
-               document.getElementById("pStopMeasure").value             = response.flowlines.features[0].properties.snap_measure;
-               
-            }
-            
-            var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
-            var search_type      = get_select_values(document.getElementById("pSearchType"));
-            
-            var data = {
-                "search_type"               : search_type
-               ,"nhdplus_version"           : nhdplus_version
-                
-               ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
-               ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
-               ,"start_reachcode"           : document.getElementById("pStartReachCode").value
-               ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
-               ,"start_measure"             : document.getElementById("pStartMeasure").value
-               
-               ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
-               ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
-               ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
-               ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
-               ,"stop_measure"              : document.getElementById("pStopMeasure").value
-               
-               ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
-               ,"return_flowline_details"   : true
-               ,"return_flowline_geometry"  : true
-            }
-            
-            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-               zpostgrest_host = get_url_parameter("postgrest_host");
-            } else {
-               zpostgrest_host = postgrest_host;
-            }
-
-            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-               zpostgrest_port = get_url_parameter("postgrest_port");
-            } else {
-               zpostgrest_port = postgrest_port;
-            }
-
-            if (zpostgrest_host === null) {
-               console.log("no PostgREST API server location defined.");
-               return;
-            }
-         
-            var http = "http";
-            if (zpostgrest_port == "443" ) {
-               http = "https";
-            }
-            httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_nav",data,nav_response);
-            
-         }
-         
-         function dz_reset() {
-            document.getElementById("output").innerHTML = "";
-            snap_path.clearLayers();
-            flowlines.clearLayers();
+      if (search_type == "PP" || search_type == "PPALL") {
+         if (layer_count == 2) {
+            drawnItems.clearLayers();
             blank_pts();
-            blank_nhdplusids()
-            busy_off();
+            blank_nhdplusids();
+            document.getElementById("dz_run_service").disabled = true;
+         } 
+      } else {
+         if (layer_count == 1) {
+            drawnItems.clearLayers();
+            blank_pts();
+            blank_nhdplusids();
             document.getElementById("dz_run_service").disabled = true;
          }
-         
-         function dz_clear_old() {
-            document.getElementById("output").innerHTML = "";
-            snap_path.clearLayers();
-            flowlines.clearLayers();
-            busy_off();
-            document.getElementById("dz_run_service").disabled = true;
-         }
+      }
 
-         function busy_on() {
-            document.getElementById("busy").style.visibility = "visible";
-            document.body.style.cursor = "wait";
-            document.getElementById("dz_run_service").disabled = true;
-         }
+      if (type === "marker") {
+         if (search_type == "PP" || search_type == "PPALL") {
+            if (layer_count != 1) {
+               var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
 
-         function busy_off() {
-            document.getElementById("busy").style.visibility = "hidden";
-            document.body.style.cursor = "auto";
+               document.getElementById("pPoint").value = start_geojsonval;
+               layer.bindPopup(start_geojsonval);
+               blank_start_nhdplusids();
+               
+            } else if (layer_count == 1) {
+               var stop_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+               
+               document.getElementById("pPoint2").value = stop_geojsonval;
+               layer.bindPopup(stop_geojsonval);
+               blank_stop_nhdplusids();
+
+               document.getElementById("dz_run_service").disabled = false;
+            }
+            
+         } else {
+            var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+
+            document.getElementById("pPoint").value = start_geojsonval;
+            layer.bindPopup(start_geojsonval);
+            blank_start_nhdplusids();
+
             document.getElementById("dz_run_service").disabled = false;
          }
+      }
+
+      drawnItems.addLayer(layer);
+      check_start();
+   });
+
+   map.on(L.Draw.Event.DELETED, function(e) {
+      var layer_count = drawnItems.getLayers().length;
+
+      if (layer_count == 1) {
+         document.getElementById("pPoint2").value = "";
+      } else {
+         document.getElementById("pPoint").value = "";
+      }
+
+      document.getElementById("dz_run_service").disabled = true;
+   });
+   
+   var snap_path = L.geoJson(null, {
+      onEachFeature: onEachFeature_snap_path
+   }).addTo(map);
+   
+   var flowlines = new L.GeoJSON(null, {
+      onEachFeature: onEachFeature_flowlines
+   }).addTo(map);
+   
+   var layer_items = {
+     "Snap path": snap_path,
+     "Returned Streams": flowlines
+   };
+   L.control.layers(null, layer_items).addTo(map);
+   
+   function onEachFeature_snap_path(feature,layer) {
+      if (feature.properties && feature.properties.snap_distancekm) {
+         layer.bindPopup(
+            "Length (Km): " +
+            feature.properties.snap_distancekm.toString()
+         );
+      }
+   }
+   
+   function onEachFeature_flowlines(feature,layer) {
+      if (feature.properties && feature.properties.nhdplusid) {
+         layer.bindPopup(
+            "NHDPlusID: " +
+            feature.properties.nhdplusid.toString() +
+            "<BR/>" +
+            "Perm ID: " +
+            feature.properties.permanent_identifier +
+            "<BR/>" +
+            "Reach Code: " +
+            feature.properties.reachcode +
+            "<BR/>" +
+            "Hydro Seq: " +
+            feature.properties.hydroseq.toString() +
+            "<BR/>" +
+            "FMeasure: " +
+            feature.properties.fmeasure.toString() +
+            "<BR/>" +
+            "TMeasure: " +
+            feature.properties.tmeasure.toString() +
+            "<BR/>" +
+            "GNIS Name: " +
+            feature.properties.gnis_name +
+            "<BR/>" +
+            "Length (Km): " +
+            feature.properties.lengthkm +
+            "<BR/>" +
+            "Network Distance (Km): " +
+            feature.properties.network_distancekm +
+            "<BR/>" 
+         );
+      }
+   }
+
+   function run_service() {
+      dz_clear_old();
+      busy_on();
+
+      var start_geojsonval = document.getElementById("pPoint").value;
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      if (start_geojsonval == "" ) {
          
-         function blank_pts() {
-            drawnItems.clearLayers();
-            document.getElementById("pPoint").value = "";
-            document.getElementById("pPoint2").value = "";
+         var search_type      = get_select_values(document.getElementById("pSearchType"));
+         
+         var data = {
+             "search_type"               : search_type
+            ,"nhdplus_version"           : nhdplus_version
+             
+            ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
+            ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
+            ,"start_reachcode"           : document.getElementById("pStartReachCode").value
+            ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
+            ,"start_measure"             : document.getElementById("pStartMeasure").value
+            
+            ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"              : document.getElementById("pStopMeasure").value
+            
+            ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+            ,"return_flowline_details"   : true
+            ,"return_flowline_geometry"  : true
          }
+      
+         httpPost(
+            build_api() + "cipsrv_nav",
+            data,
+            nav_response
+         );
+      
+      } else {
+         if (start_geojsonval !== "") {
 
-         function blank_pt1() {
-            document.getElementById("pPoint").value = "";
-         }
-
-         function blank_pt2() {
-            document.getElementById("pPoint2").value = "";
-         }
-          
-         function blank_nhdplusids() {
-            blank_start_nhdplusids();
-            blank_stop_nhdplusids();
-         }
-
-         function blank_start_nhdplusids() {
-            document.getElementById("pStartNHDPlusID").value = "";
-            document.getElementById("pStartPermanentIdentifier").value = "";
-            document.getElementById("pStartReachCode").value = "";
-            document.getElementById("pStartHydroSeq").value = "";
-            document.getElementById("pStartMeasure").value = "";
-         }
-
-         function blank_stop_nhdplusids() {
-            document.getElementById("pStopNHDPlusID").value = "";
-            document.getElementById("pStopPermanentIdentifier").value = "";
-            document.getElementById("pStopReachCode").value = "";
-            document.getElementById("pStopHydroSeq").value = "";
-            document.getElementById("pStopMeasure").value = "";
-         }
-
-         function check_start() {
-            var search_type = get_select_values(document.getElementById("pSearchType"));
-
-            var pt1 = document.getElementById("pPoint").value;
-            var pt2 = document.getElementById("pPoint2").value;
-
-            var com1 = document.getElementById("pStartNHDPlusID").value;
-            var per1 = document.getElementById("pStartPermanentIdentifier").value;
-            var rch1 = document.getElementById("pStartReachCode").value;
-            var hyd1 = document.getElementById("pStartHydroSeq").value;
-
-            var com2 = document.getElementById("pStopNHDPlusID").value;
-            var per2 = document.getElementById("pStopPermanentIdentifier").value;
-            var rch2 = document.getElementById("pStopReachCode").value;
-            var hyd2 = document.getElementById("pStopHydroSeq").value;
-
-            if (search_type != "PP" && search_type != "PPALL" && pt1 !== null && pt1 !== "") {
-               document.getElementById("dz_run_service").disabled = false;
-            } else if (
-               ( search_type == "PP" || search_type == "PPALL" ) &&
-               pt1 !== null &&
-               pt1 !== "" &&
-               pt2 !== null &&
-               pt2 !== ""
-            ) {
-               document.getElementById("dz_run_service").disabled = false;
+            var data = {
+                "point"           : JSON.parse(start_geojsonval)
+               ,"nhdplus_version" : nhdplus_version
+               ,"limit_navigable" : true
+               ,"return_link_path": true
+            }
+      
+            httpPost(
+               build_api() + "pointindexing",
+               data,
+               pt1_response
+            );
+         
+         } 
+      
+      }
+      
+   }
+   
+   function httpPost(url,data,callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("POST",url,true);
+      xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
+      xmlHttp.responseType = 'json';
+      xmlHttp.onreadystatechange = function() {
+         if(xmlHttp.readyState === 4) {
+            if(xmlHttp.status === 200) {
+               response = xmlHttp.response;
+               callback(null,response);
             } else {
-               if (search_type == "PP" || search_type == "PPALL") {
-                  if (
-                     (com1 !== null && com1 !== "") ||
-                     (per1 !== null && per1 !== "") ||
-                     (rch1 !== null && rch1 !== "") ||
-                     (hyd1 !== null && hyd1 !== "") 
-                  ) {
-                     if (
-                       (com1 !== null && com1 !== "") ||
-                       (per1 !== null && per1 !== "") ||
-                       (rch1 !== null && rch1 !== "") ||
-                       (hyd1 !== null && hyd1 !== "")
-                     ) {
-                        document.getElementById("dz_run_service").disabled = false;
-                     } else {
-                        document.getElementById("dz_run_service").disabled = true;
-                     }
-                  }
-               } else {
+               callback(xmlHttp.statusText,null);
+            }
+         }
+      };
+      xmlHttp.send(JSON.stringify(data));
+   }
+
+   function get_select_values(select){
+      var result = null;
+      
+      if ( select == null ) {
+         return result;
+      }
+      
+      if ( select.options == null ) {
+         return result;
+      }
+      
+      if ( select.selectedIndex == null ) {
+         return result;
+      }
+      
+      return select.options[select.selectedIndex].value;
+   
+   }
+   
+   function get_mselect_values(select){
+      var result = [];
+      var options = select && select.options;
+      var opt;
+      
+      if ( options == null ) {
+         return result;
+      }
+
+      for (var i=0, iLen=options.length; i<iLen; i++) {
+         opt = options[i];
+
+         if (opt.selected) {
+            result.push(opt.value || opt.text);
+         }
+      }
+      return result;
+   }
+   
+   function nav_response(error,response) {
+      busy_off();
+
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
+         flowlines.addData(response.flowlines).setStyle({
+             "color": "#0000FF"
+            ,"fillColor": "#0000FF"
+            ,"weight": 4
+         });
+         
+         map.fitBounds(flowlines.getBounds(), {
+            maxZoom: 16
+         });
+         
+         document.getElementById("output").innerHTML = "<P>&nbsp;</P><P align='center'>Flowline Count: " + response.flowline_count + "</P>";
+         
+      }            
+   }
+   
+   function pt1_response(error,response) {
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.indexing_line !== null && response.indexing_line.type !== null) {
+         snap_path.addData(response.indexing_line).setStyle({
+             "color": "#FFA500"
+            ,"fillColor": "#FFA500"
+         });
+         
+         document.getElementById("pStartNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
+         document.getElementById("pStartPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
+         document.getElementById("pStartReachCode").value           = response.flowlines.features[0].properties.reachcode;
+         document.getElementById("pStartHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
+         document.getElementById("pStartMeasure").value             = response.flowlines.features[0].properties.snap_measure;
+         
+      }
+
+      var stop_geojsonval  = document.getElementById("pPoint2").value;
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      if (stop_geojsonval !== "") {
+         
+         var data = {
+             "point"           : JSON.parse(stop_geojsonval)
+            ,"nhdplus_version" : nhdplus_version
+            ,"limit_navigable" : true
+            ,"return_link_path": true
+         }
+      
+         httpPost(
+            build_api() + "pointindexing",
+            data,
+            pt2_response
+         );
+      
+      } else {
+         var search_type      = get_select_values(document.getElementById("pSearchType"));
+      
+         var data = {
+             "search_type"               : search_type
+            ,"nhdplus_version"           : nhdplus_version
+             
+            ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
+            ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
+            ,"start_reachcode"           : document.getElementById("pStartReachCode").value
+            ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
+            ,"start_measure"             : document.getElementById("pStartMeasure").value
+            
+            ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"              : document.getElementById("pStopMeasure").value
+            
+            ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+            ,"return_flowline_details"   : true
+            ,"return_flowline_geometry"  : true
+         }
+      
+         httpPost(
+            build_api() + "cipsrv_nav",
+            data,
+            nav_response
+         );
+      }
+      
+   }
+   
+   function pt2_response(error,response) {
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.indexing_line !== null && response.indexing_line.type !== null) {
+         snap_path.addData(response.indexing_line).setStyle({
+             "color": "#FFA500"
+            ,"fillColor": "#FFA500"
+         });
+         
+         document.getElementById("pStopNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
+         document.getElementById("pStopPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
+         document.getElementById("pStopReachCode").value           = response.flowlines.features[0].properties.reachcode;
+         document.getElementById("pStopHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
+         document.getElementById("pStopMeasure").value             = response.flowlines.features[0].properties.snap_measure;
+         
+      }
+      
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      var search_type      = get_select_values(document.getElementById("pSearchType"));
+      
+      var data = {
+          "search_type"               : search_type
+         ,"nhdplus_version"           : nhdplus_version
+          
+         ,"start_nhdplusid"           : document.getElementById("pStartNHDPlusID").value
+         ,"start_permanent_identifier": document.getElementById("pStartPermanentIdentifier").value
+         ,"start_reachcode"           : document.getElementById("pStartReachCode").value
+         ,"start_hydroseq"            : document.getElementById("pStartHydroSeq").value
+         ,"start_measure"             : document.getElementById("pStartMeasure").value
+         
+         ,"stop_nhdplusid"            : document.getElementById("pStopNHDPlusID").value
+         ,"stop_permanent_identifier" : document.getElementById("pStopPermanentIdentifier").value
+         ,"stop_reachcode"            : document.getElementById("pStopReachCode").value
+         ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
+         ,"stop_measure"              : document.getElementById("pStopMeasure").value
+         
+         ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+         ,"return_flowline_details"   : true
+         ,"return_flowline_geometry"  : true
+      }
+      
+      httpPost(
+         build_api() + "cipsrv_nav",
+         data,
+         nav_response
+      );
+      
+   }
+   
+   function dz_reset() {
+      document.getElementById("output").innerHTML = "";
+      snap_path.clearLayers();
+      flowlines.clearLayers();
+      blank_pts();
+      blank_nhdplusids()
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+   }
+   
+   function dz_clear_old() {
+      document.getElementById("output").innerHTML = "";
+      snap_path.clearLayers();
+      flowlines.clearLayers();
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   function busy_on() {
+      document.getElementById("busy").style.visibility = "visible";
+      document.body.style.cursor = "wait";
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   function busy_off() {
+      document.getElementById("busy").style.visibility = "hidden";
+      document.body.style.cursor = "auto";
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   function blank_pts() {
+      drawnItems.clearLayers();
+      document.getElementById("pPoint").value = "";
+      document.getElementById("pPoint2").value = "";
+   }
+
+   function blank_pt1() {
+      document.getElementById("pPoint").value = "";
+   }
+
+   function blank_pt2() {
+      document.getElementById("pPoint2").value = "";
+   }
+    
+   function blank_nhdplusids() {
+      blank_start_nhdplusids();
+      blank_stop_nhdplusids();
+   }
+
+   function blank_start_nhdplusids() {
+      document.getElementById("pStartNHDPlusID").value = "";
+      document.getElementById("pStartPermanentIdentifier").value = "";
+      document.getElementById("pStartReachCode").value = "";
+      document.getElementById("pStartHydroSeq").value = "";
+      document.getElementById("pStartMeasure").value = "";
+   }
+
+   function blank_stop_nhdplusids() {
+      document.getElementById("pStopNHDPlusID").value = "";
+      document.getElementById("pStopPermanentIdentifier").value = "";
+      document.getElementById("pStopReachCode").value = "";
+      document.getElementById("pStopHydroSeq").value = "";
+      document.getElementById("pStopMeasure").value = "";
+   }
+
+   function check_start() {
+      var search_type = get_select_values(document.getElementById("pSearchType"));
+
+      var pt1 = document.getElementById("pPoint").value;
+      var pt2 = document.getElementById("pPoint2").value;
+
+      var com1 = document.getElementById("pStartNHDPlusID").value;
+      var per1 = document.getElementById("pStartPermanentIdentifier").value;
+      var rch1 = document.getElementById("pStartReachCode").value;
+      var hyd1 = document.getElementById("pStartHydroSeq").value;
+
+      var com2 = document.getElementById("pStopNHDPlusID").value;
+      var per2 = document.getElementById("pStopPermanentIdentifier").value;
+      var rch2 = document.getElementById("pStopReachCode").value;
+      var hyd2 = document.getElementById("pStopHydroSeq").value;
+
+      if (search_type != "PP" && search_type != "PPALL" && pt1 !== null && pt1 !== "") {
+         document.getElementById("dz_run_service").disabled = false;
+      } else if (
+         ( search_type == "PP" || search_type == "PPALL" ) &&
+         pt1 !== null &&
+         pt1 !== "" &&
+         pt2 !== null &&
+         pt2 !== ""
+      ) {
+         document.getElementById("dz_run_service").disabled = false;
+      } else {
+         if (search_type == "PP" || search_type == "PPALL") {
+            if (
+               (com1 !== null && com1 !== "") ||
+               (per1 !== null && per1 !== "") ||
+               (rch1 !== null && rch1 !== "") ||
+               (hyd1 !== null && hyd1 !== "") 
+            ) {
                if (
                  (com1 !== null && com1 !== "") ||
                  (per1 !== null && per1 !== "") ||
                  (rch1 !== null && rch1 !== "") ||
-                 (hyd1 !== null && hyd1 !== "") 
+                 (hyd1 !== null && hyd1 !== "")
                ) {
-                 document.getElementById("dz_run_service").disabled = false;
+                  document.getElementById("dz_run_service").disabled = false;
                } else {
-                 document.getElementById("dz_run_service").disabled = true;
-               }
-             }
-           }
-         }
-         
-         function update_form() {
-            var search_type = get_select_values(document.getElementById("pSearchType"));
-
-            if (search_type == "PP" || search_type == "PPALL") {
-               document.getElementById("pStopNHDPlusID").disabled = false;
-               document.getElementById("pStopPermanentIdentifier").disabled = false;
-               document.getElementById("pStopReachCode").disabled = false;
-               document.getElementById("pStopHydroSeq").disabled = false;
-               document.getElementById("pStopMeasure").disabled = false;
-               document.getElementById("pPoint2").disabled = false;
-               document.getElementById("pSearchMaxDistanceKm").disabled = true;
-            } else {
-               document.getElementById("pStopNHDPlusID").disabled = true;
-               document.getElementById("pStopPermanentIdentifier").disabled = true;
-               document.getElementById("pStopReachCode").disabled = true;
-               document.getElementById("pStopHydroSeq").disabled = true;
-               document.getElementById("pStopMeasure").disabled = true;
-               document.getElementById("pPoint2").disabled = true;
-               document.getElementById("pSearchMaxDistanceKm").disabled = false;
-            }
-         }
-
-         function get_url_parameter(param_key) {
-            var page_url = window.location.search.substring(1);
-            
-            var url_variables = page_url.split('&');
-            for (var i = 0; i < url_variables.length; i++) {
-               var parameter_name = url_variables[i].split('=');
-               if (parameter_name[0] == param_key) {
-                  return parameter_name[1];
+                  document.getElementById("dz_run_service").disabled = true;
                }
             }
-            return null;
+         } else {
+         if (
+           (com1 !== null && com1 !== "") ||
+           (per1 !== null && per1 !== "") ||
+           (rch1 !== null && rch1 !== "") ||
+           (hyd1 !== null && hyd1 !== "") 
+         ) {
+           document.getElementById("dz_run_service").disabled = false;
+         } else {
+           document.getElementById("dz_run_service").disabled = true;
          }
-         
-         function updatept(geojson) {
-            if (geojson == null || geojson == undefined || geojson == "") {
-               document.getElementById("dz_run_service").disabled = true;
-            } else {
-               var search_menu = document.getElementById("pSearchType");
-               var search_type = search_menu.options[search_menu.selectedIndex].value;
-               var drawnl      = drawnItems.getLayers();
-               var drawn_count = layers.length;
+       }
+     }
+   }
+   
+   function update_form() {
+      var search_type = get_select_values(document.getElementById("pSearchType"));
 
-               blank_nhdplusids();
-               if (drawn_count == 2) {
-                  null;
-               } else if (drawn_count == 1) {
-                  null;
-               } else {
-                  null;
-               }               
-            }
-         }
-         
-         function updatept2(geojson) {
-            if (geojson == null || geojson == undefined || geojson == "") {
-               document.getElementById("dz_run_service").disabled = true;
-            } else {
-               var search_menu = document.getElementById("pSearchType");
-               var search_type = search_menu.options[search_menu.selectedIndex].value;
-               var drawnl      = drawnItems.getLayers();
-               var drawn_count = layers.length;
+      if (search_type == "PP" || search_type == "PPALL") {
+         document.getElementById("pStopNHDPlusID").disabled = false;
+         document.getElementById("pStopPermanentIdentifier").disabled = false;
+         document.getElementById("pStopReachCode").disabled = false;
+         document.getElementById("pStopHydroSeq").disabled = false;
+         document.getElementById("pStopMeasure").disabled = false;
+         document.getElementById("pPoint2").disabled = false;
+         document.getElementById("pSearchMaxDistanceKm").disabled = true;
+      } else {
+         document.getElementById("pStopNHDPlusID").disabled = true;
+         document.getElementById("pStopPermanentIdentifier").disabled = true;
+         document.getElementById("pStopReachCode").disabled = true;
+         document.getElementById("pStopHydroSeq").disabled = true;
+         document.getElementById("pStopMeasure").disabled = true;
+         document.getElementById("pPoint2").disabled = true;
+         document.getElementById("pSearchMaxDistanceKm").disabled = false;
+      }
+   }
 
-               blank_nhdplusids();
-               if (drawn_count == 2) {
-                  null;
-               } else if (drawn_count == 1) {
-                  null;
-               } else {
-                  null;
-               } 
-            }
+   function get_url_parameter(param_key) {
+      var page_url = window.location.search.substring(1);
+      
+      var url_variables = page_url.split('&');
+      for (var i = 0; i < url_variables.length; i++) {
+         var parameter_name = url_variables[i].split('=');
+         if (parameter_name[0] == param_key) {
+            return parameter_name[1];
          }
+      }
+      return null;
+   }
+   
+   function updatept(geojson) {
+      if (geojson == null || geojson == undefined || geojson == "") {
+         document.getElementById("dz_run_service").disabled = true;
+      } else {
+         var search_menu = document.getElementById("pSearchType");
+         var search_type = search_menu.options[search_menu.selectedIndex].value;
+         var drawnl      = drawnItems.getLayers();
+         var drawn_count = layers.length;
+
+         blank_nhdplusids();
+         if (drawn_count == 2) {
+            null;
+         } else if (drawn_count == 1) {
+            null;
+         } else {
+            null;
+         }               
+      }
+   }
+   
+   function updatept2(geojson) {
+      if (geojson == null || geojson == undefined || geojson == "") {
+         document.getElementById("dz_run_service").disabled = true;
+      } else {
+         var search_menu = document.getElementById("pSearchType");
+         var search_type = search_menu.options[search_menu.selectedIndex].value;
+         var drawnl      = drawnItems.getLayers();
+         var drawn_count = layers.length;
+
+         blank_nhdplusids();
+         if (drawn_count == 2) {
+            null;
+         } else if (drawn_count == 1) {
+            null;
+         } else {
+            null;
+         } 
+      }
+   }
+   
+   function build_api() {
+      
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (
+         typeof postgrest_pref === "undefined" ||
+         postgrest_pref === null ||
+         postgrest_pref == "NONE"
+      ) {
+         zpostgrest_pref = get_url_parameter("postgrest_pref");
+      } else {
+         zpostgrest_pref = postgrest_pref;
+      }
+      
+      if (zpostgrest_pref === null ) {
+         zpostgrest_pref = "";
+      } else {
+         zpostgrest_pref = zpostgrest_pref + "/";
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      
+      return http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port + "/" + 
+         zpostgrest_pref + "rpc/";
+         
+   }
           
       </script>
    </body>

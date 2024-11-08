@@ -169,498 +169,517 @@
       <script src='https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
-         document.getElementById("dz_run_service").disabled = true;
-         document.getElementById("busy").style.visibility = "hidden";
-         var zoom_cache = {};
-         var domainsLoaded = false;
-         
-         // Try to load the domains first time
-         getDomains();         
+   document.getElementById("dz_run_service").disabled = true;
+   document.getElementById("busy").style.visibility = "hidden";
+   var zoom_cache = {};
+   var domainsLoaded = false;
+   
+   // Try to load the domains first time
+   getDomains();         
 
-         var map = L.map("map").setView([46.874626,-96.782341],12);
-         mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+   var map = L.map("map").setView([46.874626,-96.782341],12);
+   mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
 
-         basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution: "Map data &copy; " + mapLink,
-            maxZoom: 18
-         });
-         basemap.addTo(map);
-         
-         var drawnItems = new L.FeatureGroup().addTo(map);
-         var drawControl = new L.Control.Draw({
-            draw: {
-               polygon: true,
-               polyline: true,
-               rectangle: false,
-               circle: false,
-               marker: true,
-               circlemarker: false
-            },
-            edit: {
-               featureGroup: drawnItems,
-               edit: false,
-               remove: true
-            }
-         });
-         map.addControl(drawControl);
-         
-         map.on(L.Draw.Event.CREATED, function(e) {
-            var type = e.layerType;
-            var layer = e.layer;
-            drawnItems.clearLayers();       
-            document.getElementById("dzGeometry").value = JSON.stringify(e.layer.toGeoJSON().geometry);
-            drawnItems.addLayer(layer);
-            document.getElementById("dz_run_service").disabled = false;
-            
-         });
-         
-         map.on(L.Draw.Event.DELETED, function(e) {
-            document.getElementById("dzGeometry").value = "";
-            document.getElementById("dz_run_service").disabled = true;
-            
-         });
-         
-         // Check for domains hit a second time 
-         if (! domainsLoaded ) {
-            const date = Date.now();
-            let currentDate = null;
-            do {
-               currentDate = Date.now();
-            } while (currentDate - date < 400 );
-            
-            if (! domainsLoaded ) {
-               getDomains();
-            }
-         }
-         
-         var indexed_points = L.geoJson(null,{
-            onEachFeature: function (f,l) {
-               l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
-            }
-         }).addTo(map);
-         
-         var indexed_lines = L.geoJson(null,{
-            onEachFeature: function (f,l) {
-               l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
-            }
-         }).addTo(map);
-         
-         var indexed_areas = L.geoJson(null,{
-            onEachFeature: function (f,l) {
-               l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
-            }
-         }).addTo(map);
-         
-         var indexed_catchments = L.geoJson(null,{
-            onEachFeature: function (f,l) {
-               l.bindPopup('<b>Indexed Catchment</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
-            }
-         }).addTo(map);
-         
-         var catchment_flowlines = L.geoJson(null,{
-            onEachFeature: function (f,l) {
-               l.bindPopup('<b>NHD Flowline</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
-            }
-         }).addTo(map);
-         
-         var xwalked_huc12s = L.geoJson(null,{
-            onEachFeature: function (f,l) {
-               l.bindPopup('<b>Indexed HUC12s</b><br/><<pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
-            }
-         }).addTo(map);
-         
-         var dummy_zoomer = L.geoJson().addTo(map);
-         
-         var layer_items = {
-             "Sketched Items":      drawnItems
-            ,"Indexed Points":      indexed_points
-            ,"Indexed Lines":       indexed_lines
-            ,"Indexed Areas":       indexed_areas
-            ,"Indexed Catchments":  indexed_catchments
-            ,"Catchment Flowlines": catchment_flowlines
-            ,"XWalked HUC12s":      xwalked_huc12s
-         };
-         L.control.layers(null, layer_items).addTo(map);
-         
-         // check for domains a third time
-         if (! domainsLoaded ) {
-            const date = Date.now();
-            let currentDate = null;
-            do {
-               currentDate = Date.now();
-            } while (currentDate - date < 1500 );
-            
-            if (! domainsLoaded ) {
-               getDomains();
-            }
-         }
-         
-         function run_service() {
-            dz_clear();
-            busy_on();
+   basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; " + mapLink,
+      maxZoom: 18
+   });
+   basemap.addTo(map);
+   
+   var drawnItems = new L.FeatureGroup().addTo(map);
+   var drawControl = new L.Control.Draw({
+      draw: {
+         polygon: true,
+         polyline: true,
+         rectangle: false,
+         circle: false,
+         marker: true,
+         circlemarker: false
+      },
+      edit: {
+         featureGroup: drawnItems,
+         edit: false,
+         remove: true
+      }
+   });
+   map.addControl(drawControl);
+   
+   map.on(L.Draw.Event.CREATED, function(e) {
+      var type = e.layerType;
+      var layer = e.layer;
+      drawnItems.clearLayers();       
+      document.getElementById("dzGeometry").value = JSON.stringify(e.layer.toGeoJSON().geometry);
+      drawnItems.addLayer(layer);
+      document.getElementById("dz_run_service").disabled = false;
+      
+   });
+   
+   map.on(L.Draw.Event.DELETED, function(e) {
+      document.getElementById("dzGeometry").value = "";
+      document.getElementById("dz_run_service").disabled = true;
+      
+   });
+   
+   // Check for domains hit a second time 
+   if (! domainsLoaded ) {
+      const date = Date.now();
+      let currentDate = null;
+      do {
+         currentDate = Date.now();
+      } while (currentDate - date < 400 );
+      
+      if (! domainsLoaded ) {
+         getDomains();
+      }
+   }
+   
+   var indexed_points = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+   
+   var indexed_lines = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+   
+   var indexed_areas = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Indexed Event</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+   
+   var indexed_catchments = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Indexed Catchment</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+   
+   var catchment_flowlines = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>NHD Flowline</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+   
+   var xwalked_huc12s = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Indexed HUC12s</b><br/><<pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+   
+   var dummy_zoomer = L.geoJson().addTo(map);
+   
+   var layer_items = {
+       "Sketched Items":      drawnItems
+      ,"Indexed Points":      indexed_points
+      ,"Indexed Lines":       indexed_lines
+      ,"Indexed Areas":       indexed_areas
+      ,"Indexed Catchments":  indexed_catchments
+      ,"Catchment Flowlines": catchment_flowlines
+      ,"XWalked HUC12s":      xwalked_huc12s
+   };
+   L.control.layers(null, layer_items).addTo(map);
+   
+   // check for domains a third time
+   if (! domainsLoaded ) {
+      const date = Date.now();
+      let currentDate = null;
+      do {
+         currentDate = Date.now();
+      } while (currentDate - date < 1500 );
+      
+      if (! domainsLoaded ) {
+         getDomains();
+      }
+   }
+   
+   function run_service() {
+      dz_clear();
+      busy_on();
 
-            var geomc  = document.getElementById("dzGeometryClip");
-            var geoms  = document.getElementById("dzGeometryClipStage");
-            var catfl  = document.getElementById("dzCatchmentFilters");
-            
-            var pnhdv  = document.getElementById("dzNHDPlusVersion");
-            var pointm = document.getElementById("dzDefaultPointIndexingMethod");
-            var linem  = document.getElementById("dzDefaultLineIndexingMethod");
-            var ringm  = document.getElementById("dzDefaultRingIndexingMethod");
-            var aream  = document.getElementById("dzDefaultAreaIndexingMethod");
-            
-            var geom  = JSON.parse(document.getElementById("dzGeometry").value);
+      var geomc  = document.getElementById("dzGeometryClip");
+      var geoms  = document.getElementById("dzGeometryClipStage");
+      var catfl  = document.getElementById("dzCatchmentFilters");
+      
+      var pnhdv  = document.getElementById("dzNHDPlusVersion");
+      var pointm = document.getElementById("dzDefaultPointIndexingMethod");
+      var linem  = document.getElementById("dzDefaultLineIndexingMethod");
+      var ringm  = document.getElementById("dzDefaultRingIndexingMethod");
+      var aream  = document.getElementById("dzDefaultAreaIndexingMethod");
+      
+      var geom  = JSON.parse(document.getElementById("dzGeometry").value);
 
-            var data = {
-                "geometry":                       geom
-                
-               ,"geometry_clip":                  get_mselect_values(geomc)
-               ,"geometry_clip_stage":            get_select_values(geoms)
-               ,"catchment_filter":               get_mselect_values(catfl)
-               ,"nhdplus_version":                get_select_values(pnhdv)
-               ,"wbd_version":                    null
-               
-               ,"default_point_indexing_method":  get_select_values(pointm)
-               
-               ,"default_line_indexing_method":   get_select_values(linem)
-               ,"default_line_threshold":         document.getElementById("dzLineThreasholdPerc").value
-               
-               ,"default_ring_indexing_method":   get_select_values(ringm)
-               ,"default_ring_areacat_threshold": document.getElementById("dzRingCatThreasholdPerc").value
-               ,"default_ring_areaevt_threshold": document.getElementById("dzRingEvtThreasholdPerc").value
-               
-               ,"default_area_indexing_method":   get_select_values(aream)
-               ,"default_areacat_threshold":      document.getElementById("dzCatThreasholdPerc").value
-               ,"default_areaevt_threshold":      document.getElementById("dzEvtThreasholdPerc").value
-               
-               ,"return_indexed_features":        true
-               ,"return_indexed_collection":      false
-               ,"return_catchment_geometry":      document.getElementById("dzShowCatchments").checked
-               ,"return_flowlines":               document.getElementById("dzShowFlowlines").checked
-               ,"return_flowline_geometry":       true
-               ,"return_huc12s":                  document.getElementById("dzShowHUC12s").checked
-            };
-            
-            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-               zpostgrest_host = get_url_parameter("postgrest_host");
+      var data = {
+          "geometry":                       geom
+          
+         ,"geometry_clip":                  get_mselect_values(geomc)
+         ,"geometry_clip_stage":            get_select_values(geoms)
+         ,"catchment_filter":               get_mselect_values(catfl)
+         ,"nhdplus_version":                get_select_values(pnhdv)
+         ,"wbd_version":                    null
+         
+         ,"default_point_indexing_method":  get_select_values(pointm)
+         
+         ,"default_line_indexing_method":   get_select_values(linem)
+         ,"default_line_threshold":         document.getElementById("dzLineThreasholdPerc").value
+         
+         ,"default_ring_indexing_method":   get_select_values(ringm)
+         ,"default_ring_areacat_threshold": document.getElementById("dzRingCatThreasholdPerc").value
+         ,"default_ring_areaevt_threshold": document.getElementById("dzRingEvtThreasholdPerc").value
+         
+         ,"default_area_indexing_method":   get_select_values(aream)
+         ,"default_areacat_threshold":      document.getElementById("dzCatThreasholdPerc").value
+         ,"default_areaevt_threshold":      document.getElementById("dzEvtThreasholdPerc").value
+         
+         ,"return_indexed_features":        true
+         ,"return_indexed_collection":      false
+         ,"return_catchment_geometry":      document.getElementById("dzShowCatchments").checked
+         ,"return_flowlines":               document.getElementById("dzShowFlowlines").checked
+         ,"return_flowline_geometry":       true
+         ,"return_huc12s":                  document.getElementById("dzShowHUC12s").checked
+      };
+      
+      httpPost(
+         build_api() + "cipsrv_index",
+         data,
+         get_response
+      );
+     
+   }
+   
+   function httpPost(url,data,callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("POST",url,true);
+      xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
+      xmlHttp.responseType = 'json';
+      xmlHttp.onreadystatechange = function() {
+         if(xmlHttp.readyState === 4) {
+            if(xmlHttp.status === 200) {
+               response = xmlHttp.response;
+               callback(null,response);
             } else {
-               zpostgrest_host = postgrest_host;
+               callback(xmlHttp.statusText,null);
             }
-
-            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-               zpostgrest_port = get_url_parameter("postgrest_port");
-            } else {
-               zpostgrest_port = postgrest_port;
-            }
-
-            if (zpostgrest_host === null) {
-               console.log("no PostgREST API server location defined.");
-               return;
-            }
-            
-            var http = "http";
-            if (zpostgrest_port == "443" ) {
-               http = "https";
-            }
-            httpPost(http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_index",data,get_response);
-           
          }
-         
-         function httpPost(url,data,callback) {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.open("POST",url,true);
-            xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
-            xmlHttp.responseType = 'json';
-            xmlHttp.onreadystatechange = function() {
-               if(xmlHttp.readyState === 4) {
-                  if(xmlHttp.status === 200) {
-                     response = xmlHttp.response;
-                     callback(null,response);
-                  } else {
-                     callback(xmlHttp.statusText,null);
+      };
+      xmlHttp.send(JSON.stringify(data));
+   }
+   
+   function getDomains() {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.onreadystatechange = function() {
+         if (xmlHttp.readyState === 4) { // request is done
+            if (xmlHttp.status === 200) { // successfully
+               domainsLoaded = true;
+               
+               var obj = JSON.parse(xmlHttp.responseText);
+               var states = obj["states"];
+               var tribes = obj["tribes"];
+               
+               var catfilter = document.getElementById("dzCatchmentFilters");
+               ;
+               var load = '<option value="TRIBAL">Tribal Only</option>';
+               load    += '<option value="NOTRIBAL">No Tribal</option>';
+               for (let i=0; i < states.length; i++) {
+                  load += '<option value="' + states[i].stusps + '">' + states[i].name + '</option>';
+               }
+               catfilter.innerHTML = load;
+               var clipgeo = document.getElementById("dzGeometryClip");
+               load = '';
+               for (let i=0; i < states.length; i++) {
+                  load += '<option value="USPS:' + states[i].stusps + '">' + states[i].name + '</option>';
+               }
+               for (let i=0; i < tribes.length; i++) {
+                  if (tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
+                     load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + '">' + tribes[i].aiannhns_namelsad + '</option>';
+                     load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
+                     load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
+                  } else if (tribes[i].has_reservation_lands && ! tribes[i].has_trust_lands) {
+                     load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
+                  } else if (! tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
+                     load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
                   }
                }
-            };
-            xmlHttp.send(JSON.stringify(data));
+               clipgeo.innerHTML = load;
+            }                  
          }
-         
-         function getDomains() {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() {
-               if (xmlHttp.readyState === 4) { // request is done
-                  if (xmlHttp.status === 200) { // successfully
-                     domainsLoaded = true;
-                     
-                     var obj = JSON.parse(xmlHttp.responseText);
-                     var states = obj["states"];
-                     var tribes = obj["tribes"];
-                     
-                     var catfilter = document.getElementById("dzCatchmentFilters");
-                     ;
-                     var load = '<option value="TRIBAL">Tribal Only</option>';
-                     load    += '<option value="NOTRIBAL">No Tribal</option>';
-                     for (let i=0; i < states.length; i++) {
-                        load += '<option value="' + states[i].stusps + '">' + states[i].name + '</option>';
-                     }
-                     catfilter.innerHTML = load;
-                     var clipgeo = document.getElementById("dzGeometryClip");
-                     load = '';
-                     for (let i=0; i < states.length; i++) {
-                        load += '<option value="USPS:' + states[i].stusps + '">' + states[i].name + '</option>';
-                     }
-                     for (let i=0; i < tribes.length; i++) {
-                        if (tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + '">' + tribes[i].aiannhns_namelsad + '</option>';
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
-                        } else if (tribes[i].has_reservation_lands && ! tribes[i].has_trust_lands) {
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':R">' + tribes[i].aiannhns_namelsad + ' (Reservation Lands Only)</option>';
-                        } else if (! tribes[i].has_reservation_lands && tribes[i].has_trust_lands) {
-                           load += '<option value="GEOID_STEM:' + tribes[i].aiannhns_stem + ':T">' + tribes[i].aiannhns_namelsad + ' (Trust Lands Only)</option>';
-                        }
-                     }
-                     clipgeo.innerHTML = load;
-                  }                  
-               }
+
+      };
+      
+      var url = build_api() + "cipsrv_domains"
+      xmlHttp.open('GET',url);
+      xmlHttp.send();
+   }      
    
-            };
-            
-            if (typeof postgrest_host === 'undefined' || postgrest_host === null || postgrest_host == 'NONE') {
-               zpostgrest_host = get_url_parameter("postgrest_host");
-            } else {
-               zpostgrest_host = postgrest_host;
-            }
-
-            if (typeof postgrest_port === 'undefined' || postgrest_port === null || postgrest_port == 'NONE') {
-               zpostgrest_port = get_url_parameter("postgrest_port");
-            } else {
-               zpostgrest_port = postgrest_port;
-            }
-
-            if (zpostgrest_host === null) {
-               console.log("no PostgREST API server location defined.");
-               return;
-            }
-            
-            var http = "http";
-            if (zpostgrest_port == "443" ) {
-               http = "https";
-            }
-            var url = http + "://" + zpostgrest_host + ":" + zpostgrest_port + "/rpc/cipsrv_domains"
-            xmlHttp.open('GET',url);
-            xmlHttp.send();
-         }      
-         
-         function get_select_values(select){
-            var result = null;
-            
-            if ( select == null ) {
-               return result;
-            }
-            
-            if ( select.options == null ) {
-               return result;
-            }
-            
-            if ( select.selectedIndex == null ) {
-               return result;
-            }
-            
-            return select.options[select.selectedIndex].value;
-         
-         }
-         
-         function get_mselect_values(select){
-            var result = [];
-            var options = select && select.options;
-            var opt;
-            
-            if ( options == null ) {
-               return result;
-            }
-
-            for (var i=0, iLen=options.length; i<iLen; i++) {
-               opt = options[i];
-
-               if (opt.selected) {
-                  result.push(opt.value || opt.text);
-               }
-            }
-            return result;
-         }
-         
-         function get_response(error,response) {
-            busy_off();
+   function get_select_values(select){
+      var result = null;
+      
+      if ( select == null ) {
+         return result;
+      }
+      
+      if ( select.options == null ) {
+         return result;
+      }
+      
+      if ( select.selectedIndex == null ) {
+         return result;
+      }
+      
+      return select.options[select.selectedIndex].value;
    
-            if (error) {
-               document.getElementById("output").innerHTML = "<P>" + error + "</P>";
-               return false;
-            } else if (response == null) {
-               document.getElementById("output").innerHTML = "<P>No response from service.</P>";
-               return false;
-            } else if (response.return_code != 0) {
-               document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
-               return false;
-            } else if (response.catchment_count == 0) {
-               document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
-            }
-            
-            if (response.indexed_points !== null && response.indexed_points.features[0].geometry.type !== null) {
-               indexed_points.addData(response.indexed_points).setStyle({
-                   "color":       "#808080"
-                  ,"opacity":     .80
-                  ,"fillColor":   "#808080"
-                  ,"fillOpacity": .10
-               });
-            }
-            
-            if (response.indexed_lines !== null && response.indexed_lines.features[0].geometry.type !== null) {
-               indexed_lines.addData(response.indexed_lines).setStyle({
-                   "color":       "#808080"
-                  ,"opacity":     .80
-                  ,"fillColor":   "#808080"
-                  ,"fillOpacity": .10
-               });
-            }
-            
-            if (response.indexed_areas !== null && response.indexed_areas.features[0].geometry.type !== null) {
-               indexed_areas.addData(response.indexed_areas).setStyle({
-                   "color":       "#808080"
-                  ,"opacity":     .80
-                  ,"fillColor":   "#808080"
-                  ,"fillOpacity": .10
-               });
-            }
-            
-            if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
-               indexed_catchments.addData(response.catchments).setStyle({
-                   "color":       "#FF6600"
-                  ,"fillColor":   "#FF6600"
-               });
-               
-            }
-            
-            if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
-               catchment_flowlines.addData(response.flowlines).setStyle({
-                   "color":       "#003399"
-                  ,"opacity":     .80
-               });
-            }
-            
-            if (response.huc12s !== null && response.huc12s.features[0].geometry.type !== null) {
-               xwalked_huc12s.addData(response.huc12s).setStyle({
-                   "color":       "#CC33FF"
-                  ,"fillColor":   "#CC33FF"
-               });
-            }
-            
-            if (response.huc12s !== null && response.huc12s.features[0].geometry.type !== null) {
-               map.fitBounds(indexed_huc12s.getBounds(), {
-                  maxZoom: 16
-               });
-               
-            } else if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
-               map.fitBounds(indexed_catchments.getBounds(), {
-                  maxZoom: 16
-               });
-            }            
-            
-            zoom_cache = {};
+   }
+   
+   function get_mselect_values(select){
+      var result = [];
+      var options = select && select.options;
+      var opt;
+      
+      if ( options == null ) {
+         return result;
+      }
 
-            if (response.catchments !== null ) {
-               tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
-                       + '<TR>'
-                       + '<TH colspan="5" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + roundNumber(response.catchment_areasqkm,2) + ' SqKm</TH>'
-                       + '<TR>'
-                       + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
-                       + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
-                       + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
-                       + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
-                       + '<TH style="font-family: Arial; font-size: 14px;">Tribal SqKm</TH>'
-                       + '</TR>';
-               tbl_end = '</TABLE>';
+      for (var i=0, iLen=options.length; i<iLen; i++) {
+         opt = options[i];
 
-               tbl_cnt = '';
-               for (var i = 0; i < response.catchments.features.length; i++) {
-                  tbl_cnt += '<TR>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">';
-                          
-                  if (response.catchments.features[0].geometry.type !== null) {
-                     tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
-                     zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
-                  } else {
-                     tbl_cnt += '&nbsp;';
-                  }
-                  
-                  tbl_cnt += '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.areasqkm,4) + '</TD>'
-                          +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4) + '</TD>'
-                          +  '</TR>';
-                  }       
-               
-               document.getElementById("output").innerHTML = tbl_beg + tbl_cnt + tbl_end;
-            }
-            
+         if (opt.selected) {
+            result.push(opt.value || opt.text);
          }
+      }
+      return result;
+   }
+   
+   function get_response(error,response) {
+      busy_off();
+
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.indexed_points !== null && response.indexed_points.features[0].geometry.type !== null) {
+         indexed_points.addData(response.indexed_points).setStyle({
+             "color":       "#808080"
+            ,"opacity":     .80
+            ,"fillColor":   "#808080"
+            ,"fillOpacity": .10
+         });
+      }
+      
+      if (response.indexed_lines !== null && response.indexed_lines.features[0].geometry.type !== null) {
+         indexed_lines.addData(response.indexed_lines).setStyle({
+             "color":       "#808080"
+            ,"opacity":     .80
+            ,"fillColor":   "#808080"
+            ,"fillOpacity": .10
+         });
+      }
+      
+      if (response.indexed_areas !== null && response.indexed_areas.features[0].geometry.type !== null) {
+         indexed_areas.addData(response.indexed_areas).setStyle({
+             "color":       "#808080"
+            ,"opacity":     .80
+            ,"fillColor":   "#808080"
+            ,"fillOpacity": .10
+         });
+      }
+      
+      if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
+         indexed_catchments.addData(response.catchments).setStyle({
+             "color":       "#FF6600"
+            ,"fillColor":   "#FF6600"
+         });
          
-         function zoom_to_catchment(id) {
-            dummy_zoomer.clearLayers();
-            dummy_zoomer.addData(zoom_cache[id]).setStyle({
-                "opacity":     0
-               ,"fillOpacity": 0
-            });
-            map.fitBounds(dummy_zoomer.getBounds(), {
-               maxZoom: 16
-            });
-            return true;
-         }
+      }
+      
+      if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
+         catchment_flowlines.addData(response.flowlines).setStyle({
+             "color":       "#003399"
+            ,"opacity":     .80
+         });
+      }
+      
+      if (response.huc12s !== null && response.huc12s.features[0].geometry.type !== null) {
+         xwalked_huc12s.addData(response.huc12s).setStyle({
+             "color":       "#CC33FF"
+            ,"fillColor":   "#CC33FF"
+         });
+      }
+      
+      if (response.huc12s !== null && response.huc12s.features[0].geometry.type !== null) {
+         map.fitBounds(indexed_huc12s.getBounds(), {
+            maxZoom: 16
+         });
          
-         function dz_clear() {
-            document.getElementById("output").innerHTML = "";
-            indexed_points.clearLayers();
-            indexed_lines.clearLayers();
-            indexed_areas.clearLayers();
-            indexed_catchments.clearLayers();
-            catchment_flowlines.clearLayers();
-            xwalked_huc12s.clearLayers();
-            busy_off();
-         }
+      } else if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
+         map.fitBounds(indexed_catchments.getBounds(), {
+            maxZoom: 16
+         });
+      }            
+      
+      zoom_cache = {};
 
-         function busy_on() {
-            document.getElementById("busy").style.visibility = "visible";
-            document.body.style.cursor = "wait";
-            document.getElementById("dz_run_service").disabled = true;
-         }
+      if (response.catchments !== null ) {
+         tbl_beg = '<TABLE border="1" style="margin: 0 auto; border-collapse: collapse; width: 400px; padding: 7px;">'
+                 + '<TR>'
+                 + '<TH colspan="5" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + roundNumber(response.catchment_areasqkm,2) + ' SqKm</TH>'
+                 + '<TR>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">Tribal SqKm</TH>'
+                 + '</TR>';
+         tbl_end = '</TABLE>';
 
-         function busy_off() {
-            document.getElementById("busy").style.visibility = "hidden";
-            document.body.style.cursor = "auto";
-            document.getElementById("dz_run_service").disabled = false;
-         }
-
-         function get_url_parameter(param_key) {
-            var page_url = window.location.search.substring(1);
+         tbl_cnt = '';
+         for (var i = 0; i < response.catchments.features.length; i++) {
+            tbl_cnt += '<TR>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">';
+                    
+            if (response.catchments.features[0].geometry.type !== null) {
+               tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
+               zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
+            } else {
+               tbl_cnt += '&nbsp;';
+            }
             
-            var url_variables = page_url.split('&');
-            for (var i = 0; i < url_variables.length; i++) {
-               var parameter_name = url_variables[i].split('=');
-               if (parameter_name[0] == param_key) {
-                  return parameter_name[1];
-               }
-            }
-            return null;
-         }
+            tbl_cnt += '</TD>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.areasqkm,4) + '</TD>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4) + '</TD>'
+                    +  '</TR>';
+            }       
          
-         function roundNumber(number, digits) {
-            if (number === null || number === undefined ) {
-               return null;
-            }
-            var multiple = Math.pow(10, digits);
-            var rndedNum = Math.round(number * multiple) / multiple;
-            return rndedNum;
-        }
+         document.getElementById("output").innerHTML = tbl_beg + tbl_cnt + tbl_end;
+      }
+      
+   }
+   
+   function zoom_to_catchment(id) {
+      dummy_zoomer.clearLayers();
+      dummy_zoomer.addData(zoom_cache[id]).setStyle({
+          "opacity":     0
+         ,"fillOpacity": 0
+      });
+      map.fitBounds(dummy_zoomer.getBounds(), {
+         maxZoom: 16
+      });
+      return true;
+   }
+   
+   function dz_clear() {
+      document.getElementById("output").innerHTML = "";
+      indexed_points.clearLayers();
+      indexed_lines.clearLayers();
+      indexed_areas.clearLayers();
+      indexed_catchments.clearLayers();
+      catchment_flowlines.clearLayers();
+      xwalked_huc12s.clearLayers();
+      busy_off();
+   }
+
+   function busy_on() {
+      document.getElementById("busy").style.visibility = "visible";
+      document.body.style.cursor = "wait";
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   function busy_off() {
+      document.getElementById("busy").style.visibility = "hidden";
+      document.body.style.cursor = "auto";
+      document.getElementById("dz_run_service").disabled = false;
+   }
+
+   function get_url_parameter(param_key) {
+      var page_url = window.location.search.substring(1);
+      
+      var url_variables = page_url.split('&');
+      for (var i = 0; i < url_variables.length; i++) {
+         var parameter_name = url_variables[i].split('=');
+         if (parameter_name[0] == param_key) {
+            return parameter_name[1];
+         }
+      }
+      return null;
+   }
+   
+   function roundNumber(number, digits) {
+      if (number === null || number === undefined ) {
+         return null;
+      }
+      var multiple = Math.pow(10, digits);
+      var rndedNum = Math.round(number * multiple) / multiple;
+      return rndedNum;
+  }
+  
+  function build_api() {
+      
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (
+         typeof postgrest_pref === "undefined" ||
+         postgrest_pref === null ||
+         postgrest_pref == "NONE"
+      ) {
+         zpostgrest_pref = get_url_parameter("postgrest_pref");
+      } else {
+         zpostgrest_pref = postgrest_pref;
+      }
+      
+      if (zpostgrest_pref === null ) {
+         zpostgrest_pref = "";
+      } else {
+         zpostgrest_pref = zpostgrest_pref + "/";
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      
+      return http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port + "/" + 
+         zpostgrest_pref + "rpc/";
+         
+   }
          
       </script>
    </body>

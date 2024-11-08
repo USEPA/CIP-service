@@ -227,42 +227,8 @@
          ,nhdplus_version: resolution.options[resolution.selectedIndex].value
       };
 
-      if (
-         typeof postgrest_host === "undefined" ||
-         postgrest_host === null ||
-         postgrest_host == "NONE"
-      ) {
-         zpostgrest_host = get_url_parameter("postgrest_host");
-      } else {
-         zpostgrest_host = postgrest_host;
-      }
-
-      if (
-         typeof postgrest_port === "undefined" ||
-         postgrest_port === null ||
-         postgrest_port == "NONE"
-      ) {
-         zpostgrest_port = get_url_parameter("postgrest_port");
-      } else {
-         zpostgrest_port = postgrest_port;
-      }
-
-      if (zpostgrest_host === null) {
-         console.log("no PostgREST API server location defined.");
-         return;
-      }
-
-      var http = "http";
-      if (zpostgrest_port == "443") {
-         http = "https";
-      }
       httpPost(
-         http +
-         "://" +
-         zpostgrest_host +
-         ":" +
-         zpostgrest_port +
-         "/rpc/pointindexing",
+         build_api() + "pointindexing",
          data,
          ptresponse
       );
@@ -367,42 +333,8 @@
         ,nhdplus_version: resolution.options[resolution.selectedIndex].value
       };
 
-      if (
-         typeof postgrest_host === "undefined" ||
-         postgrest_host === null ||
-         postgrest_host == "NONE"
-      ) {
-         zpostgrest_host = get_url_parameter("postgrest_host");
-      } else {
-         zpostgrest_host = postgrest_host;
-      }
-
-      if (
-         typeof postgrest_port === "undefined" ||
-         postgrest_port === null ||
-         postgrest_port == "NONE"
-      ) {
-         zpostgrest_port = get_url_parameter("postgrest_port");
-      } else {
-         zpostgrest_port = postgrest_port;
-      }
-
-      if (zpostgrest_host === null) {
-         console.log("no PostgREST API server location defined.");
-         return;
-      }
-
-      var http = "http";
-      if (zpostgrest_port == "443") {
-         http = "https";
-      }
       httpPost(
-         http +
-         "://" +
-         zpostgrest_host +
-         ":" +
-         zpostgrest_port +
-         "/rpc/randompoint",
+         build_api() + "randompoint",
          data,
          rand_response
       );
@@ -523,6 +455,63 @@
          }
       }
       return null;
+   }
+   
+   function build_api() {
+      
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (
+         typeof postgrest_pref === "undefined" ||
+         postgrest_pref === null ||
+         postgrest_pref == "NONE"
+      ) {
+         zpostgrest_pref = get_url_parameter("postgrest_pref");
+      } else {
+         zpostgrest_pref = postgrest_pref;
+      }
+      
+      if (zpostgrest_pref === null ) {
+         zpostgrest_pref = "";
+      } else {
+         zpostgrest_pref = zpostgrest_pref + "/";
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      
+      return http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port + "/" + 
+         zpostgrest_pref + "rpc/";
+         
    }
    
       </script>
