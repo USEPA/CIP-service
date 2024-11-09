@@ -17,6 +17,11 @@ parser.add_argument("--mr_dumpfile_copyin"      ,required=False,default=None);
 parser.add_argument("--hr_dumpfile"             ,required=False,default=None);
 parser.add_argument("--hr_dumpfile_copyin"      ,required=False,default=None);
 
+parser.add_argument("--mr2_dumpfile"            ,required=False,default=None);
+parser.add_argument("--mr2_dumpfile_copyin"     ,required=False,default=None);
+parser.add_argument("--hr2_dumpfile"            ,required=False,default=None);
+parser.add_argument("--hr2_dumpfile_copyin"     ,required=False,default=None);
+
 parser.add_argument("--mrgrid_dumpfile"         ,required=False,default=None);
 parser.add_argument("--mrgrid_dumpfile_copyin"  ,required=False,default=None);
 parser.add_argument("--hrgrid_dumpfile"         ,required=False,default=None);
@@ -37,6 +42,11 @@ def main(
    ,mr_dumpfile_copyin
    ,hr_dumpfile
    ,hr_dumpfile_copyin
+   
+   ,mr2_dumpfile
+   ,mr2_dumpfile_copyin
+   ,hr2_dumpfile
+   ,hr2_dumpfile_copyin
    
    ,mrgrid_dumpfile
    ,mrgrid_dumpfile_copyin
@@ -299,7 +309,63 @@ def main(
    if z == 0:
       print("Error no NHDPlus datasets loaded using these parameters");
       sys.exit(-50);
-      
+   
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      cmd = [
+          "docker","compose","exec","cip_jp","jupyter"
+         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus2_m.ipynb"
+         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus2_m.py"
+      ];
+      dzproc(cmd);
+
+      if mr2_dumpfile_copyin is not None:
+         mdf = os.path.basename(mr2_dumpfile_copyin);
+         print("Loading local mr2 dumpfile " + mdf + " into container.");
+         cmd = ["docker","compose","cp",mr2_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+         dzproc(cmd);
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_m.py","--use_existing","--mr2_dumpfile",mdf];
+         dzproc(cmd);
+         
+      else:
+         if mr2_dumpfile is None:
+            print("Downloading and importing default NHDPlus2 MR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_m.py"];
+            dzproc(cmd);
+            
+         else:
+            print("Downloading and importing " + mr2_dumpfile + " NHDPlus2 MR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_m.py","--mr2_dumpfile",mr2_dumpfile];
+            dzproc(cmd);
+            
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      cmd = [
+          "docker","compose","exec","cip_jp","jupyter"
+         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus2_h.ipynb"
+         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus2_h.py"
+      ];
+      dzproc(cmd);
+
+      if hr2_dumpfile_copyin is not None:
+         mdf = os.path.basename(hr2_dumpfile_copyin);
+         print("Loading local hrgrid dumpfile " + mdf + " into container.");
+         cmd = ["docker","compose","cp",hr2_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+         dzproc(cmd);
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_h.py","--use_existing","--hr2_dumpfile",mdf];
+         dzproc(cmd);
+         
+      else:
+         if hr2_dumpfile is None:
+            print("Downloading and importing default NHDPlus2 HR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_h.py"];
+            dzproc(cmd);
+            
+         else:
+            print("Downloading and importing " + hrgrid_dumpfile + " NHDPlus2 HR data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_h.py","--hr2_dumpfile",hr2_dumpfile];
+            dzproc(cmd);
+   
    ###############################################################################
    if recipe in ['EXTENDED']:
       cmd = [
@@ -384,6 +450,11 @@ if __name__ == '__main__':
       ,mr_dumpfile_copyin       = args.mr_dumpfile_copyin
       ,hr_dumpfile              = args.hr_dumpfile
       ,hr_dumpfile_copyin       = args.hr_dumpfile_copyin
+      
+      ,mr2_dumpfile             = args.mr2_dumpfile
+      ,mr2_dumpfile_copyin      = args.mr2_dumpfile_copyin
+      ,hr2_dumpfile             = args.hr2_dumpfile
+      ,hr2_dumpfile_copyin      = args.hr2_dumpfile_copyin
       
       ,mrgrid_dumpfile          = args.mrgrid_dumpfile
       ,mrgrid_dumpfile_copyin   = args.mrgrid_dumpfile_copyin
