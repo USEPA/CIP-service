@@ -215,19 +215,6 @@ def main(
    print("Running compose up for demo containers.");
    cmd = ["docker","compose","up","-d"];
    dzproc(cmd);
-
-   ###############################################################################
-   os.chdir('../admin');
-   print("Running compose build for admin containers.");
-   cmd = ["docker","compose","build"];
-   if build_nocache:
-      cmd.append("--no-cache");
-   dzproc(cmd);
-
-   ###############################################################################
-   print("Running compose up for admin containers.");
-   cmd = ["docker","compose","up","-d"];
-   dzproc(cmd);
    
    ###############################################################################
    os.chdir('../gis');
@@ -239,6 +226,19 @@ def main(
 
    ###############################################################################
    print("Running compose up for gis containers.");
+   cmd = ["docker","compose","up","-d"];
+   dzproc(cmd);
+
+   ###############################################################################
+   os.chdir('../admin');
+   print("Running compose build for admin containers.");
+   cmd = ["docker","compose","build"];
+   if build_nocache:
+      cmd.append("--no-cache");
+   dzproc(cmd);
+
+   ###############################################################################
+   print("Running compose up for admin containers.");
    cmd = ["docker","compose","up","-d"];
    dzproc(cmd);
 
