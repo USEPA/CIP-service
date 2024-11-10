@@ -117,6 +117,15 @@ def main(
       
       dzproc(cmd);
       
+   os.chdir('../gis');
+   if os.path.exists("docker-compose.yml"):
+      print(".  gis");
+      cmd = ["docker","compose","down"];
+      if down_volumes:
+         cmd.append("-v");      
+      
+      dzproc(cmd);
+      
    os.chdir('../config');
 
    ###############################################################################
@@ -147,6 +156,13 @@ def main(
    print("Configuring compose for demo containers using default settings.");
    cc.main(
        bundle    = "demo"
+      ,bprofile  = "default"
+   );
+
+   ###############################################################################
+   print("Configuring compose for gis containers using default settings.");
+   cc.main(
+       bundle    = "gis"
       ,bprofile  = "default"
    );
 
@@ -210,6 +226,19 @@ def main(
 
    ###############################################################################
    print("Running compose up for admin containers.");
+   cmd = ["docker","compose","up","-d"];
+   dzproc(cmd);
+   
+   ###############################################################################
+   os.chdir('../gis');
+   print("Running compose build for gis containers.");
+   cmd = ["docker","compose","build"];
+   if build_nocache:
+      cmd.append("--no-cache");
+   dzproc(cmd);
+
+   ###############################################################################
+   print("Running compose up for gis containers.");
    cmd = ["docker","compose","up","-d"];
    dzproc(cmd);
 

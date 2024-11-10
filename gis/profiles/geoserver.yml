@@ -1,28 +1,19 @@
-profile_name: nginx_demo 
+profile_name: geoserver 
 #
 # Profile recipe to quickly demonstrate CIP usage
 #
-last updated: 20241027
-#
-# Provide location of the CIP engine API 
-cip_pr_host:       env.POSTGREST_HOST
-cip_pr_port:       env.POSTGREST_PORT
+last updated: 20241110
 #
 # Provide credentials for geoserver
 cip_pg_host:       cip_pg
 cip_pg_port:       5432
 cip_pg_db:         cipsrv
 cip_pg_is_rds:     false
-cip_pg_gsv_pass:   env.POSTGRESQL_GSV_PASS
+cip_pg_gis_pass:   env.POSTGRESQL_GIS_PASS
 cip_gs_admin_user: cipsrv_geoserver
 cip_gs_admin_pass: env.GEOSERVER_ADMIN_PASSWORD
 #
 components:
-   cip_ng:
-      type:             container
-      external_port:    env.NGINX_PORT
-      add_host_gateway: false
-   #
    cip_gs:
       type:             container
       external_port:    env.GEOSERVER_PORT
