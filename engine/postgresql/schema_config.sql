@@ -14,7 +14,6 @@ CREATE SCHEMA cipsrv_tap           AUTHORIZATION cipsrv;
 CREATE SCHEMA cipsrv_pgrest        AUTHORIZATION cipsrv_pgrest;
 CREATE SCHEMA cipsrv_upload        AUTHORIZATION cipsrv_upload;
 CREATE SCHEMA cipsrv_gis           AUTHORIZATION cipsrv_gis;
-CREATE SCHEMA cipsrv_owld          AUTHORIZATION cipsrv_owld;
 
 GRANT  USAGE ON SCHEMA cipsrv_engine        TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_support       TO cipsrv_pgrest;
