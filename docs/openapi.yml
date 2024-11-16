@@ -28,29 +28,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/cipsrv_index_resp'
-  /rpc/cipsrv_nav:
-    post:
-      tags:
-      - 'CIP Services'
-      summary: CIP-service Navigation Endpoint
-      description: CIP-service Navigation Endpoint
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/cipsrv_nav_rb'
-      responses:
-        200:
-          description: CIP-service Navigation Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/cipsrv_nav_resp'
   /rpc/cipsrv_domains:
     get:
       tags:
-      - 'Support Services'
+      - 'CIP Services'
       summary: CIP-service Domains Endpoint
       description: CIP-service Domains Endpoint
       responses:
@@ -60,25 +41,158 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/cipsrv_domains' 
-  /rpc/point_catreach_index:
+  /rpc/navigate:
     post:
       tags:
       - 'Utility Services'
-      summary: CIP-service Point Catchment Reach Indexing Endpoint
-      description: CIP-service Point Catchment Reach Indexing Endpoint
+      summary: CIP-service Navigation Endpoint
+      description: CIP-service Navigation Endpoint
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/point_catreach_index_rb'
+              $ref: '#/components/schemas/navigate_rb'
+      responses:
+        200:
+          description: CIP-service Navigation Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/navigate_resp'
+  /rpc/delineate:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Delineation Endpoint
+      description: CIP-service Delineation Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/delineate_rb'
+      responses:
+        200:
+          description: CIP-service Delineation Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/delineate_resp'
+  /rpc/pointindexing:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Point Indexing Endpoint
+      description: CIP-service Point Indexing Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pointindexing_rb'
       responses:
         200:
           description: CIP-service Point Catchment Reach Indexing Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/point_catreach_index_resp'
+                $ref: '#/components/schemas/pointindexing_resp'
+  /rpc/randomcatchment:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Utility Random Catchment
+      description: CIP-service Utility Random Catchment Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/randomcatchment_rb'
+      responses:
+        200:
+          description: CIP-service Utility Random Catchment Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/randomcatchment_resp'
+  /rpc/randomhuc12:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Utility Random HUC12
+      description: CIP-service Utility Random HUC12 Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/randomhuc12_rb'
+      responses:
+        200:
+          description: CIP-service Utility Random HUC12 Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/randomhuc12_resp'
+  /rpc/randomnav:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Utility Random Nav Location
+      description: CIP-service Utility Random Nav Location Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/randomnav_rb'
+      responses:
+        200:
+          description: CIP-service Utility Random Nav Location Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/randomnav_resp'
+  /rpc/randomppnav:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Utility Random PP Nav Locations
+      description: CIP-service Utility Random PP Nav Locations Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/randomppnav_rb'
+      responses:
+        200:
+          description: CIP-service Utility Random PP Nav Locations Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/randomppnav_resp'
+  /rpc/randompoint:
+    post:
+      tags:
+      - 'Utility Services'
+      summary: CIP-service Utility Random Point
+      description: CIP-service Utility Random Point Endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/randompoint_rb'
+      responses:
+        200:
+          description: CIP-service Utility Random Point Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/randompoint_resp'
 components:
   schemas:
     cipsrv_index_rb:
@@ -124,20 +238,17 @@ components:
           - AFTER
           default: BEFORE
         catchment_filter:
-          description: array of filter items to apply to indexing results.
+          description: >
+             Array of filter items to apply to indexing results.  Filter values may include:
+                * USPS codes for the 50 states plus DC, PR, VI, AS, GU and MP.
+                * Tribal keywords: ALLTRIBAL, PARTTRIBAL, NOTRIBAL or TRIBAL < X.
+             For the TRIBAL < X keyword X is a decimal percentage that tribal percentage of the catchment must meet to be included.
           type: array
           items:
             type: string
           nullable: true
         nhdplus_version:
-          description: NHDPlus version used in CIP indexing.
-          type: string
-          nullable: false
-          enum:
-          - nhdplus_m
-          - nhdplus_h
-          default: nhdplus_m
-          example: nhdplus_m
+          $ref: '#/components/schemas/nhdplus_version'
         wbd_version:
           description: WBD version used in CIP indexing. Currently non-functional.
           type: string
@@ -290,22 +401,14 @@ components:
         huc12s:
           $ref: '#/components/schemas/geojson_featurecollection'
         return_code:
-          type: integer
-          format: int32
+          $ref: '#/components/schemas/return_code'
         status_message:
           type: string
-    cipsrv_nav_rb:
+    navigate_rb:
       type: object
       properties:
         nhdplus_version:
-          description: NHDPlus version used in navigation.
-          type: string
-          nullable: false
-          enum:
-          - nhdplus_m
-          - nhdplus_h
-          default: nhdplus_m
-          example: nhdplus_m
+          $ref: '#/components/schemas/nhdplus_version'
         search_type:
           description: |
             Navigation methodolody for network discovery of events:
@@ -397,7 +500,7 @@ components:
           type: boolean
           nullable: true
           default: true
-    cipsrv_nav_resp:
+    navigate_resp:
       type: object
       properties:
         flowlines:
@@ -414,7 +517,17 @@ components:
           description: Status message describing the results of processing.  Null indicates success.
           type: string
           nullable: false
-    point_catreach_index_rb:
+    delineate_rb:
+      type: object
+      properties:
+        nhdplus_version:
+          $ref: '#/components/schemas/nhdplus_version'
+    delineate_resp:
+      type: object
+      properties:
+        flowlines:
+          $ref: '#/components/schemas/geojson_featurecollection'
+    pointindexing_rb:
       type: object
       properties:
         point:
@@ -432,7 +545,7 @@ components:
         known_region:
           type: string
           nullable: true
-    point_catreach_index_resp:
+    pointindexing_resp:
       type: object
       properties:
         nhdplusid:
@@ -466,12 +579,62 @@ components:
         snap_path:
           $ref: '#/components/schemas/geojson_feature'
         return_code:
-          type: integer
-          format: int32
-          nullable: false
+          $ref: '#/components/schemas/return_code'
         status_message:
           type: string
-          nullable: false
+          nullable: false     
+    randomcatchment_rb:
+      type: object
+      properties:
+        nhdplus_version:
+          $ref: '#/components/schemas/nhdplus_version'
+    randomcatchment_resp:
+      type: object
+      properties:
+        catchment:
+          $ref: '#/components/schemas/geojson_feature'
+    randomhuc12_rb:
+      type: object
+      properties:
+        nhdplus_version:
+          $ref: '#/components/schemas/nhdplus_version'
+    randomhuc12_resp:
+      type: object
+      properties:
+        huc12:
+          $ref: '#/components/schemas/geojson_feature'
+    randomnav_rb:
+      type: object
+      properties:
+        nhdplus_version:
+          $ref: '#/components/schemas/nhdplus_version'
+    randomnav_resp:
+      type: object
+      properties:
+        navpoint:
+          $ref: '#/components/schemas/geojson_feature'
+    randomppnav_rb:
+      type: object
+      properties:
+        nhdplus_version:
+          $ref: '#/components/schemas/nhdplus_version'
+    randomppnav_resp:
+      type: object
+      properties:
+        navpoint1:
+          $ref: '#/components/schemas/geojson_feature'
+        navpoint2:
+          $ref: '#/components/schemas/geojson_feature'
+    randompoint_rb:
+      type: object
+      properties:
+        nhdplus_version:
+          $ref: '#/components/schemas/nhdplus_version'
+    randompoint_resp:
+      type: object
+      properties:
+        point:
+          $ref: '#/components/schemas/geojson_feature'         
     cipsrv_domains:
       type: object
       properties:
@@ -765,33 +928,43 @@ components:
             area_count:
               type: integer
     snap_point_properties:
-      nhdplus:
-        description: NHDPlus int64 flowline identifier.
-        type: integer
-        format: int64
-      reachcode:
-        $ref: '#/components/schemas/reachcode'
-      measure:
-        $ref: '#/components/schemas/measure'
+      type: object
+      properties:
+        nhdplus:
+          description: NHDPlus int64 flowline identifier.
+          type: integer
+          format: int64
+        reachcode:
+          $ref: '#/components/schemas/reachcode'
+        measure:
+          $ref: '#/components/schemas/measure'
     snap_path_properties:
-      lengthkm:
-        type: number
+      type: object
+      properties:
+        nhdplus:
+          description: NHDPlus int64 flowline identifier.
+          type: integer
+          format: int64
+    reachcode:
+      type: string
+      minLength: 14
+      maxLength: 14
     nhdplus_version:
+      description: NHDPlus version used in CIP indexing.
       type: string
       nullable: false
       enum:
       - nhdplus_m
       - nhdplus_h
-    reachcode:
-      type: string
-      minLength: 14
-      maxLength: 14
-    measure:
-      type: number
-      minimum: 0
-      maximum: 100
+      default: nhdplus_m
+      example: nhdplus_m
     return_code:
       description: Status code for results.  Zero indicates success.
       type: integer
       format: int32
       nullable: false
+    measure:
+      type: number
+      minimum: 0
+      maximum: 100
+        

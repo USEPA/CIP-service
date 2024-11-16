@@ -102,7 +102,7 @@ BEGIN
    int_geom_count := ST_NumGeometries(p_geometry);
    FOR i IN 1 .. int_geom_count
    LOOP
-      out_return_code := cipsrv_nhdplus_m.create_line_temp_tables();
+      out_return_code := cipsrv_engine.create_line_temp_tables();
       geom_part := ST_GeometryN(p_geometry,i);
       
    ----------------------------------------------------------------------------

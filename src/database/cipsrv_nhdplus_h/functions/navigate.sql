@@ -1,3 +1,14 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.navigate';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.navigate(
     IN  p_search_type                  VARCHAR
    ,IN  p_start_nhdplusid              BIGINT
@@ -118,7 +129,7 @@ BEGIN
    -- Step 20
    -- Flush or create the temp tables
    ----------------------------------------------------------------------------
-   int_check := cipsrv_nhdplus_h.create_navigation_temp_tables();
+   int_check := cipsrv_engine.create_navigation_temp_tables();
 
    ----------------------------------------------------------------------------
    -- Step 40

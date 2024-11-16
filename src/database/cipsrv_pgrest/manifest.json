@@ -24,14 +24,15 @@
          ,"includes": [
              "functions/cipsrv_domains.sql"
             ,"functions/cipsrv_index.sql"
-            ,"functions/cipsrv_nav.sql"
-            ,"functions/pointindexing.sql"
-            ,"functions/randomnav.sql"
-            ,"functions/randomppnav.sql"
-            ,"functions/randomcatchment.sql"
-            ,"functions/randompoint.sql"
-            ,"functions/randomhuc12.sql"
+            ,"functions/delineate.sql"
             ,"functions/healthcheck.sql"
+            ,"functions/navigate.sql"
+            ,"functions/pointindexing.sql"
+            ,"functions/randomcatchment.sql"
+            ,"functions/randomhuc12.sql"
+            ,"functions/randomnav.sql"
+            ,"functions/randompoint.sql"
+            ,"functions/randomppnav.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
