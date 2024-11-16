@@ -42,369 +42,6 @@ AS (
 GRANT USAGE ON TYPE cipsrv_engine.cip_feature TO public;
 
 --******************************--
------ functions/temp_table_exists.sql 
-
-CREATE or REPLACE FUNCTION cipsrv_engine.temp_table_exists(
-   IN p_table_name VARCHAR
-) RETURNS BOOLEAN 
-STABLE
-AS $BODY$
-DECLARE
-   str_table_name VARCHAR(255);
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Query catalog for temp table
-   ----------------------------------------------------------------------------
-   SELECT 
-    n.nspname
-   INTO str_table_name
-   FROM 
-   pg_catalog.pg_class c 
-   LEFT JOIN 
-   pg_catalog.pg_namespace n 
-   ON 
-   n.oid = c.relnamespace
-   where 
-       n.nspname like 'pg_temp_%'
-   AND pg_catalog.pg_table_is_visible(c.oid)
-   AND UPPER(relname) = UPPER(p_table_name);
-
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- See what we gots and exit accordingly
-   ----------------------------------------------------------------------------
-   IF str_table_name IS NULL 
-   THEN
-      RETURN FALSE;
-
-   ELSE
-      RETURN TRUE;
-
-   END IF;
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.temp_table_exists(
-   VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.temp_table_exists(
-   VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/table_exists.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.table_exists';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE or REPLACE FUNCTION cipsrv_engine.table_exists(
-    IN  p_schema_name VARCHAR
-   ,IN  p_table_name  VARCHAR
-) RETURNS BOOLEAN 
-STABLE
-AS $BODY$
-DECLARE
-   str_table_name VARCHAR(255);
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Query catalog for table
-   ----------------------------------------------------------------------------
-   SELECT 
-   c.relname
-   INTO str_table_name
-   FROM 
-   pg_catalog.pg_class c 
-   LEFT JOIN 
-   pg_catalog.pg_namespace n 
-   ON 
-   n.oid = c.relnamespace
-   WHERE  
-       n.nspname = p_schema_name
-   AND c.relname = p_table_name
-   AND c.relkind = 'r';
-
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- See what we gots and exit accordingly
-   ----------------------------------------------------------------------------
-   IF str_table_name IS NULL 
-   THEN
-      RETURN FALSE;
-
-   ELSE
-      RETURN TRUE;
-
-   END IF;
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.table_exists(
-    VARCHAR
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.table_exists(
-    VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/field_exists.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.field_exists';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE or REPLACE FUNCTION cipsrv_engine.field_exists(
-    IN  p_schema_name VARCHAR
-   ,IN  p_table_name  VARCHAR
-   ,IN  p_field_name  VARCHAR
-) RETURNS BOOLEAN 
-STABLE
-AS $BODY$
-DECLARE
-   int_oid        INTEGER;
-   str_table_name VARCHAR(255);
-   str_field_name VARCHAR(255);
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Query catalog for table
-   ----------------------------------------------------------------------------
-   SELECT 
-    c.oid
-   INTO int_oid
-   FROM 
-   pg_catalog.pg_class c 
-   LEFT JOIN 
-   pg_catalog.pg_namespace n 
-   ON 
-   n.oid = c.relnamespace
-   WHERE  
-       n.nspname = p_schema_name
-   AND c.relname = p_table_name
-   AND c.relkind = 'r';
-   
-   IF int_oid IS NULL 
-   THEN
-      RETURN FALSE;
-      
-   END IF;
-   
-   SELECT 
-    a.attname
-   INTO str_field_name
-   FROM 
-   pg_catalog.pg_attribute a 
-   WHERE 
-       a.attrelid = int_oid
-   AND a.attname  = p_field_name
-   AND NOT attisdropped
-   AND attnum > 0; 
-
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- See what we gots and exit accordingly
-   ----------------------------------------------------------------------------
-   IF str_field_name IS NULL 
-   THEN
-      RETURN FALSE;
-
-   ELSE
-      RETURN TRUE;
-
-   END IF;
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.field_exists(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.field_exists(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/index_exists.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.index_exists';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE or REPLACE FUNCTION cipsrv_engine.index_exists(
-    IN  p_schema_name VARCHAR
-   ,IN  p_table_name  VARCHAR
-   ,IN  p_index_name  VARCHAR
-) RETURNS BOOLEAN 
-STABLE
-AS $BODY$
-DECLARE
-   str_index_name VARCHAR(255);
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Query catalog for table
-   ----------------------------------------------------------------------------
-   SELECT 
-   a.indexname
-   INTO str_index_name
-   FROM 
-   pg_indexes a
-   WHERE
-       a.schemaname = p_schema_name
-   AND a.tablename  = p_table_name
-   AND a.indexname  = p_index_name;
-
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- See what we gots and exit accordingly
-   ----------------------------------------------------------------------------
-   IF str_index_name IS NULL 
-   THEN
-      RETURN FALSE;
-
-   ELSE
-      RETURN TRUE;
-
-   END IF;
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.index_exists(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.index_exists(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/column_has_single_index.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.column_has_single_index';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE or REPLACE FUNCTION cipsrv_engine.column_has_single_index(
-    IN  p_schema_name  VARCHAR
-   ,IN  p_table_name   VARCHAR
-   ,IN  p_column_name  VARCHAR
-   ,IN  p_unique       BOOLEAN DEFAULT FALSE
-) RETURNS BOOLEAN 
-STABLE
-AS $BODY$
-DECLARE
-   boo_results BOOLEAN;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Query catalog for table
-   ----------------------------------------------------------------------------
-   SELECT
-   TRUE
-   INTO boo_results
-   FROM 
-   pg_class t
-   JOIN
-   pg_namespace ns
-   ON
-   t.relnamespace = ns.oid
-   JOIN
-   pg_index ix
-   ON
-   t.oid = ix.indrelid
-   JOIN
-   pg_class i
-   ON
-   i.oid = ix.indexrelid
-   JOIN
-   pg_attribute a
-   ON
-       a.attrelid = t.oid
-   AND a.attnum = ANY(ix.indkey)
-   WHERE 
-       t.relkind  = 'r'
-   AND ns.nspname = p_schema_name
-   AND t.relname  = p_table_name
-   AND attname    = p_column_name
-   AND (NOT p_unique OR ix.indisunique)
-   GROUP BY
-    a.attname
-   ,i.relname
-   HAVING 
-   COUNT(*) = 1;
-
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- See what we gots and exit accordingly
-   ----------------------------------------------------------------------------
-   RETURN COALESCE(boo_results,FALSE);
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.column_has_single_index(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.column_has_single_index(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
-
---******************************--
 ----- functions/adjust_point_extent.sql 
 
 DO $$DECLARE 
@@ -478,2404 +115,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.adjust_point_extent(
    ,NUMERIC
    ,NUMERIC
    ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/create_cip_temp_tables.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.create_cip_temp_tables()
-RETURNS INT4
-VOLATILE
-AS $BODY$
-DECLARE
-BEGIN
-   
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Create tmp_cip temp table
-   ----------------------------------------------------------------------------
-   IF cipsrv_engine.temp_table_exists('tmp_cip')
-   THEN
-      TRUNCATE TABLE tmp_cip;
-      
-   ELSE
-      CREATE TEMPORARY TABLE tmp_cip(
-          permid_joinkey       UUID
-         ,catchmentstatecodes  VARCHAR[]
-         ,nhdplusid            BIGINT    NOT NULL
-         ,overlap_measure      NUMERIC
-      );
-
-      CREATE UNIQUE INDEX tmp_cip_pk
-      ON tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-      ) NULLS NOT DISTINCT;
-      
-      CREATE INDEX tmp_cip_i01
-      ON tmp_cip(
-         permid_joinkey
-      );
-      
-      CREATE INDEX tmp_cip_i02
-      ON tmp_cip(
-         nhdplusid
-      );
-
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Create tmp_cip_out temp table
-   ----------------------------------------------------------------------------
-   IF cipsrv_engine.temp_table_exists('tmp_cip_out')
-   THEN
-      TRUNCATE TABLE tmp_cip_out;
-      
-   ELSE
-      CREATE TEMPORARY TABLE tmp_cip_out(
-          nhdplusid            BIGINT      NOT NULL
-         ,catchmentstatecode   VARCHAR(2)  NOT NULL
-         ,xwalk_huc12          VARCHAR(12)
-         ,areasqkm             NUMERIC
-         ,istribal             VARCHAR(1)  NOT NULL
-         ,istribal_areasqkm    NUMERIC
-         ,shape                GEOMETRY
-      );
-
-      CREATE UNIQUE INDEX tmp_cip_out_pk 
-      ON tmp_cip_out(catchmentstatecode,nhdplusid);
-      
-      CREATE INDEX tmp_cip_out_01i
-      ON tmp_cip_out(nhdplusid);
-
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Step 70
-   -- I guess that went okay
-   ----------------------------------------------------------------------------
-   RETURN 0;
-   
-END;
-$BODY$ 
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.create_cip_temp_tables() OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_temp_tables() TO PUBLIC;
-
---******************************--
------ functions/create_cip_batch_temp_tables.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.create_cip_batch_temp_tables()
-RETURNS INT4
-VOLATILE
-AS $BODY$
-DECLARE
-BEGIN
-   
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Create tmp_cip temp table
-   ----------------------------------------------------------------------------
-   IF cipsrv_engine.temp_table_exists('tmp_cip')
-   THEN
-      TRUNCATE TABLE tmp_cip;
-      
-   ELSE
-      CREATE TEMPORARY TABLE tmp_cip(
-          permid_joinkey       UUID
-         ,catchmentstatecodes  VARCHAR[]
-         ,nhdplusid            BIGINT    NOT NULL
-         ,overlap_measure      NUMERIC
-      );
-
-      CREATE UNIQUE INDEX tmp_cip_pk
-      ON tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-      ) NULLS NOT DISTINCT;
-      
-      CREATE INDEX tmp_cip_i01
-      ON tmp_cip(
-         permid_joinkey
-      );
-      
-      CREATE INDEX tmp_cip_i02
-      ON tmp_cip(
-         nhdplusid
-      );
-
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Create tmp_src2cip temp table
-   ----------------------------------------------------------------------------
-   IF cipsrv_engine.temp_table_exists('tmp_src2cip')
-   THEN
-      TRUNCATE TABLE tmp_src2cip;
-      
-   ELSE
-      CREATE TEMPORARY TABLE tmp_src2cip(
-          permid_joinkey       UUID
-         ,nhdplusid            BIGINT
-         ,cip_method           VARCHAR(255)
-         ,cip_parms            VARCHAR(255)
-         ,overlap_measure      NUMERIC
-      );
-
-      CREATE UNIQUE INDEX tmp_src2cip_pk 
-      ON tmp_src2cip(
-          permid_joinkey
-         ,nhdplusid
-      );
-
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Step 30
-   -- I guess that went okay
-   ----------------------------------------------------------------------------
-   RETURN 0;
-   
-END;
-$BODY$ 
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.create_cip_batch_temp_tables() OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_batch_temp_tables() TO PUBLIC;
-
---******************************--
------ functions/cipsrv_version.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_version';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_version()
-RETURNS VARCHAR
-STABLE
-AS $BODY$
-DECLARE
-BEGIN
-
-   RETURN '1.0';
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.cipsrv_version()
-OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_version()
-TO PUBLIC;
-
---******************************--
------ functions/featurecat.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.featurecat(
-    IN  p_features           cipsrv_engine.cip_feature[]
-   ,IN  p_cat                cipsrv_engine.cip_feature[]
-) RETURNS cipsrv_engine.cip_feature[]
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   ary_features cipsrv_engine.cip_feature[];
-   ary_cat      cipsrv_engine.cip_feature[];
-   ary_rez      cipsrv_engine.cip_feature[];
-   
-BEGIN
-
-   ary_features := array_remove(p_features,NULL);
-   ary_cat      := array_remove(p_cat,NULL);
-   ary_rez      := NULL::cipsrv_engine.cip_feature[];
-   
-   IF ary_features IS NOT NULL
-   AND array_length(ary_features,1) > 0
-   THEN
-      FOR i IN 1 .. array_length(ary_features,1)
-      LOOP
-         ary_rez := array_append(ary_rez,ary_features[i]);
-         
-      END LOOP;
-      
-   END IF;
-   
-   IF ary_cat IS NOT NULL 
-   AND array_length(ary_cat,1) > 0
-   THEN
-      FOR i IN 1 .. array_length(ary_cat,1)
-      LOOP
-         ary_rez := array_append(ary_rez,ary_cat[i]);
-         
-      END LOOP;
-   
-   END IF;
-
-   RETURN ary_rez;   
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.featurecat(
-    cipsrv_engine.cip_feature[]
-   ,cipsrv_engine.cip_feature[]
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.featurecat(
-    cipsrv_engine.cip_feature[]
-   ,cipsrv_engine.cip_feature[]
-) TO PUBLIC;
-
---******************************--
------ functions/measure_lengthkm.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.measure_lengthkm';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.measure_lengthkm(
-    IN  p_geometry                GEOMETRY
-   ,IN  p_nhdplus_version         VARCHAR
-   ,IN  p_default_nhdplus_version VARCHAR DEFAULT NULL
-   ,IN  p_known_region            VARCHAR DEFAULT NULL
-   ,IN  p_default_known_region    VARCHAR DEFAULT NULL
-) RETURNS NUMERIC
-STABLE
-AS $BODY$ 
-DECLARE
-   str_nhdplus_version VARCHAR;
-   str_known_region    VARCHAR;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF p_geometry IS NULL
-   THEN
-      RAISE EXCEPTION 'input geometry required';
-      
-   END IF;
-   
-   IF p_nhdplus_version IS NULL
-   THEN
-      IF p_default_nhdplus_version IS NULL
-      THEN
-         RAISE EXCEPTION 'nhdplus version required';
-      
-      ELSE
-         str_nhdplus_version := p_default_nhdplus_version;
-         
-      END IF;
-      
-   ELSE
-      str_nhdplus_version := p_nhdplus_version; 
-   
-   END IF;
-   
-   str_known_region := p_known_region;
-   IF str_known_region IS NULL
-   THEN
-      str_known_region := p_default_known_region;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Determine the region from geometry if known region value not provided
-   ----------------------------------------------------------------------------
-   IF str_nhdplus_version IN ('nhdplus_m','MR')
-   THEN
-      RETURN cipsrv_nhdplus_m.measure_lengthkm(
-          p_geometry     := p_geometry
-         ,p_known_region := str_known_region
-      );
-   
-   ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
-   THEN
-      RETURN cipsrv_nhdplus_h.measure_lengthkm(
-          p_geometry     := p_geometry
-         ,p_known_region := str_known_region
-      );
-   
-   ELSE
-      RAISE EXCEPTION 'unknown nhdplus version %',str_nhdplus_version;
-   
-   END IF;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.measure_lengthkm(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.measure_lengthkm(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/measure_areasqkm.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.measure_areasqkm';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.measure_areasqkm(
-    IN  p_geometry                GEOMETRY
-   ,IN  p_nhdplus_version         VARCHAR
-   ,IN  p_default_nhdplus_version VARCHAR DEFAULT NULL
-   ,IN  p_known_region            VARCHAR DEFAULT NULL
-   ,IN  p_default_known_region    VARCHAR DEFAULT NULL
-) RETURNS NUMERIC
-STABLE
-AS $BODY$ 
-DECLARE
-   str_nhdplus_version VARCHAR;
-   str_known_region    VARCHAR;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF p_geometry IS NULL
-   THEN
-      RAISE EXCEPTION 'input geometry required';
-      
-   END IF;
-   
-   IF p_nhdplus_version IS NULL
-   THEN
-      IF p_default_nhdplus_version IS NULL
-      THEN
-         RAISE EXCEPTION 'nhdplus version required';
-      
-      ELSE
-         str_nhdplus_version := p_default_nhdplus_version;
-         
-      END IF;
-      
-   ELSE
-      str_nhdplus_version := p_nhdplus_version; 
-   
-   END IF;
-   
-   str_known_region := p_known_region;
-   IF str_known_region IS NULL
-   THEN
-      str_known_region := p_default_known_region;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Determine the region from geometry if known region value not provided
-   ----------------------------------------------------------------------------
-   IF str_nhdplus_version IN ('nhdplus_m','MR')
-   THEN
-      RETURN cipsrv_nhdplus_m.measure_areasqkm(
-          p_geometry     := p_geometry
-         ,p_known_region := str_known_region
-      );
-   
-   ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
-   THEN
-      RETURN cipsrv_nhdplus_h.measure_areasqkm(
-          p_geometry     := p_geometry
-         ,p_known_region := str_known_region
-      );
-   
-   ELSE
-      RAISE EXCEPTION 'unknown nhdplus version %',str_nhdplus_version;
-   
-   END IF;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.measure_areasqkm(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR    
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.measure_areasqkm(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/jsonb2feature.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2feature';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
-    IN  p_feature                JSONB
-   ,IN  p_geometry_override      GEOMETRY DEFAULT NULL
-   ,IN  p_globalid               VARCHAR  DEFAULT NULL
-   ,IN  p_source_featureid       VARCHAR  DEFAULT NULL
-   ,IN  p_permid_joinkey         VARCHAR  DEFAULT NULL
-   ,IN  p_nhdplus_version        VARCHAR  DEFAULT NULL
-   ,IN  p_known_region           VARCHAR  DEFAULT NULL
-   ,IN  p_int_srid               INTEGER  DEFAULT NULL
-   
-   ,IN  p_point_indexing_method  VARCHAR  DEFAULT NULL
-   
-   ,IN  p_line_indexing_method   VARCHAR  DEFAULT NULL
-   ,IN  p_line_threshold         NUMERIC  DEFAULT NULL
-   
-   ,IN  p_ring_indexing_method   VARCHAR  DEFAULT NULL
-   ,IN  p_ring_areacat_threshold NUMERIC  DEFAULT NULL
-   ,IN  p_ring_areaevt_threshold NUMERIC  DEFAULT NULL
-   
-   ,IN  p_area_indexing_method   VARCHAR  DEFAULT NULL
-   ,IN  p_areacat_threshold      NUMERIC  DEFAULT NULL
-   ,IN  p_areaevt_threshold      NUMERIC  DEFAULT NULL
-   
-) RETURNS cipsrv_engine.cip_feature[]
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   rec                        RECORD;
-   obj_rez cipsrv_engine.cip_feature;
-   ary_rez cipsrv_engine.cip_feature[];
-   has_properties             BOOLEAN;
-   boo_isring                 BOOLEAN;
-   str_globalid               VARCHAR;
-   str_permid_joinkey         VARCHAR;
-   str_nhdplus_version        VARCHAR;
-   str_known_region           VARCHAR;
-   int_srid                   INTEGER;
-   str_source_featureid       VARCHAR;
-   
-   str_point_indexing_method  VARCHAR;
-   
-   str_line_indexing_method   VARCHAR;
-   num_line_threshold         NUMERIC;
-   
-   str_ring_indexing_method   VARCHAR;
-   num_ring_areacat_threshold NUMERIC;
-   num_ring_areaevt_threshold NUMERIC;
-   
-   str_area_indexing_method   VARCHAR;
-   num_areacat_threshold      NUMERIC;
-   num_areaevt_threshold      NUMERIC;
-   
-   sdo_geometry               GEOMETRY;
-   sdo_geometry2              GEOMETRY;
-   json_feature               JSONB := p_feature;
-   num_line_lengthkm          NUMERIC;
-   num_area_areasqkm          NUMERIC;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF json_feature IS NULL
-   THEN
-      RETURN ARRAY[obj_rez];
-      
-   ELSIF JSONB_TYPEOF(json_feature) != 'object'
-   OR json_feature->'type' IS NULL
-   OR json_feature->>'type' != 'Feature'
-   THEN
-      RAISE EXCEPTION 'input jsonb is not geojson feature';
-   
-   ELSE
-      IF p_geometry_override IS NOT NULL
-      THEN
-         json_feature := JSONB_BUILD_OBJECT(
-             'type'       ,'Feature'
-            ,'geometry'   ,ST_AsGeoJSON(ST_Transform(p_geometry_override,4326))::JSONB
-            ,'properties' ,json_feature->'properties'
-         );
-      
-      ELSIF json_feature->>'type' IN (
-          'Point'
-         ,'LineString'
-         ,'Polygon'
-         ,'MultiPoint'
-         ,'MultiLineString'
-         ,'MultiPolygon'
-         ,'GeometryCollection'
-      )
-      THEN
-         -- If naked geometry, repack into feature
-         json_feature := JSONB_BUILD_OBJECT(
-             'type'       ,'Feature'
-            ,'geometry'   ,json_feature
-         );
-         
-      END IF;
-      
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Get quick boolean if original properties exist
-   ----------------------------------------------------------------------------
-   IF json_feature->'properties' IS NULL
-   THEN
-      has_properties := FALSE;
-
-   ELSE
-      has_properties := TRUE;
-
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Extract the geometry
-   ----------------------------------------------------------------------------
-   IF json_feature->'geometry' IS NOT NULL
-   THEN
-      sdo_geometry := ST_GeomFromGeoJSON(json_feature->'geometry')::JSONB;
-      
-      -- This fixes a bug in PostGIS 3.1.5
-      IF sdo_geometry IS NOT NULL
-      AND ( ST_SRID(sdo_geometry) IS NULL OR ST_SRID(sdo_geometry) = 0 )
-      THEN
-         sdo_geometry := ST_SetSRID(sdo_geometry,4326);
-         
-      END IF;
-      
-      -- Break up geometry collections and multilinestrings
-      IF ST_GeometryType(sdo_geometry) IN (
-          'ST_MultiLineString'
-         ,'ST_GeometryCollection'   
-      )
-      THEN
-         FOR i IN 1 .. ST_NumGeometries(sdo_geometry)
-         LOOP
-            sdo_geometry2 := ST_GeometryN(sdo_geometry,i);
-            
-            ary_rez := cipsrv_engine.featurecat(ary_rez,
-               cipsrv_engine.jsonb2feature(
-                   p_feature                := json_feature
-                  ,p_geometry_override      := sdo_geometry2
-                  ,p_source_featureid       := p_source_featureid
-                  ,p_permid_joinkey         := p_permid_joinkey
-                  ,p_nhdplus_version        := p_nhdplus_version
-                  ,p_known_region           := p_known_region
-                  ,p_int_srid               := p_int_srid
-                  
-                  ,p_point_indexing_method  := p_point_indexing_method
-                  
-                  ,p_line_indexing_method   := p_line_indexing_method
-                  ,p_line_threshold         := p_line_threshold
-                  
-                  ,p_ring_indexing_method   := p_ring_indexing_method
-                  ,p_ring_areacat_threshold := p_ring_areacat_threshold
-                  ,p_ring_areaevt_threshold := p_ring_areaevt_threshold
-                  
-                  ,p_area_indexing_method   := p_area_indexing_method
-                  ,p_areacat_threshold      := p_areacat_threshold
-                  ,p_areaevt_threshold      := p_areaevt_threshold
-               )
-            );
-            
-         END LOOP;
-         
-         RETURN ary_rez;
- 
-      END IF;
-      
-      IF NOT ST_IsValid(sdo_geometry)
-      THEN
-         sdo_geometry := ST_MakeValid(sdo_geometry);
-         
-      END IF;
-
-      IF ST_GeometryType(sdo_geometry) = 'ST_LineString'
-      THEN
-         boo_isring := ST_IsRing(sdo_geometry);
-      
-      ELSE
-         boo_isring := FALSE;
-         
-      END IF;   
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for globalid override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'globalid' IS NOT NULL
-   THEN
-      str_globalid := json_feature->'properties'->>'globalid';
-      
-   ELSIF p_globalid IS NOT NULL
-   THEN
-      str_globalid := p_globalid;
-      
-   ELSE
-      str_globalid := '{' || uuid_generate_v1() || '}';
-
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for source_featureid override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'source_featureid' IS NOT NULL
-   THEN
-      str_source_featureid := json_feature->'properties'->>'source_featureid';
-      
-   ELSIF p_source_featureid IS NOT NULL
-   THEN
-      str_source_featureid := p_source_featureid;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for permid_joinkey override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'permid_joinkey' IS NOT NULL
-   THEN
-      str_permid_joinkey := json_feature->'properties'->>'permid_joinkey';
-      
-   ELSIF p_permid_joinkey IS NOT NULL
-   THEN
-      str_permid_joinkey := p_permid_joinkey;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for nhdplus_version override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'nhdplus_version' IS NOT NULL
-   THEN
-      str_nhdplus_version := json_feature->'properties'->>'nhdplus_version';
-      
-   ELSIF p_nhdplus_version IS NOT NULL
-   THEN
-      str_nhdplus_version := p_nhdplus_version;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for known_region override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'known_region' IS NOT NULL
-   THEN
-      str_known_region := json_feature->'properties'->>'known_region';
-      
-   ELSIF p_known_region IS NOT NULL
-   THEN
-      str_known_region := p_known_region;
-      
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Test for int_srid override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'int_srid' IS NOT NULL
-   THEN
-      int_srid := json_feature->'properties'->'int_srid';
-      
-   ELSIF p_int_srid IS NOT NULL
-   THEN
-      int_srid := p_int_srid;
-      
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Try to sort out int_srid with overrides
-   ----------------------------------------------------------------------------
-   IF  int_srid IS NULL
-   AND str_nhdplus_version IS NOT NULL
-   AND str_known_region IS NOT NULL
-   THEN
-      rec := cipsrv_engine.determine_grid_srid(
-          p_geometry        := NULL
-         ,p_nhdplus_version := str_nhdplus_version
-         ,p_known_region    := str_known_region
-      );
-      int_srid := rec.out_srid;
-      
-   ELSIF int_srid IS NULL
-   AND str_nhdplus_version IS NOT NULL
-   AND str_known_region IS NULL
-   AND sdo_geometry IS NOT NULL
-   THEN
-      rec := cipsrv_engine.determine_grid_srid(
-          p_geometry        := sdo_geometry
-         ,p_nhdplus_version := str_nhdplus_version
-         ,p_known_region    := NULL
-      );
-      int_srid := rec.out_srid;
-      str_known_region := rec.out_srid::VARCHAR;
-   
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for point indexing_method override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'point_indexing_method' IS NOT NULL
-   THEN
-      str_point_indexing_method := json_feature->'properties'->>'point_indexing_method';
-      
-   ELSIF p_point_indexing_method IS NOT NULL
-   THEN
-      str_point_indexing_method := p_point_indexing_method;
-
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for line indexing_method override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'line_indexing_method' IS NOT NULL
-   THEN
-      str_line_indexing_method := json_feature->'properties'->>'line_indexing_method';
-      
-   ELSIF p_line_indexing_method IS NOT NULL
-   THEN
-      str_line_indexing_method := p_line_indexing_method;
-
-   END IF;
-   
-   IF has_properties
-   AND json_feature->'properties'->'line_threshold' IS NOT NULL
-   THEN
-      num_line_threshold := json_feature->'properties'->'line_threshold';
-      
-   ELSIF p_line_threshold IS NOT NULL
-   THEN
-      num_line_threshold := p_line_threshold;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for ring indexing_method override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'ring_indexing_method' IS NOT NULL
-   THEN
-      str_ring_indexing_method := json_feature->'properties'->>'ring_indexing_method';
-      
-   ELSIF p_ring_indexing_method IS NOT NULL
-   THEN
-      str_ring_indexing_method := p_ring_indexing_method;
-
-   END IF;
-   
-   IF has_properties
-   AND json_feature->'properties'->'ring_areacat_threshold' IS NOT NULL
-   THEN
-      num_ring_areacat_threshold := json_feature->'properties'->'ring_areacat_threshold';
-      
-   ELSIF p_ring_areacat_threshold IS NOT NULL
-   THEN
-      num_ring_areacat_threshold := p_ring_areacat_threshold;
-      
-   END IF;
-   
-   IF has_properties
-   AND json_feature->'properties'->'ring_areaevt_threshold' IS NOT NULL
-   THEN
-      num_ring_areaevt_threshold := json_feature->'properties'->'ring_areaevt_threshold';
-      
-   ELSIF p_ring_areaevt_threshold IS NOT NULL
-   THEN
-      num_ring_areaevt_threshold := p_ring_areaevt_threshold;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Test for area indexing_method override
-   ----------------------------------------------------------------------------
-   IF has_properties
-   AND json_feature->'properties'->'area_indexing_method' IS NOT NULL
-   THEN
-      str_area_indexing_method := json_feature->'properties'->>'area_indexing_method';
-      
-   ELSIF p_area_indexing_method IS NOT NULL
-   THEN
-      str_area_indexing_method := p_area_indexing_method;
-
-   END IF;
-   
-   IF has_properties
-   AND json_feature->'properties'->'areacat_threshold' IS NOT NULL
-   THEN
-      num_areacat_threshold := json_feature->'properties'->'areacat_threshold';
-      
-   ELSIF p_areacat_threshold IS NOT NULL
-   THEN
-      num_areacat_threshold := p_areacat_threshold;
-      
-   END IF;
-   
-   IF has_properties
-   AND json_feature->'properties'->'areaevt_threshold' IS NOT NULL
-   THEN
-      num_areaevt_threshold := json_feature->'properties'->'areaevt_threshold';
-      
-   ELSIF p_areaevt_threshold IS NOT NULL
-   THEN
-      num_areaevt_threshold := p_areaevt_threshold;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Measure geometry size
-   ----------------------------------------------------------------------------
-   IF int_srid IS NOT NULL
-   AND ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
-   THEN
-      num_line_lengthkm := ROUND(ST_Length(ST_Transform(
-          sdo_geometry
-         ,int_srid
-      ))::NUMERIC * 0.001,8);
-               
-   ELSIF int_srid IS NOT NULL
-   AND ST_GeometryType(sdo_geometry) IN ('ST_Polygon','ST_MultiPolygon')
-   THEN
-      num_area_areasqkm := ROUND(ST_Area(ST_Transform(
-          sdo_geometry
-         ,int_srid
-      ))::NUMERIC / 1000000,8);
-      
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Create the object
-   ----------------------------------------------------------------------------
-   obj_rez := (
-       str_globalid
-      ,ST_GeometryType(sdo_geometry)
-      ,sdo_geometry
-      ,num_line_lengthkm
-      ,num_area_areasqkm
-      ,boo_isring
-      ,json_feature->'properties'
-      ,str_source_featureid
-      ,str_permid_joinkey
-      ,str_nhdplus_version
-      ,str_known_region
-      ,int_srid
-      ,NULL
-      ,NULL
-      
-      ,str_point_indexing_method
-      
-      ,str_line_indexing_method
-      ,num_line_threshold
-      ,NULL
-      
-      ,str_ring_indexing_method
-      ,num_ring_areacat_threshold
-      ,NULL
-      ,num_ring_areaevt_threshold
-      ,NULL
-      
-      ,str_area_indexing_method
-      ,num_areacat_threshold
-      ,NULL
-      ,num_areaevt_threshold
-      ,NULL
-   )::cipsrv_engine.cip_feature;
-
-   RETURN ARRAY[obj_rez];   
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.jsonb2feature(
-    JSONB
-   ,GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
-    JSONB
-   ,GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/jsonb2features.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2features';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2features(
-    IN  p_features                       JSONB
-   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
-   ,IN  p_known_region                   VARCHAR DEFAULT NULL
-   ,IN  p_int_srid                       INTEGER DEFAULT NULL
-   
-   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
-   
-   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
-   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
-   
-   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
-   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
-   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
-   
-   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
-   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
-   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
-   
-) RETURNS cipsrv_engine.cip_feature[]
-VOLATILE
-AS $BODY$ 
-DECLARE
-   obj_rez cipsrv_engine.cip_feature[];
-   ary_rez cipsrv_engine.cip_feature[];
-   str_nhdplus_version                VARCHAR;
-   str_known_region                   VARCHAR;
-   int_srid                           INTEGER;
-   
-   str_default_point_indexing_method  VARCHAR;
-   
-   str_default_line_indexing_method   VARCHAR;
-   num_default_line_threshold         NUMERIC;
-   
-   str_default_ring_indexing_method   VARCHAR;
-   num_default_ring_areacat_threshold NUMERIC;
-   num_default_ring_areaevt_threshold NUMERIC;
-   
-   str_default_area_indexing_method   VARCHAR;
-   num_default_areacat_threshold      NUMERIC;
-   num_default_areaevt_threshold      NUMERIC;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF p_features IS NULL
-   OR ( JSONB_TYPEOF(p_features) = 'array'
-   AND JSONB_ARRAY_LENGTH(p_features) = 0 )
-   THEN
-      RETURN ary_rez;
-      
-   END IF;
-   
-   str_nhdplus_version                := p_nhdplus_version;
-   str_known_region                   := p_known_region;
-   int_srid                           := p_int_srid;
-   
-   str_default_point_indexing_method  := p_default_point_indexing_method;
-   
-   str_default_line_indexing_method   := p_default_line_indexing_method;
-   num_default_line_threshold         := p_default_line_threshold;
-   
-   str_default_ring_indexing_method   := p_default_ring_indexing_method;
-   num_default_ring_areacat_threshold := p_default_ring_areacat_threshold;
-   num_default_ring_areaevt_threshold := p_default_ring_areaevt_threshold;
-
-   str_default_area_indexing_method   := p_default_area_indexing_method;
-   num_default_areacat_threshold      := p_default_areacat_threshold;
-   num_default_areaevt_threshold      := p_default_areaevt_threshold;
-
-   ----------------------------------------------------------------------------
-   -- Build the features
-   ----------------------------------------------------------------------------
-   IF JSONB_TYPEOF(p_features) = 'object'
-   AND p_features->>'type' IN ('Point','LineString','Polygon','MultiPoint','MultiLineString','MultiPolygon','GeometryCollection')
-   THEN
-      obj_rez := cipsrv_engine.jsonb2feature(
-          p_feature               := JSONB_BUILD_OBJECT(
-             'type',     'Feature'
-            ,'geometry', p_features
-          )
-         ,p_nhdplus_version        := str_nhdplus_version
-         ,p_known_region           := str_known_region
-         ,p_int_srid               := int_srid
-         
-         ,p_point_indexing_method  := str_default_point_indexing_method
-         
-         ,p_line_indexing_method   := str_default_line_indexing_method
-         ,p_line_threshold         := num_default_line_threshold
-         
-         ,p_ring_indexing_method   := str_default_ring_indexing_method
-         ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
-         ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
-         
-         ,p_area_indexing_method   := str_default_area_indexing_method
-         ,p_areacat_threshold      := num_default_areacat_threshold
-         ,p_areaevt_threshold      := num_default_areaevt_threshold
-      );
-      
-      ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
-   
-   ELSIF JSONB_TYPEOF(p_features) = 'object'
-   AND p_features->>'type' = 'Feature'
-   THEN
-      obj_rez := cipsrv_engine.jsonb2feature(
-          p_feature                := p_features
-         ,p_nhdplus_version        := str_nhdplus_version
-         ,p_known_region           := str_known_region
-         ,p_int_srid               := int_srid
-         
-         ,p_point_indexing_method  := str_default_point_indexing_method
-         
-         ,p_line_indexing_method   := str_default_line_indexing_method
-         ,p_line_threshold         := num_default_line_threshold
-         
-         ,p_ring_indexing_method   := str_default_ring_indexing_method
-         ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
-         ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
-         
-         ,p_area_indexing_method   := str_default_area_indexing_method
-         ,p_areacat_threshold      := num_default_areacat_threshold
-         ,p_areaevt_threshold      := num_default_areaevt_threshold
-          
-      );
-      
-      ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
-   
-   ELSIF JSONB_TYPEOF(p_features) = 'object'
-   AND p_features->>'type' = 'FeatureCollection'
-   THEN
-      FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features->'features')
-      LOOP
-         obj_rez := cipsrv_engine.jsonb2feature(
-             p_feature                := p_features->'features'->i-1
-            ,p_nhdplus_version        := str_nhdplus_version
-            ,p_known_region           := str_known_region
-            ,p_int_srid               := int_srid
-            
-            ,p_point_indexing_method  := str_default_point_indexing_method
-            
-            ,p_line_indexing_method   := str_default_line_indexing_method
-            ,p_line_threshold         := num_default_line_threshold
-            
-            ,p_ring_indexing_method   := str_default_ring_indexing_method
-            ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
-            ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
-            
-            ,p_area_indexing_method   := str_default_area_indexing_method
-            ,p_areacat_threshold      := num_default_areacat_threshold
-            ,p_areaevt_threshold      := num_default_areaevt_threshold
-            
-         );
-      
-         ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
-   
-      END LOOP;
-      
-   ELSE
-      RAISE EXCEPTION 'input jsonb is not geojson %', p_features;
-   
-   END IF;
-   
-   RETURN ary_rez;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.jsonb2features(
-    JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2features(
-    JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/feature2jsonb.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.feature2jsonb';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.feature2jsonb(
-   IN  p_feature      cipsrv_engine.cip_feature
-) RETURNS JSONB
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   json_rez        JSONB;
-   json_properties JSONB;
-   
-BEGIN
-
-   IF p_feature IS NULL
-   THEN
-      RETURN json_rez;
-      
-   END IF;
-   
-   json_properties := (p_feature).properties;
-   
-   IF json_properties IS NULL
-   OR JSONB_TYPEOF(json_properties) = 'null'
-   THEN
-      json_properties := '{}'::JSONB;
-      
-   END IF;
-   
-   IF (p_feature).globalid IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['globalid']
-         ,replacement       := TO_JSONB((p_feature).globalid)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).lengthkm IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['lengthkm']
-         ,replacement       := TO_JSONB((p_feature).lengthkm)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).areasqkm IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['areasqkm']
-         ,replacement       := TO_JSONB((p_feature).areasqkm)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).converted_to_ring IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['converted_to_ring']
-         ,replacement       := TO_JSONB((p_feature).converted_to_ring)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).indexing_method_used IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['indexing_method_used']
-         ,replacement       := TO_JSONB((p_feature).indexing_method_used)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).line_threshold_used IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['line_threshold_used']
-         ,replacement       := TO_JSONB((p_feature).line_threshold_used)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).areacat_threshold_used IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['areacat_threshold_used']
-         ,replacement       := TO_JSONB((p_feature).areacat_threshold_used)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).areaevt_threshold_used IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['areaevt_threshold_used']
-         ,replacement       := TO_JSONB((p_feature).areaevt_threshold_used)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   
-   
-   IF (p_feature).ring_areacat_threshold_used IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['ring_areacat_threshold_used']
-         ,replacement       := TO_JSONB((p_feature).ring_areacat_threshold_used)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   IF (p_feature).ring_areaevt_threshold_used IS NOT NULL
-   THEN
-      json_properties := JSONB_SET(
-          jsonb_in          := json_properties
-         ,path              := ARRAY['ring_areaevt_threshold_used']
-         ,replacement       := TO_JSONB((p_feature).ring_areaevt_threshold_used)
-         ,create_if_missing := TRUE
-      );
-      
-   END IF;
-   
-   json_rez := JSONB_BUILD_OBJECT(
-       'type'       ,'Feature'
-      ,'geometry'   ,ST_AsGeoJSON(ST_Transform((p_feature).geometry,4326))::JSONB
-      ,'obj_type'   ,'event_feature_properties'
-      ,'properties' ,json_properties
-   );
-
-   RETURN json_rez;   
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.feature2jsonb(
-   cipsrv_engine.cip_feature
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.feature2jsonb(
-   cipsrv_engine.cip_feature
-) TO PUBLIC;
-
---******************************--
------ functions/features2jsonb.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.features2jsonb';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.features2jsonb(
-    IN  p_features           cipsrv_engine.cip_feature[]
-   ,IN  p_geometry_type      VARCHAR DEFAULT NULL
-   ,IN  p_empty_collection   BOOLEAN DEFAULT FALSE
-) RETURNS JSONB
-IMMUTABLE
-AS $BODY$
-DECLARE
-   obj_rez JSONB;
-   ary_rez JSONB;
-
-BEGIN
-
-   IF p_features IS NULL
-   OR array_length(p_features,1) = 0
-   THEN
-      IF p_empty_collection
-      THEN
-         RETURN JSON_BUILD_OBJECT(
-             'type'    , 'FeatureCollection'
-            ,'features', '[]'::JSONB
-         );
-
-      ELSE
-         RETURN NULL;
-
-      END IF;
-
-   END IF;
-
-   FOR i IN 1 .. array_length(p_features,1)
-   LOOP
-      IF p_geometry_type IS NULL
-      OR ( p_geometry_type IN ('P')
-         AND p_features[i].gtype IN ('ST_Point','ST_MultiPoint')
-      )
-      OR ( p_geometry_type IN ('L')
-         AND p_features[i].gtype IN ('ST_LineString','ST_MultiLineString')
-      )
-      OR ( p_geometry_type IN ('A')
-         AND p_features[i].gtype IN ('ST_Polygon','ST_MultiPolygon')
-      )
-      THEN
-         obj_rez := cipsrv_engine.feature2jsonb(
-            p_feature := p_features[i]
-         );
-
-         IF ary_rez IS NULL
-         THEN
-            ary_rez := JSON_BUILD_ARRAY(obj_rez);
-
-         ELSE
-            ary_rez := ary_rez || obj_rez;
-
-         END IF;
-
-      END IF;
-
-   END LOOP;
-
-   IF ary_rez IS NULL
-   OR JSONB_ARRAY_LENGTH(ary_rez) = 0
-   THEN
-      IF p_empty_collection
-      THEN
-         RETURN JSON_BUILD_OBJECT(
-             'type'    , 'FeatureCollection'
-            ,'features', '[]'::JSONB
-         );
-
-      ELSE
-         RETURN NULL;
-
-      END IF;
-
-   ELSE
-      RETURN JSON_BUILD_OBJECT(
-          'type'    , 'FeatureCollection'
-         ,'features', ary_rez
-      );
-
-   END IF;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.features2jsonb(
-    cipsrv_engine.cip_feature[]
-   ,VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.features2jsonb(
-    cipsrv_engine.cip_feature[]
-   ,VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
-
---******************************--
------ functions/features2geomcollection.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.features2geomcollection(
-    IN  p_features           cipsrv_engine.cip_feature[]
-) RETURNS GEOMETRY
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   sdo_rez GEOMETRY;
-   
-BEGIN
-
-   IF p_features IS NULL
-   OR array_length(p_features,1) = 0
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   FOR i IN 1 .. array_length(p_features,1)
-   LOOP
-      IF sdo_rez IS NULL
-      THEN
-         sdo_rez := ST_Transform(p_features[i].geometry,4326);
-         
-      ELSE
-         sdo_rez := ST_Collect(sdo_rez,ST_Transform(p_features[i].geometry,4326));
-      
-      END IF;
-   
-   END LOOP;
-   
-   RETURN sdo_rez;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.features2geomcollection(
-    cipsrv_engine.cip_feature[]
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.features2geomcollection(
-    cipsrv_engine.cip_feature[]
-) TO PUBLIC;
-
---******************************--
------ functions/preprocess2summary.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.preprocess2summary';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.preprocess2summary(
-    IN  p_features           cipsrv_engine.cip_feature[]
-) RETURNS JSONB
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   obj_rez JSONB;
-   int_point_count INTEGER;
-   int_line_count  INTEGER;
-   int_area_count  INTEGER;
-   
-BEGIN
-
-   IF p_features IS NULL
-   OR array_length(p_features,1) = 0
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   int_point_count := 0;
-   int_line_count  := 0;
-   int_area_count  := 0;
-   
-   FOR i IN 1 .. array_length(p_features,1)
-   LOOP
-      IF p_features[i].gtype IN ('ST_Point','ST_MultiPoint')
-      THEN
-         int_point_count := int_point_count + 1;
-         
-      ELSIF p_features[i].gtype IN ('ST_LineString','ST_MultiLineString')
-      THEN
-         int_line_count := int_line_count + 1;
-         
-      ELSIF p_features[i].gtype IN ('ST_Polygon','ST_MultiPolygon')
-      THEN
-         int_area_count := int_area_count + 1;
-         
-      END IF;
-   
-   END LOOP;
-   
-   obj_rez := JSONB_BUILD_OBJECT(
-       'point_count', int_point_count
-      ,'line_count' , int_line_count
-      ,'area_count' , int_area_count
-   );
-   
-   RETURN JSONB_BUILD_OBJECT(
-       'input_features', obj_rez
-   );
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.preprocess2summary(
-    cipsrv_engine.cip_feature[]
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.preprocess2summary(
-    cipsrv_engine.cip_feature[]
-) TO PUBLIC;
-
---******************************--
------ functions/unpackjsonb.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.unpackjsonb';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
-    IN  p_points                         JSONB
-   ,IN  p_lines                          JSONB
-   ,IN  p_areas                          JSONB
-   ,IN  p_geometry                       JSONB
-   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
-   ,IN  p_known_region                   VARCHAR DEFAULT NULL
-   ,IN  p_int_srid                       INTEGER DEFAULT NULL
-   
-   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
-   
-   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
-   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
-   
-   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
-   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
-   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
-   
-   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
-   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
-   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
-   
-   ,OUT out_return_code                  INTEGER
-   ,OUT out_status_message               VARCHAR
-   ,OUT out_features                     cipsrv_engine.cip_feature[]
-)
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-   rec              RECORD;
-   ary_points       cipsrv_engine.cip_feature[];
-   ary_lines        cipsrv_engine.cip_feature[];
-   ary_areas        cipsrv_engine.cip_feature[];
-   str_known_region VARCHAR := p_known_region;
-   int_srid         INTEGER := p_int_srid;
-   
-BEGIN
-
-   out_return_code := 0;
-   
-   ----------------------------------------------------------------------------
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF  p_points   IS NULL
-   AND p_lines    IS NULL
-   AND p_areas    IS NULL
-   AND p_geometry IS NULL
-   THEN
-      RETURN;
-      
-   END IF;
-   
-   IF p_nhdplus_version IS NULL
-   THEN
-      RAISE EXCEPTION 'nhdplus version cannot be null';
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Branch when geometry is provided
-   ----------------------------------------------------------------------------
-   IF p_geometry IS NOT NULL
-   THEN
-      out_features := cipsrv_engine.jsonb2features(
-          p_features                      := p_geometry
-         ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
-         ,p_int_srid                      := int_srid
-         ,p_default_point_indexing_method := p_default_point_indexing_method
-         ,p_default_line_indexing_method  := p_default_line_indexing_method
-         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
-         ,p_default_area_indexing_method  := p_default_area_indexing_method
-         ,p_default_line_threshold        := p_default_line_threshold
-         ,p_default_areacat_threshold     := p_default_areacat_threshold
-         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
-      );
-   
-   ELSE
-      ary_points := cipsrv_engine.jsonb2features(
-          p_features                      := p_points
-         ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
-         ,p_int_srid                      := int_srid
-         ,p_default_point_indexing_method := p_default_point_indexing_method
-         ,p_default_line_indexing_method  := p_default_line_indexing_method
-         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
-         ,p_default_area_indexing_method  := p_default_area_indexing_method
-         ,p_default_line_threshold        := p_default_line_threshold
-         ,p_default_areacat_threshold     := p_default_areacat_threshold
-         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
-      );
-      
-      ary_lines := cipsrv_engine.jsonb2features(
-          p_features                      := p_lines
-         ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
-         ,p_int_srid                      := int_srid
-         ,p_default_point_indexing_method := p_default_point_indexing_method
-         ,p_default_line_indexing_method  := p_default_line_indexing_method
-         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
-         ,p_default_area_indexing_method  := p_default_area_indexing_method
-         ,p_default_line_threshold        := p_default_line_threshold
-         ,p_default_areacat_threshold     := p_default_areacat_threshold
-         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
-      );
-      
-      ary_areas := cipsrv_engine.jsonb2features(
-          p_features                      := p_areas
-         ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
-         ,p_int_srid                      := int_srid
-         ,p_default_point_indexing_method := p_default_point_indexing_method
-         ,p_default_line_indexing_method  := p_default_line_indexing_method
-         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
-         ,p_default_area_indexing_method  := p_default_area_indexing_method
-         ,p_default_line_threshold        := p_default_line_threshold
-         ,p_default_areacat_threshold     := p_default_areacat_threshold
-         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
-      );
-      
-      out_features := cipsrv_engine.featurecat(out_features,ary_points);
-      out_features := cipsrv_engine.featurecat(out_features,ary_lines);
-      out_features := cipsrv_engine.featurecat(out_features,ary_areas);
-      
-   END IF;
-      
-   -------------------------------------------------------------------------
-   -- Ring Handling
-   -------------------------------------------------------------------------
-   IF out_features IS NOT NULL
-   AND array_length(out_features,1) > 0
-   THEN
-      FOR i IN 1 .. array_length(out_features,1)
-      LOOP
-         IF out_features[i].isRing 
-         AND out_features[i].ring_indexing_method != 'treat_as_lines'
-         THEN
-            out_features[i].geometry := ST_MakePolygon(out_features[i].geometry);
-            out_features[i].gtype    := ST_GeometryType(out_features[i].geometry);
-            out_features[i].converted_to_ring := TRUE;
-            out_features[i].area_indexing_method := out_features[i].ring_indexing_method;
-            out_features[i].areacat_threshold    := out_features[i].ring_areacat_threshold;
-            out_features[i].areaevt_threshold    := out_features[i].ring_areaevt_threshold;
-            
-            out_features[i].lengthkm := NULL;
-            out_features[i].areasqkm := ROUND(ST_Area(ST_Transform(
-                out_features[i].geometry
-               ,out_features[i].int_srid
-            ))::NUMERIC / 1000000,8);
-            
-         END IF;
-      
-      END LOOP;
-      
-   END IF;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.unpackjsonb(
-    JSONB
-   ,JSONB
-   ,JSONB
-   ,JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.unpackjsonb(
-    JSONB
-   ,JSONB
-   ,JSONB
-   ,JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/feature_clip.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.feature_clip';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.feature_clip(
-    IN  p_features                      cipsrv_engine.cip_feature[]
-   ,IN  p_clippers                      VARCHAR[]
-   ,IN  p_known_region                  VARCHAR
-   ,OUT out_return_code                 INTEGER
-   ,OUT out_status_message              VARCHAR
-   ,OUT out_features                    cipsrv_engine.cip_feature[]
-)
-VOLATILE
-AS $BODY$ 
-DECLARE
-   rec                  RECORD;
-   obj_rez cipsrv_engine.cip_feature;
-   ary_rez cipsrv_engine.cip_feature[];
-   str_known_region     VARCHAR := p_known_region;
-   sdo_output           GEOMETRY;
-   
-BEGIN
-
-   out_return_code := 0;
-   
-   ----------------------------------------------------------------------------
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF p_features IS NULL
-   OR array_length(p_features,1) = 0
-   THEN
-      RETURN;
-      
-   END IF;
-   
-   IF p_clippers IS NULL
-   OR array_length(p_clippers,1) = 0
-   THEN
-      out_features := p_features;
-      RETURN;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Loop over the features
-   ----------------------------------------------------------------------------
-   FOR i IN 1 .. array_length(p_features,1)
-   LOOP
-      obj_rez := p_features[i];
-      
-      rec := cipsrv_support.geometry_clip(
-          p_geometry      := (obj_rez).geometry
-         ,p_clippers      := p_clippers
-         ,p_known_region  := str_known_region
-      );
-      sdo_output         := rec.out_clipped_geometry;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      
-      IF out_return_code != 0
-      THEN
-         RETURN;
-         
-      END IF;
-      
-      IF sdo_output IS NULL
-      OR ST_IsEmpty(sdo_output)
-      THEN
-         NULL;
-         
-      ELSE
-         obj_rez.geometry := sdo_output;
-         out_features     := array_append(out_features,obj_rez);
-         
-      END IF;
-         
-   END LOOP;
-   
-   RETURN;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.feature_clip(
-    cipsrv_engine.cip_feature[]
-   ,VARCHAR[]
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_clip(
-    cipsrv_engine.cip_feature[]
-   ,VARCHAR[]
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/feature_batch_clip.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.feature_batch_clip';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.feature_batch_clip(
-    IN  p_keyword                       VARCHAR
-   ,IN  p_clippers                      VARCHAR[]
-   ,IN  p_known_region                  VARCHAR
-   ,OUT out_return_code                 INTEGER
-   ,OUT out_status_message              VARCHAR
-)
-VOLATILE
-AS $BODY$ 
-DECLARE
-   rec                  RECORD;
-   str_sql              VARCHAR;
-   
-BEGIN
-
-   out_return_code := 0;
-   
-   ----------------------------------------------------------------------------
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF p_clippers IS NULL
-   OR array_length(p_clippers,1) = 0
-   THEN
-      RETURN;
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Clip the point features
-   ----------------------------------------------------------------------------
-   str_sql := 'UPDATE cipsrv_upload.' || p_keyword || '_points a '
-           || 'SET shape = ( '
-           || '   SELECT '
-           || '   b.out_clipped_geometry '
-           || '   FROM '
-           || '   cipsrv_support.geometry_clip( '
-           || '       p_geometry      := a.shape '
-           || '      ,p_clippers      := ? '
-           || '      ,p_known_region  := ? '
-           || '   ) '
-           || ') ';
-           
-   EXECUTE str_sql USING p_clippers,p_known_region;
-   
-   str_sql := 'DELETE FROM cipsrv_upload.' || p_keyword || '_points a '
-           || 'WHERE '
-           || 'a.shape IS NULL ';
-           
-   EXECUTE str_sql;
-   
-   ----------------------------------------------------------------------------
-   -- Clip the line features
-   ----------------------------------------------------------------------------
-   str_sql := 'UPDATE cipsrv_upload.' || p_keyword || '_lines a '
-           || 'SET shape = ( '
-           || '   SELECT '
-           || '   b.out_clipped_geometry '
-           || '   FROM '
-           || '   cipsrv_support.geometry_clip( '
-           || '       p_geometry      := a.shape '
-           || '      ,p_clippers      := ? '
-           || '      ,p_known_region  := ? '
-           || '   ) '
-           || ') ';
-           
-   EXECUTE str_sql USING p_clippers,p_known_region;
-   
-   str_sql := 'DELETE FROM cipsrv_upload.' || p_keyword || '_lines a '
-           || 'WHERE '
-           || 'a.shape IS NULL ';
-           
-   EXECUTE str_sql;
-   
-   ----------------------------------------------------------------------------
-   -- Clip the area features
-   ----------------------------------------------------------------------------
-   str_sql := 'UPDATE cipsrv_upload.' || p_keyword || '_areas a '
-           || 'SET shape = ( '
-           || '   SELECT '
-           || '   b.out_clipped_geometry '
-           || '   FROM '
-           || '   cipsrv_support.geometry_clip( '
-           || '       p_geometry      := a.shape '
-           || '      ,p_clippers      := ? '
-           || '      ,p_known_region  := ? '
-           || '   ) '
-           || ') ';
-           
-   EXECUTE str_sql USING p_clippers,p_known_region;
-   
-   str_sql := 'DELETE FROM cipsrv_upload.' || p_keyword || '_areas a '
-           || 'WHERE '
-           || 'a.shape IS NULL ';
-           
-   EXECUTE str_sql;
-   
-   RETURN;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.feature_batch_clip(
-    VARCHAR
-   ,VARCHAR[]
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_batch_clip(
-    VARCHAR
-   ,VARCHAR[]
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/json2geometry.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.json2geometry(
-    IN  p_in                         JSONB
-) RETURNS GEOMETRY
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-   json_feature JSONB;
-   
-BEGIN
-
-   IF p_in IS NULL
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   IF NOT JSONB_PATH_EXISTS(p_in,'$.type')
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   IF p_in->>'type' IN ('Point','LineString','Polygon','MultiPoint','MultiLineString','MultiPolygon','GeometryCollection')
-   THEN
-      RETURN ST_GeomFromGeoJSON(p_in);
-      
-   ELSIF p_in->>'type' = 'Feature'
-   THEN
-      IF NOT JSONB_PATH_EXISTS(p_in,'$.geometry')
-      THEN
-         RETURN NULL;
-         
-      END IF;
-      
-      RETURN ST_GeomFromGeoJSON(p_in->'geometry');
-   
-   ELSIF p_in->>'type' = 'FeatureCollection'
-   THEN
-      IF NOT JSONB_PATH_EXISTS(p_in,'$.features')
-      OR p_in->'features' IS NULL
-      OR JSONB_ARRAY_LENGTH(p_in->'features') = 0
-      THEN
-         RETURN NULL;
-         
-      END IF;
-      
-      json_feature := p_in->'features'->0;
-      
-      IF NOT JSONB_PATH_EXISTS(json_feature,'$.geometry')
-      THEN
-         RETURN NULL;
-         
-      END IF;
-      
-      RETURN ST_GeomFromGeoJSON(json_feature->'geometry');
-   
-   END IF;
-   
-   RETURN NULL;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.json2geometry(
-   JSONB
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.json2geometry(
-   JSONB
-) TO PUBLIC;
-
---******************************--
------ functions/json2numeric.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.json2numeric(
-    IN  p_in                         JSONB
-) RETURNS NUMERIC
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-BEGIN
-
-   IF p_in IS NULL
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   IF JSONB_TYPEOF(p_in) = 'string'
-   THEN
-      IF p_in::VARCHAR IN ('',' ','null','""')
-      THEN
-         RETURN NULL;
-
-      ELSE            
-         RETURN REPLACE(
-            p_in::VARCHAR
-           ,'"'
-           ,''           
-         )::NUMERIC;
-         
-      END IF;
-   
-   ELSE
-      RETURN p_in;
-
-   END IF;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.json2numeric(
-   JSONB
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.json2numeric(
-   JSONB
-) TO PUBLIC;
-
---******************************--
------ functions/json2bigint.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.json2bigint(
-    IN  p_in                         JSONB
-) RETURNS BIGINT
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-BEGIN
-
-   IF p_in IS NULL
-   THEN
-      RETURN NULL;
-      
-   END IF;
-   
-   IF JSONB_TYPEOF(p_in) = 'string'
-   THEN
-      IF p_in::VARCHAR IN ('',' ','null','""')
-      THEN
-         RETURN NULL;
-
-      ELSE            
-         RETURN REPLACE(
-            p_in::VARCHAR
-           ,'"'
-           ,''           
-         )::BIGINT;
-         
-      END IF;
-   
-   ELSE
-      RETURN p_in;
-
-   END IF;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.json2bigint(
-   JSONB
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.json2bigint(
-   JSONB
-) TO PUBLIC;
-
---******************************--
------ functions/determine_grid_srid.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.determine_grid_srid(
-    IN  p_geometry             GEOMETRY
-   ,IN  p_nhdplus_version      VARCHAR
-   ,IN  p_known_region         VARCHAR
-   ,OUT out_srid               INTEGER
-   ,OUT out_grid_size          NUMERIC
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   rec RECORD;
-   
-BEGIN
-
-   IF p_nhdplus_version = 'nhdplus_m'
-   THEN
-      rec := cipsrv_nhdplus_m.determine_grid_srid(
-          p_geometry          := p_geometry
-         ,p_known_region      := p_known_region
-      );
-      out_srid           := rec.out_srid;
-      out_grid_size      := rec.out_grid_size;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-   
-   ELSIF p_nhdplus_version = 'nhdplus_h'
-   THEN
-      rec := cipsrv_nhdplus_h.determine_grid_srid(
-          p_geometry          := p_geometry
-         ,p_known_region      := p_known_region
-      );
-      out_srid           := rec.out_srid;
-      out_grid_size      := rec.out_grid_size;
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-
-   ELSE
-      RAISE EXCEPTION 'err %',p_nhdplus_version;
-
-   END IF;   
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.determine_grid_srid(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.determine_grid_srid(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/parse_catchment_filter.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_engine.parse_catchment_filter';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_engine.parse_catchment_filter(
-    IN  p_catchment_filter             VARCHAR[]
-   ,OUT out_filter_by_state            BOOLEAN
-   ,OUT out_state_filters              VARCHAR[]
-   ,OUT out_filter_by_tribal           BOOLEAN
-   ,OUT out_filter_by_notribal         BOOLEAN
-   ,OUT out_return_code                INTEGER
-   ,OUT out_status_message             VARCHAR
-)
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-   rec           RECORD;
-   sdo_geom      GEOMETRY;
-   num_lengthkm  NUMERIC;
-   num_areasqkm  NUMERIC;
-   ary_states    VARCHAR[];
-   
-BEGIN
-
-   out_return_code        := 0;
-   out_filter_by_state    := FALSE;
-   out_filter_by_tribal   := FALSE;
-   out_filter_by_notribal := FALSE;
-   
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   ary_states := ARRAY[
-       'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FL','GA','GU','HI'
-      ,'ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MO','MP'
-      ,'MS','MT','NE','NV','NH','NJ','NM','NY','NC','ND','MP','OH','OK','OR'
-      ,'PA','PR','RI','SC','SD','TN','TX','UT','VT','VI','VA','WA','WV','WI'
-      ,'WY'
-   ];
-   
-   IF p_catchment_filter IS NOT NULL
-   AND array_length(p_catchment_filter,1) > 0
-   THEN
-      FOR i IN 1 .. array_length(p_catchment_filter,1)
-      LOOP
-         IF UPPER(p_catchment_filter[i]) IN ('ALLTRIBES','TRIBAL')
-         THEN
-            out_filter_by_tribal   := TRUE;
-            out_filter_by_notribal := FALSE;
-            
-         ELSIF UPPER(p_catchment_filter[i]) IN ('NOTRIBES','NOTRIBAL')
-         THEN
-            out_filter_by_tribal   := FALSE;
-            out_filter_by_notribal := TRUE;
-            
-         ELSIF UPPER(p_catchment_filter[i]) = ANY(ary_states)
-         THEN
-            out_filter_by_state := TRUE;
-            out_state_filters := array_append(out_state_filters,UPPER(p_catchment_filter[i]));
-         
-         END IF;
-         
-      END LOOP;
-      
-   END IF;
-   
-   RETURN;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_engine.parse_catchment_filter(
-    VARCHAR[]
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.parse_catchment_filter(
-    VARCHAR[]
 ) TO PUBLIC;
 
 --******************************--
@@ -3654,6 +893,4246 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_index(
    ,BOOLEAN
    ,BOOLEAN
    ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/cipsrv_version.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_version';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_version()
+RETURNS VARCHAR
+STABLE
+AS $BODY$
+DECLARE
+BEGIN
+
+   RETURN '1.0';
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.cipsrv_version()
+OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_version()
+TO PUBLIC;
+
+--******************************--
+----- functions/column_has_single_index.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.column_has_single_index';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.column_has_single_index(
+    IN  p_schema_name  VARCHAR
+   ,IN  p_table_name   VARCHAR
+   ,IN  p_column_name  VARCHAR
+   ,IN  p_unique       BOOLEAN DEFAULT FALSE
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   boo_results BOOLEAN;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for table
+   ----------------------------------------------------------------------------
+   SELECT
+   TRUE
+   INTO boo_results
+   FROM 
+   pg_class t
+   JOIN
+   pg_namespace ns
+   ON
+   t.relnamespace = ns.oid
+   JOIN
+   pg_index ix
+   ON
+   t.oid = ix.indrelid
+   JOIN
+   pg_class i
+   ON
+   i.oid = ix.indexrelid
+   JOIN
+   pg_attribute a
+   ON
+       a.attrelid = t.oid
+   AND a.attnum = ANY(ix.indkey)
+   WHERE 
+       t.relkind  = 'r'
+   AND ns.nspname = p_schema_name
+   AND t.relname  = p_table_name
+   AND attname    = p_column_name
+   AND (NOT p_unique OR ix.indisunique)
+   GROUP BY
+    a.attname
+   ,i.relname
+   HAVING 
+   COUNT(*) = 1;
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   RETURN COALESCE(boo_results,FALSE);
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.column_has_single_index(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.column_has_single_index(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/create_cip_batch_temp_tables.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.create_cip_batch_temp_tables()
+RETURNS INT4
+VOLATILE
+AS $BODY$
+DECLARE
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create tmp_cip temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_cip')
+   THEN
+      TRUNCATE TABLE tmp_cip;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_cip(
+          permid_joinkey       UUID
+         ,catchmentstatecodes  VARCHAR[]
+         ,nhdplusid            BIGINT    NOT NULL
+         ,overlap_measure      NUMERIC
+      );
+
+      CREATE UNIQUE INDEX tmp_cip_pk
+      ON tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+      ) NULLS NOT DISTINCT;
+      
+      CREATE INDEX tmp_cip_i01
+      ON tmp_cip(
+         permid_joinkey
+      );
+      
+      CREATE INDEX tmp_cip_i02
+      ON tmp_cip(
+         nhdplusid
+      );
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Create tmp_src2cip temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_src2cip')
+   THEN
+      TRUNCATE TABLE tmp_src2cip;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_src2cip(
+          permid_joinkey       UUID
+         ,nhdplusid            BIGINT
+         ,cip_method           VARCHAR(255)
+         ,cip_parms            VARCHAR(255)
+         ,overlap_measure      NUMERIC
+      );
+
+      CREATE UNIQUE INDEX tmp_src2cip_pk 
+      ON tmp_src2cip(
+          permid_joinkey
+         ,nhdplusid
+      );
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   RETURN 0;
+   
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.create_cip_batch_temp_tables() OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_batch_temp_tables() TO PUBLIC;
+
+--******************************--
+----- functions/create_cip_temp_tables.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.create_cip_temp_tables()
+RETURNS INT4
+VOLATILE
+AS $BODY$
+DECLARE
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create tmp_cip temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_cip')
+   THEN
+      TRUNCATE TABLE tmp_cip;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_cip(
+          permid_joinkey       UUID
+         ,catchmentstatecodes  VARCHAR[]
+         ,nhdplusid            BIGINT    NOT NULL
+         ,overlap_measure      NUMERIC
+      );
+
+      CREATE UNIQUE INDEX tmp_cip_pk
+      ON tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+      ) NULLS NOT DISTINCT;
+      
+      CREATE INDEX tmp_cip_i01
+      ON tmp_cip(
+         permid_joinkey
+      );
+      
+      CREATE INDEX tmp_cip_i02
+      ON tmp_cip(
+         nhdplusid
+      );
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Create tmp_cip_out temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_cip_out')
+   THEN
+      TRUNCATE TABLE tmp_cip_out;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_cip_out(
+          nhdplusid            BIGINT      NOT NULL
+         ,catchmentstatecode   VARCHAR(2)  NOT NULL
+         ,xwalk_huc12          VARCHAR(12)
+         ,areasqkm             NUMERIC
+         ,istribal             VARCHAR(1)  NOT NULL
+         ,istribal_areasqkm    NUMERIC
+         ,shape                GEOMETRY
+      );
+
+      CREATE UNIQUE INDEX tmp_cip_out_pk 
+      ON tmp_cip_out(catchmentstatecode,nhdplusid);
+      
+      CREATE INDEX tmp_cip_out_01i
+      ON tmp_cip_out(nhdplusid);
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   RETURN 0;
+   
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.create_cip_temp_tables() OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.create_cip_temp_tables() TO PUBLIC;
+
+--******************************--
+----- functions/create_delineation_temp_tables.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.create_delineation_temp_tables()
+RETURNS INTEGER
+VOLATILE
+AS $BODY$
+DECLARE
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create tmp_catchments temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_catchments')
+   THEN
+      TRUNCATE TABLE tmp_catchments;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_catchments(
+          nhdplusid                   BIGINT
+         ,sourcefc                    VARCHAR(40)
+         ,gridcode                    INTEGER
+         ,areasqkm                    NUMERIC
+         ,vpuid                       VARCHAR(16)
+         ,hydroseq                    BIGINT
+         ,shape                       GEOMETRY
+         ,shape_3338                  GEOMETRY
+         ,shape_5070                  GEOMETRY
+         ,shape_26904                 GEOMETRY
+         ,shape_32161                 GEOMETRY
+         ,shape_32655                 GEOMETRY
+         ,shape_32702                 GEOMETRY
+      );
+
+      CREATE UNIQUE INDEX tmp_catchments_pk
+      ON tmp_catchments(nhdplusid);
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   RETURN 0;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.create_delineation_temp_tables()
+OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.create_delineation_temp_tables()
+TO PUBLIC;
+--******************************--
+----- functions/create_line_temp_tables.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.create_line_temp_tables()
+RETURNS INT4
+VOLATILE
+AS $BODY$
+DECLARE
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create tmp_line temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_line')
+   THEN
+      TRUNCATE TABLE tmp_line;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_line(
+          nhdplusid               BIGINT
+         ,areasqkm                NUMERIC
+         ,overlapmeasure          NUMERIC
+         ,eventpercentage         NUMERIC
+         ,nhdpercentage           NUMERIC
+         ,hydroseq                BIGINT
+         ,levelpathi              BIGINT
+         ,fromnode                BIGINT
+         ,tonode                  BIGINT
+         ,connector_fromnode      BIGINT
+         ,connector_tonode        BIGINT
+         ,fcode                   INTEGER
+         ,isnavigable             BOOLEAN
+      );
+
+      CREATE UNIQUE INDEX tmp_line_pk 
+      ON tmp_line(nhdplusid);
+      
+      CREATE UNIQUE INDEX tmp_line_pk2
+      ON tmp_line(hydroseq);
+      
+      CREATE INDEX tmp_line_01i
+      ON tmp_line(levelpathi);
+      
+      CREATE INDEX tmp_line_02i
+      ON tmp_line(fcode);
+      
+      CREATE INDEX tmp_line_03i
+      ON tmp_line(isnavigable);
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Create tmp_line_dd temp table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_line_levelpathi')
+   THEN
+      TRUNCATE TABLE tmp_line_levelpathi;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_line_levelpathi(
+          levelpathi              BIGINT
+         ,max_hydroseq            BIGINT
+         ,min_hydroseq            BIGINT
+         ,totaleventpercentage    NUMERIC
+         ,totaloverlapmeasure     NUMERIC
+         ,levelpathilengthkm      NUMERIC
+         ,fromnode                BIGINT
+         ,tonode                  BIGINT
+         ,connector_fromnode      BIGINT
+         ,connector_tonode        BIGINT
+      );
+
+      CREATE UNIQUE INDEX tmp_line_levelpathi_pk 
+      ON tmp_line_levelpathi(levelpathi);
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   RETURN 0;
+   
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.create_line_temp_tables() 
+OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.create_line_temp_tables() 
+TO PUBLIC;
+
+--******************************--
+----- functions/create_navigation_temp_tables.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.create_navigation_temp_tables()
+RETURNS INTEGER
+VOLATILE
+AS $BODY$
+DECLARE
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create tmp_navigation_working30 temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_navigation_working30')
+   THEN
+      TRUNCATE TABLE tmp_navigation_working30;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_navigation_working30(
+          nhdplusid                   BIGINT
+         ,hydroseq                    BIGINT
+         ,fmeasure                    NUMERIC
+         ,tmeasure                    NUMERIC
+         ,lengthkm                    NUMERIC
+         ,flowtimeday                 NUMERIC
+         ,network_distancekm          NUMERIC
+         ,network_flowtimeday         NUMERIC
+         ,levelpathi                  BIGINT
+         ,terminalpa                  BIGINT
+         ,uphydroseq                  BIGINT
+         ,dnhydroseq                  BIGINT
+         ,navtermination_flag         INTEGER
+         ,nav_order                   INTEGER
+         ,selected                    BOOLEAN
+      );
+
+      CREATE UNIQUE INDEX tmp_navigation_working30_pk
+      ON tmp_navigation_working30(nhdplusid);
+      
+      CREATE UNIQUE INDEX tmp_navigation_working30_1u
+      ON tmp_navigation_working30(hydroseq);
+      
+      CREATE INDEX tmp_navigation_working30_01i
+      ON tmp_navigation_working30(network_distancekm);
+            
+      CREATE INDEX tmp_navigation_working30_02i
+      ON tmp_navigation_working30(network_flowtimeday);
+      
+      CREATE INDEX tmp_navigation_working30_03i
+      ON tmp_navigation_working30(dnhydroseq);
+      
+      CREATE INDEX tmp_navigation_working30_04i
+      ON tmp_navigation_working30(nav_order);
+      
+      CREATE INDEX tmp_navigation_working30_05i
+      ON tmp_navigation_working30(selected);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Create tmp_navigation_results temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_navigation_results')
+   THEN
+      TRUNCATE TABLE tmp_navigation_results;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_navigation_results(
+          nhdplusid                   BIGINT
+         ,hydroseq                    BIGINT
+         ,fmeasure                    NUMERIC
+         ,tmeasure                    NUMERIC
+         ,levelpathi                  BIGINT
+         ,terminalpa                  BIGINT
+         ,uphydroseq                  BIGINT
+         ,dnhydroseq                  BIGINT
+         ,lengthkm                    NUMERIC
+         ,flowtimeday                 NUMERIC
+         /* ++++++++++ */
+         ,network_distancekm          NUMERIC
+         ,network_flowtimeday         NUMERIC
+         /* ++++++++++ */
+         ,permanent_identifier        VARCHAR(40)
+         ,reachcode                   VARCHAR(14)
+         ,fcode                       INTEGER
+         ,gnis_id                     VARCHAR(10)
+         ,gnis_name                   VARCHAR(65)
+         ,wbarea_permanent_identifier VARCHAR(40)
+         /* ++++++++++ */
+         ,quality_marker              INTEGER
+         ,navtermination_flag         INTEGER
+         ,shape                       GEOMETRY
+         ,nav_order                   INTEGER
+      );
+
+      CREATE UNIQUE INDEX tmp_navigation_results_pk
+      ON tmp_navigation_results(nhdplusid);
+      
+      CREATE UNIQUE INDEX tmp_navigation_results_1u
+      ON tmp_navigation_results(hydroseq);
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   RETURN 0;
+   
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.create_navigation_temp_tables() 
+OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.create_navigation_temp_tables() 
+TO PUBLIC;
+
+--******************************--
+----- functions/deepest_cell.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.deepest_cell';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.deepest_cell(
+    IN  p_input               GEOMETRY
+   ,IN  p_FDR                 RASTER
+   ,IN  p_FAC                 RASTER 
+   ,OUT out_columnX           INTEGER
+   ,OUT out_rowY              INTEGER
+)
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+   rec               RECORD;
+   sdo_input         GEOMETRY := p_input;
+   int_column_x_fdr  INTEGER;
+   int_row_y_fdr     INTEGER;
+   int_column_x_fac  INTEGER;
+   int_row_y_fac     INTEGER;
+   int_orig_column_x INTEGER;
+   int_orig_row_y    INTEGER;
+   mat_values_fdr    INTEGER[][];
+   mat_values_fac    INTEGER[][];
+   int_largest_accum INTEGER;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF sdo_input IS NULL
+   THEN
+      RAISE EXCEPTION 'input point cannot by null';
+      
+   END IF;
+   
+   IF p_FDR IS NULL
+   OR p_FAC IS NULL
+   THEN
+      RAISE EXCEPTION 'FDR and FAC rasters required';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Force inputs to match
+   ----------------------------------------------------------------------------
+   IF ST_SRID(sdo_input) <> ST_SRID(p_FDR)
+   THEN
+      sdo_input := ST_Transform(sdo_input,ST_SRID(p_FDR));
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Get initial start columnx and rowy from raster fdr
+   ----------------------------------------------------------------------------
+   rec := ST_WorldToRasterCoord(
+       p_FDR
+      ,sdo_input
+   );
+   int_column_x_fdr := rec.columnx;
+   int_row_y_fdr    := rec.rowy;
+   --RAISE WARNING '% %', int_column_x_fdr, int_row_y_fdr;
+   --RAISE WARNING '%',st_astext(st_transform(ST_PixelAsCentroid(p_FDR,int_column_x,int_row_y),4269));
+
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Get initial start columnx and rowy from raster fac
+   ----------------------------------------------------------------------------
+   rec := ST_WorldToRasterCoord(
+       p_FAC
+      ,sdo_input
+   );
+   int_column_x_fac := rec.columnx;
+   int_row_y_fac    := rec.rowy;
+   --RAISE WARNING '% %', int_column_x_fac, int_row_y_fac;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Pull the fdr 9 cell matrix around this top
+   --------------------------------------------------------------------------
+   mat_values_fdr := ST_Neighborhood(
+       p_FDR
+      ,1
+      ,int_column_x_fdr
+      ,int_row_y_fdr
+      ,1
+      ,1
+   );
+   --RAISE WARNING '%', mat_values_fdr;
+   
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Pull the fac 9 cell matrix around this top
+   --------------------------------------------------------------------------
+   mat_values_fac := ST_Neighborhood(
+       p_FAC
+      ,1
+      ,int_column_x_fac
+      ,int_row_y_fac
+      ,1
+      ,1
+   );
+   --RAISE WARNING '%', mat_values_fac;
+   
+   --------------------------------------------------------------------------
+   -- Step 70
+   -- Decide whether to move over into neighboring cell that is deeper
+   --------------------------------------------------------------------------
+   int_orig_column_x := int_column_x_fdr;
+   int_orig_row_y    := int_row_y_fdr;
+   int_largest_accum := mat_values_fac[2][2];
+   
+   -- 1,1
+   IF  mat_values_fac[1][1] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 32
+   THEN
+      IF mat_values_fdr[2][1] <> 64
+      AND mat_values_fdr[1][2] <> 16
+      THEN
+         int_largest_accum := mat_values_fac[1][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y - 1;
+      
+      ELSIF mat_values_fdr[2][1] = 64
+      AND   mat_values_fac[2][1] + 7 < mat_values_fac[1][1]
+      THEN
+         int_largest_accum := mat_values_fac[1][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y - 1;
+      
+      ELSIF mat_values_fdr[1][2] = 16
+      AND   mat_values_fac[1][2] + 7 < mat_values_fac[1][1]
+      THEN
+         int_largest_accum := mat_values_fac[1][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y - 1;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 1,2
+   IF  mat_values_fac[1][2] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 64
+   THEN
+      IF mat_values_fdr[1][1] <> 1
+      AND mat_values_fdr[1][3] <> 16
+      THEN
+         int_largest_accum := mat_values_fac[1][2];
+         int_column_x_fdr  := int_orig_column_x;
+         int_row_y_fdr     := int_orig_row_y - 1;
+      
+      ELSIF mat_values_fdr[1][1] = 1
+      AND   mat_values_fac[1][1] + 7 < mat_values_fac[1][2]
+      THEN
+         int_largest_accum := mat_values_fac[1][2];
+         int_column_x_fdr  := int_orig_column_x;
+         int_row_y_fdr     := int_orig_row_y - 1;
+      
+      ELSIF mat_values_fdr[1][3] = 16
+      AND   mat_values_fac[1][3] + 7 < mat_values_fac[1][2]
+      THEN
+         int_largest_accum := mat_values_fac[1][2];
+         int_column_x_fdr  := int_orig_column_x;
+         int_row_y_fdr     := int_orig_row_y - 1;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 1,3
+   IF  mat_values_fac[1][3] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 128
+   THEN
+      IF mat_values_fdr[1][2] <> 1
+      AND mat_values_fdr[2][3] <> 64
+      THEN
+         int_largest_accum := mat_values_fac[1][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y - 1;
+      
+      ELSIF mat_values_fdr[1][2] = 1
+      AND   mat_values_fac[1][2] + 7 < mat_values_fac[1][3]
+      THEN
+         int_largest_accum := mat_values_fac[1][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y - 1;
+      
+      ELSIF mat_values_fdr[2][3] = 64
+      AND   mat_values_fac[2][3] + 7 < mat_values_fac[1][3]
+      THEN
+         int_largest_accum := mat_values_fac[1][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y - 1;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 2,1
+   IF  mat_values_fac[2][1] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 16
+   THEN
+      IF mat_values_fdr[1][1] <> 4
+      AND mat_values_fdr[3][1] <> 64
+      THEN
+         int_largest_accum := mat_values_fac[2][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y;
+      
+      ELSIF mat_values_fdr[1][1] = 4
+      AND   mat_values_fac[1][1] + 7 < mat_values_fac[2][1]
+      THEN
+         int_largest_accum := mat_values_fac[2][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y;
+      
+      ELSIF mat_values_fdr[3][1] = 64
+      AND   mat_values_fac[3][1] + 7 < mat_values_fac[2][1]
+      THEN
+         int_largest_accum := mat_values_fac[2][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 2,3
+   IF  mat_values_fac[2][3] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 1
+   THEN
+      IF mat_values_fdr[1][3] <> 4
+      AND mat_values_fdr[3][3] <> 64
+      THEN
+         int_largest_accum := mat_values_fac[2][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y;
+      
+      ELSIF mat_values_fdr[1][3] = 4
+      AND   mat_values_fac[1][3] + 7 < mat_values_fac[2][3]
+      THEN
+         int_largest_accum := mat_values_fac[2][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y;
+      
+      ELSIF mat_values_fdr[3][3] = 64
+      AND   mat_values_fac[3][3] + 7 < mat_values_fac[2][3]
+      THEN
+         int_largest_accum := mat_values_fac[2][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 3,1
+   IF  mat_values_fac[3][1] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 8
+   THEN
+      IF mat_values_fdr[2][1] <> 4
+      AND mat_values_fdr[3][2] <> 16
+      THEN
+         int_largest_accum := mat_values_fac[3][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y + 1;
+      
+      ELSIF mat_values_fdr[2][1] = 4
+      AND   mat_values_fac[2][1] + 7 < mat_values_fac[3][1]
+      THEN
+         int_largest_accum := mat_values_fac[3][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y + 1;
+      
+      ELSIF mat_values_fdr[3][2] = 16
+      AND   mat_values_fac[3][2] + 7 < mat_values_fac[3][1]
+      THEN
+         int_largest_accum := mat_values_fac[3][1];
+         int_column_x_fdr  := int_orig_column_x - 1;
+         int_row_y_fdr     := int_orig_row_y + 1;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 3,2
+   IF  mat_values_fac[3][2] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 4
+   THEN
+      IF  mat_values_fdr[3][1] <> 1
+      AND mat_values_fdr[3][3] <> 16
+      THEN
+         int_largest_accum := mat_values_fac[3][2];
+         int_column_x_fdr  := int_orig_column_x;
+         int_row_y_fdr     := int_orig_row_y + 1;
+      
+      ELSIF mat_values_fdr[3][1] = 1
+      AND   mat_values_fac[3][1] + 7 < mat_values_fac[3][2]
+      THEN
+         int_largest_accum := mat_values_fac[3][2];
+         int_column_x_fdr  := int_orig_column_x;
+         int_row_y_fdr     := int_orig_row_y + 1;
+      
+      ELSIF mat_values_fdr[3][3] = 16
+      AND   mat_values_fac[3][3] + 7 < mat_values_fac[3][2]
+      THEN
+         int_largest_accum := mat_values_fac[3][2];
+         int_column_x_fdr  := int_orig_column_x;
+         int_row_y_fdr     := int_orig_row_y + 1;
+         
+      END IF;
+      
+   END IF;
+   
+   -- 3,3
+   IF  mat_values_fac[3][3] > int_largest_accum
+   AND mat_values_fdr[2][2] <> 2
+   THEN
+      IF mat_values_fdr[3][2] <> 1
+      AND mat_values_fdr[2][3] <> 4
+      THEN
+         int_largest_accum := mat_values_fac[3][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y + 1;
+      
+      ELSIF mat_values_fdr[3][2] = 1
+      AND   mat_values_fac[3][2] + 7 < mat_values_fac[3][3]
+      THEN
+         int_largest_accum := mat_values_fac[3][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y + 1;
+      
+      ELSIF mat_values_fdr[2][3] = 4
+      AND   mat_values_fac[2][3] + 7 < mat_values_fac[3][3]
+      THEN
+         int_largest_accum := mat_values_fac[3][3];
+         int_column_x_fdr  := int_orig_column_x + 1;
+         int_row_y_fdr     := int_orig_row_y + 1;
+         
+      END IF;
+      
+   END IF;
+   --RAISE WARNING '% %', int_column_x_fdr, int_row_y_fdr;
+   
+   --------------------------------------------------------------------------
+   -- Step 80
+   -- Return results
+   --------------------------------------------------------------------------
+   out_columnX := int_column_x_fdr;
+   out_rowY    := int_row_y_fdr;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.deepest_cell(
+    GEOMETRY
+   ,RASTER
+   ,RASTER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.deepest_cell(
+    GEOMETRY
+   ,RASTER
+   ,RASTER
+) TO PUBLIC;
+--******************************--
+----- functions/determine_grid_srid.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.determine_grid_srid(
+    IN  p_geometry             GEOMETRY
+   ,IN  p_nhdplus_version      VARCHAR
+   ,IN  p_known_region         VARCHAR
+   ,OUT out_srid               INTEGER
+   ,OUT out_grid_size          NUMERIC
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec RECORD;
+   
+BEGIN
+
+   IF p_nhdplus_version = 'nhdplus_m'
+   THEN
+      rec := cipsrv_nhdplus_m.determine_grid_srid(
+          p_geometry          := p_geometry
+         ,p_known_region      := p_known_region
+      );
+      out_srid           := rec.out_srid;
+      out_grid_size      := rec.out_grid_size;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+   
+   ELSIF p_nhdplus_version = 'nhdplus_h'
+   THEN
+      rec := cipsrv_nhdplus_h.determine_grid_srid(
+          p_geometry          := p_geometry
+         ,p_known_region      := p_known_region
+      );
+      out_srid           := rec.out_srid;
+      out_grid_size      := rec.out_grid_size;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+
+   ELSE
+      RAISE EXCEPTION 'err %',p_nhdplus_version;
+
+   END IF;   
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.determine_grid_srid(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.determine_grid_srid(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/fdr_upstream_norecursion.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.fdr_upstream_norecursion';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.fdr_upstream_norecursion(
+    IN p_column_x             INTEGER
+   ,IN p_row_y                INTEGER
+   ,IN OUT iout_rast          RASTER
+   ,OUT out_depth             INTEGER 
+)
+IMMUTABLE
+AS $BODY$
+DECLARE
+   boo_continue     BOOLEAN;
+   int_depth_charge INTEGER := 100000;
+   mat_values       INTEGER[][];
+   int_working_x    INTEGER[];
+   int_working_y    INTEGER[];
+   int_increment_x  INTEGER[];
+   int_increment_y  INTEGER[];
+   int_index        INTEGER;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF iout_rast IS NULL
+   THEN
+      RAISE EXCEPTION 'Input raster is null';
+      
+   END IF;
+   --raise warning 'raster % by %', st_height(iout_rast), st_width(iout_rast);
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Seed the start location
+   ----------------------------------------------------------------------------
+   int_working_x[1] := p_column_x;
+   int_working_y[1] := p_row_y;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Set up outer loop to allow starting over and exit condition
+   ----------------------------------------------------------------------------
+   out_depth := 1;
+   boo_continue := TRUE;
+   <<outer_loop>>
+   WHILE boo_continue
+   LOOP
+      
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Abend if stuck in ceaseless loop
+   ----------------------------------------------------------------------------
+      out_depth := out_depth + 1;
+      IF out_depth > int_depth_charge
+      THEN
+         RAISE EXCEPTION 'depth charge';
+         
+      END IF;
+      
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Initialize increment queue
+   ----------------------------------------------------------------------------
+      int_index       := 1;
+      int_increment_x := NULL;
+      int_increment_y := NULL;
+      
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Loop through the working stack
+   ----------------------------------------------------------------------------
+      --raise warning '%', array_length(int_working_x,1);
+      FOR i IN 1 .. array_length(int_working_x,1)
+      LOOP
+         
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Pull 3x3 grid
+   ----------------------------------------------------------------------------   
+         mat_values := ST_Neighborhood(
+             iout_rast
+            ,1
+            ,int_working_x[i]
+            ,int_working_y[i]
+            ,1
+            ,1
+         );
+         --raise warning '%', mat_values;
+
+   ----------------------------------------------------------------------------
+   -- Step 80
+   -- Set center grid to be 99
+   ----------------------------------------------------------------------------
+         IF mat_values[2][2] <> 99
+         THEN
+            
+            iout_rast := ST_SetValue(
+                iout_rast
+               ,int_working_x[i]
+               ,int_working_y[i]
+               ,99
+            );
+            
+   ----------------------------------------------------------------------------
+   -- Step 90
+   -- Examine surrounding cells to define the upstream area
+   ----------------------------------------------------------------------------         
+            IF mat_values[1][1] = 2
+            THEN
+               int_increment_x[int_index] := int_working_x[i] - 1;
+               int_increment_y[int_index] := int_working_y[i] - 1;
+               int_index := int_index + 1;
+
+            END IF;
+
+            IF mat_values[1][2] = 4
+            THEN
+               int_increment_x[int_index] := int_working_x[i];
+               int_increment_y[int_index] := int_working_y[i] - 1;
+               int_index := int_index + 1;
+
+            END IF;
+
+            IF mat_values[1][3] = 8
+            THEN
+               int_increment_x[int_index] := int_working_x[i] + 1;
+               int_increment_y[int_index] := int_working_y[i] - 1;
+               int_index := int_index + 1;
+              
+            END IF;
+
+            IF mat_values[2][1] = 1
+            THEN
+               int_increment_x[int_index] := int_working_x[i] - 1;
+               int_increment_y[int_index] := int_working_y[i];
+               int_index := int_index + 1;
+
+            END IF;
+
+            IF mat_values[2][3] = 16
+            THEN
+               int_increment_x[int_index] := int_working_x[i] + 1;
+               int_increment_y[int_index] := int_working_y[i];
+               int_index := int_index + 1;
+
+            END IF;
+
+            IF mat_values[3][1] = 128
+            THEN
+               int_increment_x[int_index] := int_working_x[i] - 1;
+               int_increment_y[int_index] := int_working_y[i] + 1;
+               int_index := int_index + 1;
+               
+            END IF;
+
+            IF mat_values[3][2] = 64
+            THEN
+               int_increment_x[int_index] := int_working_x[i];
+               int_increment_y[int_index] := int_working_y[i] + 1;
+               int_index := int_index + 1;
+
+            END IF;
+
+            IF mat_values[3][3] = 32
+            THEN
+               int_increment_x[int_index] := int_working_x[i] + 1;
+               int_increment_y[int_index] := int_working_y[i] + 1;
+               int_index := int_index + 1;
+               
+            END IF;
+
+         END IF;
+
+      END LOOP;
+      
+   ----------------------------------------------------------------------------
+   -- Step 100
+   -- Continue until done
+   ----------------------------------------------------------------------------
+      IF int_increment_x IS NULL
+      OR array_length(int_increment_x,1) = 0
+      THEN
+         boo_continue := FALSE;
+         
+      END IF;
+      
+      int_working_x := int_increment_x;
+      int_working_y := int_increment_y;
+      
+   ----------------------------------------------------------------------------
+   -- Step 110
+   -- Continue until done
+   ----------------------------------------------------------------------------
+   END LOOP outer_loop;
+
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.fdr_upstream_norecursion(
+    INTEGER
+   ,INTEGER
+   ,RASTER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.fdr_upstream_norecursion(
+    INTEGER
+   ,INTEGER
+   ,RASTER
+) TO PUBLIC;
+--******************************--
+----- functions/feature_batch_clip.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.feature_batch_clip';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.feature_batch_clip(
+    IN  p_keyword                       VARCHAR
+   ,IN  p_clippers                      VARCHAR[]
+   ,IN  p_known_region                  VARCHAR
+   ,OUT out_return_code                 INTEGER
+   ,OUT out_status_message              VARCHAR
+)
+VOLATILE
+AS $BODY$ 
+DECLARE
+   rec                  RECORD;
+   str_sql              VARCHAR;
+   
+BEGIN
+
+   out_return_code := 0;
+   
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_clippers IS NULL
+   OR array_length(p_clippers,1) = 0
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Clip the point features
+   ----------------------------------------------------------------------------
+   str_sql := 'UPDATE cipsrv_upload.' || p_keyword || '_points a '
+           || 'SET shape = ( '
+           || '   SELECT '
+           || '   b.out_clipped_geometry '
+           || '   FROM '
+           || '   cipsrv_support.geometry_clip( '
+           || '       p_geometry      := a.shape '
+           || '      ,p_clippers      := ? '
+           || '      ,p_known_region  := ? '
+           || '   ) '
+           || ') ';
+           
+   EXECUTE str_sql USING p_clippers,p_known_region;
+   
+   str_sql := 'DELETE FROM cipsrv_upload.' || p_keyword || '_points a '
+           || 'WHERE '
+           || 'a.shape IS NULL ';
+           
+   EXECUTE str_sql;
+   
+   ----------------------------------------------------------------------------
+   -- Clip the line features
+   ----------------------------------------------------------------------------
+   str_sql := 'UPDATE cipsrv_upload.' || p_keyword || '_lines a '
+           || 'SET shape = ( '
+           || '   SELECT '
+           || '   b.out_clipped_geometry '
+           || '   FROM '
+           || '   cipsrv_support.geometry_clip( '
+           || '       p_geometry      := a.shape '
+           || '      ,p_clippers      := ? '
+           || '      ,p_known_region  := ? '
+           || '   ) '
+           || ') ';
+           
+   EXECUTE str_sql USING p_clippers,p_known_region;
+   
+   str_sql := 'DELETE FROM cipsrv_upload.' || p_keyword || '_lines a '
+           || 'WHERE '
+           || 'a.shape IS NULL ';
+           
+   EXECUTE str_sql;
+   
+   ----------------------------------------------------------------------------
+   -- Clip the area features
+   ----------------------------------------------------------------------------
+   str_sql := 'UPDATE cipsrv_upload.' || p_keyword || '_areas a '
+           || 'SET shape = ( '
+           || '   SELECT '
+           || '   b.out_clipped_geometry '
+           || '   FROM '
+           || '   cipsrv_support.geometry_clip( '
+           || '       p_geometry      := a.shape '
+           || '      ,p_clippers      := ? '
+           || '      ,p_known_region  := ? '
+           || '   ) '
+           || ') ';
+           
+   EXECUTE str_sql USING p_clippers,p_known_region;
+   
+   str_sql := 'DELETE FROM cipsrv_upload.' || p_keyword || '_areas a '
+           || 'WHERE '
+           || 'a.shape IS NULL ';
+           
+   EXECUTE str_sql;
+   
+   RETURN;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.feature_batch_clip(
+    VARCHAR
+   ,VARCHAR[]
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_batch_clip(
+    VARCHAR
+   ,VARCHAR[]
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/feature_clip.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.feature_clip';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.feature_clip(
+    IN  p_features                      cipsrv_engine.cip_feature[]
+   ,IN  p_clippers                      VARCHAR[]
+   ,IN  p_known_region                  VARCHAR
+   ,OUT out_return_code                 INTEGER
+   ,OUT out_status_message              VARCHAR
+   ,OUT out_features                    cipsrv_engine.cip_feature[]
+)
+VOLATILE
+AS $BODY$ 
+DECLARE
+   rec                  RECORD;
+   obj_rez cipsrv_engine.cip_feature;
+   ary_rez cipsrv_engine.cip_feature[];
+   str_known_region     VARCHAR := p_known_region;
+   sdo_output           GEOMETRY;
+   
+BEGIN
+
+   out_return_code := 0;
+   
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_features IS NULL
+   OR array_length(p_features,1) = 0
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   IF p_clippers IS NULL
+   OR array_length(p_clippers,1) = 0
+   THEN
+      out_features := p_features;
+      RETURN;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Loop over the features
+   ----------------------------------------------------------------------------
+   FOR i IN 1 .. array_length(p_features,1)
+   LOOP
+      obj_rez := p_features[i];
+      
+      rec := cipsrv_support.geometry_clip(
+          p_geometry      := (obj_rez).geometry
+         ,p_clippers      := p_clippers
+         ,p_known_region  := str_known_region
+      );
+      sdo_output         := rec.out_clipped_geometry;
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      
+      IF out_return_code != 0
+      THEN
+         RETURN;
+         
+      END IF;
+      
+      IF sdo_output IS NULL
+      OR ST_IsEmpty(sdo_output)
+      THEN
+         NULL;
+         
+      ELSE
+         obj_rez.geometry := sdo_output;
+         out_features     := array_append(out_features,obj_rez);
+         
+      END IF;
+         
+   END LOOP;
+   
+   RETURN;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.feature_clip(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR[]
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_clip(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR[]
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/featurecat.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.featurecat(
+    IN  p_features           cipsrv_engine.cip_feature[]
+   ,IN  p_cat                cipsrv_engine.cip_feature[]
+) RETURNS cipsrv_engine.cip_feature[]
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   ary_features cipsrv_engine.cip_feature[];
+   ary_cat      cipsrv_engine.cip_feature[];
+   ary_rez      cipsrv_engine.cip_feature[];
+   
+BEGIN
+
+   ary_features := array_remove(p_features,NULL);
+   ary_cat      := array_remove(p_cat,NULL);
+   ary_rez      := NULL::cipsrv_engine.cip_feature[];
+   
+   IF ary_features IS NOT NULL
+   AND array_length(ary_features,1) > 0
+   THEN
+      FOR i IN 1 .. array_length(ary_features,1)
+      LOOP
+         ary_rez := array_append(ary_rez,ary_features[i]);
+         
+      END LOOP;
+      
+   END IF;
+   
+   IF ary_cat IS NOT NULL 
+   AND array_length(ary_cat,1) > 0
+   THEN
+      FOR i IN 1 .. array_length(ary_cat,1)
+      LOOP
+         ary_rez := array_append(ary_rez,ary_cat[i]);
+         
+      END LOOP;
+   
+   END IF;
+
+   RETURN ary_rez;   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.featurecat(
+    cipsrv_engine.cip_feature[]
+   ,cipsrv_engine.cip_feature[]
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.featurecat(
+    cipsrv_engine.cip_feature[]
+   ,cipsrv_engine.cip_feature[]
+) TO PUBLIC;
+
+--******************************--
+----- functions/feature2jsonb.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.feature2jsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.feature2jsonb(
+   IN  p_feature      cipsrv_engine.cip_feature
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   json_rez        JSONB;
+   json_properties JSONB;
+   
+BEGIN
+
+   IF p_feature IS NULL
+   THEN
+      RETURN json_rez;
+      
+   END IF;
+   
+   json_properties := (p_feature).properties;
+   
+   IF json_properties IS NULL
+   OR JSONB_TYPEOF(json_properties) = 'null'
+   THEN
+      json_properties := '{}'::JSONB;
+      
+   END IF;
+   
+   IF (p_feature).globalid IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['globalid']
+         ,replacement       := TO_JSONB((p_feature).globalid)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).lengthkm IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['lengthkm']
+         ,replacement       := TO_JSONB((p_feature).lengthkm)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).areasqkm IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['areasqkm']
+         ,replacement       := TO_JSONB((p_feature).areasqkm)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).converted_to_ring IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['converted_to_ring']
+         ,replacement       := TO_JSONB((p_feature).converted_to_ring)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).indexing_method_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['indexing_method_used']
+         ,replacement       := TO_JSONB((p_feature).indexing_method_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).line_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['line_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).line_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).areacat_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['areacat_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).areacat_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).areaevt_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['areaevt_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).areaevt_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   
+   
+   IF (p_feature).ring_areacat_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_areacat_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).ring_areacat_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   IF (p_feature).ring_areaevt_threshold_used IS NOT NULL
+   THEN
+      json_properties := JSONB_SET(
+          jsonb_in          := json_properties
+         ,path              := ARRAY['ring_areaevt_threshold_used']
+         ,replacement       := TO_JSONB((p_feature).ring_areaevt_threshold_used)
+         ,create_if_missing := TRUE
+      );
+      
+   END IF;
+   
+   json_rez := JSONB_BUILD_OBJECT(
+       'type'       ,'Feature'
+      ,'geometry'   ,ST_AsGeoJSON(ST_Transform((p_feature).geometry,4326))::JSONB
+      ,'obj_type'   ,'event_feature_properties'
+      ,'properties' ,json_properties
+   );
+
+   RETURN json_rez;   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.feature2jsonb(
+   cipsrv_engine.cip_feature
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.feature2jsonb(
+   cipsrv_engine.cip_feature
+) TO PUBLIC;
+
+--******************************--
+----- functions/features2geomcollection.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.features2geomcollection(
+    IN  p_features           cipsrv_engine.cip_feature[]
+) RETURNS GEOMETRY
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   sdo_rez GEOMETRY;
+   
+BEGIN
+
+   IF p_features IS NULL
+   OR array_length(p_features,1) = 0
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   FOR i IN 1 .. array_length(p_features,1)
+   LOOP
+      IF sdo_rez IS NULL
+      THEN
+         sdo_rez := ST_Transform(p_features[i].geometry,4326);
+         
+      ELSE
+         sdo_rez := ST_Collect(sdo_rez,ST_Transform(p_features[i].geometry,4326));
+      
+      END IF;
+   
+   END LOOP;
+   
+   RETURN sdo_rez;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.features2geomcollection(
+    cipsrv_engine.cip_feature[]
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.features2geomcollection(
+    cipsrv_engine.cip_feature[]
+) TO PUBLIC;
+
+--******************************--
+----- functions/features2jsonb.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.features2jsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.features2jsonb(
+    IN  p_features           cipsrv_engine.cip_feature[]
+   ,IN  p_geometry_type      VARCHAR DEFAULT NULL
+   ,IN  p_empty_collection   BOOLEAN DEFAULT FALSE
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$
+DECLARE
+   obj_rez JSONB;
+   ary_rez JSONB;
+
+BEGIN
+
+   IF p_features IS NULL
+   OR array_length(p_features,1) = 0
+   THEN
+      IF p_empty_collection
+      THEN
+         RETURN JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', '[]'::JSONB
+         );
+
+      ELSE
+         RETURN NULL;
+
+      END IF;
+
+   END IF;
+
+   FOR i IN 1 .. array_length(p_features,1)
+   LOOP
+      IF p_geometry_type IS NULL
+      OR ( p_geometry_type IN ('P')
+         AND p_features[i].gtype IN ('ST_Point','ST_MultiPoint')
+      )
+      OR ( p_geometry_type IN ('L')
+         AND p_features[i].gtype IN ('ST_LineString','ST_MultiLineString')
+      )
+      OR ( p_geometry_type IN ('A')
+         AND p_features[i].gtype IN ('ST_Polygon','ST_MultiPolygon')
+      )
+      THEN
+         obj_rez := cipsrv_engine.feature2jsonb(
+            p_feature := p_features[i]
+         );
+
+         IF ary_rez IS NULL
+         THEN
+            ary_rez := JSON_BUILD_ARRAY(obj_rez);
+
+         ELSE
+            ary_rez := ary_rez || obj_rez;
+
+         END IF;
+
+      END IF;
+
+   END LOOP;
+
+   IF ary_rez IS NULL
+   OR JSONB_ARRAY_LENGTH(ary_rez) = 0
+   THEN
+      IF p_empty_collection
+      THEN
+         RETURN JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', '[]'::JSONB
+         );
+
+      ELSE
+         RETURN NULL;
+
+      END IF;
+
+   ELSE
+      RETURN JSON_BUILD_OBJECT(
+          'type'    , 'FeatureCollection'
+         ,'features', ary_rez
+      );
+
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.features2jsonb(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.features2jsonb(
+    cipsrv_engine.cip_feature[]
+   ,VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/field_exists.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.field_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.field_exists(
+    IN  p_schema_name VARCHAR
+   ,IN  p_table_name  VARCHAR
+   ,IN  p_field_name  VARCHAR
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   int_oid        INTEGER;
+   str_table_name VARCHAR(255);
+   str_field_name VARCHAR(255);
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for table
+   ----------------------------------------------------------------------------
+   SELECT 
+    c.oid
+   INTO int_oid
+   FROM 
+   pg_catalog.pg_class c 
+   LEFT JOIN 
+   pg_catalog.pg_namespace n 
+   ON 
+   n.oid = c.relnamespace
+   WHERE  
+       n.nspname = p_schema_name
+   AND c.relname = p_table_name
+   AND c.relkind = 'r';
+   
+   IF int_oid IS NULL 
+   THEN
+      RETURN FALSE;
+      
+   END IF;
+   
+   SELECT 
+    a.attname
+   INTO str_field_name
+   FROM 
+   pg_catalog.pg_attribute a 
+   WHERE 
+       a.attrelid = int_oid
+   AND a.attname  = p_field_name
+   AND NOT attisdropped
+   AND attnum > 0; 
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   IF str_field_name IS NULL 
+   THEN
+      RETURN FALSE;
+
+   ELSE
+      RETURN TRUE;
+
+   END IF;
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.field_exists(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.field_exists(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/index_exists.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.index_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.index_exists(
+    IN  p_schema_name VARCHAR
+   ,IN  p_table_name  VARCHAR
+   ,IN  p_index_name  VARCHAR
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   str_index_name VARCHAR(255);
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for table
+   ----------------------------------------------------------------------------
+   SELECT 
+   a.indexname
+   INTO str_index_name
+   FROM 
+   pg_indexes a
+   WHERE
+       a.schemaname = p_schema_name
+   AND a.tablename  = p_table_name
+   AND a.indexname  = p_index_name;
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   IF str_index_name IS NULL 
+   THEN
+      RETURN FALSE;
+
+   ELSE
+      RETURN TRUE;
+
+   END IF;
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.index_exists(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.index_exists(
+    VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/json2geometry.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.json2geometry(
+    IN  p_in                         JSONB
+) RETURNS GEOMETRY
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+   json_feature JSONB;
+   
+BEGIN
+
+   IF p_in IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   IF NOT JSONB_PATH_EXISTS(p_in,'$.type')
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   IF p_in->>'type' IN ('Point','LineString','Polygon','MultiPoint','MultiLineString','MultiPolygon','GeometryCollection')
+   THEN
+      RETURN ST_GeomFromGeoJSON(p_in);
+      
+   ELSIF p_in->>'type' = 'Feature'
+   THEN
+      IF NOT JSONB_PATH_EXISTS(p_in,'$.geometry')
+      THEN
+         RETURN NULL;
+         
+      END IF;
+      
+      RETURN ST_GeomFromGeoJSON(p_in->'geometry');
+   
+   ELSIF p_in->>'type' = 'FeatureCollection'
+   THEN
+      IF NOT JSONB_PATH_EXISTS(p_in,'$.features')
+      OR p_in->'features' IS NULL
+      OR JSONB_ARRAY_LENGTH(p_in->'features') = 0
+      THEN
+         RETURN NULL;
+         
+      END IF;
+      
+      json_feature := p_in->'features'->0;
+      
+      IF NOT JSONB_PATH_EXISTS(json_feature,'$.geometry')
+      THEN
+         RETURN NULL;
+         
+      END IF;
+      
+      RETURN ST_GeomFromGeoJSON(json_feature->'geometry');
+   
+   END IF;
+   
+   RETURN NULL;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.json2geometry(
+   JSONB
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.json2geometry(
+   JSONB
+) TO PUBLIC;
+
+--******************************--
+----- functions/json2numeric.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.json2numeric(
+    IN  p_in                         JSONB
+) RETURNS NUMERIC
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+BEGIN
+
+   IF p_in IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   IF JSONB_TYPEOF(p_in) = 'string'
+   THEN
+      IF p_in::VARCHAR IN ('',' ','null','""')
+      THEN
+         RETURN NULL;
+
+      ELSE            
+         RETURN REPLACE(
+            p_in::VARCHAR
+           ,'"'
+           ,''           
+         )::NUMERIC;
+         
+      END IF;
+   
+   ELSE
+      RETURN p_in;
+
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.json2numeric(
+   JSONB
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.json2numeric(
+   JSONB
+) TO PUBLIC;
+
+--******************************--
+----- functions/json2bigint.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.json2bigint(
+    IN  p_in                         JSONB
+) RETURNS BIGINT
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+BEGIN
+
+   IF p_in IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   IF JSONB_TYPEOF(p_in) = 'string'
+   THEN
+      IF p_in::VARCHAR IN ('',' ','null','""')
+      THEN
+         RETURN NULL;
+
+      ELSE            
+         RETURN REPLACE(
+            p_in::VARCHAR
+           ,'"'
+           ,''           
+         )::BIGINT;
+         
+      END IF;
+   
+   ELSE
+      RETURN p_in;
+
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.json2bigint(
+   JSONB
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.json2bigint(
+   JSONB
+) TO PUBLIC;
+
+--******************************--
+----- functions/jsonb2feature.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2feature';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
+    IN  p_feature                JSONB
+   ,IN  p_geometry_override      GEOMETRY DEFAULT NULL
+   ,IN  p_globalid               VARCHAR  DEFAULT NULL
+   ,IN  p_source_featureid       VARCHAR  DEFAULT NULL
+   ,IN  p_permid_joinkey         VARCHAR  DEFAULT NULL
+   ,IN  p_nhdplus_version        VARCHAR  DEFAULT NULL
+   ,IN  p_known_region           VARCHAR  DEFAULT NULL
+   ,IN  p_int_srid               INTEGER  DEFAULT NULL
+   
+   ,IN  p_point_indexing_method  VARCHAR  DEFAULT NULL
+   
+   ,IN  p_line_indexing_method   VARCHAR  DEFAULT NULL
+   ,IN  p_line_threshold         NUMERIC  DEFAULT NULL
+   
+   ,IN  p_ring_indexing_method   VARCHAR  DEFAULT NULL
+   ,IN  p_ring_areacat_threshold NUMERIC  DEFAULT NULL
+   ,IN  p_ring_areaevt_threshold NUMERIC  DEFAULT NULL
+   
+   ,IN  p_area_indexing_method   VARCHAR  DEFAULT NULL
+   ,IN  p_areacat_threshold      NUMERIC  DEFAULT NULL
+   ,IN  p_areaevt_threshold      NUMERIC  DEFAULT NULL
+   
+) RETURNS cipsrv_engine.cip_feature[]
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   rec                        RECORD;
+   obj_rez cipsrv_engine.cip_feature;
+   ary_rez cipsrv_engine.cip_feature[];
+   has_properties             BOOLEAN;
+   boo_isring                 BOOLEAN;
+   str_globalid               VARCHAR;
+   str_permid_joinkey         VARCHAR;
+   str_nhdplus_version        VARCHAR;
+   str_known_region           VARCHAR;
+   int_srid                   INTEGER;
+   str_source_featureid       VARCHAR;
+   
+   str_point_indexing_method  VARCHAR;
+   
+   str_line_indexing_method   VARCHAR;
+   num_line_threshold         NUMERIC;
+   
+   str_ring_indexing_method   VARCHAR;
+   num_ring_areacat_threshold NUMERIC;
+   num_ring_areaevt_threshold NUMERIC;
+   
+   str_area_indexing_method   VARCHAR;
+   num_areacat_threshold      NUMERIC;
+   num_areaevt_threshold      NUMERIC;
+   
+   sdo_geometry               GEOMETRY;
+   sdo_geometry2              GEOMETRY;
+   json_feature               JSONB := p_feature;
+   num_line_lengthkm          NUMERIC;
+   num_area_areasqkm          NUMERIC;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF json_feature IS NULL
+   THEN
+      RETURN ARRAY[obj_rez];
+      
+   ELSIF JSONB_TYPEOF(json_feature) != 'object'
+   OR json_feature->'type' IS NULL
+   OR json_feature->>'type' != 'Feature'
+   THEN
+      RAISE EXCEPTION 'input jsonb is not geojson feature';
+   
+   ELSE
+      IF p_geometry_override IS NOT NULL
+      THEN
+         json_feature := JSONB_BUILD_OBJECT(
+             'type'       ,'Feature'
+            ,'geometry'   ,ST_AsGeoJSON(ST_Transform(p_geometry_override,4326))::JSONB
+            ,'properties' ,json_feature->'properties'
+         );
+      
+      ELSIF json_feature->>'type' IN (
+          'Point'
+         ,'LineString'
+         ,'Polygon'
+         ,'MultiPoint'
+         ,'MultiLineString'
+         ,'MultiPolygon'
+         ,'GeometryCollection'
+      )
+      THEN
+         -- If naked geometry, repack into feature
+         json_feature := JSONB_BUILD_OBJECT(
+             'type'       ,'Feature'
+            ,'geometry'   ,json_feature
+         );
+         
+      END IF;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Get quick boolean if original properties exist
+   ----------------------------------------------------------------------------
+   IF json_feature->'properties' IS NULL
+   THEN
+      has_properties := FALSE;
+
+   ELSE
+      has_properties := TRUE;
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Extract the geometry
+   ----------------------------------------------------------------------------
+   IF json_feature->'geometry' IS NOT NULL
+   THEN
+      sdo_geometry := ST_GeomFromGeoJSON(json_feature->'geometry')::JSONB;
+      
+      -- This fixes a bug in PostGIS 3.1.5
+      IF sdo_geometry IS NOT NULL
+      AND ( ST_SRID(sdo_geometry) IS NULL OR ST_SRID(sdo_geometry) = 0 )
+      THEN
+         sdo_geometry := ST_SetSRID(sdo_geometry,4326);
+         
+      END IF;
+      
+      -- Break up geometry collections and multilinestrings
+      IF ST_GeometryType(sdo_geometry) IN (
+          'ST_MultiLineString'
+         ,'ST_GeometryCollection'   
+      )
+      THEN
+         FOR i IN 1 .. ST_NumGeometries(sdo_geometry)
+         LOOP
+            sdo_geometry2 := ST_GeometryN(sdo_geometry,i);
+            
+            ary_rez := cipsrv_engine.featurecat(ary_rez,
+               cipsrv_engine.jsonb2feature(
+                   p_feature                := json_feature
+                  ,p_geometry_override      := sdo_geometry2
+                  ,p_source_featureid       := p_source_featureid
+                  ,p_permid_joinkey         := p_permid_joinkey
+                  ,p_nhdplus_version        := p_nhdplus_version
+                  ,p_known_region           := p_known_region
+                  ,p_int_srid               := p_int_srid
+                  
+                  ,p_point_indexing_method  := p_point_indexing_method
+                  
+                  ,p_line_indexing_method   := p_line_indexing_method
+                  ,p_line_threshold         := p_line_threshold
+                  
+                  ,p_ring_indexing_method   := p_ring_indexing_method
+                  ,p_ring_areacat_threshold := p_ring_areacat_threshold
+                  ,p_ring_areaevt_threshold := p_ring_areaevt_threshold
+                  
+                  ,p_area_indexing_method   := p_area_indexing_method
+                  ,p_areacat_threshold      := p_areacat_threshold
+                  ,p_areaevt_threshold      := p_areaevt_threshold
+               )
+            );
+            
+         END LOOP;
+         
+         RETURN ary_rez;
+ 
+      END IF;
+      
+      IF NOT ST_IsValid(sdo_geometry)
+      THEN
+         sdo_geometry := ST_MakeValid(sdo_geometry);
+         
+      END IF;
+
+      IF ST_GeometryType(sdo_geometry) = 'ST_LineString'
+      THEN
+         boo_isring := ST_IsRing(sdo_geometry);
+      
+      ELSE
+         boo_isring := FALSE;
+         
+      END IF;   
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for globalid override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'globalid' IS NOT NULL
+   THEN
+      str_globalid := json_feature->'properties'->>'globalid';
+      
+   ELSIF p_globalid IS NOT NULL
+   THEN
+      str_globalid := p_globalid;
+      
+   ELSE
+      str_globalid := '{' || uuid_generate_v1() || '}';
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for source_featureid override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'source_featureid' IS NOT NULL
+   THEN
+      str_source_featureid := json_feature->'properties'->>'source_featureid';
+      
+   ELSIF p_source_featureid IS NOT NULL
+   THEN
+      str_source_featureid := p_source_featureid;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for permid_joinkey override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'permid_joinkey' IS NOT NULL
+   THEN
+      str_permid_joinkey := json_feature->'properties'->>'permid_joinkey';
+      
+   ELSIF p_permid_joinkey IS NOT NULL
+   THEN
+      str_permid_joinkey := p_permid_joinkey;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for nhdplus_version override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'nhdplus_version' IS NOT NULL
+   THEN
+      str_nhdplus_version := json_feature->'properties'->>'nhdplus_version';
+      
+   ELSIF p_nhdplus_version IS NOT NULL
+   THEN
+      str_nhdplus_version := p_nhdplus_version;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for known_region override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'known_region' IS NOT NULL
+   THEN
+      str_known_region := json_feature->'properties'->>'known_region';
+      
+   ELSIF p_known_region IS NOT NULL
+   THEN
+      str_known_region := p_known_region;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Test for int_srid override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'int_srid' IS NOT NULL
+   THEN
+      int_srid := json_feature->'properties'->'int_srid';
+      
+   ELSIF p_int_srid IS NOT NULL
+   THEN
+      int_srid := p_int_srid;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Try to sort out int_srid with overrides
+   ----------------------------------------------------------------------------
+   IF  int_srid IS NULL
+   AND str_nhdplus_version IS NOT NULL
+   AND str_known_region IS NOT NULL
+   THEN
+      rec := cipsrv_engine.determine_grid_srid(
+          p_geometry        := NULL
+         ,p_nhdplus_version := str_nhdplus_version
+         ,p_known_region    := str_known_region
+      );
+      int_srid := rec.out_srid;
+      
+   ELSIF int_srid IS NULL
+   AND str_nhdplus_version IS NOT NULL
+   AND str_known_region IS NULL
+   AND sdo_geometry IS NOT NULL
+   THEN
+      rec := cipsrv_engine.determine_grid_srid(
+          p_geometry        := sdo_geometry
+         ,p_nhdplus_version := str_nhdplus_version
+         ,p_known_region    := NULL
+      );
+      int_srid := rec.out_srid;
+      str_known_region := rec.out_srid::VARCHAR;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for point indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'point_indexing_method' IS NOT NULL
+   THEN
+      str_point_indexing_method := json_feature->'properties'->>'point_indexing_method';
+      
+   ELSIF p_point_indexing_method IS NOT NULL
+   THEN
+      str_point_indexing_method := p_point_indexing_method;
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for line indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'line_indexing_method' IS NOT NULL
+   THEN
+      str_line_indexing_method := json_feature->'properties'->>'line_indexing_method';
+      
+   ELSIF p_line_indexing_method IS NOT NULL
+   THEN
+      str_line_indexing_method := p_line_indexing_method;
+
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'line_threshold' IS NOT NULL
+   THEN
+      num_line_threshold := json_feature->'properties'->'line_threshold';
+      
+   ELSIF p_line_threshold IS NOT NULL
+   THEN
+      num_line_threshold := p_line_threshold;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for ring indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'ring_indexing_method' IS NOT NULL
+   THEN
+      str_ring_indexing_method := json_feature->'properties'->>'ring_indexing_method';
+      
+   ELSIF p_ring_indexing_method IS NOT NULL
+   THEN
+      str_ring_indexing_method := p_ring_indexing_method;
+
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'ring_areacat_threshold' IS NOT NULL
+   THEN
+      num_ring_areacat_threshold := json_feature->'properties'->'ring_areacat_threshold';
+      
+   ELSIF p_ring_areacat_threshold IS NOT NULL
+   THEN
+      num_ring_areacat_threshold := p_ring_areacat_threshold;
+      
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'ring_areaevt_threshold' IS NOT NULL
+   THEN
+      num_ring_areaevt_threshold := json_feature->'properties'->'ring_areaevt_threshold';
+      
+   ELSIF p_ring_areaevt_threshold IS NOT NULL
+   THEN
+      num_ring_areaevt_threshold := p_ring_areaevt_threshold;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Test for area indexing_method override
+   ----------------------------------------------------------------------------
+   IF has_properties
+   AND json_feature->'properties'->'area_indexing_method' IS NOT NULL
+   THEN
+      str_area_indexing_method := json_feature->'properties'->>'area_indexing_method';
+      
+   ELSIF p_area_indexing_method IS NOT NULL
+   THEN
+      str_area_indexing_method := p_area_indexing_method;
+
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'areacat_threshold' IS NOT NULL
+   THEN
+      num_areacat_threshold := json_feature->'properties'->'areacat_threshold';
+      
+   ELSIF p_areacat_threshold IS NOT NULL
+   THEN
+      num_areacat_threshold := p_areacat_threshold;
+      
+   END IF;
+   
+   IF has_properties
+   AND json_feature->'properties'->'areaevt_threshold' IS NOT NULL
+   THEN
+      num_areaevt_threshold := json_feature->'properties'->'areaevt_threshold';
+      
+   ELSIF p_areaevt_threshold IS NOT NULL
+   THEN
+      num_areaevt_threshold := p_areaevt_threshold;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Measure geometry size
+   ----------------------------------------------------------------------------
+   IF int_srid IS NOT NULL
+   AND ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
+   THEN
+      num_line_lengthkm := ROUND(ST_Length(ST_Transform(
+          sdo_geometry
+         ,int_srid
+      ))::NUMERIC * 0.001,8);
+               
+   ELSIF int_srid IS NOT NULL
+   AND ST_GeometryType(sdo_geometry) IN ('ST_Polygon','ST_MultiPolygon')
+   THEN
+      num_area_areasqkm := ROUND(ST_Area(ST_Transform(
+          sdo_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Create the object
+   ----------------------------------------------------------------------------
+   obj_rez := (
+       str_globalid
+      ,ST_GeometryType(sdo_geometry)
+      ,sdo_geometry
+      ,num_line_lengthkm
+      ,num_area_areasqkm
+      ,boo_isring
+      ,json_feature->'properties'
+      ,str_source_featureid
+      ,str_permid_joinkey
+      ,str_nhdplus_version
+      ,str_known_region
+      ,int_srid
+      ,NULL
+      ,NULL
+      
+      ,str_point_indexing_method
+      
+      ,str_line_indexing_method
+      ,num_line_threshold
+      ,NULL
+      
+      ,str_ring_indexing_method
+      ,num_ring_areacat_threshold
+      ,NULL
+      ,num_ring_areaevt_threshold
+      ,NULL
+      
+      ,str_area_indexing_method
+      ,num_areacat_threshold
+      ,NULL
+      ,num_areaevt_threshold
+      ,NULL
+   )::cipsrv_engine.cip_feature;
+
+   RETURN ARRAY[obj_rez];   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.jsonb2feature(
+    JSONB
+   ,GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   
+   ,VARCHAR
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
+    JSONB
+   ,GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   
+   ,VARCHAR
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
+----- functions/jsonb2features.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2features';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2features(
+    IN  p_features                       JSONB
+   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
+   ,IN  p_known_region                   VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                       INTEGER DEFAULT NULL
+   
+   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
+   
+   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
+   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
+   
+) RETURNS cipsrv_engine.cip_feature[]
+VOLATILE
+AS $BODY$ 
+DECLARE
+   obj_rez cipsrv_engine.cip_feature[];
+   ary_rez cipsrv_engine.cip_feature[];
+   str_nhdplus_version                VARCHAR;
+   str_known_region                   VARCHAR;
+   int_srid                           INTEGER;
+   
+   str_default_point_indexing_method  VARCHAR;
+   
+   str_default_line_indexing_method   VARCHAR;
+   num_default_line_threshold         NUMERIC;
+   
+   str_default_ring_indexing_method   VARCHAR;
+   num_default_ring_areacat_threshold NUMERIC;
+   num_default_ring_areaevt_threshold NUMERIC;
+   
+   str_default_area_indexing_method   VARCHAR;
+   num_default_areacat_threshold      NUMERIC;
+   num_default_areaevt_threshold      NUMERIC;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_features IS NULL
+   OR ( JSONB_TYPEOF(p_features) = 'array'
+   AND JSONB_ARRAY_LENGTH(p_features) = 0 )
+   THEN
+      RETURN ary_rez;
+      
+   END IF;
+   
+   str_nhdplus_version                := p_nhdplus_version;
+   str_known_region                   := p_known_region;
+   int_srid                           := p_int_srid;
+   
+   str_default_point_indexing_method  := p_default_point_indexing_method;
+   
+   str_default_line_indexing_method   := p_default_line_indexing_method;
+   num_default_line_threshold         := p_default_line_threshold;
+   
+   str_default_ring_indexing_method   := p_default_ring_indexing_method;
+   num_default_ring_areacat_threshold := p_default_ring_areacat_threshold;
+   num_default_ring_areaevt_threshold := p_default_ring_areaevt_threshold;
+
+   str_default_area_indexing_method   := p_default_area_indexing_method;
+   num_default_areacat_threshold      := p_default_areacat_threshold;
+   num_default_areaevt_threshold      := p_default_areaevt_threshold;
+
+   ----------------------------------------------------------------------------
+   -- Build the features
+   ----------------------------------------------------------------------------
+   IF JSONB_TYPEOF(p_features) = 'object'
+   AND p_features->>'type' IN ('Point','LineString','Polygon','MultiPoint','MultiLineString','MultiPolygon','GeometryCollection')
+   THEN
+      obj_rez := cipsrv_engine.jsonb2feature(
+          p_feature               := JSONB_BUILD_OBJECT(
+             'type',     'Feature'
+            ,'geometry', p_features
+          )
+         ,p_nhdplus_version        := str_nhdplus_version
+         ,p_known_region           := str_known_region
+         ,p_int_srid               := int_srid
+         
+         ,p_point_indexing_method  := str_default_point_indexing_method
+         
+         ,p_line_indexing_method   := str_default_line_indexing_method
+         ,p_line_threshold         := num_default_line_threshold
+         
+         ,p_ring_indexing_method   := str_default_ring_indexing_method
+         ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
+         ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+         
+         ,p_area_indexing_method   := str_default_area_indexing_method
+         ,p_areacat_threshold      := num_default_areacat_threshold
+         ,p_areaevt_threshold      := num_default_areaevt_threshold
+      );
+      
+      ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
+   
+   ELSIF JSONB_TYPEOF(p_features) = 'object'
+   AND p_features->>'type' = 'Feature'
+   THEN
+      obj_rez := cipsrv_engine.jsonb2feature(
+          p_feature                := p_features
+         ,p_nhdplus_version        := str_nhdplus_version
+         ,p_known_region           := str_known_region
+         ,p_int_srid               := int_srid
+         
+         ,p_point_indexing_method  := str_default_point_indexing_method
+         
+         ,p_line_indexing_method   := str_default_line_indexing_method
+         ,p_line_threshold         := num_default_line_threshold
+         
+         ,p_ring_indexing_method   := str_default_ring_indexing_method
+         ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
+         ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+         
+         ,p_area_indexing_method   := str_default_area_indexing_method
+         ,p_areacat_threshold      := num_default_areacat_threshold
+         ,p_areaevt_threshold      := num_default_areaevt_threshold
+          
+      );
+      
+      ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
+   
+   ELSIF JSONB_TYPEOF(p_features) = 'object'
+   AND p_features->>'type' = 'FeatureCollection'
+   THEN
+      FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features->'features')
+      LOOP
+         obj_rez := cipsrv_engine.jsonb2feature(
+             p_feature                := p_features->'features'->i-1
+            ,p_nhdplus_version        := str_nhdplus_version
+            ,p_known_region           := str_known_region
+            ,p_int_srid               := int_srid
+            
+            ,p_point_indexing_method  := str_default_point_indexing_method
+            
+            ,p_line_indexing_method   := str_default_line_indexing_method
+            ,p_line_threshold         := num_default_line_threshold
+            
+            ,p_ring_indexing_method   := str_default_ring_indexing_method
+            ,p_ring_areacat_threshold := num_default_ring_areacat_threshold
+            ,p_ring_areaevt_threshold := num_default_ring_areaevt_threshold
+            
+            ,p_area_indexing_method   := str_default_area_indexing_method
+            ,p_areacat_threshold      := num_default_areacat_threshold
+            ,p_areaevt_threshold      := num_default_areaevt_threshold
+            
+         );
+      
+         ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
+   
+      END LOOP;
+      
+   ELSE
+      RAISE EXCEPTION 'input jsonb is not geojson %', p_features;
+   
+   END IF;
+   
+   RETURN ary_rez;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.jsonb2features(
+    JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   
+   ,VARCHAR
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2features(
+    JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   
+   ,VARCHAR
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
+----- functions/lrs_intersection.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.lrs_intersection';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.lrs_intersection(
+    IN  p_geometry1          GEOMETRY
+   ,IN  p_geometry2          GEOMETRY
+) RETURNS GEOMETRY 
+AS
+$BODY$ 
+DECLARE
+   sdo_intersection GEOMETRY;
+   sdo_initial      GEOMETRY;
+   sdo_newinter     GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF ST_GeometryType(p_geometry1) <> 'ST_LineString'
+   OR ST_M(ST_StartPoint(p_geometry1)) IS NULL
+   THEN
+      RAISE EXCEPTION 'geometry 1 must be single LRS linestring';
+      
+   END IF;
+   
+   IF ST_GeometryType(p_geometry2) NOT IN ('ST_Polygon','ST_MultiPolygon')
+   THEN
+      RAISE EXCEPTION 'geometry 2 must be a polygon or multipolygon';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Do the intersection
+   ----------------------------------------------------------------------------
+   sdo_intersection := ST_Intersection(
+       p_geometry1
+      ,p_geometry2
+   );
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Now see what we got
+   ----------------------------------------------------------------------------
+   IF ST_GeometryType(sdo_intersection) IS NULL
+   THEN
+      RETURN NULL;
+      
+   ELSIF ST_GeometryType(sdo_intersection) = 'ST_MultiPoint'
+   THEN
+      RETURN NULL;
+      
+   ELSIF ST_GeometryType(sdo_intersection) IN (
+       'ST_LineString'
+      ,'ST_GeometryCollection'
+      ,'ST_MultiLineString'
+   )
+   THEN
+      NULL;  -- Do nothing
+      
+   ELSE
+      RAISE EXCEPTION 
+          'intersection returned component gtype %'
+         , ST_GeometryType(sdo_intersection);
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Pick out the linestrings
+   ----------------------------------------------------------------------------
+   FOR i IN 1 .. ST_NumGeometries(sdo_intersection)
+   LOOP
+      sdo_initial := ST_GeometryN(sdo_intersection,i);
+      
+      IF ST_GeometryType(sdo_initial) = 'ST_LineString'
+      THEN
+         sdo_initial := dz_lrs.overlay_measures(
+             p_geometry1 := sdo_initial
+            ,p_geometry2 := p_geometry1
+         );
+
+         IF sdo_newinter IS NULL
+         THEN
+            sdo_newinter := sdo_initial;
+            
+         ELSE
+            sdo_newinter := dz_lrs.safe_concatenate_geom_segments(
+                sdo_newinter
+               ,sdo_initial
+            );
+            
+         END IF;
+         
+      END IF;
+   
+   END LOOP;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Final check and then return the results
+   --------------------------------------------------------------------------
+   IF ST_GeometryType(sdo_newinter) NOT IN ('ST_LineString','ST_MultiLineString')
+   THEN
+      RAISE EXCEPTION 'unable to process geometry';
+      
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Return what we got
+   --------------------------------------------------------------------------
+   RETURN sdo_newinter;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.lrs_intersection(
+    GEOMETRY
+   ,GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.lrs_intersection(
+    GEOMETRY
+   ,GEOMETRY
+) TO PUBLIC;
+--******************************--
+----- functions/measure_lengthkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.measure_lengthkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.measure_lengthkm(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_nhdplus_version         VARCHAR
+   ,IN  p_default_nhdplus_version VARCHAR DEFAULT NULL
+   ,IN  p_known_region            VARCHAR DEFAULT NULL
+   ,IN  p_default_known_region    VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   str_nhdplus_version VARCHAR;
+   str_known_region    VARCHAR;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      IF p_default_nhdplus_version IS NULL
+      THEN
+         RAISE EXCEPTION 'nhdplus version required';
+      
+      ELSE
+         str_nhdplus_version := p_default_nhdplus_version;
+         
+      END IF;
+      
+   ELSE
+      str_nhdplus_version := p_nhdplus_version; 
+   
+   END IF;
+   
+   str_known_region := p_known_region;
+   IF str_known_region IS NULL
+   THEN
+      str_known_region := p_default_known_region;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   IF str_nhdplus_version IN ('nhdplus_m','MR')
+   THEN
+      RETURN cipsrv_nhdplus_m.measure_lengthkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
+   THEN
+      RETURN cipsrv_nhdplus_h.measure_lengthkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSE
+      RAISE EXCEPTION 'unknown nhdplus version %',str_nhdplus_version;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/measure_areasqkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.measure_areasqkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.measure_areasqkm(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_nhdplus_version         VARCHAR
+   ,IN  p_default_nhdplus_version VARCHAR DEFAULT NULL
+   ,IN  p_known_region            VARCHAR DEFAULT NULL
+   ,IN  p_default_known_region    VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   str_nhdplus_version VARCHAR;
+   str_known_region    VARCHAR;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      IF p_default_nhdplus_version IS NULL
+      THEN
+         RAISE EXCEPTION 'nhdplus version required';
+      
+      ELSE
+         str_nhdplus_version := p_default_nhdplus_version;
+         
+      END IF;
+      
+   ELSE
+      str_nhdplus_version := p_nhdplus_version; 
+   
+   END IF;
+   
+   str_known_region := p_known_region;
+   IF str_known_region IS NULL
+   THEN
+      str_known_region := p_default_known_region;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   IF str_nhdplus_version IN ('nhdplus_m','MR')
+   THEN
+      RETURN cipsrv_nhdplus_m.measure_areasqkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSIF str_nhdplus_version IN ('nhdplus_h','HR')
+   THEN
+      RETURN cipsrv_nhdplus_h.measure_areasqkm(
+          p_geometry     := p_geometry
+         ,p_known_region := str_known_region
+      );
+   
+   ELSE
+      RAISE EXCEPTION 'unknown nhdplus version %',str_nhdplus_version;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR    
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/overlay_measures.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.overlay_measures';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.overlay_measures(
+    IN  p_geometry1           GEOMETRY
+   ,IN  p_geometry2           GEOMETRY
+) RETURNS GEOMETRY 
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+   sdo_input_start   GEOMETRY;
+   sdo_input_end     GEOMETRY;
+   num_start_meas    NUMERIC;
+   num_end_meas      NUMERIC;
+   sdo_lrs_output    GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF ST_GeometryType(p_geometry1)  <> 'ST_LineString'
+   THEN
+      RAISE EXCEPTION 'geometry 1 must a single linestring';
+      
+   END IF;
+   
+   IF ST_GeometryType(p_geometry2) <> 'ST_LineString'
+   OR ST_M(ST_StartPoint(p_geometry2)) IS NULL
+   THEN
+      RAISE EXCEPTION 'geometry 2 must be single LRS linestring';
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Collect the start and end points of the input geometry
+   --------------------------------------------------------------------------
+   sdo_input_start := ST_StartPoint(p_geometry1);
+   sdo_input_end   := ST_EndPoint(p_geometry1);
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Collect the start and end measure of the input geometry on the lrs
+   --------------------------------------------------------------------------
+   num_start_meas := ST_InterpolatePoint(
+       p_geometry2
+      ,sdo_input_start
+   );
+      
+   num_end_meas := ST_InterpolatePoint(
+       p_geometry2
+      ,sdo_input_end
+   );
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Build the new LRS string from the measures
+   --------------------------------------------------------------------------
+   sdo_lrs_output := ST_AddMeasure(
+       p_geometry1
+      ,num_start_meas
+      ,num_end_meas
+   );
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Check to see if the geometry is backwards
+   --------------------------------------------------------------------------
+   IF num_start_meas < num_end_meas
+   THEN
+      sdo_lrs_output := cipsrv_engine.reverse_linestring(
+          p_geometry := sdo_lrs_output
+      );
+      
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Return the results
+   --------------------------------------------------------------------------
+   RETURN sdo_lrs_output;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.overlay_measures(
+    GEOMETRY
+   ,GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.overlay_measures(
+    GEOMETRY
+   ,GEOMETRY
+) TO PUBLIC;
+--******************************--
+----- functions/parse_catchment_filter.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.parse_catchment_filter';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.parse_catchment_filter(
+    IN  p_catchment_filter             VARCHAR[]
+   ,OUT out_filter_by_state            BOOLEAN
+   ,OUT out_state_filters              VARCHAR[]
+   ,OUT out_filter_by_tribal           BOOLEAN
+   ,OUT out_filter_by_notribal         BOOLEAN
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
+)
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+   rec           RECORD;
+   sdo_geom      GEOMETRY;
+   num_lengthkm  NUMERIC;
+   num_areasqkm  NUMERIC;
+   ary_states    VARCHAR[];
+   
+BEGIN
+
+   out_return_code        := 0;
+   out_filter_by_state    := FALSE;
+   out_filter_by_tribal   := FALSE;
+   out_filter_by_notribal := FALSE;
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   ary_states := ARRAY[
+       'AL','AK','AS','AZ','AR','CA','CO','CT','DE','DC','FL','GA','GU','HI'
+      ,'ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MO','MP'
+      ,'MS','MT','NE','NV','NH','NJ','NM','NY','NC','ND','MP','OH','OK','OR'
+      ,'PA','PR','RI','SC','SD','TN','TX','UT','VT','VI','VA','WA','WV','WI'
+      ,'WY'
+   ];
+   
+   IF p_catchment_filter IS NOT NULL
+   AND array_length(p_catchment_filter,1) > 0
+   THEN
+      FOR i IN 1 .. array_length(p_catchment_filter,1)
+      LOOP
+         IF UPPER(p_catchment_filter[i]) IN ('ALLTRIBES','TRIBAL')
+         THEN
+            out_filter_by_tribal   := TRUE;
+            out_filter_by_notribal := FALSE;
+            
+         ELSIF UPPER(p_catchment_filter[i]) IN ('NOTRIBES','NOTRIBAL')
+         THEN
+            out_filter_by_tribal   := FALSE;
+            out_filter_by_notribal := TRUE;
+            
+         ELSIF UPPER(p_catchment_filter[i]) = ANY(ary_states)
+         THEN
+            out_filter_by_state := TRUE;
+            out_state_filters := array_append(out_state_filters,UPPER(p_catchment_filter[i]));
+         
+         END IF;
+         
+      END LOOP;
+      
+   END IF;
+   
+   RETURN;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.parse_catchment_filter(
+    VARCHAR[]
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.parse_catchment_filter(
+    VARCHAR[]
+) TO PUBLIC;
+
+--******************************--
+----- functions/preprocess2summary.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.preprocess2summary';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.preprocess2summary(
+    IN  p_features           cipsrv_engine.cip_feature[]
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   obj_rez JSONB;
+   int_point_count INTEGER;
+   int_line_count  INTEGER;
+   int_area_count  INTEGER;
+   
+BEGIN
+
+   IF p_features IS NULL
+   OR array_length(p_features,1) = 0
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   int_point_count := 0;
+   int_line_count  := 0;
+   int_area_count  := 0;
+   
+   FOR i IN 1 .. array_length(p_features,1)
+   LOOP
+      IF p_features[i].gtype IN ('ST_Point','ST_MultiPoint')
+      THEN
+         int_point_count := int_point_count + 1;
+         
+      ELSIF p_features[i].gtype IN ('ST_LineString','ST_MultiLineString')
+      THEN
+         int_line_count := int_line_count + 1;
+         
+      ELSIF p_features[i].gtype IN ('ST_Polygon','ST_MultiPolygon')
+      THEN
+         int_area_count := int_area_count + 1;
+         
+      END IF;
+   
+   END LOOP;
+   
+   obj_rez := JSONB_BUILD_OBJECT(
+       'point_count', int_point_count
+      ,'line_count' , int_line_count
+      ,'area_count' , int_area_count
+   );
+   
+   RETURN JSONB_BUILD_OBJECT(
+       'input_features', obj_rez
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.preprocess2summary(
+    cipsrv_engine.cip_feature[]
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.preprocess2summary(
+    cipsrv_engine.cip_feature[]
+) TO PUBLIC;
+
+--******************************--
+----- functions/raster_raindrop.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.raster_raindrop';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.raster_raindrop(
+    IN  p_raster           RASTER
+   ,IN  p_columnX          INTEGER
+   ,IN  p_rowY             INTEGER
+) RETURNS GEOMETRY
+IMMUTABLE
+AS
+$BODY$
+DECLARE
+   r             RECORD;
+   sdo_output    GEOMETRY;
+   sdo_temp      GEOMETRY;
+   int_column_x  INTEGER := p_columnX;
+   int_row_y     INTEGER := p_rowY;
+   int_stop      INTEGER;
+   int_value     INTEGER;
+   int_width     INTEGER;
+   int_height    INTEGER;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_columnX IS NULL
+   OR p_rowY    IS NULL
+   OR p_raster  IS NULL
+   THEN
+      RAISE EXCEPTION 'err';
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Get the raster size
+   ----------------------------------------------------------------------------
+   int_width   := ST_Width(p_raster);
+   int_height  := ST_Height(p_raster);
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Test the start point on the grid
+   ----------------------------------------------------------------------------
+   sdo_temp := ST_PixelAsCentroid(
+       p_raster
+      ,int_column_x
+      ,int_row_y
+   );
+   --raise warning '% % %', int_column_x, int_row_y, st_astext(st_transform(sdo_temp,4269));
+   
+   IF sdo_temp IS NULL
+   THEN
+      RAISE EXCEPTION 'unable to obtain coordinates from raster with X and Y provided';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Walk the grid downstream
+   ----------------------------------------------------------------------------
+   int_stop := 10000;
+   WHILE int_stop > 0
+   LOOP
+      sdo_temp := ST_PixelAsCentroid(
+          p_raster
+         ,int_column_x
+         ,int_row_y
+      );
+      
+      int_value := ST_Value(
+          rast     := p_raster
+         ,band     := 1
+         ,x        := int_column_x
+         ,y        := int_row_y
+         ,exclude_nodata_value := true
+      );
+      
+      CASE int_value
+      WHEN 1
+      THEN
+         int_column_x := int_column_x + 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 2
+      THEN
+         int_column_x := int_column_x + 1;
+         int_row_y    := int_row_y    + 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 4
+      THEN
+         int_row_y    := int_row_y    + 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 8
+      THEN
+         int_column_x := int_column_x - 1;
+         int_row_y    := int_row_y    + 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 16
+      THEN
+         int_column_x := int_column_x - 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 32
+      THEN
+         int_column_x := int_column_x - 1;
+         int_row_y    := int_row_y    - 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 64
+      THEN
+         int_row_y    := int_row_y    - 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 128
+      THEN
+         int_column_x := int_column_x + 1;
+         int_row_y    := int_row_y    - 1;
+         
+         IF sdo_output IS NULL
+         THEN
+            sdo_output := sdo_temp;
+
+         ELSE
+            sdo_output := ST_MakeLine(
+                sdo_output
+               ,sdo_temp
+            );
+
+         END IF;
+         
+      WHEN 0
+      THEN
+         int_stop := 0;
+         
+      WHEN 255
+      THEN
+         int_stop := 0;
+         
+      ELSE
+         int_stop := 0;
+         
+      END CASE;
+
+      IF int_column_x < 1
+      OR int_row_y < 1
+      OR int_column_x > int_width
+      OR int_row_y > int_height
+      THEN
+         int_stop := 0;
+         
+      END IF;
+      
+      int_stop := int_stop - 1;
+   
+   END LOOP;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Return what we got
+   ----------------------------------------------------------------------------
+   RETURN sdo_output;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.raster_raindrop(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.raster_raindrop(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+) TO PUBLIC;
+
+--******************************--
+----- functions/reverse_linestring.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.reverse_linestring';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.reverse_linestring(
+    IN  p_geometry          GEOMETRY
+) RETURNS GEOMETRY
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+   sdo_lrs_output    GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF ST_GeometryType(p_geometry)  <> 'ST_LineString'
+   THEN
+      RAISE EXCEPTION 'geometry must a single linestring';
+      
+   END IF;
+   
+   IF ST_M(
+      ST_StartPoint(p_geometry)
+   ) IS NULL
+   THEN
+      RETURN ST_Reverse(p_geometry);
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Reverse the linestring taking measures along for a ride
+   --------------------------------------------------------------------------
+   SELECT
+   ST_MakeLine(a.geom)
+   INTO
+   sdo_lrs_output
+   FROM (
+      SELECT
+      aa.geom
+      FROM (
+         SELECT (ST_DumpPoints(
+            p_geometry
+         )).*
+      ) aa
+      ORDER BY
+      aa.path[1] DESC
+   ) a;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Return the results
+   --------------------------------------------------------------------------
+   RETURN sdo_lrs_output;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.reverse_linestring(
+    GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.reverse_linestring(
+    GEOMETRY
+) TO PUBLIC;
+--******************************--
+----- functions/table_exists.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.table_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE or REPLACE FUNCTION cipsrv_engine.table_exists(
+    IN  p_schema_name VARCHAR
+   ,IN  p_table_name  VARCHAR
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   str_table_name VARCHAR(255);
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for table
+   ----------------------------------------------------------------------------
+   SELECT 
+   c.relname
+   INTO str_table_name
+   FROM 
+   pg_catalog.pg_class c 
+   LEFT JOIN 
+   pg_catalog.pg_namespace n 
+   ON 
+   n.oid = c.relnamespace
+   WHERE  
+       n.nspname = p_schema_name
+   AND c.relname = p_table_name
+   AND c.relkind = 'r';
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   IF str_table_name IS NULL 
+   THEN
+      RETURN FALSE;
+
+   ELSE
+      RETURN TRUE;
+
+   END IF;
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.table_exists(
+    VARCHAR
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.table_exists(
+    VARCHAR
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/temp_table_exists.sql 
+
+CREATE or REPLACE FUNCTION cipsrv_engine.temp_table_exists(
+   IN p_table_name VARCHAR
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   str_table_name VARCHAR(255);
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for temp table
+   ----------------------------------------------------------------------------
+   SELECT 
+    n.nspname
+   INTO str_table_name
+   FROM 
+   pg_catalog.pg_class c 
+   LEFT JOIN 
+   pg_catalog.pg_namespace n 
+   ON 
+   n.oid = c.relnamespace
+   where 
+       n.nspname like 'pg_temp_%'
+   AND pg_catalog.pg_table_is_visible(c.oid)
+   AND UPPER(relname) = UPPER(p_table_name);
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   IF str_table_name IS NULL 
+   THEN
+      RETURN FALSE;
+
+   ELSE
+      RETURN TRUE;
+
+   END IF;
+
+END;
+$BODY$ LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.temp_table_exists(
+   VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.temp_table_exists(
+   VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/unpackjsonb.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.unpackjsonb';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
+    IN  p_points                         JSONB
+   ,IN  p_lines                          JSONB
+   ,IN  p_areas                          JSONB
+   ,IN  p_geometry                       JSONB
+   ,IN  p_nhdplus_version                VARCHAR DEFAULT NULL
+   ,IN  p_known_region                   VARCHAR DEFAULT NULL
+   ,IN  p_int_srid                       INTEGER DEFAULT NULL
+   
+   ,IN  p_default_point_indexing_method  VARCHAR DEFAULT NULL
+   
+   ,IN  p_default_line_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_line_threshold         NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_ring_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_ring_areacat_threshold NUMERIC DEFAULT NULL
+   ,IN  p_default_ring_areaevt_threshold NUMERIC DEFAULT NULL
+   
+   ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
+   ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
+   ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
+   
+   ,OUT out_return_code                  INTEGER
+   ,OUT out_status_message               VARCHAR
+   ,OUT out_features                     cipsrv_engine.cip_feature[]
+)
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+   rec              RECORD;
+   ary_points       cipsrv_engine.cip_feature[];
+   ary_lines        cipsrv_engine.cip_feature[];
+   ary_areas        cipsrv_engine.cip_feature[];
+   str_known_region VARCHAR := p_known_region;
+   int_srid         INTEGER := p_int_srid;
+   
+BEGIN
+
+   out_return_code := 0;
+   
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF  p_points   IS NULL
+   AND p_lines    IS NULL
+   AND p_areas    IS NULL
+   AND p_geometry IS NULL
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   IF p_nhdplus_version IS NULL
+   THEN
+      RAISE EXCEPTION 'nhdplus version cannot be null';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Branch when geometry is provided
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NOT NULL
+   THEN
+      out_features := cipsrv_engine.jsonb2features(
+          p_features                      := p_geometry
+         ,p_nhdplus_version               := p_nhdplus_version
+         ,p_known_region                  := str_known_region
+         ,p_int_srid                      := int_srid
+         ,p_default_point_indexing_method := p_default_point_indexing_method
+         ,p_default_line_indexing_method  := p_default_line_indexing_method
+         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_default_area_indexing_method  := p_default_area_indexing_method
+         ,p_default_line_threshold        := p_default_line_threshold
+         ,p_default_areacat_threshold     := p_default_areacat_threshold
+         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
+      );
+   
+   ELSE
+      ary_points := cipsrv_engine.jsonb2features(
+          p_features                      := p_points
+         ,p_nhdplus_version               := p_nhdplus_version
+         ,p_known_region                  := str_known_region
+         ,p_int_srid                      := int_srid
+         ,p_default_point_indexing_method := p_default_point_indexing_method
+         ,p_default_line_indexing_method  := p_default_line_indexing_method
+         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_default_area_indexing_method  := p_default_area_indexing_method
+         ,p_default_line_threshold        := p_default_line_threshold
+         ,p_default_areacat_threshold     := p_default_areacat_threshold
+         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
+      );
+      
+      ary_lines := cipsrv_engine.jsonb2features(
+          p_features                      := p_lines
+         ,p_nhdplus_version               := p_nhdplus_version
+         ,p_known_region                  := str_known_region
+         ,p_int_srid                      := int_srid
+         ,p_default_point_indexing_method := p_default_point_indexing_method
+         ,p_default_line_indexing_method  := p_default_line_indexing_method
+         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_default_area_indexing_method  := p_default_area_indexing_method
+         ,p_default_line_threshold        := p_default_line_threshold
+         ,p_default_areacat_threshold     := p_default_areacat_threshold
+         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
+      );
+      
+      ary_areas := cipsrv_engine.jsonb2features(
+          p_features                      := p_areas
+         ,p_nhdplus_version               := p_nhdplus_version
+         ,p_known_region                  := str_known_region
+         ,p_int_srid                      := int_srid
+         ,p_default_point_indexing_method := p_default_point_indexing_method
+         ,p_default_line_indexing_method  := p_default_line_indexing_method
+         ,p_default_ring_indexing_method  := p_default_ring_indexing_method
+         ,p_default_area_indexing_method  := p_default_area_indexing_method
+         ,p_default_line_threshold        := p_default_line_threshold
+         ,p_default_areacat_threshold     := p_default_areacat_threshold
+         ,p_default_areaevt_threshold     := p_default_areaevt_threshold
+      );
+      
+      out_features := cipsrv_engine.featurecat(out_features,ary_points);
+      out_features := cipsrv_engine.featurecat(out_features,ary_lines);
+      out_features := cipsrv_engine.featurecat(out_features,ary_areas);
+      
+   END IF;
+      
+   -------------------------------------------------------------------------
+   -- Ring Handling
+   -------------------------------------------------------------------------
+   IF out_features IS NOT NULL
+   AND array_length(out_features,1) > 0
+   THEN
+      FOR i IN 1 .. array_length(out_features,1)
+      LOOP
+         IF out_features[i].isRing 
+         AND out_features[i].ring_indexing_method != 'treat_as_lines'
+         THEN
+            out_features[i].geometry := ST_MakePolygon(out_features[i].geometry);
+            out_features[i].gtype    := ST_GeometryType(out_features[i].geometry);
+            out_features[i].converted_to_ring := TRUE;
+            out_features[i].area_indexing_method := out_features[i].ring_indexing_method;
+            out_features[i].areacat_threshold    := out_features[i].ring_areacat_threshold;
+            out_features[i].areaevt_threshold    := out_features[i].ring_areaevt_threshold;
+            
+            out_features[i].lengthkm := NULL;
+            out_features[i].areasqkm := ROUND(ST_Area(ST_Transform(
+                out_features[i].geometry
+               ,out_features[i].int_srid
+            ))::NUMERIC / 1000000,8);
+            
+         END IF;
+      
+      END LOOP;
+      
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.unpackjsonb(
+    JSONB
+   ,JSONB
+   ,JSONB
+   ,JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   
+   ,VARCHAR
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.unpackjsonb(
+    JSONB
+   ,JSONB
+   ,JSONB
+   ,JSONB
+   ,VARCHAR
+   ,VARCHAR
+   ,INTEGER
+   ,VARCHAR
+   
+   ,VARCHAR
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
 ) TO PUBLIC;
 
 --******************************--

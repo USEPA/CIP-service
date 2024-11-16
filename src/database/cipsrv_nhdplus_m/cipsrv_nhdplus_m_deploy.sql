@@ -2552,146 +2552,2296 @@ ALTER TYPE cipsrv_nhdplus_m.snapflowline OWNER TO cipsrv;
 GRANT USAGE ON TYPE cipsrv_nhdplus_m.snapflowline TO PUBLIC;
 
 --******************************--
------ functions/generic_common_mbr.sql 
+----- functions/catconstrained_index.sql 
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
-   IN  p_input  VARCHAR
-) RETURNS GEOMETRY 
-IMMUTABLE
-AS
-$BODY$ 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.catconstrained_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_index(
+    IN  p_point                     GEOMETRY
+   ,IN  p_return_link_path          BOOLEAN
+   ,IN  p_known_region              VARCHAR
+   ,IN  p_known_catchment_nhdplusid BIGINT DEFAULT NULL
+   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km        NUMERIC
+   ,OUT out_end_point               GEOMETRY
+   ,OUT out_indexing_line           GEOMETRY
+   ,OUT out_region                  VARCHAR
+   ,OUT out_nhdplusid               BIGINT
+   ,OUT out_return_code             INTEGER
+   ,OUT out_status_message          VARCHAR
+)
+STABLE
+AS $BODY$ 
 DECLARE
-   str_input VARCHAR(4000) := UPPER(p_input);
+   rec                     RECORD;
+   boo_return_link_path    BOOLEAN  := p_return_link_path;
+   int_raster_srid         INTEGER;
+   sdo_input               GEOMETRY;
+   rec_candidate           cipsrv_nhdplus_m.snapflowline;
+   int_nhdplusid           BIGINT;
+   boo_issink              BOOLEAN;
+   boo_isocean             BOOLEAN;
+   boo_isalaskan           BOOLEAN;
    
 BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
    
-   IF str_input IN ('5070','CONUS','US','USA',
-   'AL','AR','AZ','CA','CO','CT','DC','DE','FL','GA',
-   'IA','ID','IL','IN','KS','KY','LA','MA','MD','ME',
-   'MI','MN','MO','MS','MT','NC','ND','NE','NH','NJ',
-   'NM','NV','NY','OH','OK','OR','PA','RI','SC','SD',
-   'TN','TX','UT','VA','VT','WA','WI','WV','WY')
+   IF p_point IS NULL OR ST_IsEmpty(p_point) 
+   OR ST_GeometryType(p_point) <> 'ST_Point'
    THEN
-      RETURN ST_PolygonFromText('POLYGON((-128.0 20.2,-64.0 20.2,-64.0 52.0,-128.0 52.0,-128.0 20.2))',4326)::geography;
-      
-   ELSIF str_input IN ('3338','AK','ALASKA')
-   THEN
-      RETURN ST_MPolyFromText('MULTIPOLYGON(((-180 48,-128 48,-128 90,-180 90,-180 48)),((168 48,180 48,180 90,168 90,168 48)))',4326)::geography;
-      
-   ELSIF str_input IN ('26904','HI','HAWAII')
-   THEN
-      RETURN ST_PolygonFromText('POLYGON((-180.0 10.0,-146.0 10.0,-146.0 35.0,-180.0 35.0,-180.0 10.0))',4326)::geography;
-      
-   ELSIF str_input IN ('32161','PR','VI','PR/VI','PRVI')
-   THEN
-      RETURN ST_PolygonFromText('POLYGON((-69.0 16.0,-63.0 16.0,-63.0 20.0,-69.0 20.0,-69.0 16.0))',4326)::geography;
-   
-   ELSIF str_input IN ('32655','GUMP','GUAM','MP','GU')
-   THEN
-      RETURN ST_PolyFromText('POLYGON((136.0 8.0,154.0 8.0,154.0 25.0,136.0 25.0,136.0 8.0))',4326)::geography;
-         
-   ELSIF str_input IN ('32702','SAMOA','AS')
-   THEN
-      RETURN ST_PolyFromText('POLYGON((-178.0 -20.0, -163.0 -20.0, -163.0 -5.0, -178.0 -5.0, -178.0 -20.0))',4326)::geography;
-        
-   ELSE
-      RAISE EXCEPTION 'unknown generic mbr code';
+      out_return_code    := -99;
+      out_status_message := 'Input must be point geometry.';
+      RETURN;
       
    END IF;
    
+   IF boo_return_link_path IS NULL
+   THEN
+      boo_return_link_path := FALSE;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the projection
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_point
+      ,p_known_region   := p_known_region
+   );
+   int_raster_srid    := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   out_region         := rec.out_srid::VARCHAR;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
+   END IF;
+     
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project input point if required
+   --------------------------------------------------------------------------
+   IF ST_SRID(p_point) = int_raster_srid
+   THEN
+      sdo_input := p_point;
+      
+   ELSE
+      sdo_input := ST_Transform(p_point,int_raster_srid);
+      
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Determine the catchment if not provided
+   --------------------------------------------------------------------------
+   IF p_known_catchment_nhdplusid IS NOT NULL
+   THEN
+      int_nhdplusid := p_known_catchment_nhdplusid;
+      
+   ELSE
+      IF int_raster_srid = 5070
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.issink
+         ,a.isocean
+         ,a.isalaskan
+         INTO 
+          int_nhdplusid
+         ,boo_issink
+         ,boo_isocean
+         ,boo_isalaskan
+         FROM
+         cipsrv_nhdplus_m.catchment_5070 a
+         WHERE
+         ST_Intersects(
+             a.shape
+            ,sdo_input
+         )
+         LIMIT 1;
+         
+      ELSIF int_raster_srid = 3338
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.issink
+         ,a.isocean
+         ,a.isalaskan
+         INTO 
+          int_nhdplusid
+         ,boo_issink
+         ,boo_isocean
+         ,boo_isalaskan
+         FROM
+         cipsrv_nhdplus_m.catchment_3338 a
+         WHERE
+         ST_Intersects(
+             a.shape
+            ,sdo_input
+         )
+         LIMIT 1;
+         
+      ELSIF int_raster_srid = 22904
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.issink
+         ,a.isocean
+         ,a.isalaskan
+         INTO 
+          int_nhdplusid
+         ,boo_issink
+         ,boo_isocean
+         ,boo_isalaskan
+         FROM
+         cipsrv_nhdplus_m.catchment_22904 a
+         WHERE
+         ST_Intersects(
+             a.shape
+            ,sdo_input
+         )
+         LIMIT 1;
+         
+      ELSIF int_raster_srid = 32161
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.issink
+         ,a.isocean
+         ,a.isalaskan
+         INTO 
+          int_nhdplusid
+         ,boo_issink
+         ,boo_isocean
+         ,boo_isalaskan
+         FROM
+         cipsrv_nhdplus_m.catchment_32161 a
+         WHERE
+         ST_Intersects(
+             a.shape
+            ,sdo_input
+         )
+         LIMIT 1;
+         
+      ELSIF int_raster_srid = 32655
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.issink
+         ,a.isocean
+         ,a.isalaskan
+         INTO 
+          int_nhdplusid
+         ,boo_issink
+         ,boo_isocean
+         ,boo_isalaskan
+         FROM
+         cipsrv_nhdplus_m.catchment_32655 a
+         WHERE
+         ST_Intersects(
+             a.shape
+            ,sdo_input
+         )
+         LIMIT 1;
+         
+      ELSIF int_raster_srid = 32702
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.issink
+         ,a.isocean
+         ,a.isalaskan
+         INTO 
+         int_nhdplusid
+         FROM
+         cipsrv_nhdplus_m.catchment_32702 a
+         WHERE
+         ST_Intersects(
+             a.shape
+            ,sdo_input
+         )
+         LIMIT 1;
+         
+      ELSE
+         RAISE EXCEPTION 'err';
+      
+      END IF;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Bail if no results
+   --------------------------------------------------------------------------
+   IF int_nhdplusid IS NULL
+   THEN
+      out_return_code    := -2;
+      out_status_message := 'no results found';
+      RETURN;
+   
+   END IF;
+   
+   IF boo_issink
+   OR boo_isocean
+   OR boo_isalaskan
+   THEN
+      out_return_code    := -3;
+      out_status_message := 'catchment without flowline for indexing';
+      out_nhdplusid      := int_nhdplusid;
+      RETURN;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Pull the matching flowline
+   --------------------------------------------------------------------------
+   IF int_raster_srid = 5070
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       rec_candidate.permanent_identifier
+      ,rec_candidate.fdate
+      ,rec_candidate.resolution
+      ,rec_candidate.gnis_id
+      ,rec_candidate.gnis_name
+      ,rec_candidate.lengthkm
+      ,rec_candidate.reachcode
+      ,rec_candidate.flowdir
+      ,rec_candidate.wbarea_permanent_identifier
+      ,rec_candidate.ftype
+      ,rec_candidate.fcode
+      ,rec_candidate.mainpath
+      ,rec_candidate.innetwork
+      ,rec_candidate.visibilityfilter
+      ,rec_candidate.nhdplusid
+      ,rec_candidate.vpuid
+      ,rec_candidate.enabled
+      ,rec_candidate.fmeasure
+      ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
+      ,rec_candidate.shape
+      ,rec_candidate.snap_measure
+      ,rec_candidate.snap_distancekm
+      ,rec_candidate.snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_5070 aa
+         WHERE
+         aa.nhdplusid = int_nhdplusid
+      ) a;
+   
+   ELSIF int_raster_srid = 3338
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       rec_candidate.permanent_identifier
+      ,rec_candidate.fdate
+      ,rec_candidate.resolution
+      ,rec_candidate.gnis_id
+      ,rec_candidate.gnis_name
+      ,rec_candidate.lengthkm
+      ,rec_candidate.reachcode
+      ,rec_candidate.flowdir
+      ,rec_candidate.wbarea_permanent_identifier
+      ,rec_candidate.ftype
+      ,rec_candidate.fcode
+      ,rec_candidate.mainpath
+      ,rec_candidate.innetwork
+      ,rec_candidate.visibilityfilter
+      ,rec_candidate.nhdplusid
+      ,rec_candidate.vpuid
+      ,rec_candidate.enabled
+      ,rec_candidate.fmeasure
+      ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
+      ,rec_candidate.shape
+      ,rec_candidate.snap_measure
+      ,rec_candidate.snap_distancekm
+      ,rec_candidate.snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_3338 aa
+         WHERE
+         aa.nhdplusid = int_nhdplusid
+      ) a;
+   
+   ELSIF int_raster_srid = 26904
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       rec_candidate.permanent_identifier
+      ,rec_candidate.fdate
+      ,rec_candidate.resolution
+      ,rec_candidate.gnis_id
+      ,rec_candidate.gnis_name
+      ,rec_candidate.lengthkm
+      ,rec_candidate.reachcode
+      ,rec_candidate.flowdir
+      ,rec_candidate.wbarea_permanent_identifier
+      ,rec_candidate.ftype
+      ,rec_candidate.fcode
+      ,rec_candidate.mainpath
+      ,rec_candidate.innetwork
+      ,rec_candidate.visibilityfilter
+      ,rec_candidate.nhdplusid
+      ,rec_candidate.vpuid
+      ,rec_candidate.enabled
+      ,rec_candidate.fmeasure
+      ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
+      ,rec_candidate.shape
+      ,rec_candidate.snap_measure
+      ,rec_candidate.snap_distancekm
+      ,rec_candidate.snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_26904 aa
+         WHERE
+         aa.nhdplusid = int_nhdplusid
+      ) a;
+      
+   ELSIF int_raster_srid = 32161
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       rec_candidate.permanent_identifier
+      ,rec_candidate.fdate
+      ,rec_candidate.resolution
+      ,rec_candidate.gnis_id
+      ,rec_candidate.gnis_name
+      ,rec_candidate.lengthkm
+      ,rec_candidate.reachcode
+      ,rec_candidate.flowdir
+      ,rec_candidate.wbarea_permanent_identifier
+      ,rec_candidate.ftype
+      ,rec_candidate.fcode
+      ,rec_candidate.mainpath
+      ,rec_candidate.innetwork
+      ,rec_candidate.visibilityfilter
+      ,rec_candidate.nhdplusid
+      ,rec_candidate.vpuid
+      ,rec_candidate.enabled
+      ,rec_candidate.fmeasure
+      ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
+      ,rec_candidate.shape
+      ,rec_candidate.snap_measure
+      ,rec_candidate.snap_distancekm
+      ,rec_candidate.snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32161 aa
+         WHERE
+         aa.nhdplusid = int_nhdplusid
+      ) a;
+      
+   ELSIF int_raster_srid = 32655
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       rec_candidate.permanent_identifier
+      ,rec_candidate.fdate
+      ,rec_candidate.resolution
+      ,rec_candidate.gnis_id
+      ,rec_candidate.gnis_name
+      ,rec_candidate.lengthkm
+      ,rec_candidate.reachcode
+      ,rec_candidate.flowdir
+      ,rec_candidate.wbarea_permanent_identifier
+      ,rec_candidate.ftype
+      ,rec_candidate.fcode
+      ,rec_candidate.mainpath
+      ,rec_candidate.innetwork
+      ,rec_candidate.visibilityfilter
+      ,rec_candidate.nhdplusid
+      ,rec_candidate.vpuid
+      ,rec_candidate.enabled
+      ,rec_candidate.fmeasure
+      ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
+      ,rec_candidate.shape
+      ,rec_candidate.snap_measure
+      ,rec_candidate.snap_distancekm
+      ,rec_candidate.snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32655 aa
+         WHERE
+         aa.nhdplusid = int_nhdplusid
+      ) a;
+      
+   ELSIF int_raster_srid = 32702
+   THEN
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,ROUND(
+           a.snap_measure::NUMERIC
+          ,5
+       ) AS snap_measure
+      ,a.snap_distancekm
+      ,ST_Transform(ST_Force2D(
+          ST_GeometryN(
+             ST_LocateAlong(
+                 a.shape
+                ,a.snap_measure
+             )
+            ,1
+          )
+       ),4269) AS snap_point
+      INTO
+       rec_candidate.permanent_identifier
+      ,rec_candidate.fdate
+      ,rec_candidate.resolution
+      ,rec_candidate.gnis_id
+      ,rec_candidate.gnis_name
+      ,rec_candidate.lengthkm
+      ,rec_candidate.reachcode
+      ,rec_candidate.flowdir
+      ,rec_candidate.wbarea_permanent_identifier
+      ,rec_candidate.ftype
+      ,rec_candidate.fcode
+      ,rec_candidate.mainpath
+      ,rec_candidate.innetwork
+      ,rec_candidate.visibilityfilter
+      ,rec_candidate.nhdplusid
+      ,rec_candidate.vpuid
+      ,rec_candidate.enabled
+      ,rec_candidate.fmeasure
+      ,rec_candidate.tmeasure
+      ,rec_candidate.hydroseq
+      ,rec_candidate.shape
+      ,rec_candidate.snap_measure
+      ,rec_candidate.snap_distancekm
+      ,rec_candidate.snap_point
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_InterpolatePoint(
+              aa.shape
+             ,sdo_input
+          ) AS snap_measure
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32702 aa
+         WHERE
+         aa.nhdplusid = int_nhdplusid
+      ) a;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 70
+   -- Generate snap path if requested
+   --------------------------------------------------------------------------
+   out_flowlines[1]     := rec_candidate;
+   out_path_distance_km := out_flowlines[1].snap_distancekm;
+   out_end_point        := out_flowlines[1].snap_point;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
+   
+   IF p_return_link_path
+   AND out_path_distance_km > 0.00005
+   THEN
+      out_indexing_line := ST_MakeLine(
+          ST_Transform(sdo_input,4269)
+         ,out_end_point
+      );
+  
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 90
+   -- Check for problems and mismatches
+   --------------------------------------------------------------------------
+   IF out_nhdplusid IS NULL
+   THEN
+      out_return_code    := -1;
+      out_status_message := 'Error matching catchment to flowline <<' || int_nhdplusid::VARCHAR || '>>';
+      RETURN;
+      
+   END IF;
+
+
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
-   VARCHAR
+ALTER FUNCTION cipsrv_nhdplus_m.catconstrained_index(
+    GEOMETRY
+   ,BOOLEAN
+   ,VARCHAR
+   ,BIGINT
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
-   VARCHAR
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.catconstrained_index(
+    GEOMETRY
+   ,BOOLEAN
+   ,VARCHAR
+   ,BIGINT
 ) TO PUBLIC;
+--******************************--
+----- functions/delineate.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.delineate';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.delineate(
+    IN  p_search_type                  VARCHAR
+   ,IN  p_start_nhdplusid              BIGINT
+   ,IN  p_start_permanent_identifier   VARCHAR
+   ,IN  p_start_reachcode              VARCHAR
+   ,IN  p_start_hydroseq               BIGINT
+   ,IN  p_start_measure                NUMERIC
+   ,IN  p_stop_nhdplusid               BIGINT
+   ,IN  p_stop_permanent_identifier    VARCHAR
+   ,IN  p_stop_reachcode               VARCHAR
+   ,IN  p_stop_hydroseq                BIGINT
+   ,IN  p_stop_measure                 NUMERIC
+   ,IN  p_max_distancekm               NUMERIC
+   ,IN  p_max_flowtimeday              NUMERIC
+   ,IN  p_aggregation_engine           VARCHAR
+   ,IN  p_split_initial_catchment      BOOLEAN
+   ,IN  p_fill_basin_holes             BOOLEAN
+   ,IN  p_force_no_cache               BOOLEAN
+   ,IN  p_return_delineation_geometry  BOOLEAN
+   ,IN  p_return_flowlines             BOOLEAN   
+   ,IN  p_return_flowline_details      BOOLEAN
+   ,IN  p_return_flowline_geometry     BOOLEAN
+   
+   ,OUT out_aggregation_used           VARCHAR
+   ,OUT out_return_flowlines           BOOLEAN
+   ,OUT out_start_nhdplusid            BIGINT
+   ,OUT out_start_permanent_identifier VARCHAR
+   ,OUT out_start_measure              NUMERIC
+   ,OUT out_grid_srid                  INTEGER
+   ,OUT out_stop_nhdplusid             BIGINT
+   ,OUT out_stop_measure               NUMERIC
+   ,OUT out_flowline_count             INTEGER
+   ,OUT out_return_code                NUMERIC
+   ,OUT out_status_message             VARCHAR
+)
+VOLATILE
+AS $BODY$
+DECLARE
+   rec                             RECORD;
+   str_search_type                 VARCHAR(16) := UPPER(p_search_type); 
+   obj_start_flowline              cipsrv_nhdplus_m.flowline;
+   obj_stop_flowline               cipsrv_nhdplus_m.flowline;
+   num_maximum_distancekm          NUMERIC     := p_max_distancekm;
+   num_maximum_flowtimeday         NUMERIC     := p_max_flowtimeday;
+   int_counter                     INTEGER;
+   int_check                       INTEGER;
+   int_grid_srid                   INTEGER;
+   int_start_nhdplusid             BIGINT;
+   str_start_permanent_identifier  VARCHAR(40);
+   num_start_measure               NUMERIC;
+   int_stop_nhdplusid              BIGINT;
+   num_stop_measure                NUMERIC;
+   int_flowlines                   INTEGER;
+   int_catchments                  INTEGER;
+   sdo_splitpoint                  GEOMETRY;
+   sdo_split_catchment             GEOMETRY;
+   sdo_topo_output                 GEOMETRY;
+   sdo_output                      GEOMETRY;
+   num_area                        NUMERIC;
+   str_aggregation_engine          VARCHAR := UPPER(p_aggregation_engine);
+   boo_aggregation_flag            BOOLEAN;
+   boo_topology_flag               BOOLEAN;
+   boo_split_initial_catchment     BOOLEAN;
+   boo_fill_basin_holes            BOOLEAN;
+   boo_return_delineation_geometry BOOLEAN;
+   boo_return_flowlines            BOOLEAN;
+   boo_return_flowline_details     BOOLEAN;
+   boo_return_flowline_geometry    BOOLEAN;
+   boo_zero_length_delin           BOOLEAN;   
+   boo_force_no_cache              BOOLEAN;
+   boo_cached_watershed            BOOLEAN;
+
+BEGIN
+
+   out_return_code := cipsrv_engine.create_delineation_temp_tables();
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   out_return_code    := 0;
+   obj_start_flowline := NULL::cipsrv_nhdplus_m.flowline;
+   obj_stop_flowline  := NULL::cipsrv_nhdplus_m.flowline;
+   
+   IF str_search_type IN ('PP','POINT TO POINT','POINT-TO-POINT')
+   THEN
+      str_search_type := 'PP';
+      
+   ELSIF str_search_type IN ('PPALL')
+   THEN
+      str_search_type := 'PPALL';
+   
+   ELSIF str_search_type IN ('UT','UPSTREAM WITH TRIBUTARIES')
+   THEN
+      str_search_type := 'UT';
+   
+   ELSIF str_search_type IN ('UM','UPSTREAM MAIN PATH ONLY')
+   THEN
+      str_search_type := 'UM';
+   
+   ELSIF str_search_type IN ('DD','DOWNSTREAM WITH DIVERGENCES')
+   THEN
+      str_search_type := 'DD';
+   
+   ELSIF str_search_type IN ('DM','DOWNSTREAM MAIN PATH ONLY')
+   THEN
+      str_search_type := 'DM';
+      
+   ELSE
+      out_return_code    := -1;
+      out_status_message := 'Valid SearchType codes are UM, UT, DM, DD and PP.';
+
+   END IF;
+
+   IF str_search_type IN ('PP','PPALL')
+   THEN
+      num_maximum_distancekm  := NULL;
+      num_maximum_flowtimeday := NULL;
+
+   END IF;
+
+   IF  num_maximum_distancekm  IS NOT NULL
+   AND num_maximum_flowtimeday IS NOT NULL
+   THEN
+      num_maximum_flowtimeday := NULL;
+
+   END IF;
+   
+   IF str_aggregation_engine IN ('SPATIAL')
+   THEN
+      str_aggregation_engine := 'SPATIAL';
+      boo_aggregation_flag   := TRUE;
+      boo_topology_flag      := FALSE;
+      
+   ELSIF str_aggregation_engine IN ('TOPO')
+   THEN
+      str_aggregation_engine := 'TOPO';
+      boo_aggregation_flag   := TRUE;
+      boo_topology_flag      := TRUE;
+   
+   ELSIF str_aggregation_engine IN ('NONE')
+   THEN
+      str_aggregation_engine := 'NONE';
+      boo_aggregation_flag   := FALSE;
+      boo_topology_flag      := FALSE;
+   
+   ELSE
+      str_aggregation_engine := 'TOPO';
+      boo_aggregation_flag   := TRUE;
+      boo_topology_flag      := TRUE;
+      
+   END IF;
+   
+   boo_split_initial_catchment := p_split_initial_catchment;
+   IF boo_split_initial_catchment IS NULL
+   THEN
+      boo_split_initial_catchment := TRUE;
+      
+   END IF;
+   
+   boo_fill_basin_holes := p_fill_basin_holes;
+   IF boo_fill_basin_holes IS NULL
+   THEN
+      boo_fill_basin_holes := TRUE;
+      
+   END IF;
+   
+   boo_force_no_cache := p_force_no_cache;
+   IF boo_force_no_cache IS NULL
+   THEN
+      boo_force_no_cache := FALSE;
+      
+   END IF;
+   
+   boo_return_delineation_geometry := p_return_delineation_geometry;
+   IF boo_return_delineation_geometry IS NULL
+   THEN
+      boo_return_delineation_geometry := TRUE;
+      
+   END IF;
+   
+   boo_return_flowlines := p_return_flowlines;
+   IF boo_return_flowlines IS NULL
+   THEN
+      boo_return_flowlines := FALSE;
+      
+   END IF;
+   
+   boo_return_flowline_details := p_return_flowline_details;
+   IF boo_return_flowline_details IS NULL
+   THEN
+      boo_return_flowline_details := TRUE;
+      
+   END IF;
+   
+   boo_return_flowline_geometry := p_return_flowline_geometry;
+   IF boo_return_flowline_geometry IS NULL
+   THEN
+      boo_return_flowline_geometry := TRUE;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine special conditions
+   ----------------------------------------------------------------------------
+   IF  num_maximum_distancekm IS NULL
+   AND num_maximum_flowtimeday IS NULL
+   AND NOT boo_split_initial_catchment
+   AND NOT boo_return_flowlines
+   AND str_aggregation_engine != 'NONE'
+   THEN
+      boo_cached_watershed := TRUE;
+      
+   ELSIF num_maximum_distancekm  = 0
+   OR    num_maximum_flowtimeday = 0
+   THEN
+      boo_zero_length_delin := TRUE;
+      
+   END IF;
+   
+   IF boo_force_no_cache
+   THEN
+      boo_cached_watershed := FALSE;
+   
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- For cached watershed, verify that nhdplusid matches actual catchment
+   ----------------------------------------------------------------------------
+   IF boo_cached_watershed
+   OR boo_zero_length_delin
+   THEN
+      rec := cipsrv_nhdplus_m.get_flowline(
+          p_direction            := str_search_type
+         ,p_nhdplusid            := p_start_nhdplusid
+         ,p_permanent_identifier := p_start_permanent_identifier
+         ,p_reachcode            := p_start_reachcode
+         ,p_hydroseq             := p_start_hydroseq
+         ,p_measure              := p_start_measure
+      );
+      out_return_code        := rec.out_return_code;
+      out_status_message     := rec.out_status_message;
+      
+      IF out_return_code <> 0
+      THEN
+         IF out_return_code = -10
+         THEN
+            out_status_message := 'Flowline ' || COALESCE(
+                p_start_nhdplusid::VARCHAR
+               ,p_start_permanent_identifier
+               ,p_start_reachcode
+               ,p_start_hydroseq::VARCHAR
+               ,'err'
+            );
+            
+            IF p_start_measure IS NOT NULL
+            THEN
+               out_status_message := out_status_message || ' at measure ' || p_start_measure::VARCHAR;
+               
+            END IF;
+            
+            out_status_message := out_status_message || ' not found in NHDPlus stream network.';
+            
+         END IF;
+         
+         RETURN;
+         
+      END IF;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Run the Navigation Service
+   ----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   THEN
+      rec := cipsrv_nhdplus_m.navigate(
+          p_search_type                := str_search_type
+         ,p_start_nhdplusid            := p_start_nhdplusid
+         ,p_start_permanent_identifier := p_start_permanent_identifier
+         ,p_start_reachcode            := p_start_reachcode
+         ,p_start_hydroseq             := p_start_hydroseq
+         ,p_start_measure              := p_start_measure
+         ,p_stop_nhdplusid             := p_stop_nhdplusid
+         ,p_stop_permanent_identifier  := p_stop_permanent_identifier
+         ,p_stop_reachcode             := p_stop_reachcode
+         ,p_stop_hydroseq              := p_stop_hydroseq
+         ,p_stop_measure               := p_stop_measure
+         ,p_max_distancekm             := num_maximum_distancekm
+         ,p_max_flowtimeday            := num_maximum_flowtimeday
+      );
+      
+      out_return_code                := rec.out_return_code;
+      out_status_message             := rec.out_status_message;
+      int_start_nhdplusid            := rec.out_start_nhdplusid;
+      num_start_measure              := rec.out_start_measure;
+      str_start_permanent_identifier := rec.out_start_permanent_identifier;
+      int_grid_srid                  := rec.out_grid_srid;   
+      int_flowlines                  := rec.out_flowline_count;
+      int_stop_nhdplusid                 := rec.out_stop_nhdplusid;
+      num_stop_measure               := rec.out_stop_measure;
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Examine the navigation results
+   ----------------------------------------------------------------------------
+   IF  out_return_code = -56600
+   AND str_search_type <> 'PP'
+   THEN
+       -- When directional navigation hits the coastal response, flip to zero length
+      out_return_code := 0;
+      out_status_message := NULL;
+      boo_zero_length_delin := TRUE;
+      
+      rec := cipsrv_nhdplus_m.get_flowline(
+          p_direction            := str_search_type
+         ,p_nhdplusid            := p_start_nhdplusid
+         ,p_permanent_identifier := p_start_permanent_identifier
+         ,p_reachcode            := p_start_reachcode
+         ,p_hydroseq             := p_start_hydroseq
+         ,p_measure              := p_start_measure
+      );
+      out_return_code        := rec.out_return_code;
+      out_status_message     := rec.out_status_message;
+      
+      IF out_return_code <> 0
+      THEN
+         IF out_return_code = -10
+         THEN
+            out_status_message := 'Flowline ' || COALESCE(
+                p_start_nhdplusid::VARCHAR
+               ,p_start_permanent_identifier
+               ,p_start_reachcode
+               ,p_start_hydroseq::VARCHAR
+               ,'err'
+            );
+            
+            IF p_start_measure IS NOT NULL
+            THEN
+               out_status_message := out_status_message || ' at measure ' || p_start_measure::VARCHAR;
+               
+            END IF;
+            
+            out_status_message := out_status_message || ' not found in NHDPlus stream network.';
+            
+         END IF;
+         
+         RETURN;
+         
+      END IF;
+      
+   END IF;
+   
+   IF out_return_code <> 0
+   THEN
+      IF out_return_code = 302
+      THEN
+         -- Message is per Tommy Dewald.  Do not change without checking with Tommy first
+         out_status_message := 'The selected flowline (stream segment) is not connected to the NHDPlus stream network';
+         
+      END IF;
+      
+      RETURN;
+      
+   END IF;
+
+   -----------------------------------------------------------------------------
+   -- Step 70
+   -- Run Catchment Delineation Preprocessing 
+   -----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   AND NOT boo_return_flowlines
+   THEN
+      rec := cipsrv_nhdplus_m.delineation_preprocessing(
+          p_aggregation_flag             := boo_aggregation_flag
+         ,p_known_grid                   := int_grid_srid::VARCHAR
+         ,p_return_delineation_geometry  := boo_return_delineation_geometry
+         ,p_return_topology_results      := FALSE
+         ,p_extra_catchments             := NULL
+      );
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      int_catchments     := rec.out_records_inserted;
+
+      IF out_return_code <> 0
+      THEN
+         RETURN;
+      
+      END IF;
+      
+   END IF;
+
+   -----------------------------------------------------------------------------
+   -- Step 80
+   -- Fetch the split catchment geometry if required
+   -----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   AND boo_split_catchment
+   THEN
+      IF str_search_type <> 'UT'
+      THEN
+         out_return_code := -700;
+         out_status_message := 'Catchment split only supported for upstream with tributary navigation';
+         
+         RETURN;
+         
+      END IF;
+   
+      -- This might need to be adjusted to be a bit further downstream, dunno
+      sdo_splitpoint := cipsrv_nhdplus_m.point_at_measure(
+          p_nhdplusid            := int_start_nhdplusid
+         ,p_permanent_identifier := NULL
+         ,p_reachcode            := NULL 
+         ,p_measure              := num_start_measure
+         ,p_2d_flag              := TRUE
+      );
+
+      sdo_split_catchment := cipsrv_nhdplus_m.split_catchment(
+          p_split_point  := ST_Transform(sdo_splitpoint,int_grid_srid)
+         ,p_nhdplusid    := int_start_nhdplusid
+         ,p_known_region := int_grid_srid::VARCHAR
+      );
+      --raise warning '% %',int_catchments, st_astext(st_transform(st_collect(sdo_splitpoint,NULL),4269));
+      
+      IF sdo_split_catchment IS NULL
+      THEN
+         out_return_code := -702;
+         out_status_message := 'Catchment split process failed';
+         
+         RETURN;
+         
+      END IF;
+   
+   END IF;
+   
+   -----------------------------------------------------------------------------
+   -- Step 90
+   -- Swap in the split catchment for catchment and geometric aggregation
+   -----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   AND boo_split_catchment
+   THEN
+      IF boo_topology_flag
+      THEN
+         DELETE FROM tmp_catchments a
+         WHERE
+         a.nhdplusid  = int_start_nhdplusid;
+         
+      ELSE
+         IF int_grid_srid = 5070
+         THEN
+            UPDATE tmp_catchments a
+            SET
+             shape       = ST_Transform(sdo_split_catchment,4269)
+            ,shape_5070  = sdo_split_catchment
+            ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
+            WHERE
+            a.nhdplusid = int_start_nhdplusid;
+            
+         ELSIF int_grid_srid = 3338
+         THEN
+            UPDATE tmp_catchments a
+            SET
+             shape       = ST_Transform(sdo_split_catchment,4269)
+            ,shape_3338  = sdo_split_catchment
+            ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
+            WHERE
+            a.nhdplusid = int_start_nhdplusid;
+            
+         ELSIF int_grid_srid = 26904
+         THEN
+            UPDATE tmp_catchments a
+            SET
+             shape       = ST_Transform(sdo_split_catchment,4269)
+            ,shape_26904 = sdo_split_catchment
+            ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
+            WHERE
+            a.nhdplusid = int_start_nhdplusid;
+            
+         ELSIF int_grid_srid = 32161
+         THEN
+            UPDATE tmp_catchments a
+            SET
+             shape       = ST_Transform(sdo_split_catchment,4269)
+            ,shape_32161 = sdo_split_catchment
+            ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
+            WHERE
+            a.nhdplusid = int_start_nhdplusid;
+            
+         ELSIF int_grid_srid = 32655
+         THEN
+            UPDATE tmp_catchments a
+            SET
+             shape       = ST_Transform(sdo_split_catchment,4269)
+            ,shape_32655 = sdo_split_catchment
+            ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
+            WHERE
+            a.nhdplusid = int_start_nhdplusid;
+            
+         ELSIF int_grid_srid = 32702
+         THEN
+            UPDATE tmp_catchments a
+            SET
+             shape       = ST_Transform(sdo_split_catchment,4269)
+            ,shape_32702 = sdo_split_catchment
+            ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
+            WHERE
+            a.nhdplusid = int_start_nhdplusid;
+            
+         END IF;
+
+      END IF;
+      
+   END IF;
+   
+   -----------------------------------------------------------------------------
+   -- Step 100
+   -- Branch based on aggregation decision - return aggregated catchment poly
+   -----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   THEN
+      IF boo_topology_flag
+      THEN
+         rec := cipsrv_nhdplus_m.load_topo_catchment(
+             p_grid_srid       := int_grid_srid
+            ,p_catchment_count := int_catchments
+         );
+         out_return_code     := rec.out_return_code;
+         out_status_message  := rec.out_status_message;
+         sdo_topo_output     := rec.out_geometry;
+      
+         IF out_return_code <> 0
+         THEN
+            RETURN;
+         
+         END IF;
+         
+      ELSE
+         rec := cipsrv_nhdplus_m.load_aggregated_catchment(
+             p_grid_srid       := int_grid_srid
+         );
+         out_return_code     := rec.out_return_code;
+         out_status_message  := rec.out_status_message;
+      
+         IF out_return_code <> 0
+         THEN
+            RETURN;
+         
+         END IF;         
+         
+      END IF;
+   
+   END IF;
+   
+    -----------------------------------------------------------------------------
+   -- Step 110
+   -- Add split catchment to topo aggregation if requested
+   -----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   AND boo_split_catchment
+   AND boo_topology_flag
+   THEN
+      SELECT
+      ST_Union(ST_SnaptoGrid(a.geom,0.05))
+      INTO sdo_topo_output
+      FROM (
+         SELECT 
+         (ST_Dump(
+            ST_Collect(sdo_topo_output,ST_Buffer(sdo_split_catchment,0.01))
+         )).*
+      ) a;      
+      
+      UPDATE tmp_catchments a
+      SET
+       shape    = ST_Transform(sdo_topo_output,4269)
+      ,areasqkm = ROUND(ST_Area(sdo_topo_output)::NUMERIC * 0.000001,5)
+      WHERE
+      a.nhdplusid  = -9999999;
+
+   END IF;
+   
+   -----------------------------------------------------------------------------
+   -- Step 120
+   -- Migrate catchment geometry if requested
+   -----------------------------------------------------------------------------
+   IF  NOT boo_cached_watershed
+   AND NOT boo_zero_length_delin
+   AND boo_aggregation_flag
+   THEN
+      IF int_grid_srid = 5070
+      THEN
+         UPDATE tmp_catchments a
+         SET
+         shape = ST_Transform(shape_5070,4269)
+         WHERE
+         a.sourcefc <> 'AGGR';
+         
+      ELSIF int_grid_srid = 3338
+      THEN
+         UPDATE tmp_catchments a
+         SET
+         shape = ST_Transform(shape_3338,4269)
+         WHERE
+         a.sourcefc <> 'AGGR';
+         
+      ELSIF int_grid_srid = 26904
+      THEN
+         UPDATE tmp_catchments a
+         SET
+         shape = ST_Transform(shape_26904,4269)
+         WHERE
+         a.sourcefc <> 'AGGR';
+         
+      ELSIF int_grid_srid = 32161
+      THEN
+         UPDATE tmp_catchments a
+         SET
+         shape = ST_Transform(shape_32161,4269)
+         WHERE
+         a.sourcefc <> 'AGGR';
+         
+      ELSIF int_grid_srid = 32655
+      THEN
+         UPDATE tmp_catchments a
+         SET
+         shape = ST_Transform(shape_32655,4269)
+         WHERE
+         a.sourcefc <> 'AGGR';
+         
+      ELSIF int_grid_srid = 32702
+      THEN
+         UPDATE tmp_catchments a
+         SET
+         shape = ST_Transform(shape_32702,4269)
+         WHERE
+         a.sourcefc <> 'AGGR';
+         
+      END IF;
+   
+   END IF;
+   
+   -----------------------------------------------------------------------------
+   -- Step 130
+   -- Fetch cached watershed if requested
+   -----------------------------------------------------------------------------
+   IF boo_cached_watershed
+   THEN
+      INSERT INTO tmp_catchments(
+          nhdplusid
+         ,sourcefc
+         ,gridcode
+         ,areasqkm
+         ,shape
+      )
+      SELECT
+       -9999999
+      ,'AGGR'
+      ,-9999
+      ,a.areasqkm
+      ,a.shape
+      FROM
+      cipsrv_nhdpluswshd_m.catchment_watershed a
+      WHERE
+      a.nhdplusid = int_catchment_nhdplusid;
+
+   END IF;
+   
+   -----------------------------------------------------------------------------
+   -- Step 140
+   -- Fetch zero distance catchment
+   -----------------------------------------------------------------------------
+   IF boo_zero_length_delin
+   THEN
+      IF boo_return_flowlines
+      THEN
+         INSERT INTO tmp_navigation_results(
+             nhdplusid
+            ,hydroseq
+            ,fmeasure
+            ,tmeasure
+            ,levelpathi
+            ,terminalpa
+            ,uphydroseq
+            ,dnhydroseq
+            ,lengthkm
+            ,flowtimeday
+            /* ++++++++++ */
+            ,network_distancekm
+            ,network_flowtimeday
+            /* ++++++++++ */
+            ,permanent_identifier
+            ,reachcode
+            ,fcode
+            ,gnis_id
+            ,gnis_name
+            ,wbarea_permanent_identifier
+            /* ++++++++++ */
+            ,navtermination_flag
+            ,shape
+            ,nav_order
+         )
+         SELECT
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,a.lengthkm
+         ,a.flowtimeday
+         /* ++++++++++ */
+         ,a.lengthkm    AS network_distancekm
+         ,a.flowtimeday AS network_flowtimeday
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         ,a.gnis_id
+         ,a.gnis_name
+         ,a.wbarea_permanent_identifier
+         /* ++++++++++ */
+         ,NULL
+         ,a.shape
+         ,1
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE
+         a.nhdplusid = int_start_nhdplusid;
+         
+      END IF;
+      
+      IF boo_split_catchment
+      THEN
+         sdo_splitpoint := cipsrv_nhdplus_m.point_at_measure(
+             p_nhdplusid             := int_start_nhdplusid
+            ,p_permanent_identifier  := NULL
+            ,p_reachcode             := NULL 
+            ,p_measure               := num_start_measure
+            ,p_2d_flag               := 'TRUE'
+         );
+
+         sdo_split_catchment := cipsrv_nhdplus_m.split_catchment(
+             p_split_point  := ST_Transform(sdo_splitpoint,int_grid_srid)
+            ,p_nhdplusid    := int_catchment_nhdplusid
+            ,p_known_region := int_grid_srid::VARCHAR
+         );
+
+         IF sdo_split_catchment IS NULL
+         THEN
+            out_return_code := -702;
+            out_status_message := 'Catchment split process failed';
+            
+            RETURN;
+            
+         END IF;
+         
+         num_area := ROUND(
+             ST_Area(ST_Transform(sdo_split_catchment,4326)::GEOGRAPHY)::NUMERIC * 0.000001
+            ,5
+         );
+         
+         sdo_output := ST_Transform(sdo_split_catchment,4269);
+         
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,shape
+         ) VALUES (
+             -9999999
+            ,'AGGR'
+            ,-9999
+            ,num_area
+            ,sdo_output
+         );
+  
+      END IF;
+
+   END IF;
+   
+   -----------------------------------------------------------------------------
+   -- Step 150
+   -- Remove holes if requested
+   -----------------------------------------------------------------------------
+   IF boo_fill_holes
+   THEN
+      UPDATE tmp_catchments a
+      SET
+      shape = cipsrv_engine.remove_holes(a.shape)
+      WHERE
+      a.sourcefc = 'AGGR';
+      
+      UPDATE tmp_catchments a
+      SET
+      areasqkm = ROUND(ST_Area(ST_Transform(a.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001,5)
+      WHERE
+      a.sourcefc = 'AGGR';
+
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.delineate(
+    VARCHAR
+   ,BIGINT
+   ,VARCHAR
+   ,VARCHAR
+   ,BIGINT
+   ,NUMERIC
+   ,BIGINT
+   ,VARCHAR
+   ,VARCHAR
+   ,BIGINT
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,VARCHAR
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.delineate(
+    VARCHAR
+   ,BIGINT
+   ,VARCHAR
+   ,VARCHAR
+   ,BIGINT
+   ,NUMERIC
+   ,BIGINT
+   ,VARCHAR
+   ,VARCHAR
+   ,BIGINT
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,VARCHAR
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+)  TO PUBLIC;
 
 --******************************--
------ functions/query_generic_common_mbr.sql 
+----- functions/delineation_preprocessing.sql 
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
-   IN  p_input  GEOMETRY
-) RETURNS VARCHAR
-IMMUTABLE
-AS
-$BODY$ 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.delineation_preprocessing';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.delineation_preprocessing(
+    IN  p_aggregation_flag            BOOLEAN
+   ,IN  p_known_grid                  INTEGER
+   ,IN  p_return_delineation_geometry BOOLEAN
+   ,IN  p_return_topology_results     BOOLEAN
+   ,IN  p_extra_catchments            BIGINT[]
+   ,OUT out_records_inserted          INTEGER
+   ,OUT out_return_code               NUMERIC
+   ,OUT out_status_message            VARCHAR
+)
+VOLATILE
+AS $BODY$
 DECLARE
-   sdo_point GEOGRAPHY;
+   int_inserted INTEGER;
    
 BEGIN
+   
+   out_return_code := 0;
+   out_records_inserted := 0;
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- If no aggregation requested, then just load nad83 column
+   ---------------------------------------------------------------------------- 
+   IF NOT p_aggregation_flag
+   THEN
+      INSERT INTO tmp_catchments(
+          nhdplusid
+         ,sourcefc
+         ,gridcode
+         ,areasqkm
+         ,vpuid
+         ,hydroseq
+         ,shape
+      )
+      SELECT
+       b.nhdplusid
+      ,b.sourcefc
+      ,b.gridcode
+      ,b.areasqkm
+      ,b.vpuid
+      ,a.hydrosequence
+      ,CASE WHEN p_return_delineation_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
+      FROM
+      tmp_navigation_results a
+      JOIN
+      cipsrv_nhdplus_m.nhdpluscatchment b
+      ON
+      b.nhdplusid = a.nhdplusid;
 
-   IF p_input IS NULL
-   THEN
-      RETURN NULL;
+      GET DIAGNOSTICS int_inserted = ROW_COUNT;
+      out_records_inserted := out_records_inserted + int_inserted;
       
+      IF array_length(p_extra_catchments,1) > 0
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.sourcefc
+         ,a.gridcode
+         ,a.areasqkm
+         ,a.vpuid
+         ,0
+         ,CASE WHEN p_return_delineation_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         cipsrv_nhdplus_m.nhdpluscatchment a
+         WHERE
+         a.nhdplusid = ANY(p_extra_catchments)
+         ON CONFLICT DO NOTHING;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+
+      END IF;
+      
+   -----------------------------------------------------------------------------
+   -- Step 20
+   -- Load the temp table based on the grid locality value
+   -----------------------------------------------------------------------------
+   ELSE
+      IF p_known_grid = 5070
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape_5070
+         )
+         SELECT
+          b.nhdplusid
+         ,b.sourcefc
+         ,b.gridcode
+         ,b.areasqkm
+         ,b.vpuid
+         ,a.hydrosequence
+         ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_5070_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,sourcefc
+               ,gridcode
+               ,areasqkm
+               ,vpuid
+               ,hydroseq
+               ,shape_5070
+            )
+            SELECT
+             a.nhdplusid
+            ,a.sourcefc
+            ,a.gridcode
+            ,a.areasqkm
+            ,a.vpuid
+            ,0
+            ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_5070_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+      
+      ELSIF p_known_grid = 3338
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape_3338
+         )
+         SELECT
+          b.nhdplusid
+         ,b.sourcefc
+         ,b.gridcode
+         ,b.areasqkm
+         ,b.vpuid
+         ,a.hydrosequence
+         ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_3338_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,sourcefc
+               ,gridcode
+               ,areasqkm
+               ,vpuid
+               ,hydroseq
+               ,shape_3338
+            )
+            SELECT
+             a.nhdplusid
+            ,a.sourcefc
+            ,a.gridcode
+            ,a.areasqkm
+            ,a.vpuid
+            ,0
+            ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_3338_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+      
+      ELSIF p_known_grid = 26904
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape_26904
+         )
+         SELECT
+          b.nhdplusid
+         ,b.sourcefc
+         ,b.gridcode
+         ,b.areasqkm
+         ,b.vpuid
+         ,a.hydrosequence
+         ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_26904_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,sourcefc
+               ,gridcode
+               ,areasqkm
+               ,vpuid
+               ,hydroseq
+               ,shape_26904
+            )
+            SELECT
+             a.nhdplusid
+            ,a.sourcefc
+            ,a.gridcode
+            ,a.areasqkm
+            ,a.vpuid
+            ,0
+            ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_26904_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+      
+      ELSIF p_known_grid = 32161
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape_32161
+         )
+         SELECT
+          b.nhdplusid
+         ,b.sourcefc
+         ,b.gridcode
+         ,b.areasqkm
+         ,b.vpuid
+         ,a.hydrosequence
+         ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_32161_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,sourcefc
+               ,gridcode
+               ,areasqkm
+               ,vpuid
+               ,hydroseq
+               ,shape_32161
+            )
+            SELECT
+             a.nhdplusid
+            ,a.sourcefc
+            ,a.gridcode
+            ,a.areasqkm
+            ,a.vpuid
+            ,0
+            ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_32161_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+      
+      ELSIF p_known_grid = 32655
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape_32655
+         )
+         SELECT
+          b.nhdplusid
+         ,b.sourcefc
+         ,b.gridcode
+         ,b.areasqkm
+         ,b.vpuid
+         ,a.hydrosequence
+         ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_32655_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,sourcefc
+               ,gridcode
+               ,areasqkm
+               ,vpuid
+               ,hydroseq
+               ,shape_32655
+            )
+            SELECT
+             a.nhdplusid
+            ,a.sourcefc
+            ,a.gridcode
+            ,a.areasqkm
+            ,a.vpuid
+            ,0
+            ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_32655_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+      
+      ELSIF p_known_grid = 32702
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,gridcode
+            ,areasqkm
+            ,vpuid
+            ,hydroseq
+            ,shape_32702
+         )
+         SELECT
+          b.nhdplusid
+         ,b.sourcefc
+         ,b.gridcode
+         ,b.areasqkm
+         ,b.vpuid
+         ,a.hydrosequence
+         ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_32702_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,sourcefc
+               ,gridcode
+               ,areasqkm
+               ,vpuid
+               ,hydroseq
+               ,shape_32702
+            )
+            SELECT
+             a.nhdplusid
+            ,a.sourcefc
+            ,a.gridcode
+            ,a.areasqkm
+            ,a.vpuid
+            ,0
+            ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_32702_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+      
+      ELSE
+         RAISE EXCEPTION 'err';
+         
+      END IF;   
+   
    END IF;
-   
-   sdo_point := ST_Transform(
-       ST_PointOnSurface(p_input)
-      ,4326
-   )::GEOGRAPHY;
-   
-   IF ST_Intersects(
-       sdo_point
-      ,cipsrv_nhdplus_m.generic_common_mbr('CONUS')
-   )
+
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- I guess that went okay
+   ----------------------------------------------------------------------------
+   IF out_records_inserted IS NULL
+   OR out_records_inserted = 0
    THEN
-      RETURN 'CONUS';
-      
-   ELSIF ST_Intersects(
-       sdo_point
-      ,cipsrv_nhdplus_m.generic_common_mbr('HI')
-   )
-   THEN
-      RETURN 'HI';
-      
-   ELSIF ST_Intersects(
-       sdo_point
-      ,cipsrv_nhdplus_m.generic_common_mbr('PRVI')
-   )
-   THEN
-      RETURN 'PRVI';
-      
-   ELSIF ST_Intersects(
-       sdo_point
-      ,cipsrv_nhdplus_m.generic_common_mbr('AK')
-   )
-   THEN
-      RETURN 'AK';
-      
-   ELSIF ST_Intersects(
-       sdo_point
-      ,cipsrv_nhdplus_m.generic_common_mbr('GUMP')
-   )
-   THEN
-      RETURN 'GUMP';
-      
-   ELSIF ST_Intersects(
-       sdo_point
-      ,cipsrv_nhdplus_m.generic_common_mbr('SAMOA')
-   )
-   THEN
-      RETURN 'SAMOA';
-      
+      out_return_code    := -101;
+      out_status_message := 'No Catchments match navigation results';
+      RETURN;
+
    END IF;
-   
-   RETURN NULL;  
    
 END;
-$BODY$
+$BODY$ 
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
-   GEOMETRY
+ALTER FUNCTION cipsrv_nhdplus_m.delineation_preprocessing(
+    BOOLEAN
+   ,INTEGER
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BIGINT[]
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
-   GEOMETRY
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.delineation_preprocessing(
+    BOOLEAN
+   ,INTEGER
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BIGINT[]
 ) TO PUBLIC;
 
 --******************************--
@@ -2813,186 +4963,1266 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.determine_grid_srid(
 ) TO PUBLIC;
 
 --******************************--
------ functions/temp_table_exists.sql 
+----- functions/distance_index.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.temp_table_exists';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.distance_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.temp_table_exists(
-   IN p_table_name VARCHAR
-) RETURNS BOOLEAN 
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.distance_index(
+    IN  p_point                     GEOMETRY
+   ,IN  p_fcode_allow               INTEGER[]
+   ,IN  p_fcode_deny                INTEGER[]
+   ,IN  p_distance_max_distkm       NUMERIC
+   ,IN  p_limit_innetwork           BOOLEAN
+   ,IN  p_limit_navigable           BOOLEAN
+   ,IN  p_return_link_path          BOOLEAN
+   ,IN  p_known_region              VARCHAR
+   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km        NUMERIC
+   ,OUT out_end_point               GEOMETRY
+   ,OUT out_indexing_line           GEOMETRY
+   ,OUT out_region                  VARCHAR
+   ,OUT out_nhdplusid               BIGINT
+   ,OUT out_return_code             INTEGER
+   ,OUT out_status_message          VARCHAR
+)
 STABLE
-AS $BODY$
+AS $BODY$ 
 DECLARE
-   str_table_name VARCHAR(255);
+   rec                     RECORD;
+   curs_candidates         REFCURSOR;
+   num_distance_max_distkm NUMERIC  := p_distance_max_distkm;
+   boo_limit_innetwork     BOOLEAN  := p_limit_innetwork;
+   boo_limit_navigable     BOOLEAN  := p_limit_navigable;
+   boo_return_link_path    BOOLEAN  := p_return_link_path;
+   int_raster_srid         INTEGER;
+   sdo_input               GEOMETRY;
+   sdo_temp                GEOMETRY;
+   rec_flowline            RECORD;
+   rec_candidate           cipsrv_nhdplus_m.snapflowline;
+   int_counter             INTEGER;
+   num_nearest             NUMERIC;
+   boo_check_fcode_allow   BOOLEAN := FALSE;
+   boo_check_fcode_deny    BOOLEAN := FALSE;
+   int_limit               INTEGER := 16;
    
 BEGIN
 
-   ----------------------------------------------------------------------------
+   --------------------------------------------------------------------------
    -- Step 10
-   -- Query catalog for temp table
-   ----------------------------------------------------------------------------
-   SELECT 
-    n.nspname
-   INTO str_table_name
-   FROM 
-   pg_catalog.pg_class c 
-   LEFT JOIN 
-   pg_catalog.pg_namespace n 
-   ON 
-   n.oid = c.relnamespace
-   where 
-       n.nspname like 'pg_temp_%'
-   AND pg_catalog.pg_table_is_visible(c.oid)
-   AND UPPER(relname) = UPPER(p_table_name);
-
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- See what we gots and exit accordingly
-   ----------------------------------------------------------------------------
-   IF str_table_name IS NULL 
-   THEN
-      RETURN FALSE;
-
-   ELSE
-      RETURN TRUE;
-
-   END IF;
-
-END;
-$BODY$ LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.temp_table_exists(
-   VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.temp_table_exists(
-   VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/create_line_temp_tables.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.create_line_temp_tables()
-RETURNS INT4
-VOLATILE
-AS $BODY$
-DECLARE
-BEGIN
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
    
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Create tmp_line temp table
-   ----------------------------------------------------------------------------
-   IF cipsrv_nhdplus_m.temp_table_exists('tmp_line')
+   IF p_point IS NULL OR ST_IsEmpty(p_point) 
+   OR ST_GeometryType(p_point) <> 'ST_Point'
    THEN
-      TRUNCATE TABLE tmp_line;
+      out_return_code    := -99;
+      out_status_message := 'Input must be point geometry.';
+      RETURN;
       
-   ELSE
-      CREATE TEMPORARY TABLE tmp_line(
-          nhdplusid               BIGINT
-         ,areasqkm                NUMERIC
-         ,overlapmeasure          NUMERIC
-         ,eventpercentage         NUMERIC
-         ,nhdpercentage           NUMERIC
-         ,hydroseq                BIGINT
-         ,levelpathi              BIGINT
-         ,fromnode                BIGINT
-         ,tonode                  BIGINT
-         ,connector_fromnode      BIGINT
-         ,connector_tonode        BIGINT
-         ,fcode                   INTEGER
-         ,isnavigable             BOOLEAN
-      );
-
-      CREATE UNIQUE INDEX tmp_line_pk 
-      ON tmp_line(nhdplusid);
-      
-      CREATE UNIQUE INDEX tmp_line_pk2
-      ON tmp_line(hydroseq);
-      
-      CREATE INDEX tmp_line_01i
-      ON tmp_line(levelpathi);
-      
-      CREATE INDEX tmp_line_02i
-      ON tmp_line(fcode);
-      
-      CREATE INDEX tmp_line_03i
-      ON tmp_line(isnavigable);
-
    END IF;
    
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Create tmp_line_dd temp table
-   ----------------------------------------------------------------------------
-   IF cipsrv_nhdplus_m.temp_table_exists('tmp_line_levelpathi')
+   IF num_distance_max_distkm IS NULL
+   OR num_distance_max_distkm <= 0
    THEN
-      TRUNCATE TABLE tmp_line_levelpathi;
+      num_distance_max_distkm := 99999;
       
-   ELSE
-      CREATE TEMPORARY TABLE tmp_line_levelpathi(
-          levelpathi              BIGINT
-         ,max_hydroseq            BIGINT
-         ,min_hydroseq            BIGINT
-         ,totaleventpercentage    NUMERIC
-         ,totaloverlapmeasure     NUMERIC
-         ,levelpathilengthkm      NUMERIC
-         ,fromnode                BIGINT
-         ,tonode                  BIGINT
-         ,connector_fromnode      BIGINT
-         ,connector_tonode        BIGINT
-      );
-
-      CREATE UNIQUE INDEX tmp_line_levelpathi_pk 
-      ON tmp_line_levelpathi(levelpathi);
-
+   END IF;
+   
+   IF p_fcode_allow IS NOT NULL
+   AND array_length(p_fcode_allow,1) > 0
+   THEN
+      boo_check_fcode_allow := TRUE;
+   
+   END IF;
+   
+   IF p_fcode_deny IS NOT NULL
+   AND array_length(p_fcode_deny,1) > 0
+   THEN
+      boo_check_fcode_deny := TRUE;
+   
+   END IF;
+   
+   IF boo_limit_innetwork IS NULL
+   THEN
+      boo_limit_innetwork := FALSE;
+      
+   END IF;
+   
+   IF boo_limit_navigable IS NULL
+   THEN
+      boo_limit_navigable := FALSE;
+      
+   END IF;
+   
+   IF boo_return_link_path IS NULL
+   THEN
+      boo_return_link_path := FALSE;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the projection
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_point
+      ,p_known_region   := p_known_region
+   );
+   int_raster_srid    := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   out_region         := rec.out_srid::VARCHAR;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
    END IF;
 
-   ----------------------------------------------------------------------------
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project input point if required
+   --------------------------------------------------------------------------
+   IF ST_SRID(p_point) = int_raster_srid
+   THEN
+      sdo_input := p_point;
+      
+   ELSE
+      sdo_input := ST_Transform(p_point,int_raster_srid);
+      
+   END IF;
+
+   -------------------------------------------------------------------------
+   -- Step 40
+   -- Open the cursor required
+   -------------------------------------------------------------------------
+   IF int_raster_srid = 5070
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_5070 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  p_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  p_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT int_limit
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm
+      ORDER BY 
+      a.snap_distancekm ASC;
+      
+   ELSIF int_raster_srid = 3338
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_3338 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  p_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  p_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT int_limit
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm
+      ORDER BY 
+      a.snap_distancekm ASC;
+   
+   ELSIF int_raster_srid = 26904
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_26904 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  p_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  p_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT int_limit
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm
+      ORDER BY 
+      a.snap_distancekm ASC;
+      
+   ELSIF int_raster_srid = 32161
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32161 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  p_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  p_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT int_limit
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm
+      ORDER BY 
+      a.snap_distancekm ASC;
+      
+   ELSIF int_raster_srid = 32655
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32655 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  p_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  p_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT int_limit
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm
+      ORDER BY 
+      a.snap_distancekm ASC;
+      
+   ELSIF int_raster_srid = 32702
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,a.enabled
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,aa.enabled
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32702 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  p_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  p_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT int_limit
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm
+      ORDER BY 
+      a.snap_distancekm ASC;
+      
+   ELSE
+      RAISE EXCEPTION 'err';
+   
+   END IF;
+
+   -------------------------------------------------------------------------
+   -- Step 50
+   -- Iterate the cursor into array of output type
+   --------------------------------------------------------------------------
+   num_nearest := 0;
+   int_counter := 1;
+   FETCH NEXT FROM curs_candidates INTO rec_flowline;
+   WHILE (FOUND) 
+   LOOP 
+      rec_candidate.permanent_identifier        := rec_flowline.permanent_identifier;
+      rec_candidate.fdate                       := rec_flowline.fdate;
+      rec_candidate.resolution                  := rec_flowline.resolution::integer;
+      rec_candidate.gnis_id                     := rec_flowline.gnis_id;
+      rec_candidate.gnis_name                   := rec_flowline.gnis_name;
+      rec_candidate.lengthkm                    := rec_flowline.lengthkm;
+      rec_candidate.reachcode                   := rec_flowline.reachcode;
+      rec_candidate.flowdir                     := rec_flowline.flowdir;
+      rec_candidate.wbarea_permanent_identifier := rec_flowline.wbarea_permanent_identifier;
+      rec_candidate.ftype                       := rec_flowline.ftype;
+      rec_candidate.fcode                       := rec_flowline.fcode;
+      rec_candidate.mainpath                    := rec_flowline.mainpath; 
+      rec_candidate.innetwork                   := rec_flowline.innetwork;
+      rec_candidate.visibilityfilter            := rec_flowline.visibilityfilter;
+      rec_candidate.nhdplusid                   := rec_flowline.nhdplusid;
+      rec_candidate.vpuid                       := rec_flowline.vpuid;
+      rec_candidate.enabled                     := rec_flowline.enabled;
+      rec_candidate.fmeasure                    := rec_flowline.fmeasure;
+      rec_candidate.tmeasure                    := rec_flowline.tmeasure;
+      rec_candidate.hydroseq                    := rec_flowline.hydroseq;
+      rec_candidate.shape                       := ST_Transform(rec_flowline.shape,4269);
+      
+      rec_candidate.snap_measure := ROUND(ST_InterpolatePoint(
+          rec_flowline.shape
+         ,sdo_input
+      )::NUMERIC,5);
+      
+      rec_candidate.snap_distancekm             := rec_flowline.snap_distancekm;
+      
+      sdo_temp := ST_GeometryN(ST_LocateAlong(
+          rec_flowline.shape
+         ,rec_candidate.snap_measure
+      ),1);
+      
+      -- This is some weird numeric nuttiness which is corrected by reifying as text 
+      IF sdo_temp IS NULL
+      OR ST_IsEmpty(sdo_temp)
+      THEN
+         sdo_temp := ST_GeometryN(ST_LocateAlong(
+             ST_GeomFromEWKT(ST_AsEWKT(rec_flowline.shape))
+            ,rec_candidate.snap_measure
+         ),1);
+         
+      END IF;
+ 
+      rec_candidate.snap_point := ST_Transform(ST_Force2D(
+         sdo_temp
+      ),4269);
+
+      IF num_nearest = 0
+      THEN
+         num_nearest = rec_candidate.snap_distancekm;
+         
+      END IF;
+      
+      EXIT WHEN rec_candidate.snap_distancekm > num_nearest;
+      
+      out_flowlines[int_counter] := rec_candidate;
+      int_counter := int_counter + 1;
+      
+      FETCH NEXT FROM curs_candidates INTO rec_flowline;
+      
+   END LOOP; 
+   
+   CLOSE curs_candidates;
+
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Bail if no results
+   --------------------------------------------------------------------------
+   IF int_counter = 1
+   OR out_flowlines IS NULL
+   OR array_length(out_flowlines,1) = 0
+   THEN
+      out_return_code    := -1;
+      out_status_message := 'No results found';
+      RETURN;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
    -- Step 70
-   -- I guess that went okay
-   ----------------------------------------------------------------------------
-   RETURN 0;
+   -- Finalize the output
+   --------------------------------------------------------------------------
+   out_path_distance_km := out_flowlines[1].snap_distancekm;
+   out_end_point        := out_flowlines[1].snap_point;
+   out_nhdplusid        := out_flowlines[1].nhdplusid;
    
+   IF p_return_link_path
+   AND out_path_distance_km > 0.00005
+   THEN
+      out_indexing_line := ST_MakeLine(
+          ST_Transform(sdo_input,4269)
+         ,out_end_point
+      );
+  
+   END IF;
+
 END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.distance_index(
+    GEOMETRY
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.distance_index(
+    GEOMETRY
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+) TO PUBLIC;
+--******************************--
+----- functions/distance_index_simple.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.distance_index_simple';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.distance_index_simple(
+    IN  p_point                     GEOMETRY
+   ,IN  p_fcode_allow               INTEGER[]
+   ,IN  p_fcode_deny                INTEGER[]
+   ,IN  p_distance_max_distkm       NUMERIC
+   ,IN  p_limit_innetwork           BOOLEAN
+   ,IN  p_limit_navigable           BOOLEAN
+   ,IN  p_known_region              VARCHAR
+   ,OUT out_path_distance_km        NUMERIC
+   ,OUT out_region                  VARCHAR
+   ,OUT out_nhdplusid               BIGINT
+   ,OUT out_return_code             INTEGER
+   ,OUT out_status_message          VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                     RECORD;
+   curs_candidates         REFCURSOR;
+   num_distance_max_distkm NUMERIC  := p_distance_max_distkm;
+   boo_limit_innetwork     BOOLEAN  := p_limit_innetwork;
+   boo_limit_navigable     BOOLEAN  := p_limit_navigable;
+   int_raster_srid         INTEGER;
+   sdo_input               GEOMETRY;
+   rec_flowline            RECORD;
+   int_counter             INTEGER;
+   boo_check_fcode_allow   BOOLEAN := FALSE;
+   boo_check_fcode_deny    BOOLEAN := FALSE;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   IF p_point IS NULL OR ST_IsEmpty(p_point) 
+   OR ST_GeometryType(p_point) <> 'ST_Point'
+   THEN
+      out_return_code    := -99;
+      out_status_message := 'Input must be point geometry.';
+      RETURN;
+      
+   END IF;
+   
+   IF num_distance_max_distkm IS NULL
+   OR num_distance_max_distkm <= 0
+   THEN
+      num_distance_max_distkm := 99999;
+      
+   END IF;
+   
+   IF p_fcode_allow IS NOT NULL
+   AND array_length(p_fcode_allow,1) > 0
+   THEN
+      boo_check_fcode_allow := TRUE;
+   
+   END IF;
+   
+   IF p_fcode_deny IS NOT NULL
+   AND array_length(p_fcode_deny,1) > 0
+   THEN
+      boo_check_fcode_deny := TRUE;
+   
+   END IF;
+   
+   IF boo_limit_innetwork IS NULL
+   THEN
+      boo_limit_innetwork := FALSE;
+      
+   END IF;
+   
+   IF boo_limit_navigable IS NULL
+   THEN
+      boo_limit_navigable := FALSE;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the projection
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_point
+      ,p_known_region   := p_known_region
+   );
+   int_raster_srid    := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
+   END IF;
+     
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project input point if required
+   --------------------------------------------------------------------------
+   IF ST_SRID(p_point) = int_raster_srid
+   THEN
+      sdo_input := p_point;
+      
+   ELSE
+      sdo_input := ST_Transform(p_point,int_raster_srid);
+      
+   END IF;
+
+   -------------------------------------------------------------------------
+   -- Step 40
+   -- Open the cursor required
+   -------------------------------------------------------------------------
+   IF int_raster_srid = 5070
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.nhdplusid
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.nhdplusid
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_5070 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  boo_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  boo_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT 1
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm;
+      
+   ELSIF int_raster_srid = 3338
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.nhdplusid
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.nhdplusid
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_3338 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  boo_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  boo_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT 1
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm;
+      
+   ELSIF int_raster_srid = 26904
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.nhdplusid
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.nhdplusid
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_26904 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  boo_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  boo_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT 1
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm;
+      
+   ELSIF int_raster_srid = 32161
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.nhdplusid
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.nhdplusid
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32161 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  boo_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  boo_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT 1
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm;
+      
+   ELSIF int_raster_srid = 32655
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.nhdplusid
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.nhdplusid
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32655 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  boo_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  boo_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT 1
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm;
+      
+   ELSIF int_raster_srid = 32702
+   THEN
+      OPEN curs_candidates FOR
+      SELECT 
+       a.nhdplusid
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.nhdplusid
+         ,ST_Distance(
+              ST_Transform(aa.shape,4326)::GEOGRAPHY
+             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         cipsrv_nhdplus_m.nhdflowline_32702 aa
+         WHERE
+         (  boo_check_fcode_allow IS FALSE
+            OR
+            aa.fcode = ANY(p_fcode_allow)
+         )
+         AND
+         (  boo_check_fcode_deny IS FALSE
+            OR
+            aa.fcode != ALL(p_fcode_deny)
+         )
+         AND
+         (  boo_limit_innetwork IS FALSE
+            OR
+            aa.hasvaa
+         )
+         AND
+         (  boo_limit_navigable IS FALSE
+            OR
+            aa.isnavigable
+         )
+         ORDER BY 
+         aa.shape <-> sdo_input 
+         LIMIT 1
+      ) a
+      WHERE
+      a.snap_distancekm <= num_distance_max_distkm;
+      
+   ELSE
+      RAISE EXCEPTION 'err';
+      
+   END IF;
+   
+   -------------------------------------------------------------------------
+   -- Step 50
+   -- Iterate the cursor into array of output type
+   --------------------------------------------------------------------------
+   int_counter := 0;
+   LOOP 
+      FETCH curs_candidates INTO rec_flowline; 
+      EXIT WHEN NOT FOUND; 
+      
+      int_counter          := int_counter + 1;
+      out_nhdplusid        := rec_flowline.nhdplusid;
+      out_path_distance_km := rec_flowline.snap_distancekm;
+      
+   END LOOP; 
+   
+   CLOSE curs_candidates; 
+   
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Error out if no results
+   --------------------------------------------------------------------------
+   IF int_counter = 0
+   OR out_nhdplusid IS NULL
+   THEN
+      out_return_code    := -1;
+      out_status_message := 'No results found';
+      RETURN;
+      
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.distance_index_simple(
+    GEOMETRY
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.distance_index_simple(
+    GEOMETRY
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+) TO PUBLIC;
+--******************************--
+----- functions/fetch_grids_by_geometry.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.fetch_grids_by_geometry';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
+    IN  p_FDR_input                 GEOMETRY
+   ,IN  p_FAC_input                 GEOMETRY
+   ,IN  p_known_region              VARCHAR DEFAULT NULL
+   ,IN  p_FDR_nodata                NUMERIC DEFAULT NULL
+   ,IN  p_FAC_nodata                NUMERIC DEFAULT NULL
+   ,IN  p_crop                      BOOLEAN DEFAULT TRUE
+   ,OUT out_FDR                     RASTER
+   ,OUT out_FAC                     RASTER
+   ,OUT out_return_code             INTEGER
+   ,OUT out_status_message          VARCHAR
+)
+STABLE
+AS
 $BODY$ 
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.create_line_temp_tables() OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.create_line_temp_tables() TO PUBLIC;
-
---******************************--
------ functions/measure_lengthkm.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.measure_lengthkm';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.measure_lengthkm(
-    IN  p_geometry          GEOMETRY
-   ,IN  p_known_region      VARCHAR DEFAULT NULL
-) RETURNS NUMERIC
-STABLE
-AS $BODY$ 
 DECLARE
    rec                RECORD;
-   int_srid           INTEGER;
-   int_return_code    INTEGER;
-   str_status_message VARCHAR;
-   sdo_geometry       GEOMETRY;
+   int_raster_srid    INTEGER;
+   int_original_srid  INTEGER;
+   sdo_test_input     GEOMETRY;
+   sdo_fdr_selector   GEOMETRY := p_FDR_input;
+   sdo_fac_selector   GEOMETRY := p_FAC_input;
+   int_fdr_nodata     INTEGER  := p_FDR_nodata;
+   int_fac_nodata     INTEGER  := p_FAC_nodata;
    
 BEGIN
 
@@ -3000,427 +6230,1211 @@ BEGIN
    -- Step 10
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
-   IF p_geometry IS NULL
+   IF  sdo_fdr_selector IS NULL
+   AND sdo_fac_selector IS NULL
    THEN
-      RAISE EXCEPTION 'input geometry required';
+      RAISE EXCEPTION 'input selections cannot both be null';
       
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Determine the region from geometry if known region value not provided
-   ----------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_geometry
-      ,p_known_region   := p_known_region
-   );
-   int_srid           := rec.out_srid;
-   int_return_code    := rec.out_return_code;
-   str_status_message := rec.out_status_message;
-  
-   ----------------------------------------------------------------------------
-   -- Step 30
-   -- Project as needed
-   ----------------------------------------------------------------------------
-   sdo_geometry := ST_Transform(
-       p_geometry
-      ,int_srid
-   );
-   
-   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
+   ELSIF sdo_fdr_selector IS NULL
    THEN
-      sdo_geometry := ST_CollectionExtract(sdo_geometry,2);
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 40
-   -- Return results in km
-   ----------------------------------------------------------------------------
-   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
-   THEN
-      RETURN 0;
-      
-   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
-   THEN
-      RETURN ROUND(ST_Length(sdo_geometry)::NUMERIC * 0.001,8);
+      sdo_test_input := sdo_fac_selector;
       
    ELSE
-      RAISE EXCEPTION 'measure lengthkm requires linear geometry - %',ST_GeometryType(sdo_geometry);
-      
+      sdo_test_input := sdo_fdr_selector;
+   
    END IF;
    
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.measure_lengthkm(
-    GEOMETRY
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.measure_lengthkm(
-    GEOMETRY
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/measure_areasqkm.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.measure_areasqkm';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.measure_areasqkm(
-    IN  p_geometry          GEOMETRY
-   ,IN  p_known_region      VARCHAR DEFAULT NULL
-) RETURNS NUMERIC
-STABLE
-AS $BODY$ 
-DECLARE
-   rec                RECORD;
-   int_srid           INTEGER;
-   int_return_code    INTEGER;
-   str_status_message VARCHAR;
-   sdo_geometry       GEOMETRY;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   ----------------------------------------------------------------------------
-   IF p_geometry IS NULL
+   IF  sdo_fdr_selector IS NOT NULL 
+   AND ST_GeometryType(sdo_fdr_selector) NOT IN ('ST_Polygon','ST_MultiPolygon')
    THEN
-      RAISE EXCEPTION 'input geometry required';
+      RAISE EXCEPTION 'fdr geometry selector must be polygon';
       
    END IF;
    
-   ----------------------------------------------------------------------------
+   IF  sdo_fac_selector IS NOT NULL 
+   AND ST_GeometryType(sdo_fac_selector) NOT IN ('ST_Polygon','ST_MultiPolygon')
+   THEN
+      RAISE EXCEPTION 'fac geometry selector must be polygon';
+      
+   END IF;
+   
+   IF int_fdr_nodata IS NULL
+   THEN
+      int_fdr_nodata := 255;
+      
+   END IF;
+   
+   IF int_fac_nodata IS NULL
+   THEN
+      int_fac_nodata := 2147483647;
+      
+   END IF;
+   
+   IF int_fdr_nodata < 0
+   THEN
+      RAISE EXCEPTION 'fdr nodata value must be unsigned 8 bit integer';
+   
+   END IF;   
+   
+   --------------------------------------------------------------------------
    -- Step 20
-   -- Determine the region from geometry if known region value not provided
-   ----------------------------------------------------------------------------
+   -- Determine the grid projection 
+   --------------------------------------------------------------------------
    rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_geometry
+       p_geometry       := p_split_point
       ,p_known_region   := p_known_region
    );
-   int_srid           := rec.out_srid;
-   int_return_code    := rec.out_return_code;
-   str_status_message := rec.out_status_message;
-  
-   ----------------------------------------------------------------------------
-   -- Step 30
-   -- Project as needed
-   ----------------------------------------------------------------------------
-   sdo_geometry := ST_Transform(
-       p_geometry
-      ,int_srid
-   );
-   
-   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
-   THEN
-      sdo_geometry := ST_CollectionExtract(sdo_geometry,3);
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 40
-   -- Return results in km
-   ----------------------------------------------------------------------------
-   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
-   THEN
-      RETURN 0;
-      
-   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_Polygon','ST_MultiPolygon')
-   THEN
-      RETURN ROUND(ST_Area(sdo_geometry)::NUMERIC / 1000000,8);
-      
-   ELSE
-      RAISE EXCEPTION 'measure areasqkm requires polygon geometry - %',ST_GeometryType(sdo_geometry);
-      
-   END IF;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.measure_areasqkm(
-    GEOMETRY
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.measure_areasqkm(
-    GEOMETRY
-   ,VARCHAR
-) TO PUBLIC;
-
---******************************--
------ functions/index_point_simple.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_point_simple';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    IN  p_geometry                GEOMETRY
-   ,IN  p_known_region            VARCHAR
-   ,IN  p_permid_joinkey          UUID
-   ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN DEFAULT TRUE
-   ,OUT out_return_code           INTEGER
-   ,OUT out_status_message        VARCHAR
-)
-VOLATILE
-AS $BODY$
-DECLARE
-   rec                    RECORD;
-   str_known_region       VARCHAR;
-   int_srid               INTEGER;
-   geom_input             GEOMETRY;
-   permid_geometry        GEOMETRY;
-   int_splitselector      INTEGER;
-
-BEGIN
-
-   str_known_region := p_known_region;
-
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry      := p_geometry
-      ,p_known_region  := p_known_region
-   );
-   int_srid           := rec.out_srid;
+   int_raster_srid    := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-
+   
    IF out_return_code != 0
    THEN
       RETURN;
-
-   END IF;
-
-   str_known_region := int_srid::VARCHAR;
-   
-   IF p_return_full_catchment IS NULL
-   OR p_return_full_catchment
-   THEN
-      int_splitselector := 2;
       
-   ELSE
-      int_splitselector := 1;
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project initial point
+   --------------------------------------------------------------------------
+   int_original_srid := ST_Srid(sdo_test_input);
+
+   IF  int_original_srid <> int_raster_srid
+   THEN
+      IF sdo_fdr_selector IS NOT NULL
+      THEN
+         sdo_fdr_selector := ST_Transform(sdo_fdr_selector,int_raster_srid);
+      
+      END IF;
+      
+      IF sdo_fac_selector IS NOT NULL
+      THEN
+         sdo_fac_selector := ST_Transform(sdo_fac_selector,int_raster_srid);
+      
+      END IF;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Fetch the FDR raster if requested
+   --------------------------------------------------------------------------
+   IF sdo_fdr_selector IS NOT NULL
+   THEN
+      IF int_raster_srid = 5070
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fdr_selector
+            ,p_FDR_nodata
+            ,p_crop
+         )
+         INTO out_FDR
+         FROM
+         cipsrv_nhdplusgrid_m.fdr_5070_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fdr_selector);
+
+      ELSIF int_raster_srid = 3338
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fdr_selector
+            ,p_FDR_nodata
+            ,p_crop
+         )
+         INTO out_FDR
+         FROM
+         cipsrv_nhdplusgrid_m.fdr_3338_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fdr_selector);
+
+      ELSIF int_raster_srid = 26904
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fdr_selector
+            ,p_FDR_nodata
+            ,p_crop
+         )
+         INTO out_FDR
+         FROM
+         cipsrv_nhdplusgrid_m.fdr_26904_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fdr_selector);
+
+      ELSIF int_raster_srid = 32161
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fdr_selector
+            ,p_FDR_nodata
+            ,p_crop
+         )
+         INTO out_FDR
+         FROM
+         cipsrv_nhdplusgrid_m.fdr_32161_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fdr_selector);
+
+      ELSIF int_raster_srid = 32655
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fdr_selector
+            ,p_FDR_nodata
+            ,p_crop
+         )
+         INTO out_FDR
+         FROM
+         cipsrv_nhdplusgrid_m.fdr_32655_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fdr_selector);
+
+      ELSIF int_raster_srid = 32702
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fdr_selector
+            ,p_FDR_nodata
+            ,p_crop
+         )
+         INTO out_FDR
+         FROM
+         cipsrv_nhdplusgrid_m.fdr_32702_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fdr_selector);
+
+      ELSE
+         RAISE EXCEPTION 'err';
+         
+      END IF;
    
    END IF;
-
-   IF str_known_region = '5070'
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Fetch the FAC raster if requested
+   --------------------------------------------------------------------------
+   IF sdo_fac_selector IS NOT NULL
    THEN
-      geom_input      := ST_Transform(p_geometry,5070);
-      permid_geometry := ST_Transform(p_permid_geometry,5070);
+      IF int_raster_srid = 5070
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fac_selector
+            ,p_FAC_nodata
+            ,p_crop
+         )
+         INTO out_FAC
+         FROM
+         cipsrv_nhdplusgrid_m.fac_5070_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
 
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      )
-      SELECT
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,NULL
-      FROM
-      cipsrv_nhdplus_m.catchment_5070 a
-      WHERE
-          a.statesplit IN (0,int_splitselector)
-      AND ST_Intersects(
-          a.shape
-         ,geom_input
-      )
-      ON CONFLICT DO NOTHING;
+      ELSIF int_raster_srid = 3338
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fac_selector
+            ,p_FAC_nodata
+            ,p_crop
+         )
+         INTO out_FAC
+         FROM
+         cipsrv_nhdplusgrid_m.fac_3338_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fac_selector); 
 
-   ELSIF str_known_region = '3338'
+      ELSIF int_raster_srid = 26904
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fac_selector
+            ,p_FAC_nodata
+            ,p_crop
+         )
+         INTO out_FAC
+         FROM
+         cipsrv_nhdplusgrid_m.fac_26904_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fac_selector); 
+
+      ELSIF int_raster_srid = 32161
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fac_selector
+            ,p_FAC_nodata
+            ,p_crop
+         )
+         INTO out_FAC
+         FROM
+         cipsrv_nhdplusgrid_m.fac_32161_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
+
+      ELSIF int_raster_srid = 32655
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fac_selector
+            ,p_FAC_nodata
+            ,p_crop
+         )
+         INTO out_FAC
+         FROM
+         cipsrv_nhdplusgrid_m.fac_32655_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
+
+      ELSIF int_raster_srid = 32702
+      THEN
+         SELECT 
+         ST_Clip(
+             ST_Union(a.rast)
+            ,sdo_fac_selector
+            ,p_FAC_nodata
+            ,p_crop
+         )
+         INTO out_FAC
+         FROM
+         cipsrv_nhdplusgrid_m.fac_32702_rdt a
+         WHERE
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
+
+      ELSE
+         RAISE EXCEPTION 'err';
+         
+      END IF;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
+    GEOMETRY
+   ,GEOMETRY
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
+    GEOMETRY
+   ,GEOMETRY
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,BOOLEAN
+) TO PUBLIC;
+--******************************--
+----- functions/generic_common_mbr.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
+   IN  p_input  VARCHAR
+) RETURNS GEOMETRY 
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+   str_input VARCHAR(4000) := UPPER(p_input);
+   
+BEGIN
+   
+   IF str_input IN ('5070','CONUS','US','USA',
+   'AL','AR','AZ','CA','CO','CT','DC','DE','FL','GA',
+   'IA','ID','IL','IN','KS','KY','LA','MA','MD','ME',
+   'MI','MN','MO','MS','MT','NC','ND','NE','NH','NJ',
+   'NM','NV','NY','OH','OK','OR','PA','RI','SC','SD',
+   'TN','TX','UT','VA','VT','WA','WI','WV','WY')
    THEN
-      geom_input      := ST_Transform(p_geometry,3338);
-      permid_geometry := ST_Transform(p_permid_geometry,3338);
-
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      )
-      SELECT
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,NULL
-      FROM
-      cipsrv_nhdplus_m.catchment_3338 a
-      WHERE
-          a.statesplit IN (0,int_splitselector)
-      AND ST_Intersects(
-          a.shape
-         ,geom_input
-      )
-      ON CONFLICT DO NOTHING;
-
-   ELSIF str_known_region = '26904'
+      RETURN ST_PolygonFromText('POLYGON((-128.0 20.2,-64.0 20.2,-64.0 52.0,-128.0 52.0,-128.0 20.2))',4326)::geography;
+      
+   ELSIF str_input IN ('3338','AK','ALASKA')
    THEN
-      geom_input      := ST_Transform(p_geometry,26904);
-      permid_geometry := ST_Transform(p_permid_geometry,26904);
-
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      )
-      SELECT
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,NULL
-      FROM
-      cipsrv_nhdplus_m.catchment_26904 a
-      WHERE
-          a.statesplit IN (0,int_splitselector)
-      AND ST_Intersects(
-          a.shape
-         ,geom_input
-      )
-      ON CONFLICT DO NOTHING;
-
-   ELSIF str_known_region = '32161'
+      RETURN ST_MPolyFromText('MULTIPOLYGON(((-180 48,-128 48,-128 90,-180 90,-180 48)),((168 48,180 48,180 90,168 90,168 48)))',4326)::geography;
+      
+   ELSIF str_input IN ('26904','HI','HAWAII')
    THEN
-      geom_input      := ST_Transform(p_geometry,32161);
-      permid_geometry := ST_Transform(p_permid_geometry,32161);
-
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      )
-      SELECT
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,NULL
-      FROM
-      cipsrv_nhdplus_m.catchment_32161 a
-      WHERE
-          a.statesplit IN (0,int_splitselector)
-      AND ST_Intersects(
-          a.shape
-         ,geom_input
-      )
-      ON CONFLICT DO NOTHING;
-
-   ELSIF str_known_region = '32655'
+      RETURN ST_PolygonFromText('POLYGON((-180.0 10.0,-146.0 10.0,-146.0 35.0,-180.0 35.0,-180.0 10.0))',4326)::geography;
+      
+   ELSIF str_input IN ('32161','PR','VI','PR/VI','PRVI')
    THEN
-      geom_input      := ST_Transform(p_geometry,32655);
-      permid_geometry := ST_Transform(p_permid_geometry,32655);
-
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      )
-      SELECT
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,NULL
-      FROM
-      cipsrv_nhdplus_m.catchment_32655 a
-      WHERE
-          a.statesplit IN (0,int_splitselector)
-      AND ST_Intersects(
-          a.shape
-         ,geom_input
-      )
-      ON CONFLICT DO NOTHING;
-
-   ELSIF str_known_region = '32702'
+      RETURN ST_PolygonFromText('POLYGON((-69.0 16.0,-63.0 16.0,-63.0 20.0,-69.0 20.0,-69.0 16.0))',4326)::geography;
+   
+   ELSIF str_input IN ('32655','GUMP','GUAM','MP','GU')
    THEN
-      geom_input      := ST_Transform(p_geometry,32702);
-      permid_geometry := ST_Transform(p_permid_geometry,32702);
-
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      )
-      SELECT
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,NULL
-      FROM
-      cipsrv_nhdplus_m.catchment_32702 a
-      WHERE
-          a.statesplit IN (0,int_splitselector)
-      AND ST_Intersects(
-          a.shape
-         ,geom_input
-      )
-      ON CONFLICT DO NOTHING;
-
+      RETURN ST_PolyFromText('POLYGON((136.0 8.0,154.0 8.0,154.0 25.0,136.0 25.0,136.0 8.0))',4326)::geography;
+         
+   ELSIF str_input IN ('32702','SAMOA','AS')
+   THEN
+      RETURN ST_PolyFromText('POLYGON((-178.0 -20.0, -163.0 -20.0, -163.0 -5.0, -178.0 -5.0, -178.0 -20.0))',4326)::geography;
+        
    ELSE
+      RAISE EXCEPTION 'unknown generic mbr code';
+      
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
+   VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
+   VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/get_flowline.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.get_flowline(
+    IN  p_direction            VARCHAR DEFAULT NULL
+   ,IN  p_nhdplusid            BIGINT  DEFAULT NULL
+   ,IN  p_permanent_identifier VARCHAR DEFAULT NULL
+   ,IN  p_reachcode            VARCHAR DEFAULT NULL
+   ,IN  p_hydroseq             BIGINT  DEFAULT NULL
+   ,IN  p_measure              NUMERIC DEFAULT NULL
+   ,OUT out_flowline           cipsrv_nhdplus_m.flowline
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   str_direction      VARCHAR(5) := UPPER(p_direction);
+   num_difference     NUMERIC;
+   num_end_of_line    NUMERIC := 0.0001;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   IF  p_nhdplusid IS NULL
+   AND p_permanent_identifier IS NULL
+   AND p_reachcode IS NULL
+   AND p_hydroseq IS NULL
+   THEN
+      out_return_code    := -2;
+      out_status_message := 'NHDPlusID, Permanent Identifier, Reach Code or Hydrosequence value is required.';
+      RETURN;
+      
+   END IF;
+   
+   IF str_direction IN ('UT','UM')
+   THEN
+      str_direction := 'U';
+      
+   ELSIF str_direction IN ('DD','DM','PP','PPALL')
+   THEN
+      str_direction := 'D';
+      
+   END IF;
+   
+   IF str_direction NOT IN ('D','U')
+   THEN
+      str_direction := 'D';
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Check when nhdplusid provided
+   --------------------------------------------------------------------------
+   IF p_nhdplusid IS NOT NULL
+   THEN
+      IF p_measure IS NULL
+      THEN
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE
+         a.nhdplusid = p_nhdplusid;
+
+         out_flowline.out_lengthkm           := out_flowline.lengthkm;
+         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
+         
+         IF str_direction = 'D'
+         THEN
+            out_flowline.out_measure         := out_flowline.tmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm     + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+      
+         ELSIF str_direction = 'U'
+         THEN  
+            out_flowline.out_measure         := out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
+      
+         END IF;
+         
+      ELSE
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema 
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE 
+             a.nhdplusid = p_nhdplusid
+         AND (
+            a.fmeasure = p_measure
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+         
+         out_flowline.out_measure := p_measure;
+         
+         IF str_direction = 'D'
+         THEN
+            IF  p_measure = out_flowline.fmeasure
+            AND out_flowline.hydroseq IS NOT NULL
+            AND out_flowline.hydroseq = out_flowline.terminalpa
+            THEN
+               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
+            
+            END IF;
+            
+            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+            
+         ELSIF str_direction = 'U'
+         THEN  
+            IF p_measure = out_flowline.tmeasure
+            AND out_flowline.uphydroseq = 0
+            THEN
+               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
+            
+            END IF;
+            
+            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
+      
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+
+      END IF;
+   
+   ELSIF p_permanent_identifier IS NOT NULL
+   THEN
+      IF p_measure IS NULL
+      THEN
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE
+         a.permanent_identifier = p_permanent_identifier;
+
+         out_flowline.out_lengthkm           := out_flowline.lengthkm;
+         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
+         
+         IF str_direction = 'D'
+         THEN
+            out_flowline.out_measure         := out_flowline.tmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm     + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+      
+         ELSIF str_direction = 'U'
+         THEN  
+            out_flowline.out_measure         := out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
+      
+         END IF;
+         
+      ELSE
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema 
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE
+             a.permanent_identifier = p_permanent_identifier
+         AND (
+            a.fmeasure = p_measure
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+         
+         out_flowline.out_measure := p_measure;
+         
+         IF str_direction = 'D'
+         THEN
+            IF  p_measure = out_flowline.fmeasure
+            AND out_flowline.hydroseq IS NOT NULL
+            AND out_flowline.hydroseq = out_flowline.terminalpa
+            THEN
+               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
+            
+            END IF;
+            
+            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+            
+         ELSIF str_direction = 'U'
+         THEN  
+            IF p_measure = out_flowline.tmeasure
+            AND out_flowline.uphydroseq = 0
+            THEN
+               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
+            
+            END IF;
+            
+            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
+      
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+
+      END IF;
+         
+   ELSIF p_hydroseq IS NOT NULL
+   THEN
+      IF p_measure IS NULL
+      THEN
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE
+         b.hydroseq = p_hydroseq;
+
+         out_flowline.out_lengthkm           := out_flowline.lengthkm;
+         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
+         
+         IF str_direction = 'D'
+         THEN
+            out_flowline.out_measure         := out_flowline.tmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm     + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+      
+         ELSIF str_direction = 'U'
+         THEN  
+            out_flowline.out_measure         := out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
+      
+         END IF;
+         
+      ELSE
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema 
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE
+             b.hydroseq = p_hydroseq
+         AND (
+            a.fmeasure = p_measure
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+         
+         out_flowline.out_measure := p_measure;
+         
+         IF str_direction = 'D'
+         THEN
+            IF  p_measure = out_flowline.fmeasure
+            AND out_flowline.hydroseq IS NOT NULL
+            AND out_flowline.hydroseq = out_flowline.terminalpa
+            THEN
+               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
+            
+            END IF;
+            
+            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+            
+         ELSIF str_direction = 'U'
+         THEN  
+            IF p_measure = out_flowline.tmeasure
+            AND out_flowline.uphydroseq = 0
+            THEN
+               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
+            
+            END IF;
+            
+            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
+      
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+
+      END IF; 
+
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Check when reach code provided
+   --------------------------------------------------------------------------
+   ELSIF p_reachcode IS NOT NULL
+   THEN
+      IF p_measure IS NULL
+      THEN
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema 
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE 
+             a.reachcode = p_reachcode 
+         AND (
+               (str_direction = 'D' AND a.tmeasure = 100)
+            OR (str_direction = 'U' AND a.fmeasure = 0 )
+         );
+         
+         out_flowline.out_lengthkm           := out_flowline.lengthkm;
+         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
+         
+         IF str_direction = 'D'
+         THEN
+            out_flowline.out_measure         := 100;
+            out_flowline.out_node            := out_flowline.tonode;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+            
+         ELSIF str_direction = 'U'
+         THEN
+            out_flowline.out_measure         := 0;
+            out_flowline.out_node            := out_flowline.fromnode;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
+         
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+         
+      ELSE
+         SELECT 
+          a.nhdplusid
+         ,b.hydroseq
+         ,a.fmeasure
+         ,a.tmeasure
+         ,b.levelpathi
+         ,b.terminalpa
+         ,b.uphydroseq
+         ,b.dnhydroseq
+         ,b.dnminorhyd
+         ,b.divergence
+         ,b.streamleve
+         ,b.arbolatesu
+         ,b.fromnode
+         ,b.tonode
+         ,a.vpuid
+         /* ++++++++++ */
+         ,a.permanent_identifier
+         ,a.reachcode
+         ,a.fcode
+         /* ++++++++++ */
+         ,a.lengthkm
+         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,b.totma AS flowtimeday
+         ,b.totma / (a.tmeasure - a.fmeasure)
+         /* ++++++++++ */
+         ,b.pathlength
+         ,b.pathtimema
+         /* ++++++++++ */
+         ,NULL::INTEGER
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::NUMERIC
+         ,NULL::BIGINT
+         INTO STRICT
+         out_flowline
+         FROM 
+         cipsrv_nhdplus_m.nhdflowline a
+         LEFT JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE 
+             a.reachcode = p_reachcode 
+         AND (
+            (p_measure = 0 AND a.fmeasure = 0)
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+         
+         out_flowline.out_measure := p_measure;
+         
+         IF str_direction = 'D'
+         THEN
+            IF  p_measure = out_flowline.fmeasure
+            AND out_flowline.hydroseq IS NOT NULL
+            AND out_flowline.hydroseq = out_flowline.terminalpa
+            THEN
+               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
+            
+            END IF;
+            
+            num_difference                   := p_measure - out_flowline.fmeasure;
+            out_flowline.out_node            := out_flowline.tonode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+            
+         ELSIF str_direction = 'U'
+         THEN
+            IF p_measure = out_flowline.tmeasure
+            AND out_flowline.uphydroseq = 0
+            THEN
+               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
+            
+            END IF;
+            
+            num_difference                   := out_flowline.tmeasure - p_measure;
+            out_flowline.out_node            := out_flowline.fromnode;
+            
+            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
+            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
+            
+            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
+            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
+      
+         ELSE
+            RAISE EXCEPTION 'err';
+            
+         END IF;
+ 
+      END IF;
+    
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Determine grid srid
+   --------------------------------------------------------------------------
+   IF out_flowline.vpuid = '20'
+   OR SUBSTR(out_flowline.vpuid,1,2) = '20'
+   THEN
+      out_flowline.out_grid_srid := 26904;
+      
+   ELSIF out_flowline.vpuid = '21'
+   OR SUBSTR(out_flowline.vpuid,1,2) = '21'
+   THEN
+      out_flowline.out_grid_srid := 32161;
+      
+   ELSIF out_flowline.vpuid IN ('22G','22M')
+   OR SUBSTR(out_flowline.vpuid,1,4) IN ('2201','2202')
+   THEN
+      out_flowline.out_grid_srid := 32655;
+      
+   ELSIF out_flowline.vpuid = '22A'
+   OR SUBSTR(out_flowline.vpuid,1,4) = '2203'
+   THEN
+      out_flowline.out_grid_srid := 32702;
+   
+   ELSE
+      out_flowline.out_grid_srid := 5070;
+      
+   END IF;
+   
+EXCEPTION
+
+   WHEN NO_DATA_FOUND
+   THEN
       out_return_code    := -10;
-      out_status_message := 'err ' || str_known_region;
+      out_status_message := 'no results found in NHDPlus';
+      RETURN;
 
-   END IF;
-
-   RETURN;
+   WHEN OTHERS
+   THEN
+      RAISE;   
 
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    GEOMETRY
+ALTER FUNCTION cipsrv_nhdplus_m.get_flowline(
+    VARCHAR
+   ,BIGINT
    ,VARCHAR
-   ,UUID
-   ,GEOMETRY
-   ,BOOLEAN
+   ,VARCHAR
+   ,BIGINT
+   ,NUMERIC
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    GEOMETRY
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.get_flowline(
+    VARCHAR
+   ,BIGINT
    ,VARCHAR
-   ,UUID
-   ,GEOMETRY
-   ,BOOLEAN
+   ,VARCHAR
+   ,BIGINT
+   ,NUMERIC
 ) TO PUBLIC;
 
 --******************************--
------ functions/index_line_simple.sql 
+----- functions/index_area_artpath.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_line_simple';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_artpath';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
     IN  p_geometry                GEOMETRY
-   ,IN  p_geometry_lengthkm       NUMERIC
+   ,IN  p_geometry_areasqkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_line_threshold_perc     NUMERIC
+   ,IN  p_cat_threshold_perc      NUMERIC
+   ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
@@ -3433,19 +7447,28 @@ DECLARE
    str_known_region       VARCHAR;
    int_srid               INTEGER;
    geom_input             GEOMETRY;
-   num_line_threshold     NUMERIC;
-   int_count              INTEGER;
-   num_geometry_lengthkm  NUMERIC;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
 
 BEGIN
 
-   IF p_line_threshold_perc IS NULL
+   IF p_cat_threshold_perc IS NULL
    THEN
-      num_line_threshold := 0;
+      num_cat_threshold := 0;
    
    ELSE
-      num_line_threshold := p_line_threshold_perc / 100;
+      num_cat_threshold := p_cat_threshold_perc / 100;
+      
+   END IF;
+   
+   IF p_evt_threshold_perc IS NULL
+   THEN
+      num_evt_threshold := 0;
+   
+   ELSE
+      num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
 
@@ -3466,19 +7489,19 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
-
-   IF p_geometry_lengthkm IS NULL
+   
+   IF p_geometry_areasqkm IS NULL
    THEN
-      num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
           p_geometry
          ,int_srid
-      ))::NUMERIC * 0.001,8);
+      ))::NUMERIC / 1000000,8);
       
    ELSE
-      num_geometry_lengthkm := p_geometry_lengthkm;
+      num_geometry_areasqkm := p_geometry_areasqkm;
       
    END IF;
-
+      
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -3500,30 +7523,545 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN aa.overlapmeasure >= num_geometry_lengthkm
-          THEN
-            1
-          WHEN num_geometry_lengthkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
-         ,CASE
-          WHEN aa.overlapmeasure >= aa.lengthkm
-          THEN
-            1
-          ELSE
-            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
-          END AS nhdpercentage
+         ,aa.fcode
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
-            ,aaa.lengthkm
+            ,aaa.fcode
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,aaaa.fcode
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+   
+   ELSIF str_known_region = '3338'
+   THEN
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         ,aa.fcode
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,aaa.fcode
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,aaaa.fcode
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+   
+   ELSIF str_known_region = '26904'
+   THEN
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         ,aa.fcode
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,aaa.fcode
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,aaaa.fcode
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+      
+   ELSIF str_known_region = '32161'
+   THEN
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         ,aa.fcode
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,aaa.fcode
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,aaaa.fcode
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+      
+   ELSIF str_known_region = '32655'
+   THEN
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         ,aa.fcode
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,aaa.fcode
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,aaaa.fcode
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+      
+   ELSIF str_known_region = '32702'
+   THEN
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         ,aa.fcode
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,aaa.fcode
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,aaaa.fcode
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+          a.fcode = 55800
+      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+   
+   ELSE
+      out_return_code    := -10;
+      out_status_message := 'err ' || str_known_region;
+      
+   END IF;
+   
+   RETURN;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.index_area_artpath(
+    GEOMETRY
+   ,NUMERIC
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,UUID
+   ,GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_artpath(
+    GEOMETRY
+   ,NUMERIC
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,UUID
+   ,GEOMETRY
+) TO PUBLIC;
+
+--******************************--
+----- functions/index_area_centroid.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_centroid';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_centroid(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_geometry_areasqkm       NUMERIC
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_cat_threshold_perc      NUMERIC
+   ,IN  p_evt_threshold_perc      NUMERIC   
+   ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
+)
+VOLATILE
+AS $BODY$
+DECLARE
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
+   permid_geometry        GEOMETRY;
+
+BEGIN
+
+   IF p_cat_threshold_perc IS NULL
+   THEN
+      num_cat_threshold := 0;
+   
+   ELSE
+      num_cat_threshold := p_cat_threshold_perc / 100;
+      
+   END IF;
+   
+   IF p_evt_threshold_perc IS NULL
+   THEN
+      num_evt_threshold := 0;
+   
+   ELSE
+      num_evt_threshold := p_evt_threshold_perc / 100;
+      
+   END IF;
+
+   str_known_region := p_known_region;
+
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry      := p_geometry
+      ,p_known_region  := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   str_known_region := int_srid::VARCHAR;
+   
+   IF p_geometry_areasqkm IS NULL
+   THEN
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   ELSE
+      num_geometry_areasqkm := p_geometry_areasqkm;
+      
+   END IF;
+      
+   IF str_known_region = '5070'
+   THEN
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -3534,9 +8072,515 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,2
+                  ,3
                 ) AS geom_overlap
-               ,aaaa.lengthkm
+               FROM
+               cipsrv_nhdplus_m.catchment_5070_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape_centroid
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+   
+   ELSIF str_known_region = '3338'
+   THEN
+      geom_input      := ST_Transform(p_geometry,3338);
+      permid_geometry := ST_Transform(p_permid_geometry,3338);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_3338_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape_centroid
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+   
+   ELSIF str_known_region = '26904'
+   THEN
+      geom_input      := ST_Transform(p_geometry,26904);
+      permid_geometry := ST_Transform(p_permid_geometry,26904);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_26904_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape_centroid
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+      
+   ELSIF str_known_region = '32161'
+   THEN
+      geom_input      := ST_Transform(p_geometry,32161);
+      permid_geometry := ST_Transform(p_permid_geometry,32161);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_32161_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape_centroid
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+      
+   ELSIF str_known_region = '32655'
+   THEN
+      geom_input      := ST_Transform(p_geometry,32655);
+      permid_geometry := ST_Transform(p_permid_geometry,32655);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_32655_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape_centroid
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+      
+   ELSIF str_known_region = '32702'
+   THEN
+      geom_input      := ST_Transform(p_geometry,32702);
+      permid_geometry := ST_Transform(p_permid_geometry,32702);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
+               FROM
+               cipsrv_nhdplus_m.catchment_32702_full aaaa
+               WHERE
+               ST_Intersects(
+                   aaaa.shape_centroid
+                  ,geom_input
+               )
+            ) aaa
+            WHERE 
+            aaa.geom_overlap IS NOT NULL
+         ) aa 
+      ) a
+      WHERE
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+      ON CONFLICT DO NOTHING;
+   
+   ELSE
+      out_return_code    := -10;
+      out_status_message := 'err ' || str_known_region;
+      
+   END IF;
+   
+   RETURN;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.index_area_centroid(
+    GEOMETRY
+   ,NUMERIC
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,UUID
+   ,GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_centroid(
+    GEOMETRY
+   ,NUMERIC
+   ,VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,UUID
+   ,GEOMETRY
+) TO PUBLIC;
+
+--******************************--
+----- functions/index_area_simple.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_simple';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_simple(
+    IN  p_geometry                GEOMETRY
+   ,IN  p_geometry_areasqkm       NUMERIC
+   ,IN  p_known_region            VARCHAR
+   ,IN  p_cat_threshold_perc      NUMERIC
+   ,IN  p_evt_threshold_perc      NUMERIC
+   ,IN  p_permid_joinkey          UUID
+   ,IN  p_permid_geometry         GEOMETRY
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
+)
+VOLATILE
+AS $BODY$
+DECLARE
+   rec                    RECORD;
+   str_known_region       VARCHAR;
+   int_srid               INTEGER;
+   geom_input             GEOMETRY;
+   num_cat_threshold      NUMERIC;
+   num_evt_threshold      NUMERIC;
+   num_geometry_areasqkm  NUMERIC;
+   permid_geometry        GEOMETRY;
+
+BEGIN
+
+   IF p_cat_threshold_perc IS NULL
+   THEN
+      num_cat_threshold := 0;
+   
+   ELSE
+      num_cat_threshold := p_cat_threshold_perc / 100;
+      
+   END IF;
+   
+   IF p_evt_threshold_perc IS NULL
+   THEN
+      num_evt_threshold := 0;
+   
+   ELSE
+      num_evt_threshold := p_evt_threshold_perc / 100;
+      
+   END IF;
+
+   str_known_region := p_known_region;
+
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_geometry
+      ,p_known_region   := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   str_known_region := int_srid::VARCHAR;
+   
+   IF p_geometry_areasqkm IS NULL
+   THEN
+      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+          p_geometry
+         ,int_srid
+      ))::NUMERIC / 1000000,8);
+      
+   ELSE
+      num_geometry_areasqkm := p_geometry_areasqkm;
+      
+   END IF;
+      
+   IF str_known_region = '5070'
+   THEN
+      geom_input      := ST_Transform(p_geometry,5070);
+      permid_geometry := ST_Transform(p_permid_geometry,5070);
+      
+      INSERT INTO tmp_cip(
+          permid_joinkey
+         ,catchmentstatecodes
+         ,nhdplusid
+         ,overlap_measure
+      ) 
+      SELECT 
+       p_permid_joinkey
+      ,a.catchmentstatecodes
+      ,a.nhdplusid
+      ,a.overlapmeasure
+      FROM (
+         SELECT
+          aa.catchmentstatecodes
+         ,aa.nhdplusid
+         ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
+         ,CASE
+          WHEN num_geometry_areasqkm = 0
+          THEN
+            0
+          ELSE
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+          END AS eventpercentage
+         FROM (
+            SELECT
+             aaa.catchmentstatecodes
+            ,aaa.nhdplusid
+            ,aaa.areasqkm
+            ,CASE
+             WHEN aaa.geom_overlap IS NULL
+             THEN
+               0
+             ELSE
+               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
+             END AS overlapmeasure
+            FROM (
+               SELECT
+                aaaa.catchmentstatecodes
+               ,aaaa.nhdplusid
+               ,aaaa.areasqkm
+               ,ST_CollectionExtract(
+                  ST_Intersection(
+                      aaaa.shape
+                     ,permid_geometry
+                   )
+                  ,3
+                ) AS geom_overlap
                FROM
                cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
@@ -3548,11 +8592,10 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         num_line_threshold IS NULL 
-      OR a.nhdpercentage >= num_line_threshold
-      OR a.overlapmeasure = num_geometry_lengthkm
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
-
+   
    ELSIF str_known_region = '3338'
    THEN
       geom_input      := ST_Transform(p_geometry,3338);
@@ -3563,7 +8606,7 @@ BEGIN
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
+      )  
       SELECT 
        p_permid_joinkey
       ,a.catchmentstatecodes
@@ -3574,30 +8617,26 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN aa.overlapmeasure >= num_geometry_lengthkm
-          THEN
-            1
-          WHEN num_geometry_lengthkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
-         ,CASE
-          WHEN aa.overlapmeasure >= aa.lengthkm
-          THEN
-            1
-          ELSE
-            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
-          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
-            ,aaa.lengthkm
+            ,CASE
+             WHEN aaa.geom_overlap IS NULL
+             THEN
+               0
+             ELSE
+               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
+             END AS overlapmeasure
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -3608,9 +8647,8 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,2
+                  ,3
                 ) AS geom_overlap
-               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
@@ -3622,9 +8660,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         num_line_threshold IS NULL 
-      OR a.nhdpercentage >= num_line_threshold
-      OR a.overlapmeasure = num_geometry_lengthkm
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
    ELSIF str_known_region = '26904'
@@ -3648,30 +8685,26 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN aa.overlapmeasure >= num_geometry_lengthkm
-          THEN
-            1
-          WHEN num_geometry_lengthkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
-         ,CASE
-          WHEN aa.overlapmeasure >= aa.lengthkm
-          THEN
-            1
-          ELSE
-            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
-          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
-            ,aaa.lengthkm
+            ,CASE
+             WHEN aaa.geom_overlap IS NULL
+             THEN
+               0
+             ELSE
+               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
+             END AS overlapmeasure
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -3682,9 +8715,8 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,2
+                  ,3
                 ) AS geom_overlap
-               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
@@ -3696,9 +8728,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         num_line_threshold IS NULL 
-      OR a.nhdpercentage >= num_line_threshold
-      OR a.overlapmeasure = num_geometry_lengthkm
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32161'
@@ -3722,30 +8753,26 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN aa.overlapmeasure >= num_geometry_lengthkm
-          THEN
-            1
-          WHEN num_geometry_lengthkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
-         ,CASE
-          WHEN aa.overlapmeasure >= aa.lengthkm
-          THEN
-            1
-          ELSE
-            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
-          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
-            ,aaa.lengthkm
+            ,CASE
+             WHEN aaa.geom_overlap IS NULL
+             THEN
+               0
+             ELSE
+               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
+             END AS overlapmeasure
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -3756,9 +8783,8 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,2
+                  ,3
                 ) AS geom_overlap
-               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
@@ -3770,9 +8796,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         num_line_threshold IS NULL 
-      OR a.nhdpercentage >= num_line_threshold
-      OR a.overlapmeasure = num_geometry_lengthkm
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32655'
@@ -3785,7 +8810,7 @@ BEGIN
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
+      )  
       SELECT 
        p_permid_joinkey
       ,a.catchmentstatecodes
@@ -3796,30 +8821,26 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN aa.overlapmeasure >= num_geometry_lengthkm
-          THEN
-            1
-          WHEN num_geometry_lengthkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
-         ,CASE
-          WHEN aa.overlapmeasure >= aa.lengthkm
-          THEN
-            1
-          ELSE
-            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
-          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
-            ,aaa.lengthkm
+            ,CASE
+             WHEN aaa.geom_overlap IS NULL
+             THEN
+               0
+             ELSE
+               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
+             END AS overlapmeasure
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -3830,9 +8851,8 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,2
+                  ,3
                 ) AS geom_overlap
-               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
@@ -3844,9 +8864,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         num_line_threshold IS NULL 
-      OR a.nhdpercentage >= num_line_threshold
-      OR a.overlapmeasure = num_geometry_lengthkm
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32702'
@@ -3859,7 +8878,7 @@ BEGIN
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
+      )  
       SELECT 
        p_permid_joinkey
       ,a.catchmentstatecodes
@@ -3870,30 +8889,26 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
+         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN aa.overlapmeasure >= num_geometry_lengthkm
-          THEN
-            1
-          WHEN num_geometry_lengthkm = 0
+          WHEN num_geometry_areasqkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
           END AS eventpercentage
-         ,CASE
-          WHEN aa.overlapmeasure >= aa.lengthkm
-          THEN
-            1
-          ELSE
-            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
-          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
-            ,aaa.lengthkm
+            ,CASE
+             WHEN aaa.geom_overlap IS NULL
+             THEN
+               0
+             ELSE
+               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
+             END AS overlapmeasure
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -3904,9 +8919,8 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,2
+                  ,3
                 ) AS geom_overlap
-               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
@@ -3918,9 +8932,8 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         num_line_threshold IS NULL 
-      OR a.nhdpercentage >= num_line_threshold
-      OR a.overlapmeasure = num_geometry_lengthkm
+         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
+      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
    ELSE
@@ -3929,27 +8942,27 @@ BEGIN
       
    END IF;
    
-   GET DIAGNOSTICS int_count = ROW_COUNT;
-
    RETURN;
    
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_line_simple(
+ALTER FUNCTION cipsrv_nhdplus_m.index_area_simple(
     GEOMETRY
    ,NUMERIC
    ,VARCHAR
+   ,NUMERIC
    ,NUMERIC
    ,UUID
    ,GEOMETRY
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_simple(
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_simple(
     GEOMETRY
    ,NUMERIC
    ,VARCHAR
+   ,NUMERIC
    ,NUMERIC
    ,UUID
    ,GEOMETRY
@@ -4062,7 +9075,7 @@ BEGIN
    int_geom_count := ST_NumGeometries(p_geometry);
    FOR i IN 1 .. int_geom_count
    LOOP
-      out_return_code := cipsrv_nhdplus_m.create_line_temp_tables();
+      out_return_code := cipsrv_engine.create_line_temp_tables();
       geom_part := ST_GeometryN(p_geometry,i);
       
    ----------------------------------------------------------------------------
@@ -5028,23 +10041,22 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
 ) TO PUBLIC;
 
 --******************************--
------ functions/index_area_simple.sql 
+----- functions/index_line_simple.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_simple';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_line_simple';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_simple(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
     IN  p_geometry                GEOMETRY
-   ,IN  p_geometry_areasqkm       NUMERIC
+   ,IN  p_geometry_lengthkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_cat_threshold_perc      NUMERIC
-   ,IN  p_evt_threshold_perc      NUMERIC
+   ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
    ,OUT out_return_code           INTEGER
@@ -5057,28 +10069,19 @@ DECLARE
    str_known_region       VARCHAR;
    int_srid               INTEGER;
    geom_input             GEOMETRY;
-   num_cat_threshold      NUMERIC;
-   num_evt_threshold      NUMERIC;
-   num_geometry_areasqkm  NUMERIC;
+   num_line_threshold     NUMERIC;
+   int_count              INTEGER;
+   num_geometry_lengthkm  NUMERIC;
    permid_geometry        GEOMETRY;
 
 BEGIN
 
-   IF p_cat_threshold_perc IS NULL
+   IF p_line_threshold_perc IS NULL
    THEN
-      num_cat_threshold := 0;
+      num_line_threshold := 0;
    
    ELSE
-      num_cat_threshold := p_cat_threshold_perc / 100;
-      
-   END IF;
-   
-   IF p_evt_threshold_perc IS NULL
-   THEN
-      num_evt_threshold := 0;
-   
-   ELSE
-      num_evt_threshold := p_evt_threshold_perc / 100;
+      num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
 
@@ -5099,19 +10102,19 @@ BEGIN
    END IF;
    
    str_known_region := int_srid::VARCHAR;
-   
-   IF p_geometry_areasqkm IS NULL
+
+   IF p_geometry_lengthkm IS NULL
    THEN
-      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
+      num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
           p_geometry
          ,int_srid
-      ))::NUMERIC / 1000000,8);
+      ))::NUMERIC * 0.001,8);
       
    ELSE
-      num_geometry_areasqkm := p_geometry_areasqkm;
+      num_geometry_lengthkm := p_geometry_lengthkm;
       
    END IF;
-      
+
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -5133,26 +10136,30 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN num_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
+          THEN
+            1
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,CASE
-             WHEN aaa.geom_overlap IS NULL
-             THEN
-               0
-             ELSE
-               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
-             END AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -5163,8 +10170,9 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_5070_full aaaa
                WHERE
@@ -5176,10 +10184,11 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
-   
+
    ELSIF str_known_region = '3338'
    THEN
       geom_input      := ST_Transform(p_geometry,3338);
@@ -5190,7 +10199,7 @@ BEGIN
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      )  
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.catchmentstatecodes
@@ -5201,26 +10210,30 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN num_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
+          THEN
+            1
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,CASE
-             WHEN aaa.geom_overlap IS NULL
-             THEN
-               0
-             ELSE
-               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
-             END AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -5231,8 +10244,9 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_3338_full aaaa
                WHERE
@@ -5244,8 +10258,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
    
    ELSIF str_known_region = '26904'
@@ -5269,26 +10284,30 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN num_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
+          THEN
+            1
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,CASE
-             WHEN aaa.geom_overlap IS NULL
-             THEN
-               0
-             ELSE
-               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
-             END AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -5299,8 +10318,9 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_26904_full aaaa
                WHERE
@@ -5312,8 +10332,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32161'
@@ -5337,26 +10358,30 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN num_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
+          THEN
+            1
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,CASE
-             WHEN aaa.geom_overlap IS NULL
-             THEN
-               0
-             ELSE
-               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
-             END AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -5367,8 +10392,9 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_32161_full aaaa
                WHERE
@@ -5380,8 +10406,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32655'
@@ -5394,7 +10421,7 @@ BEGIN
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      )  
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.catchmentstatecodes
@@ -5405,26 +10432,30 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN num_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
+          THEN
+            1
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,CASE
-             WHEN aaa.geom_overlap IS NULL
-             THEN
-               0
-             ELSE
-               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
-             END AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -5435,8 +10466,9 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_32655_full aaaa
                WHERE
@@ -5448,8 +10480,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
    ELSIF str_known_region = '32702'
@@ -5462,7 +10495,7 @@ BEGIN
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      )  
+      ) 
       SELECT 
        p_permid_joinkey
       ,a.catchmentstatecodes
@@ -5473,26 +10506,30 @@ BEGIN
           aa.catchmentstatecodes
          ,aa.nhdplusid
          ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
          ,CASE
-          WHEN num_geometry_areasqkm = 0
+          WHEN aa.overlapmeasure >= num_geometry_lengthkm
+          THEN
+            1
+          WHEN num_geometry_lengthkm = 0
           THEN
             0
           ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
+            ROUND(aa.overlapmeasure / num_geometry_lengthkm,8)
           END AS eventpercentage
+         ,CASE
+          WHEN aa.overlapmeasure >= aa.lengthkm
+          THEN
+            1
+          ELSE
+            ROUND(aa.overlapmeasure / GREATEST(aa.lengthkm,0.0001),8)
+          END AS nhdpercentage
          FROM (
             SELECT
              aaa.catchmentstatecodes
             ,aaa.nhdplusid
             ,aaa.areasqkm
-            ,CASE
-             WHEN aaa.geom_overlap IS NULL
-             THEN
-               0
-             ELSE
-               ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8)
-             END AS overlapmeasure
+            ,ROUND(ST_Length(aaa.geom_overlap)::NUMERIC / 1000,8) AS overlapmeasure
+            ,aaa.lengthkm
             FROM (
                SELECT
                 aaaa.catchmentstatecodes
@@ -5503,8 +10540,9 @@ BEGIN
                       aaaa.shape
                      ,permid_geometry
                    )
-                  ,3
+                  ,2
                 ) AS geom_overlap
+               ,aaaa.lengthkm
                FROM
                cipsrv_nhdplus_m.catchment_32702_full aaaa
                WHERE
@@ -5516,8 +10554,9 @@ BEGIN
          ) aa 
       ) a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+         num_line_threshold IS NULL 
+      OR a.nhdpercentage >= num_line_threshold
+      OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
    
    ELSE
@@ -5526,52 +10565,50 @@ BEGIN
       
    END IF;
    
+   GET DIAGNOSTICS int_count = ROW_COUNT;
+
    RETURN;
    
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_area_simple(
+ALTER FUNCTION cipsrv_nhdplus_m.index_line_simple(
     GEOMETRY
    ,NUMERIC
    ,VARCHAR
-   ,NUMERIC
    ,NUMERIC
    ,UUID
    ,GEOMETRY
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_simple(
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_simple(
     GEOMETRY
    ,NUMERIC
    ,VARCHAR
-   ,NUMERIC
    ,NUMERIC
    ,UUID
    ,GEOMETRY
 ) TO PUBLIC;
 
 --******************************--
------ functions/index_area_centroid.sql 
+----- functions/index_point_simple.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_centroid';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_point_simple';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_centroid(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
     IN  p_geometry                GEOMETRY
-   ,IN  p_geometry_areasqkm       NUMERIC
    ,IN  p_known_region            VARCHAR
-   ,IN  p_cat_threshold_perc      NUMERIC
-   ,IN  p_evt_threshold_perc      NUMERIC   
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN DEFAULT TRUE
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -5582,30 +10619,10 @@ DECLARE
    str_known_region       VARCHAR;
    int_srid               INTEGER;
    geom_input             GEOMETRY;
-   num_cat_threshold      NUMERIC;
-   num_evt_threshold      NUMERIC;
-   num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
-
-   IF p_cat_threshold_perc IS NULL
-   THEN
-      num_cat_threshold := 0;
-   
-   ELSE
-      num_cat_threshold := p_cat_threshold_perc / 100;
-      
-   END IF;
-   
-   IF p_evt_threshold_perc IS NULL
-   THEN
-      num_evt_threshold := 0;
-   
-   ELSE
-      num_evt_threshold := p_evt_threshold_perc / 100;
-      
-   END IF;
 
    str_known_region := p_known_region;
 
@@ -5616,2182 +10633,1182 @@ BEGIN
    int_srid           := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-   
+
    IF out_return_code != 0
    THEN
       RETURN;
-      
+
    END IF;
-   
+
    str_known_region := int_srid::VARCHAR;
    
-   IF p_geometry_areasqkm IS NULL
+   IF p_return_full_catchment IS NULL
+   OR p_return_full_catchment
    THEN
-      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
-          p_geometry
-         ,int_srid
-      ))::NUMERIC / 1000000,8);
+      int_splitselector := 2;
       
    ELSE
-      num_geometry_areasqkm := p_geometry_areasqkm;
-      
+      int_splitselector := 1;
+   
    END IF;
-      
+
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
       permid_geometry := ST_Transform(p_permid_geometry,5070);
-      
+
       INSERT INTO tmp_cip(
           permid_joinkey
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
-      SELECT 
+      )
+      SELECT
        p_permid_joinkey
       ,a.catchmentstatecodes
       ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_5070_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape_centroid
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
+      ,NULL
+      FROM
+      cipsrv_nhdplus_m.catchment_5070 a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
+          a.shape
+         ,geom_input
+      )
       ON CONFLICT DO NOTHING;
-   
+
    ELSIF str_known_region = '3338'
    THEN
       geom_input      := ST_Transform(p_geometry,3338);
       permid_geometry := ST_Transform(p_permid_geometry,3338);
-      
+
       INSERT INTO tmp_cip(
           permid_joinkey
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
-      SELECT 
+      )
+      SELECT
        p_permid_joinkey
       ,a.catchmentstatecodes
       ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_3338_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape_centroid
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
+      ,NULL
+      FROM
+      cipsrv_nhdplus_m.catchment_3338 a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
+          a.shape
+         ,geom_input
+      )
       ON CONFLICT DO NOTHING;
-   
+
    ELSIF str_known_region = '26904'
    THEN
       geom_input      := ST_Transform(p_geometry,26904);
       permid_geometry := ST_Transform(p_permid_geometry,26904);
-      
+
       INSERT INTO tmp_cip(
           permid_joinkey
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
-      SELECT 
+      )
+      SELECT
        p_permid_joinkey
       ,a.catchmentstatecodes
       ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_26904_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape_centroid
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
+      ,NULL
+      FROM
+      cipsrv_nhdplus_m.catchment_26904 a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
+          a.shape
+         ,geom_input
+      )
       ON CONFLICT DO NOTHING;
-      
+
    ELSIF str_known_region = '32161'
    THEN
       geom_input      := ST_Transform(p_geometry,32161);
       permid_geometry := ST_Transform(p_permid_geometry,32161);
-      
+
       INSERT INTO tmp_cip(
           permid_joinkey
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
-      SELECT 
+      )
+      SELECT
        p_permid_joinkey
       ,a.catchmentstatecodes
       ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_32161_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape_centroid
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
+      ,NULL
+      FROM
+      cipsrv_nhdplus_m.catchment_32161 a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
+          a.shape
+         ,geom_input
+      )
       ON CONFLICT DO NOTHING;
-      
+
    ELSIF str_known_region = '32655'
    THEN
       geom_input      := ST_Transform(p_geometry,32655);
       permid_geometry := ST_Transform(p_permid_geometry,32655);
-      
+
       INSERT INTO tmp_cip(
           permid_joinkey
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
-      SELECT 
+      )
+      SELECT
        p_permid_joinkey
       ,a.catchmentstatecodes
       ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_32655_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape_centroid
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
+      ,NULL
+      FROM
+      cipsrv_nhdplus_m.catchment_32655 a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
+          a.shape
+         ,geom_input
+      )
       ON CONFLICT DO NOTHING;
-      
+
    ELSIF str_known_region = '32702'
    THEN
       geom_input      := ST_Transform(p_geometry,32702);
       permid_geometry := ST_Transform(p_permid_geometry,32702);
-      
+
       INSERT INTO tmp_cip(
           permid_joinkey
          ,catchmentstatecodes
          ,nhdplusid
          ,overlap_measure
-      ) 
-      SELECT 
+      )
+      SELECT
        p_permid_joinkey
       ,a.catchmentstatecodes
       ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_32702_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape_centroid
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
+      ,NULL
+      FROM
+      cipsrv_nhdplus_m.catchment_32702 a
       WHERE
-         (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
+          a.statesplit IN (0,int_splitselector)
+      AND ST_Intersects(
+          a.shape
+         ,geom_input
+      )
       ON CONFLICT DO NOTHING;
-   
+
    ELSE
       out_return_code    := -10;
       out_status_message := 'err ' || str_known_region;
-      
+
    END IF;
-   
+
    RETURN;
-   
+
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_area_centroid(
+ALTER FUNCTION cipsrv_nhdplus_m.index_point_simple(
     GEOMETRY
-   ,NUMERIC
    ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
    ,UUID
    ,GEOMETRY
+   ,BOOLEAN
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_centroid(
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
     GEOMETRY
-   ,NUMERIC
    ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
    ,UUID
    ,GEOMETRY
+   ,BOOLEAN
 ) TO PUBLIC;
 
 --******************************--
------ functions/index_area_artpath.sql 
+----- functions/load_aggregated_catchment.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_artpath';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.load_aggregated_catchment';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
-    IN  p_geometry                GEOMETRY
-   ,IN  p_geometry_areasqkm       NUMERIC
-   ,IN  p_known_region            VARCHAR
-   ,IN  p_cat_threshold_perc      NUMERIC
-   ,IN  p_evt_threshold_perc      NUMERIC
-   ,IN  p_permid_joinkey          UUID
-   ,IN  p_permid_geometry         GEOMETRY
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.load_aggregated_catchment(
+    IN  p_grid_srid               INTEGER
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
 VOLATILE
-AS $BODY$
-DECLARE
-   rec                    RECORD;
-   str_known_region       VARCHAR;
-   int_srid               INTEGER;
-   geom_input             GEOMETRY;
-   num_cat_threshold      NUMERIC;
-   num_evt_threshold      NUMERIC;
-   num_geometry_areasqkm  NUMERIC;
-   permid_geometry        GEOMETRY;
-
-BEGIN
-
-   IF p_cat_threshold_perc IS NULL
-   THEN
-      num_cat_threshold := 0;
-   
-   ELSE
-      num_cat_threshold := p_cat_threshold_perc / 100;
-      
-   END IF;
-   
-   IF p_evt_threshold_perc IS NULL
-   THEN
-      num_evt_threshold := 0;
-   
-   ELSE
-      num_evt_threshold := p_evt_threshold_perc / 100;
-      
-   END IF;
-
-   str_known_region := p_known_region;
-
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_geometry
-      ,p_known_region   := p_known_region
-   );
-   int_srid           := rec.out_srid;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
-   
-   IF out_return_code != 0
-   THEN
-      RETURN;
-      
-   END IF;
-   
-   str_known_region := int_srid::VARCHAR;
-   
-   IF p_geometry_areasqkm IS NULL
-   THEN
-      num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
-          p_geometry
-         ,int_srid
-      ))::NUMERIC / 1000000,8);
-      
-   ELSE
-      num_geometry_areasqkm := p_geometry_areasqkm;
-      
-   END IF;
-      
-   IF str_known_region = '5070'
-   THEN
-      geom_input      := ST_Transform(p_geometry,5070);
-      permid_geometry := ST_Transform(p_permid_geometry,5070);
-      
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      ) 
-      SELECT 
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         ,aa.fcode
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,aaa.fcode
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,aaaa.fcode
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_5070_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
-      WHERE
-          a.fcode = 55800
-      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
-      ON CONFLICT DO NOTHING;
-   
-   ELSIF str_known_region = '3338'
-   THEN
-      geom_input      := ST_Transform(p_geometry,3338);
-      permid_geometry := ST_Transform(p_permid_geometry,3338);
-      
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      ) 
-      SELECT 
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         ,aa.fcode
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,aaa.fcode
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,aaaa.fcode
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_3338_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
-      WHERE
-          a.fcode = 55800
-      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
-      ON CONFLICT DO NOTHING;
-   
-   ELSIF str_known_region = '26904'
-   THEN
-      geom_input      := ST_Transform(p_geometry,26904);
-      permid_geometry := ST_Transform(p_permid_geometry,26904);
-      
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      ) 
-      SELECT 
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         ,aa.fcode
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,aaa.fcode
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,aaaa.fcode
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_26904_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
-      WHERE
-          a.fcode = 55800
-      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
-      ON CONFLICT DO NOTHING;
-      
-   ELSIF str_known_region = '32161'
-   THEN
-      geom_input      := ST_Transform(p_geometry,32161);
-      permid_geometry := ST_Transform(p_permid_geometry,32161);
-      
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      ) 
-      SELECT 
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         ,aa.fcode
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,aaa.fcode
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,aaaa.fcode
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_32161_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
-      WHERE
-          a.fcode = 55800
-      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
-      ON CONFLICT DO NOTHING;
-      
-   ELSIF str_known_region = '32655'
-   THEN
-      geom_input      := ST_Transform(p_geometry,32655);
-      permid_geometry := ST_Transform(p_permid_geometry,32655);
-      
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      ) 
-      SELECT 
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         ,aa.fcode
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,aaa.fcode
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,aaaa.fcode
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_32655_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
-      WHERE
-          a.fcode = 55800
-      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
-      ON CONFLICT DO NOTHING;
-      
-   ELSIF str_known_region = '32702'
-   THEN
-      geom_input      := ST_Transform(p_geometry,32702);
-      permid_geometry := ST_Transform(p_permid_geometry,32702);
-      
-      INSERT INTO tmp_cip(
-          permid_joinkey
-         ,catchmentstatecodes
-         ,nhdplusid
-         ,overlap_measure
-      ) 
-      SELECT 
-       p_permid_joinkey
-      ,a.catchmentstatecodes
-      ,a.nhdplusid
-      ,a.overlapmeasure
-      FROM (
-         SELECT
-          aa.catchmentstatecodes
-         ,aa.nhdplusid
-         ,aa.overlapmeasure
-         ,ROUND(aa.overlapmeasure / aa.areasqkm,8) AS nhdpercentage
-         ,CASE
-          WHEN num_geometry_areasqkm = 0
-          THEN
-            0
-          ELSE
-            ROUND(aa.overlapmeasure / num_geometry_areasqkm,8)
-          END AS eventpercentage
-         ,aa.fcode
-         FROM (
-            SELECT
-             aaa.catchmentstatecodes
-            ,aaa.nhdplusid
-            ,aaa.areasqkm
-            ,aaa.fcode
-            ,ROUND(ST_Area(aaa.geom_overlap)::NUMERIC / 1000000,8) AS overlapmeasure
-            FROM (
-               SELECT
-                aaaa.catchmentstatecodes
-               ,aaaa.nhdplusid
-               ,aaaa.areasqkm
-               ,aaaa.fcode
-               ,ST_CollectionExtract(
-                  ST_Intersection(
-                      aaaa.shape
-                     ,permid_geometry
-                   )
-                  ,3
-                ) AS geom_overlap
-               FROM
-               cipsrv_nhdplus_m.catchment_32702_full aaaa
-               WHERE
-               ST_Intersects(
-                   aaaa.shape
-                  ,geom_input
-               )
-            ) aaa
-            WHERE 
-            aaa.geom_overlap IS NOT NULL
-         ) aa 
-      ) a
-      WHERE
-          a.fcode = 55800
-      OR (num_cat_threshold IS NULL OR a.nhdpercentage   >= num_cat_threshold)
-      OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
-      ON CONFLICT DO NOTHING;
-   
-   ELSE
-      out_return_code    := -10;
-      out_status_message := 'err ' || str_known_region;
-      
-   END IF;
-   
-   RETURN;
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.index_area_artpath(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_artpath(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) TO PUBLIC;
-
---******************************--
------ functions/create_nav_temp_tables.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.create_navigation_temp_tables()
-RETURNS INTEGER
-VOLATILE
-AS $BODY$
-DECLARE
-BEGIN
-   
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Create tmp_navigation_working30 temp table
-   ---------------------------------------------------------------------------- 
-   IF cipsrv_nhdplus_m.temp_table_exists('tmp_navigation_working30')
-   THEN
-      TRUNCATE TABLE tmp_navigation_working30;
-      
-   ELSE
-      CREATE TEMPORARY TABLE tmp_navigation_working30(
-          nhdplusid                   BIGINT
-         ,hydroseq                    BIGINT
-         ,fmeasure                    NUMERIC
-         ,tmeasure                    NUMERIC
-         ,lengthkm                    NUMERIC
-         ,flowtimeday                 NUMERIC
-         ,network_distancekm          NUMERIC
-         ,network_flowtimeday         NUMERIC
-         ,levelpathi                  BIGINT
-         ,terminalpa                  BIGINT
-         ,uphydroseq                  BIGINT
-         ,dnhydroseq                  BIGINT
-         ,navtermination_flag         INTEGER
-         ,nav_order                   INTEGER
-         ,selected                    BOOLEAN
-      );
-
-      CREATE UNIQUE INDEX tmp_navigation_working30_pk
-      ON tmp_navigation_working30(nhdplusid);
-      
-      CREATE UNIQUE INDEX tmp_navigation_working30_1u
-      ON tmp_navigation_working30(hydroseq);
-      
-      CREATE INDEX tmp_navigation_working30_01i
-      ON tmp_navigation_working30(network_distancekm);
-            
-      CREATE INDEX tmp_navigation_working30_02i
-      ON tmp_navigation_working30(network_flowtimeday);
-      
-      CREATE INDEX tmp_navigation_working30_03i
-      ON tmp_navigation_working30(dnhydroseq);
-      
-      CREATE INDEX tmp_navigation_working30_04i
-      ON tmp_navigation_working30(nav_order);
-      
-      CREATE INDEX tmp_navigation_working30_05i
-      ON tmp_navigation_working30(selected);
-      
-   END IF;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Create tmp_navigation_results temp table
-   ---------------------------------------------------------------------------- 
-   IF cipsrv_nhdplus_m.temp_table_exists('tmp_navigation_results')
-   THEN
-      TRUNCATE TABLE tmp_navigation_results;
-      
-   ELSE
-      CREATE TEMPORARY TABLE tmp_navigation_results(
-          nhdplusid                   BIGINT
-         ,hydroseq                    BIGINT
-         ,fmeasure                    NUMERIC
-         ,tmeasure                    NUMERIC
-         ,levelpathi                  BIGINT
-         ,terminalpa                  BIGINT
-         ,uphydroseq                  BIGINT
-         ,dnhydroseq                  BIGINT
-         ,lengthkm                    NUMERIC
-         ,flowtimeday                 NUMERIC
-         /* ++++++++++ */
-         ,network_distancekm          NUMERIC
-         ,network_flowtimeday         NUMERIC
-         /* ++++++++++ */
-         ,permanent_identifier        VARCHAR(40)
-         ,reachcode                   VARCHAR(14)
-         ,fcode                       INTEGER
-         ,gnis_id                     VARCHAR(10)
-         ,gnis_name                   VARCHAR(65)
-         ,wbarea_permanent_identifier VARCHAR(40)
-         /* ++++++++++ */
-         ,quality_marker              INTEGER
-         ,navtermination_flag         INTEGER
-         ,shape                       GEOMETRY
-         ,nav_order                   INTEGER
-      );
-
-      CREATE UNIQUE INDEX tmp_navigation_results_pk
-      ON tmp_navigation_results(nhdplusid);
-      
-      CREATE UNIQUE INDEX tmp_navigation_results_1u
-      ON tmp_navigation_results(hydroseq);
-      
-   END IF;
-
-   ----------------------------------------------------------------------------
-   -- Step 30
-   -- I guess that went okay
-   ----------------------------------------------------------------------------
-   RETURN 0;
-   
-END;
-$BODY$ 
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.create_navigation_temp_tables() OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.create_navigation_temp_tables() TO PUBLIC;
-
---******************************--
------ functions/get_flowline.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.get_flowline(
-    IN  p_direction            VARCHAR DEFAULT NULL
-   ,IN  p_nhdplusid            BIGINT  DEFAULT NULL
-   ,IN  p_permanent_identifier VARCHAR DEFAULT NULL
-   ,IN  p_reachcode            VARCHAR DEFAULT NULL
-   ,IN  p_hydroseq             BIGINT  DEFAULT NULL
-   ,IN  p_measure              NUMERIC DEFAULT NULL
-   ,OUT out_flowline           cipsrv_nhdplus_m.flowline
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
-)
-STABLE
 AS $BODY$ 
 DECLARE
-   str_direction      VARCHAR(5) := UPPER(p_direction);
-   num_difference     NUMERIC;
-   num_end_of_line    NUMERIC := 0.0001;
+   num_areasqkm    NUMERIC;
+   sdo_output      GEOMETRY;
    
 BEGIN
 
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
+   IF p_grid_srid = 5070
+   THEN
+      SELECT 
+      ST_Union(ST_SnapToGrid(shape_5070,0.05))
+      INTO sdo_output
+      FROM (
+         SELECT
+         aa.shape_5070
+         FROM
+         tmp_catchments aa
+         ORDER BY 
+         aa.hydroseq
+      ) a;
    
-   IF  p_nhdplusid IS NULL
-   AND p_permanent_identifier IS NULL
-   AND p_reachcode IS NULL
-   AND p_hydroseq IS NULL
+   ELSIF p_grid_srid = 3338
    THEN
-      out_return_code    := -2;
-      out_status_message := 'NHDPlusID, Permanent Identifier, Reach Code or Hydrosequence value is required.';
-      RETURN;
-      
-   END IF;
+      SELECT 
+      ST_Union(ST_SnapToGrid(shape_3338,0.05))
+      INTO sdo_output
+      FROM (
+         SELECT
+         aa.shape_3338
+         FROM
+         tmp_catchments aa
+         ORDER BY 
+         aa.hydroseq
+      ) a;
    
-   IF str_direction IN ('UT','UM')
+   ELSIF p_grid_srid = 26904
    THEN
-      str_direction := 'U';
+      SELECT 
+      ST_Union(ST_SnapToGrid(a.shape_26904,0.05))
+      INTO sdo_output
+      FROM (
+         SELECT
+         aa.shape_26904
+         FROM
+         tmp_catchments aa
+         ORDER BY 
+         aa.hydroseq
+      ) a;
       
-   ELSIF str_direction IN ('DD','DM','PP','PPALL')
+   ELSIF p_grid_srid = 32161
    THEN
-      str_direction := 'D';
+      SELECT 
+      ST_Union(ST_SnapToGrid(a.shape_32161,0.05))
+      INTO sdo_output
+      FROM (
+         SELECT
+         aa.shape_32161
+         FROM
+         tmp_catchments aa
+         ORDER BY 
+         aa.hydroseq
+      ) a;
       
-   END IF;
-   
-   IF str_direction NOT IN ('D','U')
+   ELSIF p_grid_srid = 32655
    THEN
-      str_direction := 'D';
-   
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Check when nhdplusid provided
-   --------------------------------------------------------------------------
-   IF p_nhdplusid IS NOT NULL
+      SELECT 
+      ST_Union(ST_SnapToGrid(a.shape_32655,0.05))
+      INTO sdo_output
+      FROM (
+         SELECT
+         aa.shape_32655
+         FROM
+         tmp_catchments aa
+         ORDER BY 
+         aa.hydroseq
+      ) a;
+
+   ELSIF p_grid_srid = 32702
    THEN
-      IF p_measure IS NULL
-      THEN
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE
-         a.nhdplusid = p_nhdplusid;
-
-         out_flowline.out_lengthkm           := out_flowline.lengthkm;
-         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
-         
-         IF str_direction = 'D'
-         THEN
-            out_flowline.out_measure         := out_flowline.tmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm     + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
+      SELECT 
+      ST_Union(ST_SnapToGrid(a.shape_32702,0.05))
+      INTO sdo_output
+      FROM (
+         SELECT
+         aa.shape_32702
+         FROM
+         tmp_catchments aa
+         ORDER BY 
+         aa.hydroseq
+      ) a;
       
-         ELSIF str_direction = 'U'
-         THEN  
-            out_flowline.out_measure         := out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
-      
-         END IF;
-         
-      ELSE
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE 
-             a.nhdplusid = p_nhdplusid
-         AND (
-            a.fmeasure = p_measure
-            OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
-         );
-         
-         out_flowline.out_measure := p_measure;
-         
-         IF str_direction = 'D'
-         THEN
-            IF  p_measure = out_flowline.fmeasure
-            AND out_flowline.hydroseq IS NOT NULL
-            AND out_flowline.hydroseq = out_flowline.terminalpa
-            THEN
-               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
-            
-            END IF;
-            
-            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-            
-         ELSIF str_direction = 'U'
-         THEN  
-            IF p_measure = out_flowline.tmeasure
-            AND out_flowline.uphydroseq = 0
-            THEN
-               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
-            
-            END IF;
-            
-            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
-      
-         ELSE
-            RAISE EXCEPTION 'err';
-            
-         END IF;
-
-      END IF;
-   
-   ELSIF p_permanent_identifier IS NOT NULL
-   THEN
-      IF p_measure IS NULL
-      THEN
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE
-         a.permanent_identifier = p_permanent_identifier;
-
-         out_flowline.out_lengthkm           := out_flowline.lengthkm;
-         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
-         
-         IF str_direction = 'D'
-         THEN
-            out_flowline.out_measure         := out_flowline.tmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm     + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-      
-         ELSIF str_direction = 'U'
-         THEN  
-            out_flowline.out_measure         := out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
-      
-         END IF;
-         
-      ELSE
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE
-             a.permanent_identifier = p_permanent_identifier
-         AND (
-            a.fmeasure = p_measure
-            OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
-         );
-         
-         out_flowline.out_measure := p_measure;
-         
-         IF str_direction = 'D'
-         THEN
-            IF  p_measure = out_flowline.fmeasure
-            AND out_flowline.hydroseq IS NOT NULL
-            AND out_flowline.hydroseq = out_flowline.terminalpa
-            THEN
-               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
-            
-            END IF;
-            
-            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-            
-         ELSIF str_direction = 'U'
-         THEN  
-            IF p_measure = out_flowline.tmeasure
-            AND out_flowline.uphydroseq = 0
-            THEN
-               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
-            
-            END IF;
-            
-            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
-      
-         ELSE
-            RAISE EXCEPTION 'err';
-            
-         END IF;
-
-      END IF;
-         
-   ELSIF p_hydroseq IS NOT NULL
-   THEN
-      IF p_measure IS NULL
-      THEN
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE
-         b.hydroseq = p_hydroseq;
-
-         out_flowline.out_lengthkm           := out_flowline.lengthkm;
-         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
-         
-         IF str_direction = 'D'
-         THEN
-            out_flowline.out_measure         := out_flowline.tmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm     + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-      
-         ELSIF str_direction = 'U'
-         THEN  
-            out_flowline.out_measure         := out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
-      
-         END IF;
-         
-      ELSE
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE
-             b.hydroseq = p_hydroseq
-         AND (
-            a.fmeasure = p_measure
-            OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
-         );
-         
-         out_flowline.out_measure := p_measure;
-         
-         IF str_direction = 'D'
-         THEN
-            IF  p_measure = out_flowline.fmeasure
-            AND out_flowline.hydroseq IS NOT NULL
-            AND out_flowline.hydroseq = out_flowline.terminalpa
-            THEN
-               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
-            
-            END IF;
-            
-            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-            
-         ELSIF str_direction = 'U'
-         THEN  
-            IF p_measure = out_flowline.tmeasure
-            AND out_flowline.uphydroseq = 0
-            THEN
-               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
-            
-            END IF;
-            
-            num_difference                   := out_flowline.tmeasure - out_flowline.out_measure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
-      
-         ELSE
-            RAISE EXCEPTION 'err';
-            
-         END IF;
-
-      END IF; 
-
-   --------------------------------------------------------------------------
-   -- Step 40
-   -- Check when reach code provided
-   --------------------------------------------------------------------------
-   ELSIF p_reachcode IS NOT NULL
-   THEN
-      IF p_measure IS NULL
-      THEN
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE 
-             a.reachcode = p_reachcode 
-         AND (
-               (str_direction = 'D' AND a.tmeasure = 100)
-            OR (str_direction = 'U' AND a.fmeasure = 0 )
-         );
-         
-         out_flowline.out_lengthkm           := out_flowline.lengthkm;
-         out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
-         
-         IF str_direction = 'D'
-         THEN
-            out_flowline.out_measure         := 100;
-            out_flowline.out_node            := out_flowline.tonode;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-            
-         ELSIF str_direction = 'U'
-         THEN
-            out_flowline.out_measure         := 0;
-            out_flowline.out_node            := out_flowline.fromnode;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday;
-         
-         ELSE
-            RAISE EXCEPTION 'err';
-            
-         END IF;
-         
-      ELSE
-         SELECT 
-          a.nhdplusid
-         ,b.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
-         ,a.vpuid
-         /* ++++++++++ */
-         ,a.permanent_identifier
-         ,a.reachcode
-         ,a.fcode
-         /* ++++++++++ */
-         ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
-         /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
-         /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
-         INTO STRICT
-         out_flowline
-         FROM 
-         cipsrv_nhdplus_m.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE 
-             a.reachcode = p_reachcode 
-         AND (
-            (p_measure = 0 AND a.fmeasure = 0)
-            OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
-         );
-         
-         out_flowline.out_measure := p_measure;
-         
-         IF str_direction = 'D'
-         THEN
-            IF  p_measure = out_flowline.fmeasure
-            AND out_flowline.hydroseq IS NOT NULL
-            AND out_flowline.hydroseq = out_flowline.terminalpa
-            THEN
-               out_flowline.out_measure := out_flowline.fmeasure + num_end_of_line;
-            
-            END IF;
-            
-            num_difference                   := p_measure - out_flowline.fmeasure;
-            out_flowline.out_node            := out_flowline.tonode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + out_flowline.lengthkm;
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + out_flowline.flowtimeday;
-            
-         ELSIF str_direction = 'U'
-         THEN
-            IF p_measure = out_flowline.tmeasure
-            AND out_flowline.uphydroseq = 0
-            THEN
-               out_flowline.out_measure := out_flowline.tmeasure - num_end_of_line;
-            
-            END IF;
-            
-            num_difference                   := out_flowline.tmeasure - p_measure;
-            out_flowline.out_node            := out_flowline.fromnode;
-            
-            out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
-            out_flowline.out_flowtimeday     := num_difference * out_flowline.flowtimeday_ratio;
-            
-            out_flowline.out_pathlengthkm    := out_flowline.pathlengthkm + (( 100 - num_difference ) * out_flowline.lengthkm_ratio);
-            out_flowline.out_pathflowtimeday := out_flowline.pathflowtimeday  + (( 100 - num_difference ) * out_flowline.flowtimeday_ratio);
-      
-         ELSE
-            RAISE EXCEPTION 'err';
-            
-         END IF;
- 
-      END IF;
-    
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 50
-   -- Determine grid srid
-   --------------------------------------------------------------------------
-   IF out_flowline.vpuid = '20'
-   OR SUBSTR(out_flowline.vpuid,1,2) = '20'
-   THEN
-      out_flowline.out_grid_srid := 26904;
-      
-   ELSIF out_flowline.vpuid = '21'
-   OR SUBSTR(out_flowline.vpuid,1,2) = '21'
-   THEN
-      out_flowline.out_grid_srid := 32161;
-      
-   ELSIF out_flowline.vpuid IN ('22G','22M')
-   OR SUBSTR(out_flowline.vpuid,1,4) IN ('2201','2202')
-   THEN
-      out_flowline.out_grid_srid := 32655;
-      
-   ELSIF out_flowline.vpuid = '22A'
-   OR SUBSTR(out_flowline.vpuid,1,4) = '2203'
-   THEN
-      out_flowline.out_grid_srid := 32702;
-   
-   ELSE
-      out_flowline.out_grid_srid := 5070;
-      
-   END IF;
-   
-EXCEPTION
-
-   WHEN NO_DATA_FOUND
-   THEN
-      out_return_code    := -10;
-      out_status_message := 'no results found in NHDPlus';
-      RETURN;
-
-   WHEN OTHERS
-   THEN
-      RAISE;   
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.get_flowline(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.get_flowline(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/nav_trim_temp.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    IN  p_search_type          VARCHAR
-   ,IN  p_fmeasure             NUMERIC
-   ,IN  p_tmeasure             NUMERIC
-   ,IN  p_lengthkm             NUMERIC
-   ,IN  p_flowtimeday          NUMERIC
-   ,IN  p_network_distancekm   NUMERIC
-   ,IN  p_network_flowtimeday  NUMERIC
-   ,IN  p_maximum_distancekm   NUMERIC
-   ,IN  p_maximum_flowtimeday  NUMERIC
-) RETURNS TABLE(
-    fmeasure            NUMERIC
-   ,tmeasure            NUMERIC
-   ,lengthkm            NUMERIC
-   ,flowtimeday         NUMERIC
-   ,network_distancekm  NUMERIC
-   ,network_flowtimeday NUMERIC
-)
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   num_fmeasure            NUMERIC := p_fmeasure;
-   num_tmeasure            NUMERIC := p_tmeasure;
-   num_lengthkm            NUMERIC := p_lengthkm;
-   num_flowtimeday         NUMERIC := p_flowtimeday;
-   num_network_distancekm  NUMERIC := p_network_distancekm;
-   num_network_flowtimeday NUMERIC := p_network_flowtimeday;
-   
-   num_ratio               NUMERIC;
-   num_ratio_other         NUMERIC;
-   num_trim                NUMERIC;
-   num_trim_meas           NUMERIC;
-   
-BEGIN
-
-   IF p_maximum_distancekm IS NOT NULL
-   THEN
-      num_ratio       := p_lengthkm / (p_tmeasure - p_fmeasure);
-      num_ratio_other := p_flowtimeday / (p_tmeasure - p_fmeasure);  
-      
-      num_trim        := p_network_distancekm - p_maximum_distancekm;
-      
-   ELSIF p_maximum_flowtimeday IS NOT NULL
-   THEN
-      num_ratio       := p_flowtimeday / (p_tmeasure - p_fmeasure);
-      num_ratio_other := p_lengthkm / (p_tmeasure - p_fmeasure);
-      
-      num_trim        := p_network_flowtimeday - p_maximum_flowtimeday;
-      
-   END IF;
-
-   IF  num_trim > 0
-   AND num_ratio > 0
-   THEN
-      num_trim_meas := num_trim / num_ratio;
-   
-      IF p_search_type IN ('UT','UM')
-      THEN
-         num_tmeasure := ROUND(p_tmeasure - num_trim_meas,5);
-      
-      ELSE
-         num_fmeasure := ROUND(p_fmeasure + num_trim_meas,5);
-      
-      END IF;
-      
-      IF p_maximum_distancekm IS NOT NULL
-      THEN
-         num_lengthkm            := num_lengthkm - num_trim;
-         num_network_distancekm  := num_network_distancekm - num_trim;
-         
-         num_flowtimeday         := num_flowtimeday - (num_trim_meas * num_ratio_other);
-         num_network_flowtimeday := num_network_flowtimeday - (num_trim_meas * num_ratio_other);
-      
-      ELSIF p_maximum_flowtimeday IS NOT NULL
-      THEN
-         num_lengthkm            := num_lengthkm - (num_trim_meas * num_ratio_other);
-         num_network_distancekm  := num_network_distancekm - (num_trim_meas * num_ratio_other);
-         
-         num_flowtimeday         := num_flowtimeday - num_trim;
-         num_network_flowtimeday := num_network_flowtimeday - num_trim;
-         
-      END IF;
-      
-   END IF;
-
-   RETURN QUERY SELECT
-    num_fmeasure
-   ,num_tmeasure
-   ,num_lengthkm
-   ,num_flowtimeday
-   ,num_network_distancekm
-   ,num_network_flowtimeday;            
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
---******************************--
------ functions/nav_single.sql 
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_single(
-    IN  str_search_type           VARCHAR
-   ,IN  obj_start_flowline        cipsrv_nhdplus_m.flowline
-   ,IN  obj_stop_flowline         cipsrv_nhdplus_m.flowline
-   ,IN  num_maximum_distancekm    NUMERIC
-   ,IN  num_maximum_flowtimeday   NUMERIC
-) RETURNS INTEGER
-VOLATILE
-AS $BODY$
-DECLARE
-   
-   num_init_meas_total      NUMERIC;
-   num_init_fmeasure        NUMERIC;
-   num_init_tmeasure        NUMERIC;
-   num_init_lengthkm        NUMERIC;
-   num_init_flowtimeday     NUMERIC;
-   int_navtermination_flag  INTEGER;
-   
-BEGIN
-
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- Calculate the single flowline navigation
-   ----------------------------------------------------------------------------
-   IF obj_start_flowline.nhdplusid = obj_stop_flowline.nhdplusid
-   THEN
-      num_init_meas_total  := ABS(obj_stop_flowline.out_measure - obj_start_flowline.out_measure);
-      num_init_lengthkm    := num_init_meas_total * obj_start_flowline.lengthkm_ratio;
-      num_init_flowtimeday := num_init_meas_total * obj_start_flowline.flowtimeday_ratio;
-
-      IF obj_start_flowline.out_measure < obj_stop_flowline.out_measure
-      THEN
-         num_init_fmeasure := obj_start_flowline.out_measure;
-         num_init_tmeasure := obj_stop_flowline.out_measure;
-
-      ELSE
-         num_init_fmeasure := obj_stop_flowline.out_measure;
-         num_init_tmeasure := obj_start_flowline.out_measure;
-
-      END IF;
-      
-   ELSIF num_maximum_distancekm < obj_start_flowline.out_lengthkm
-   THEN
-      IF str_search_type IN ('UM','UT')
-      THEN
-         num_init_fmeasure := obj_start_flowline.out_measure;
-         num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_distancekm / obj_start_flowline.lengthkm_ratio,5);
-         
-      ELSE
-         num_init_fmeasure := obj_start_flowline.out_measure - ROUND(num_maximum_distancekm / obj_start_flowline.lengthkm_ratio,5);
-         num_init_tmeasure := obj_start_flowline.out_measure;
-
-      END IF;
-
-      num_init_lengthkm    := num_maximum_distancekm;
-      num_init_flowtimeday := (num_init_tmeasure - num_init_fmeasure) * obj_start_flowline.flowtimeday_ratio;
-
-   ELSIF num_maximum_flowtimeday < obj_start_flowline.out_flowtimeday
-   THEN
-      IF str_search_type IN ('UM','UT')
-      THEN
-         num_init_fmeasure := obj_start_flowline.out_measure;
-         num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_flowtimeday / obj_start_flowline.flowtimeday_ratio,5);
-         
-      ELSE
-         num_init_fmeasure := obj_start_flowline.out_measure - ROUND(num_maximum_flowtimeday / obj_start_flowline.flowtimeday_ratio,5);
-         num_init_tmeasure := obj_start_flowline.out_measure;
-
-      END IF;
-
-      num_init_lengthkm    := (num_init_tmeasure - num_init_fmeasure) * obj_start_flowline.lengthkm_ratio;
-      num_init_flowtimeday := num_maximum_flowtimeday;
-
    ELSE
       RAISE EXCEPTION 'err';
       
    END IF;
    
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Test just in case the results are exactly the same as original flowline
-   ----------------------------------------------------------------------------
-   IF obj_start_flowline.tmeasure - obj_start_flowline.fmeasure = num_init_tmeasure - num_init_fmeasure
+   IF sdo_output IS NULL
    THEN
-      int_navtermination_flag := 1;
-      
-   ELSE
-      int_navtermination_flag := 2;
+      out_return_code    := -101;
+      out_status_message := 'Catchment aggregation failed';
+      RETURN;
       
    END IF;
    
-   ----------------------------------------------------------------------------
-   -- Step 30
-   -- Insert the results
-   ----------------------------------------------------------------------------
-   INSERT INTO tmp_navigation_working30(
+   num_areasqkm := ST_Area(sdo_output) * 0.000001;
+   
+   sdo_output := ST_Transform(sdo_output,4269);
+   
+   INSERT INTO nhdplus_delineation.tmp_catchments(
        nhdplusid
-      ,hydroseq
-      ,fmeasure
-      ,tmeasure
-      ,lengthkm
-      ,flowtimeday
-      ,network_distancekm
-      ,network_flowtimeday
-      ,levelpathi
-      ,terminalpa
-      ,uphydroseq
-      ,dnhydroseq
-      ,navtermination_flag
-      ,nav_order
-      ,selected
+      ,sourcefc
+      ,gridcode
+      ,areasqkm
+      ,shape
    ) VALUES (
-       obj_start_flowline.nhdplusid
-      ,obj_start_flowline.hydroseq
-      ,num_init_fmeasure
-      ,num_init_tmeasure
-      ,num_init_lengthkm
-      ,num_init_flowtimeday
-      ,num_init_lengthkm
-      ,num_init_flowtimeday
-      ,obj_start_flowline.levelpathi
-      ,obj_start_flowline.terminalpa
-      ,obj_start_flowline.uphydroseq
-      ,obj_start_flowline.dnhydroseq
-      ,int_navtermination_flag
-      ,0
-      ,TRUE
+       -9999999
+      ,'AGGR'
+      ,-9999
+      ,num_areasqkm
+      ,sdo_output
    );
-
-   ----------------------------------------------------------------------------
-   -- Step 40
-   -- Insert the initial flowline and tag the running counts
-   ----------------------------------------------------------------------------
-   RETURN 1;
-
+   
+   out_return_code := 0;
+   
+   RETURN;   
+   
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_single(
-    VARCHAR
-   ,cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
+ALTER FUNCTION cipsrv_nhdplus_m.load_aggregated_catchment(
+    INTEGER
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_single(
-    VARCHAR
-   ,cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.load_aggregated_catchment(
+    INTEGER
+) TO PUBLIC;
+--******************************--
+----- functions/load_topo_catchment.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.load_topo_catchment';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.load_topo_catchment(
+    IN  p_grid_srid               INTEGER
+   ,IN  p_catchment_count         INTEGER DEFAULT NULL
+   ,OUT out_total_areasqkm        NUMERIC
+   ,OUT out_geometry              GEOMETRY
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
+)
+VOLATILE
+AS $BODY$ 
+DECLARE
+   rec               RECORD;
+   ary_edges         INTEGER[];
+   ary_rings         INTEGER[];
+   int_edge_count    INTEGER;
+   sdo_ring          GEOMETRY;
+   int_sanity        INTEGER;
+   ary_polygons      GEOMETRY[];
+   ary_holes         GEOMETRY[];
+   boo_running       BOOLEAN;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Create temporary edge table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_delineation_edges')
+   THEN
+      TRUNCATE TABLE tmp_delineation_edges;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_delineation_edges(
+          edge_id        INTEGER 
+         ,interior_side  VARCHAR(1)
+         ,start_node_id  INTEGER
+         ,end_node_id    INTEGER
+         ,shape          GEOMETRY 
+         ,touch_count    INTEGER
+      );
+
+      CREATE UNIQUE INDEX tmp_delineation_edges_pk
+      ON tmp_delineation_edges(edge_id);
+      
+      CREATE INDEX tmp_delineation_edges_01i
+      ON tmp_delineation_edges(start_node_id);
+            
+      CREATE INDEX tmp_delineation_edges_02i
+      ON tmp_delineation_edges(end_node_id);
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Create temporary ring table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_delineation_rings')
+   THEN
+      TRUNCATE TABLE tmp_delineation_rings;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_delineation_rings(
+          ring_id        INTEGER
+         ,ring_type      VARCHAR(1)
+         ,shape          GEOMETRY
+      );
+
+      CREATE UNIQUE INDEX tmp_delineation_rings_pk
+      ON tmp_delineation_rings(ring_id);
+
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Create temporary ring table
+   ----------------------------------------------------------------------------
+   IF cipsrv_engine.temp_table_exists('tmp_delineation_faces')
+   THEN
+      TRUNCATE TABLE tmp_delineation_faces;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_delineation_faces(
+          face_id        INTEGER
+      );
+
+      CREATE UNIQUE INDEX tmp_delineation_faces_pk
+      ON tmp_delineation_faces(face_id);
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Load the edges into temporary table
+   ----------------------------------------------------------------------------   
+   IF p_grid_srid = 5070
+   THEN
+      INSERT INTO tmp_delineation_faces(
+         face_id
+      )
+      SELECT 
+      a.element_id 
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_5070.relation a 
+      JOIN (   
+         SELECT 
+         aa.topo_geom 
+         FROM 
+         cipsrv_nhdplustopo_m.catchment_5070_topo aa 
+         JOIN
+         tmp_catchments bb
+         ON
+         aa.nhdplusid = bb.nhdplusid
+      ) b 
+      ON 
+      a.layer_id = (b.topo_geom).layer_id AND 
+      a.topogeo_id = (b.topo_geom).id 
+      WHERE 
+      a.element_type = 3;
+
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape
+         ,touch_count
+      )
+      SELECT
+       a1.edge_id
+      ,'L'
+      ,a1.start_node
+      ,a1.end_node
+      ,a1.geom
+      ,0
+      FROM
+      cipsrv_nhdplustopo_m_catchment_fabric_5070.edge_data a1 
+      WHERE 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
+      UNION ALL SELECT 
+       a2.edge_id
+      ,'R'
+      ,a2.start_node
+      ,a2.end_node
+      ,a2.geom
+      ,0
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_5070.edge_data a2 
+      WHERE 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
+
+   ELSIF p_grid_srid = 3338
+   THEN
+      INSERT INTO tmp_delineation_faces(
+         face_id
+      )
+      SELECT 
+      a.element_id 
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_3338.relation a 
+      JOIN (   
+         SELECT 
+         aa.topo_geom 
+         FROM 
+         cipsrv_nhdplustopo_m.catchment_3338_topo aa 
+         JOIN
+         tmp_catchments bb
+         ON
+         aa.nhdplusid = bb.nhdplusid
+      ) b 
+      ON 
+      a.layer_id = (b.topo_geom).layer_id AND 
+      a.topogeo_id = (b.topo_geom).id 
+      WHERE 
+      a.element_type = 3;
+
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape
+         ,touch_count
+      )
+      SELECT
+       a1.edge_id
+      ,'L'
+      ,a1.start_node
+      ,a1.end_node
+      ,a1.geom
+      ,0
+      FROM
+      cipsrv_nhdplustopo_m_catchment_fabric_3338.edge_data a1 
+      WHERE 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
+      UNION ALL SELECT 
+       a2.edge_id
+      ,'R'
+      ,a2.start_node
+      ,a2.end_node
+      ,a2.geom
+      ,0
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_3338.edge_data a2 
+      WHERE 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
+
+   ELSIF p_grid_srid = 26904
+   THEN
+      INSERT INTO tmp_delineation_faces(
+         face_id
+      )
+      SELECT 
+      a.element_id 
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_3338.relation a 
+      JOIN (   
+         SELECT 
+         aa.topo_geom 
+         FROM 
+         cipsrv_nhdplustopo_m.catchment_26904_topo aa 
+         JOIN
+         tmp_catchments bb
+         ON
+         aa.nhdplusid = bb.nhdplusid
+      ) b 
+      ON 
+      a.layer_id = (b.topo_geom).layer_id AND 
+      a.topogeo_id = (b.topo_geom).id 
+      WHERE 
+      a.element_type = 3;
+      
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape
+         ,touch_count
+      )
+      SELECT
+       a1.edge_id
+      ,'L'
+      ,a1.start_node
+      ,a1.end_node
+      ,a1.geom
+      ,0
+      FROM
+      cipsrv_nhdplustopo_m_catchment_fabric_26904.edge_data a1 
+      WHERE 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
+      UNION ALL SELECT 
+       a2.edge_id
+      ,'R'
+      ,a2.start_node
+      ,a2.end_node
+      ,a2.geom
+      ,0
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_26904.edge_data a2 
+      WHERE 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
+      
+   ELSIF p_grid_srid = 32161
+   THEN
+      INSERT INTO tmp_delineation_faces(
+         face_id
+      )
+      SELECT 
+      a.element_id 
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_32161.relation a 
+      JOIN (   
+         SELECT 
+         aa.topo_geom 
+         FROM 
+         cipsrv_nhdplustopo_m.catchment_32161_topo aa 
+         JOIN
+         tmp_catchments bb
+         ON
+         aa.nhdplusid = bb.nhdplusid
+      ) b 
+      ON 
+      a.layer_id = (b.topo_geom).layer_id AND 
+      a.topogeo_id = (b.topo_geom).id 
+      WHERE 
+      a.element_type = 3;
+      
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape
+         ,touch_count
+      )
+      SELECT
+       a1.edge_id
+      ,'L'
+      ,a1.start_node
+      ,a1.end_node
+      ,a1.geom
+      ,0
+      FROM
+      cipsrv_nhdplustopo_m_catchment_fabric_32161.edge_data a1 
+      WHERE 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
+      UNION ALL SELECT 
+       a2.edge_id
+      ,'R'
+      ,a2.start_node
+      ,a2.end_node
+      ,a2.geom
+      ,0
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_32161.edge_data a2 
+      WHERE 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
+   
+   ELSIF p_grid_srid = 32655
+   THEN
+      INSERT INTO tmp_delineation_faces(
+         face_id
+      )
+      SELECT 
+      a.element_id 
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_32655.relation a 
+      JOIN (   
+         SELECT 
+         aa.topo_geom 
+         FROM 
+         cipsrv_nhdplustopo_m.catchment_32655_topo aa 
+         JOIN
+         tmp_catchments bb
+         ON
+         aa.nhdplusid = bb.nhdplusid
+      ) b 
+      ON 
+      a.layer_id = (b.topo_geom).layer_id AND 
+      a.topogeo_id = (b.topo_geom).id 
+      WHERE 
+      a.element_type = 3;
+      
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape
+         ,touch_count
+      )
+      SELECT
+       a1.edge_id
+      ,'L'
+      ,a1.start_node
+      ,a1.end_node
+      ,a1.geom
+      ,0
+      FROM
+      cipsrv_nhdplustopo_m_catchment_fabric_32655.edge_data a1 
+      WHERE 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
+      UNION ALL SELECT 
+       a2.edge_id
+      ,'R'
+      ,a2.start_node
+      ,a2.end_node
+      ,a2.geom
+      ,0
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_32655.edge_data a2 
+      WHERE 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
+   
+   ELSIF p_grid_srid = 32702
+   THEN
+      INSERT INTO tmp_delineation_faces(
+         face_id
+      )
+      SELECT 
+      a.element_id 
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_32702.relation a 
+      JOIN (   
+         SELECT 
+         aa.topo_geom 
+         FROM 
+         cipsrv_nhdplustopo_m.catchment_32702_topo aa 
+         JOIN
+         tmp_catchments bb
+         ON
+         aa.nhdplusid = bb.nhdplusid
+      ) b 
+      ON 
+      a.layer_id = (b.topo_geom).layer_id AND 
+      a.topogeo_id = (b.topo_geom).id 
+      WHERE 
+      a.element_type = 3;
+   
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape
+         ,touch_count
+      )
+      SELECT
+       a1.edge_id
+      ,'L'
+      ,a1.start_node
+      ,a1.end_node
+      ,a1.geom
+      ,0
+      FROM
+      cipsrv_nhdplustopo_m_catchment_fabric_32702.edge_data a1 
+      WHERE 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
+      UNION ALL SELECT 
+       a2.edge_id
+      ,'R'
+      ,a2.start_node
+      ,a2.end_node
+      ,a2.geom
+      ,0
+      FROM 
+      cipsrv_nhdplustopo_m_catchment_fabric_32702.edge_data a2 
+      WHERE 
+      NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
+      EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
+   
+   ELSE
+      RAISE EXCEPTION 'err';
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Pull out any single edge rings
+   ----------------------------------------------------------------------------
+   WITH insertedges AS (
+      INSERT INTO tmp_delineation_rings(
+          ring_id
+         ,ring_type
+         ,shape
+      )
+      SELECT
+       a.edge_id
+      ,CASE
+       WHEN   (ST_IsPolygonCCW(ST_MakePolygon(a.shape)) AND a.interior_side = 'L')
+       OR (NOT ST_IsPolygonCCW(ST_MakePolygon(a.shape)) AND a.interior_side = 'R')
+       THEN
+         'E'
+       ELSE
+         'I'
+       END AS ring_type
+      ,a.shape
+      FROM
+      tmp_delineation_edges a
+      WHERE
+      a.start_node_id = a.end_node_id
+      RETURNING ring_id
+   )
+   SELECT
+   array_agg(ring_id)
+   INTO ary_edges
+   FROM
+   insertedges;
+   
+   DELETE FROM tmp_delineation_edges
+   WHERE edge_id = ANY(ary_edges);
+   
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Recursively pull out rings
+   ----------------------------------------------------------------------------
+   SELECT 
+   COUNT(*)
+   INTO int_edge_count
+   FROM
+   tmp_delineation_edges a; 
+   
+   int_sanity := 1;
+   boo_running := TRUE;
+   WHILE boo_running
+   LOOP
+      boo_running := nhdplus_delineation.edges2rings();
+      
+      int_sanity := int_sanity + 1;
+      
+      IF int_sanity > 1000
+      THEN
+         RAISE EXCEPTION 'sanity check';
+         
+      END IF;
+      
+   END LOOP;
+   
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Organize the polygons outer and inner rings
+   ----------------------------------------------------------------------------
+   FOR rec IN 
+      SELECT
+       a.ring_id 
+      ,a.shape
+      FROM
+      tmp_delineation_rings a
+      WHERE
+      a.ring_type = 'E'
+      ORDER BY
+      ST_Area(ST_MakePolygon(a.shape)) ASC
+   LOOP
+      ary_holes := NULL;
+      
+      SELECT
+       array_agg(b.ring_id)
+      ,array_agg(b.shape)
+      INTO 
+       ary_rings
+      ,ary_holes
+      FROM
+      tmp_delineation_rings b
+      WHERE
+          b.ring_type = 'I'
+      AND ST_Intersects(
+          ST_MakePolygon(rec.shape)
+         ,b.shape
+      );
+   
+      IF ary_rings IS NULL
+      OR array_length(ary_rings,1) = 0
+      THEN
+         sdo_ring := ST_MakePolygon(rec.shape);
+         
+      ELSE
+         sdo_ring := ST_MakePolygon(rec.shape,ary_holes);
+         
+         DELETE FROM tmp_delineation_rings
+         WHERE ring_id = ANY(ary_rings);
+         
+      END IF;
+   
+      ary_polygons := array_append(ary_polygons,sdo_ring);
+   
+   END LOOP;
+      
+   ----------------------------------------------------------------------------
+   -- Step 80
+   -- Generate the final results
+   ----------------------------------------------------------------------------
+   IF array_length(ary_polygons,1) = 1
+   THEN
+      out_geometry := ST_ForcePolygonCCW(ary_polygons[1]);
+      
+   ELSE
+      out_geometry := ST_ForcePolygonCCW(ST_Collect(ary_polygons));
+      
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 90
+   -- Calculate the area
+   ----------------------------------------------------------------------------
+   out_total_areasqkm := ST_Area(ST_Transform(out_geometry,4326)::GEOGRAPHY) * 0.0000010;
+
+   ----------------------------------------------------------------------------
+   -- Step 100
+   -- Insert results as nad83
+   ----------------------------------------------------------------------------
+   INSERT INTO tmp_catchments(
+       nhdplusid
+      ,sourcefc
+      ,gridcode
+      ,areasqkm
+      ,shape
+   ) VALUES (
+       -9999999
+      ,'AGGR'
+      ,-9999
+      ,out_total_areasqkm
+      ,ST_Transform(out_geometry,4269)
+   );
+   
+   out_return_code := 0;
+   
+   RETURN; 
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.load_topo_catchment(
+    INTEGER
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.load_topo_catchment(
+    INTEGER
+   ,INTEGER
+) TO PUBLIC;
+
+--******************************--
+----- functions/measure_areasqkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.measure_areasqkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.measure_areasqkm(
+    IN  p_geometry          GEOMETRY
+   ,IN  p_known_region      VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                RECORD;
+   int_srid           INTEGER;
+   int_return_code    INTEGER;
+   str_status_message VARCHAR;
+   sdo_geometry       GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_geometry
+      ,p_known_region   := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_return_code    := rec.out_return_code;
+   str_status_message := rec.out_status_message;
+  
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Project as needed
+   ----------------------------------------------------------------------------
+   sdo_geometry := ST_Transform(
+       p_geometry
+      ,int_srid
+   );
+   
+   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
+   THEN
+      sdo_geometry := ST_CollectionExtract(sdo_geometry,3);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Return results in km
+   ----------------------------------------------------------------------------
+   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
+   THEN
+      RETURN 0;
+      
+   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_Polygon','ST_MultiPolygon')
+   THEN
+      RETURN ROUND(ST_Area(sdo_geometry)::NUMERIC / 1000000,8);
+      
+   ELSE
+      RAISE EXCEPTION 'measure areasqkm requires polygon geometry - %',ST_GeometryType(sdo_geometry);
+      
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.measure_areasqkm(
+    GEOMETRY
+   ,VARCHAR
+) TO PUBLIC;
+
+--******************************--
+----- functions/measure_lengthkm.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.measure_lengthkm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.measure_lengthkm(
+    IN  p_geometry          GEOMETRY
+   ,IN  p_known_region      VARCHAR DEFAULT NULL
+) RETURNS NUMERIC
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                RECORD;
+   int_srid           INTEGER;
+   int_return_code    INTEGER;
+   str_status_message VARCHAR;
+   sdo_geometry       GEOMETRY;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry IS NULL
+   THEN
+      RAISE EXCEPTION 'input geometry required';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the region from geometry if known region value not provided
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_geometry
+      ,p_known_region   := p_known_region
+   );
+   int_srid           := rec.out_srid;
+   int_return_code    := rec.out_return_code;
+   str_status_message := rec.out_status_message;
+  
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Project as needed
+   ----------------------------------------------------------------------------
+   sdo_geometry := ST_Transform(
+       p_geometry
+      ,int_srid
+   );
+   
+   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
+   THEN
+      sdo_geometry := ST_CollectionExtract(sdo_geometry,2);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Return results in km
+   ----------------------------------------------------------------------------
+   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
+   THEN
+      RETURN 0;
+      
+   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
+   THEN
+      RETURN ROUND(ST_Length(sdo_geometry)::NUMERIC * 0.001,8);
+      
+   ELSE
+      RAISE EXCEPTION 'measure lengthkm requires linear geometry - %',ST_GeometryType(sdo_geometry);
+      
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.measure_lengthkm(
+    GEOMETRY
+   ,VARCHAR
+) TO PUBLIC;
 
 --******************************--
 ----- functions/nav_dd.sql 
@@ -9495,6 +13512,288 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_ppall(
 )  TO PUBLIC;
 
 --******************************--
+----- functions/nav_single.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_single(
+    IN  str_search_type           VARCHAR
+   ,IN  obj_start_flowline        cipsrv_nhdplus_m.flowline
+   ,IN  obj_stop_flowline         cipsrv_nhdplus_m.flowline
+   ,IN  num_maximum_distancekm    NUMERIC
+   ,IN  num_maximum_flowtimeday   NUMERIC
+) RETURNS INTEGER
+VOLATILE
+AS $BODY$
+DECLARE
+   
+   num_init_meas_total      NUMERIC;
+   num_init_fmeasure        NUMERIC;
+   num_init_tmeasure        NUMERIC;
+   num_init_lengthkm        NUMERIC;
+   num_init_flowtimeday     NUMERIC;
+   int_navtermination_flag  INTEGER;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Calculate the single flowline navigation
+   ----------------------------------------------------------------------------
+   IF obj_start_flowline.nhdplusid = obj_stop_flowline.nhdplusid
+   THEN
+      num_init_meas_total  := ABS(obj_stop_flowline.out_measure - obj_start_flowline.out_measure);
+      num_init_lengthkm    := num_init_meas_total * obj_start_flowline.lengthkm_ratio;
+      num_init_flowtimeday := num_init_meas_total * obj_start_flowline.flowtimeday_ratio;
+
+      IF obj_start_flowline.out_measure < obj_stop_flowline.out_measure
+      THEN
+         num_init_fmeasure := obj_start_flowline.out_measure;
+         num_init_tmeasure := obj_stop_flowline.out_measure;
+
+      ELSE
+         num_init_fmeasure := obj_stop_flowline.out_measure;
+         num_init_tmeasure := obj_start_flowline.out_measure;
+
+      END IF;
+      
+   ELSIF num_maximum_distancekm < obj_start_flowline.out_lengthkm
+   THEN
+      IF str_search_type IN ('UM','UT')
+      THEN
+         num_init_fmeasure := obj_start_flowline.out_measure;
+         num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_distancekm / obj_start_flowline.lengthkm_ratio,5);
+         
+      ELSE
+         num_init_fmeasure := obj_start_flowline.out_measure - ROUND(num_maximum_distancekm / obj_start_flowline.lengthkm_ratio,5);
+         num_init_tmeasure := obj_start_flowline.out_measure;
+
+      END IF;
+
+      num_init_lengthkm    := num_maximum_distancekm;
+      num_init_flowtimeday := (num_init_tmeasure - num_init_fmeasure) * obj_start_flowline.flowtimeday_ratio;
+
+   ELSIF num_maximum_flowtimeday < obj_start_flowline.out_flowtimeday
+   THEN
+      IF str_search_type IN ('UM','UT')
+      THEN
+         num_init_fmeasure := obj_start_flowline.out_measure;
+         num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_flowtimeday / obj_start_flowline.flowtimeday_ratio,5);
+         
+      ELSE
+         num_init_fmeasure := obj_start_flowline.out_measure - ROUND(num_maximum_flowtimeday / obj_start_flowline.flowtimeday_ratio,5);
+         num_init_tmeasure := obj_start_flowline.out_measure;
+
+      END IF;
+
+      num_init_lengthkm    := (num_init_tmeasure - num_init_fmeasure) * obj_start_flowline.lengthkm_ratio;
+      num_init_flowtimeday := num_maximum_flowtimeday;
+
+   ELSE
+      RAISE EXCEPTION 'err';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Test just in case the results are exactly the same as original flowline
+   ----------------------------------------------------------------------------
+   IF obj_start_flowline.tmeasure - obj_start_flowline.fmeasure = num_init_tmeasure - num_init_fmeasure
+   THEN
+      int_navtermination_flag := 1;
+      
+   ELSE
+      int_navtermination_flag := 2;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Insert the results
+   ----------------------------------------------------------------------------
+   INSERT INTO tmp_navigation_working30(
+       nhdplusid
+      ,hydroseq
+      ,fmeasure
+      ,tmeasure
+      ,lengthkm
+      ,flowtimeday
+      ,network_distancekm
+      ,network_flowtimeday
+      ,levelpathi
+      ,terminalpa
+      ,uphydroseq
+      ,dnhydroseq
+      ,navtermination_flag
+      ,nav_order
+      ,selected
+   ) VALUES (
+       obj_start_flowline.nhdplusid
+      ,obj_start_flowline.hydroseq
+      ,num_init_fmeasure
+      ,num_init_tmeasure
+      ,num_init_lengthkm
+      ,num_init_flowtimeday
+      ,num_init_lengthkm
+      ,num_init_flowtimeday
+      ,obj_start_flowline.levelpathi
+      ,obj_start_flowline.terminalpa
+      ,obj_start_flowline.uphydroseq
+      ,obj_start_flowline.dnhydroseq
+      ,int_navtermination_flag
+      ,0
+      ,TRUE
+   );
+
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Insert the initial flowline and tag the running counts
+   ----------------------------------------------------------------------------
+   RETURN 1;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.nav_single(
+    VARCHAR
+   ,cipsrv_nhdplus_m.flowline
+   ,cipsrv_nhdplus_m.flowline
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_single(
+    VARCHAR
+   ,cipsrv_nhdplus_m.flowline
+   ,cipsrv_nhdplus_m.flowline
+   ,NUMERIC
+   ,NUMERIC
+)  TO PUBLIC;
+
+--******************************--
+----- functions/nav_trim_temp.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
+    IN  p_search_type          VARCHAR
+   ,IN  p_fmeasure             NUMERIC
+   ,IN  p_tmeasure             NUMERIC
+   ,IN  p_lengthkm             NUMERIC
+   ,IN  p_flowtimeday          NUMERIC
+   ,IN  p_network_distancekm   NUMERIC
+   ,IN  p_network_flowtimeday  NUMERIC
+   ,IN  p_maximum_distancekm   NUMERIC
+   ,IN  p_maximum_flowtimeday  NUMERIC
+) RETURNS TABLE(
+    fmeasure            NUMERIC
+   ,tmeasure            NUMERIC
+   ,lengthkm            NUMERIC
+   ,flowtimeday         NUMERIC
+   ,network_distancekm  NUMERIC
+   ,network_flowtimeday NUMERIC
+)
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   num_fmeasure            NUMERIC := p_fmeasure;
+   num_tmeasure            NUMERIC := p_tmeasure;
+   num_lengthkm            NUMERIC := p_lengthkm;
+   num_flowtimeday         NUMERIC := p_flowtimeday;
+   num_network_distancekm  NUMERIC := p_network_distancekm;
+   num_network_flowtimeday NUMERIC := p_network_flowtimeday;
+   
+   num_ratio               NUMERIC;
+   num_ratio_other         NUMERIC;
+   num_trim                NUMERIC;
+   num_trim_meas           NUMERIC;
+   
+BEGIN
+
+   IF p_maximum_distancekm IS NOT NULL
+   THEN
+      num_ratio       := p_lengthkm / (p_tmeasure - p_fmeasure);
+      num_ratio_other := p_flowtimeday / (p_tmeasure - p_fmeasure);  
+      
+      num_trim        := p_network_distancekm - p_maximum_distancekm;
+      
+   ELSIF p_maximum_flowtimeday IS NOT NULL
+   THEN
+      num_ratio       := p_flowtimeday / (p_tmeasure - p_fmeasure);
+      num_ratio_other := p_lengthkm / (p_tmeasure - p_fmeasure);
+      
+      num_trim        := p_network_flowtimeday - p_maximum_flowtimeday;
+      
+   END IF;
+
+   IF  num_trim > 0
+   AND num_ratio > 0
+   THEN
+      num_trim_meas := num_trim / num_ratio;
+   
+      IF p_search_type IN ('UT','UM')
+      THEN
+         num_tmeasure := ROUND(p_tmeasure - num_trim_meas,5);
+      
+      ELSE
+         num_fmeasure := ROUND(p_fmeasure + num_trim_meas,5);
+      
+      END IF;
+      
+      IF p_maximum_distancekm IS NOT NULL
+      THEN
+         num_lengthkm            := num_lengthkm - num_trim;
+         num_network_distancekm  := num_network_distancekm - num_trim;
+         
+         num_flowtimeday         := num_flowtimeday - (num_trim_meas * num_ratio_other);
+         num_network_flowtimeday := num_network_flowtimeday - (num_trim_meas * num_ratio_other);
+      
+      ELSIF p_maximum_flowtimeday IS NOT NULL
+      THEN
+         num_lengthkm            := num_lengthkm - (num_trim_meas * num_ratio_other);
+         num_network_distancekm  := num_network_distancekm - (num_trim_meas * num_ratio_other);
+         
+         num_flowtimeday         := num_flowtimeday - num_trim;
+         num_network_flowtimeday := num_network_flowtimeday - num_trim;
+         
+      END IF;
+      
+   END IF;
+
+   RETURN QUERY SELECT
+    num_fmeasure
+   ,num_tmeasure
+   ,num_lengthkm
+   ,num_flowtimeday
+   ,num_network_distancekm
+   ,num_network_flowtimeday;            
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
+    VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
+    VARCHAR
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+   ,NUMERIC
+) TO PUBLIC;
+
+--******************************--
 ----- functions/nav_um.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_um(
@@ -10290,112 +14589,18 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_ut_extended(
 )  TO PUBLIC;
 
 --******************************--
------ functions/snapflowline2geojson.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snapflowline2geojson';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
-    IN  p_input                        cipsrv_nhdplus_m.snapflowline
-) RETURNS JSONB
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-BEGIN
-
-   RETURN JSONB_BUILD_OBJECT(
-       'type'                ,'Feature'
-      ,'geometry'            ,ST_AsGeoJSON(ST_Transform(p_input.shape,4326))::JSONB
-      ,'properties'          ,JSONB_BUILD_OBJECT(
-          'permanent_identifier'       ,p_input.permanent_identifier
-         ,'fdate'                      ,p_input.fdate
-         ,'resolution'                 ,p_input.resolution
-         ,'gnis_id'                    ,p_input.gnis_id
-         ,'gnis_name'                  ,p_input.gnis_name
-         ,'lengthkm'                   ,p_input.lengthkm
-         ,'reachcode'                  ,p_input.reachcode
-         ,'flowdir'                    ,p_input.flowdir
-         ,'wbarea_permanent_identifier',p_input.wbarea_permanent_identifier
-         ,'ftype'                      ,p_input.ftype
-         ,'fcode'                      ,p_input.fcode
-         ,'mainpath'                   ,p_input.mainpath
-         ,'innetwork'                  ,p_input.innetwork
-         ,'visibilityfilter'           ,p_input.visibilityfilter
-         ,'nhdplusid'                  ,p_input.nhdplusid
-         ,'vpuid'                      ,p_input.vpuid
-         ,'enabled'                    ,p_input.enabled
-         ,'fmeasure'                   ,p_input.fmeasure
-         ,'tmeasure'                   ,p_input.tmeasure
-         ,'hydroseq'                   ,p_input.hydroseq
-         ,'snap_measure'               ,p_input.snap_measure
-         ,'snap_distancekm'            ,p_input.snap_distancekm
-      )
-   );
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
-    cipsrv_nhdplus_m.snapflowline
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
-    cipsrv_nhdplus_m.snapflowline
-) TO PUBLIC;
---******************************--
------ functions/snapflowlines2geojson.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snapflowlines2geojson';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
-    IN  p_input                        cipsrv_nhdplus_m.snapflowline[]
-) RETURNS JSONB
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-BEGIN
-
-   RETURN JSONB_BUILD_OBJECT(
-       'type'                ,'FeatureCollection'
-      ,'features'            ,(
-         SELECT
-         array_agg(cipsrv_nhdplus_m.snapflowline2geojson(x))
-         FROM
-         UNNEST(p_input) AS x
-      )
-   );
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
-    cipsrv_nhdplus_m.snapflowline[]
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
-    cipsrv_nhdplus_m.snapflowline[]
-) TO PUBLIC;
---******************************--
 ----- functions/navigate.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.navigate';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.navigate(
     IN  p_search_type                  VARCHAR
@@ -10517,7 +14722,7 @@ BEGIN
    -- Step 20
    -- Flush or create the temp tables
    ----------------------------------------------------------------------------
-   int_check := cipsrv_nhdplus_m.create_navigation_temp_tables();
+   int_check := cipsrv_engine.create_navigation_temp_tables();
 
    ----------------------------------------------------------------------------
    -- Step 40
@@ -11114,1113 +15319,287 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.navigate(
 )  TO PUBLIC;
 
 --******************************--
------ functions/randomnav.sql 
+----- functions/point_at_measure.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomnav';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.point_at_measure';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomnav(
-    IN  p_region               VARCHAR DEFAULT NULL
-   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
-   ,OUT out_nhdplusid          BIGINT
-   ,OUT out_reachcode          VARCHAR
-   ,OUT out_measure            NUMERIC
-   ,OUT out_shape              GEOMETRY
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   num_fmeasure    NUMERIC;
-   num_tmeasure    NUMERIC;
-   num_random      NUMERIC;
-   boo_search      BOOLEAN;
-   int_sanity      INTEGER;
-   num_big_samp    NUMERIC := 0.001;
-   sdo_flowline    GEOMETRY;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Select a random navigable flowline
-   --------------------------------------------------------------------------
-   boo_search := TRUE;
-   int_sanity := 0;
-   
-   WHILE boo_search
-   LOOP
-      IF p_region IN ('CONUS','5070')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.reachcode
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.shape
-         INTO
-          out_nhdplusid
-         ,out_reachcode
-         ,num_fmeasure
-         ,num_tmeasure
-         ,sdo_flowline
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
-            ,aa.isnavigable
-            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
-            FROM
-            cipsrv_nhdplus_m.nhdflowline_5070 aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         a.isnavigable
-         ORDER BY RANDOM()
-         LIMIT 1;
-            
-      ELSIF p_region IN ('HAWAII','HI','26904')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.reachcode
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.shape
-         INTO
-          out_nhdplusid
-         ,out_reachcode
-         ,num_fmeasure
-         ,num_tmeasure
-         ,sdo_flowline
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
-            ,aa.isnavigable
-            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
-            FROM
-            cipsrv_nhdplus_m.nhdflowline_26904 aa
-            TABLESAMPLE SYSTEM(0.1)
-         ) a
-         WHERE 
-         a.isnavigable
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSIF p_region IN ('PRVI','32161')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.reachcode
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.shape
-         INTO
-          out_nhdplusid
-         ,out_reachcode
-         ,num_fmeasure
-         ,num_tmeasure
-         ,sdo_flowline
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
-            ,aa.isnavigable
-            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
-            FROM
-            cipsrv_nhdplus_m.nhdflowline_32161 aa
-            TABLESAMPLE SYSTEM(0.1)
-         ) a
-         WHERE 
-         a.isnavigable
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSIF p_region IN ('GUAMMAR','GUMP','32655')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.reachcode
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.shape
-         INTO
-          out_nhdplusid
-         ,out_reachcode
-         ,num_fmeasure
-         ,num_tmeasure
-         ,sdo_flowline
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
-            ,aa.isnavigable
-            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
-            FROM
-            cipsrv_nhdplus_m.nhdflowline_32655 aa
-            TABLESAMPLE SYSTEM(1)
-         ) a
-         WHERE 
-         a.isnavigable
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSIF p_region IN ('AMSAMOA','AS','32702')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.reachcode
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.shape
-         INTO
-          out_nhdplusid
-         ,out_reachcode
-         ,num_fmeasure
-         ,num_tmeasure
-         ,sdo_flowline
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
-            ,aa.isnavigable
-            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
-            FROM
-            cipsrv_nhdplus_m.nhdflowline_32702 aa
-            TABLESAMPLE SYSTEM(1)
-         ) a
-         WHERE 
-         a.isnavigable = 'Y'
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSE
-         SELECT
-          a.nhdplusid
-         ,a.reachcode
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.shape
-         INTO
-          out_nhdplusid
-         ,out_reachcode
-         ,num_fmeasure
-         ,num_tmeasure
-         ,sdo_flowline
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
-            ,aa.fcode
-            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
-            FROM
-            cipsrv_nhdplus_m.nhdflowline aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         JOIN
-         cipsrv_nhdplus_m.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
-         WHERE 
-         a.fcode NOT IN (56600)
-         ORDER BY RANDOM()
-         LIMIT 1;
-      
-      END IF;
-      
-      IF out_nhdplusid IS NOT NULL
-      THEN
-         boo_search := FALSE;
-         
-      END IF;
-      
-      int_sanity := int_sanity + 1;
-      IF int_sanity > 10
-      THEN
-         num_big_samp := num_big_samp * 2;
-         
-      END IF;
-      
-      IF int_sanity > 25
-      THEN
-         out_return_code := -9;
-         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
-         RETURN;
-         
-      END IF;
-      
-   END LOOP;
-   
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Determine random measure on flowline
-   --------------------------------------------------------------------------
-   out_measure := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
-   out_measure := ROUND(out_measure,5);
-   
-   IF p_return_geometry
-   THEN
-      sdo_flowline := ST_TRANSFORM(sdo_flowline,4326);   
-      out_shape    := ST_Force2D(ST_GeometryN(ST_LocateAlong(sdo_flowline,out_measure),1));
-      
-   END IF;
-   
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.randomnav(
-    VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomnav(
-    VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
-
---******************************--
------ functions/randomppnav.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomppnav';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomppnav(
-    IN  p_region               VARCHAR DEFAULT NULL
-   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
-   ,OUT out_nhdplusid1         BIGINT
-   ,OUT out_reachcode1         VARCHAR
-   ,OUT out_measure1           NUMERIC
-   ,OUT out_shape1             GEOMETRY
-   ,OUT out_nhdplusid2         BIGINT
-   ,OUT out_reachcode2         VARCHAR
-   ,OUT out_measure2           NUMERIC
-   ,OUT out_shape2             GEOMETRY
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   rec                RECORD;
-   num_fmeasure       NUMERIC;
-   num_tmeasure       NUMERIC;
-   int_hydroseq       BIGINT;
-   int_dnhydroseq     BIGINT;
-   int_terminalpathid BIGINT;
-   boo_check          BOOLEAN;
-   int_sanity         INTEGER;
-   sdo_flowline       GEOMETRY;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   boo_check := FALSE;
-   int_sanity := 1;
-   
-   WHILE NOT boo_check
-   LOOP
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Select a random navigable flowline
-   --------------------------------------------------------------------------
-      rec := cipsrv_nhdplus_m.randomnav(
-          p_region          := p_region
-         ,p_return_geometry := p_return_geometry
-      );
-      
-      IF rec.out_return_code != 0
-      THEN
-         out_return_code    := rec.out_return_code;
-         out_status_message := rec.out_status_message;
-         RETURN;
-      
-      END IF;
-      
-      out_nhdplusid1  := rec.out_nhdplusid;
-      out_reachcode1  := rec.out_reachcode;
-      out_measure1    := rec.out_measure;
-      out_shape1      := rec.out_shape;
-   
-      SELECT
-       a.hydroseq
-      ,a.dnhydroseq
-      ,a.terminalpa
-      INTO
-       int_hydroseq
-      ,int_dnhydroseq
-      ,int_terminalpathid
-      FROM
-      cipsrv_nhdplus_m.nhdplusflowlinevaa a 
-      WHERE 
-      a.nhdplusid = out_nhdplusid1;
-      
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Select a random downstream location from the start point
-   --------------------------------------------------------------------------
-      WITH RECURSIVE pp(
-         nhdplusid
-        ,hydroseq
-        ,dnhydroseq
-        ,terminalpa
-        ,fmeasure
-        ,tmeasure
-      )
-      AS (
-         SELECT
-          out_nhdplusid1
-         ,int_hydroseq
-         ,int_dnhydroseq
-         ,int_terminalpathid
-         ,0::NUMERIC
-         ,0::NUMERIC
-         UNION
-         SELECT
-          mq.nhdplusid
-         ,mq.hydroseq
-         ,mq.dnhydroseq
-         ,mq.terminalpa
-         ,mq.fmeasure
-         ,mq.tmeasure
-         FROM
-         cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
-         CROSS JOIN
-         pp
-         WHERE
-             mq.ary_upstream_hydroseq @> ARRAY[pp.hydroseq]
-         AND mq.terminalpa =  pp.terminalpa
-      )
-      SELECT
-       a.nhdplusid
-      ,b.reachcode
-      ,a.fmeasure
-      ,a.tmeasure
-      ,CASE WHEN p_return_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
-      INTO
-       out_nhdplusid2
-      ,out_reachcode2
-      ,num_fmeasure
-      ,num_tmeasure
-      ,sdo_flowline
-      FROM
-      pp a
-      JOIN
-      cipsrv_nhdplus_m.nhdflowline b
-      ON
-      b.nhdplusid = a.nhdplusid
-      WHERE
-          a.nhdplusid <> out_nhdplusid1
-      AND RANDOM() < 0.01 
-      LIMIT 1;
-      
-      out_measure2 := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
-      out_measure2 := ROUND(out_measure2,5);
-      
-      IF out_nhdplusid2 IS NOT NULL
-      THEN
-         boo_check := TRUE;
-         
-      END IF;
-      
-      int_sanity := int_sanity + 1;
-      
-      IF int_sanity > 100
-      THEN
-         out_return_code := -9;
-         out_status_message := 'Sanity check failed';
-         RETURN;
-      
-      END IF;
-      
-   END LOOP;
-   
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Build shape2 point if requested
-   --------------------------------------------------------------------------
-   IF p_return_geometry
-   THEN
-      sdo_flowline := ST_TRANSFORM(sdo_flowline,4326);   
-      out_shape2   := ST_Force2D(ST_GeometryN(ST_LocateAlong(sdo_flowline,out_measure2),1));
-      
-   END IF;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.randomppnav(
-    VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomppnav(
-    VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
-
---******************************--
------ functions/randomcatchment.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomcatchment';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomcatchment(
-    IN  p_region                VARCHAR DEFAULT NULL
-   ,IN  p_include_extended      BOOLEAN DEFAULT FALSE
-   ,IN  p_return_geometry       BOOLEAN DEFAULT FALSE
-   ,OUT out_nhdplusid           BIGINT
-   ,OUT out_areasqkm            NUMERIC
-   ,OUT out_catchmentstatecodes VARCHAR[]
-   ,OUT out_shape               GEOMETRY
-   ,OUT out_centroid            GEOMETRY
-   ,OUT out_return_code         INTEGER
-   ,OUT out_status_message      VARCHAR
-)
-STABLE
-AS $BODY$
-DECLARE
-   boo_search      BOOLEAN;
-   int_sanity      INTEGER;
-   num_big_samp    NUMERIC := 0.001;
-   str_statecode   VARCHAR;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Select a random navigable flowline
-   --------------------------------------------------------------------------
-   boo_search := TRUE;
-   int_sanity := 0;
-   
-   WHILE boo_search
-   LOOP
-      IF p_region IN ('CONUS','5070')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_5070 aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         p_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
-               
-      ELSIF p_region IN ('ALASKA','AK','3338')
-      THEN     
-         IF NOT p_include_extended
-         THEN
-            out_status_message := 'Alaska is entirely extended H3 catchments.';
-            RETURN;
-            
-         END IF;
-         
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isalaskan
-            FROM
-            cipsrv_nhdplus_m.catchment_3338 aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         p_include_extended OR NOT a.isalaskan
-         ORDER BY RANDOM()
-         LIMIT 1;
-               
-      ELSIF p_region IN ('HAWAII','HI','26904')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_26904 aa
-            TABLESAMPLE SYSTEM(0.1)
-         ) a
-         WHERE 
-         p_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSIF p_region IN ('PRVI','32161')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_32161 aa
-            TABLESAMPLE SYSTEM(0.1)
-         ) a
-         WHERE 
-         p_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSIF p_region IN ('GUAMMAR','GUMP','32655')
-      THEN         
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_32655 aa
-            TABLESAMPLE SYSTEM(1)
-         ) a
-         WHERE 
-         p_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSIF p_region IN ('AMSAMOA','AS','32702')
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_32702 aa
-            TABLESAMPLE SYSTEM(1)
-         ) a
-         WHERE 
-         p_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
-         
-      ELSE
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecode
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecode
-            ,aa.isocean
-            ,aa.isalaskan
-            FROM
-            cipsrv_nhdplus_m.catchment_fabric aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         p_include_extended OR (a.isocean = 'N' AND a.isalaskan = 'N')
-         ORDER BY RANDOM()
-         LIMIT 1;
-      
-      END IF;
-      
-      IF out_nhdplusid IS NOT NULL
-      THEN
-         boo_search := FALSE;
-         
-      END IF;
-      
-      int_sanity := int_sanity + 1;
-      IF int_sanity > 10
-      THEN
-         num_big_samp := num_big_samp * 2;
-         
-      END IF;
-      
-      IF int_sanity > 25
-      THEN
-         out_return_code := -9;
-         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
-         RETURN;
-         
-      END IF;
-      
-   END LOOP;
-   
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Get the catchment details
-   --------------------------------------------------------------------------
-   IF str_statecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
-   THEN
-      SELECT
-       a.areasqkm
-      ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
-      INTO
-       out_areasqkm
-      ,out_catchmentstatecodes
-      ,out_shape
-      ,out_centroid
-      FROM
-      cipsrv_nhdplus_m.catchment_5070_full a
-      WHERE
-      a.nhdplusid = out_nhdplusid;
-      
-   ELSIF str_statecode IN ('AK')
-   THEN
-      SELECT
-       a.areasqkm
-      ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
-      INTO
-       out_areasqkm
-      ,out_catchmentstatecodes
-      ,out_shape
-      ,out_centroid
-      FROM
-      cipsrv_nhdplus_m.catchment_3338_full a
-      WHERE
-      a.nhdplusid = out_nhdplusid;
-      
-   ELSIF str_statecode IN ('HI')
-   THEN
-      SELECT
-       a.areasqkm
-      ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
-      INTO
-       out_areasqkm
-      ,out_catchmentstatecodes
-      ,out_shape
-      ,out_centroid
-      FROM
-      cipsrv_nhdplus_m.catchment_26904_full a
-      WHERE
-      a.nhdplusid = out_nhdplusid;
-      
-   ELSIF str_statecode IN ('PR','VI')
-   THEN
-      SELECT
-       a.areasqkm
-      ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
-      INTO
-       out_areasqkm
-      ,out_catchmentstatecodes
-      ,out_shape
-      ,out_centroid
-      FROM
-      cipsrv_nhdplus_m.catchment_32161_full a
-      WHERE
-      a.nhdplusid = out_nhdplusid;
-      
-   ELSIF str_statecode IN ('GU','MP')
-   THEN
-      SELECT
-       a.areasqkm
-      ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
-      INTO
-       out_areasqkm
-      ,out_catchmentstatecodes
-      ,out_shape
-      ,out_centroid
-      FROM
-      cipsrv_nhdplus_m.catchment_32655_full a
-      WHERE
-      a.nhdplusid = out_nhdplusid;
-      
-   ELSIF str_statecode IN ('AS')
-   THEN
-      SELECT
-       a.areasqkm
-      ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
-      INTO
-       out_areasqkm
-      ,out_catchmentstatecodes
-      ,out_shape
-      ,out_centroid
-      FROM
-      cipsrv_nhdplus_m.catchment_32702_full a
-      WHERE
-      a.nhdplusid = out_nhdplusid;
-      
-   ELSE
-      RAISE EXCEPTION 'err';
-      
-   END IF;   
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.randomcatchment(
-    VARCHAR
-   ,BOOLEAN
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomcatchment(
-    VARCHAR
-   ,BOOLEAN
-   ,BOOLEAN
-) TO PUBLIC;
-
---******************************--
------ functions/randompoint.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randompoint';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randompoint(
-    IN  p_region               VARCHAR DEFAULT NULL
-   ,IN  p_include_extended     BOOLEAN DEFAULT FALSE
-   ,OUT out_shape              GEOMETRY
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   rec             RECORD;
-   sdo_box         GEOMETRY;
-   int_count       INTEGER;
-   num_min_x       NUMERIC;
-   num_min_y       NUMERIC;
-   num_max_x       NUMERIC;
-   num_max_y       NUMERIC;
-   num_rand_x      NUMERIC;
-   num_rand_y      NUMERIC;
-   boo_search      BOOLEAN;
-   int_sanity      INTEGER;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Select a random catchment
-   --------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.randomcatchment(
-       p_region           := p_region
-      ,p_include_extended := p_include_extended
-      ,p_return_geometry  := TRUE
-   );
-   
-   IF rec.out_return_code != 0
-   THEN
-      out_return_code    := rec.out_return_code;
-      out_status_message := rec.out_status_message;
-      RETURN;
-   
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Box the catchment and get bounds
-   --------------------------------------------------------------------------
-   sdo_box   := ST_Extent(rec.out_shape);
-   num_min_x := ST_XMin(sdo_box);
-   num_min_y := ST_YMin(sdo_box);
-   num_max_x := ST_XMax(sdo_box);
-   num_max_y := ST_YMax(sdo_box);
-   
-   --------------------------------------------------------------------------
-   -- Step 40
-   -- Limit the point to being within the catchment
-   --------------------------------------------------------------------------
-   boo_search := TRUE;
-   int_sanity := 0;
-   WHILE boo_search
-   LOOP
-      num_rand_x := RANDOM() * (num_max_x - num_min_x) + num_min_x;
-      num_rand_y := RANDOM() * (num_max_y - num_min_y) + num_min_y;
-      out_shape  := ST_SetSRID(ST_Point(num_rand_x,num_rand_y),ST_SRID(rec.out_shape));
-   
-      IF ST_Within(out_shape,rec.out_shape)
-      THEN
-         boo_search := FALSE;
-      
-      END IF;
-      
-      int_sanity := int_sanity + 1;
-      IF int_sanity > 25
-      THEN
-         out_return_code    := -9;
-         out_status_message := 'Unable to process ' || int_featureid::VARCHAR || '.';
-         RETURN;
-         
-      END IF;
-   
-   END LOOP;
-   
-   out_shape := ST_Transform(out_shape,4269);
-   
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.randompoint(
-    VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randompoint(
-    VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
-
---******************************--
------ functions/raindrop_st_pixelascentroid.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_st_pixelascentroid';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
-    IN  p_raster                 RASTER
-   ,IN  p_column_x               INTEGER
-   ,IN  p_row_y                  INTEGER
-   ,IN  p_offset_x               INTEGER
-   ,IN  p_offset_y               INTEGER
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.point_at_measure(
+    IN  p_nhdplusid               INTEGER
+   ,IN  p_permanent_identifier    VARCHAR
+   ,IN  p_reachcode               VARCHAR 
+   ,IN  p_measure                 NUMERIC
+   ,IN  p_2d_flag                 BOOLEAN DEFAULT TRUE
 ) RETURNS GEOMETRY
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
+STABLE
+AS
+$BODY$ 
+DECLARE
+   sdo_output  GEOMETRY;
+   boo_2d_flag BOOLEAN := p_2d_flag;
+   
 BEGIN
 
-   RETURN ST_PixelAsCentroid(
-       rast    := p_raster
-      ,x       := p_column_x - p_offset_x + 1
-      ,y       := p_row_y    - p_offset_y + 1
-   );
-
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_measure IS NULL
+   OR p_measure < -1
+   OR p_measure > 101
+   THEN
+      RAISE EXCEPTION 'measure cannot be null and must be between -1 and 101';
+      
+   END IF;
+   
+   IF boo_2d_flag IS NULL
+   THEN
+      boo_2d_flag := TRUE;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Grab the point if a normal measure
+   ----------------------------------------------------------------------------
+   IF p_measure >= 0 AND p_measure <= 100
+   THEN
+      IF p_nhdplusid IS NOT NULL
+      THEN
+         SELECT
+         ST_GeometryN(ST_LocateAlong(a.shape,p_measure,0),1) AS shape
+         INTO
+         sdo_output
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         WHERE
+         a.nhdplusid = p_nhdplusid
+         AND (
+            p_measure = a.fmeasure
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+      
+      ELSIF p_permanent_identifier IS NOT NULL
+      THEN
+         SELECT
+         ST_GeometryN(ST_LocateAlong(a.shape,p_measure,0),1) AS shape
+         INTO
+         sdo_output
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         WHERE
+         a.permanent_identifier = p_permanent_identifier
+         AND (
+            p_measure = a.fmeasure
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+      
+      ELSIF p_reachcode IS NOT NULL
+      THEN
+         SELECT
+         ST_GeometryN(ST_LocateAlong(a.shape,p_measure,0),1) AS shape
+         INTO
+         sdo_output
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         WHERE
+         a.reachcode = p_reachcode
+         AND (
+            p_measure = a.fmeasure
+            OR
+            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+         );
+         
+      ELSE
+         RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';
+         
+      END IF;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Grab the start point if measure = 101
+   ----------------------------------------------------------------------------
+   IF p_measure = 101
+   THEN
+      IF p_nhdplusid IS NOT NULL
+      THEN
+         SELECT
+         ST_PointN(a.shape,1)
+         INTO
+         sdo_output
+         FROM
+         nhdplus.nhdflowline_np21 a
+         WHERE
+         a.nhdplusid = p_nhdplusid;
+      
+      ELSIF p_permanent_identifier IS NOT NULL
+      THEN
+         SELECT
+         ST_PointN(a.shape,1)
+         INTO
+         sdo_output
+         FROM
+         nhdplus.nhdflowline_np21 a
+         WHERE
+         a.permanent_identifier = p_permanent_identifier;
+      
+      ELSIF p_reachcode IS NOT NULL
+      THEN
+         SELECT
+         ST_PointN(a.shape,1)
+         INTO
+         sdo_output
+         FROM
+         nhdplus.nhdflowline_np21 a
+         WHERE
+             a.reachcode = p_reachcode
+         AND a.tmeasure = 100;
+         
+      ELSE
+         RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';
+         
+      END IF;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Grab the end point if measure = -1
+   ----------------------------------------------------------------------------
+   IF p_measure = -1
+   THEN
+      IF p_nhdplusid IS NOT NULL
+      THEN
+         SELECT
+         ST_PointN(a.shape,ST_NPoints(a.shape))
+         INTO
+         sdo_output
+         FROM
+         nhdplus.nhdflowline_np21 a
+         WHERE
+         a.nhdplusid = p_nhdplusid;
+      
+      ELSIF p_permanent_identifier IS NOT NULL
+      THEN
+         SELECT
+         ST_PointN(a.shape,ST_NPoints(a.shape))
+         INTO
+         sdo_output
+         FROM
+         nhdplus.nhdflowline_np21 a
+         WHERE
+         a.permanent_identifier = p_permanent_identifier;
+      
+      ELSIF p_reachcode IS NOT NULL
+      THEN
+         SELECT
+         ST_PointN(a.shape,ST_NPoints(a.shape))
+         INTO
+         sdo_output
+         FROM
+         nhdplus.nhdflowline_np21 a
+         WHERE
+             a.reachcode = p_reachcode
+         AND a.fmeasure = 0;
+         
+      ELSE
+         RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';
+         
+      END IF;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Return what we got
+   ----------------------------------------------------------------------------
+   IF boo_2d_flag
+   THEN
+      RETURN ST_Force2D(sdo_output);
+      
+   ELSE
+      RETURN sdo_output;
+   
+   END IF;
+   
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
-    RASTER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
+ALTER FUNCTION cipsrv_nhdplus_m.point_at_measure(
+    INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,BOOLEAN
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
-    RASTER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.point_at_measure(
+    INTEGER
+   ,VARCHAR
+   ,VARCHAR
+   ,NUMERIC
+   ,BOOLEAN
 ) TO PUBLIC;
+
 --******************************--
------ functions/raindrop_st_value.sql 
+----- functions/pointindexing.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_st_value';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.pointindexing';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
-    IN  p_raster                 RASTER
-   ,IN  p_column_x               INTEGER
-   ,IN  p_row_y                  INTEGER
-   ,IN  p_offset_x               INTEGER
-   ,IN  p_offset_y               INTEGER
-) RETURNS INTEGER
-IMMUTABLE
-AS $BODY$ 
-DECLARE 
-BEGIN
-
-   RETURN ST_Value(
-       rast     := p_raster
-      ,band     := 1
-      ,x        := p_column_x - p_offset_x + 1
-      ,y        := p_row_y    - p_offset_y + 1
-      ,exclude_nodata_value := true
-   );
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
-    RASTER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
-    RASTER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-) TO PUBLIC;
---******************************--
------ functions/raindrop_world_to_raster.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_world_to_raster';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_world_to_raster(
-    IN  p_point                  GEOMETRY
-   ,IN  p_known_region           VARCHAR
-   ,IN  p_preprojected           BOOLEAN DEFAULT FALSE
-   ,OUT out_column_x             INTEGER
-   ,OUT out_row_y                INTEGER
-   ,OUT out_rid                  INTEGER
-   ,OUT out_raster               RASTER
-   ,OUT out_offset_x             INTEGER
-   ,OUT out_offset_y             INTEGER
-   ,OUT out_return_code          INTEGER
-   ,OUT out_status_message       VARCHAR
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.pointindexing(
+    IN  p_point                        GEOMETRY
+   ,IN  p_indexing_engine              VARCHAR
+   ,IN  p_fcode_allow                  INTEGER[]
+   ,IN  p_fcode_deny                   INTEGER[]
+   ,IN  p_distance_max_distkm          NUMERIC
+   ,IN  p_raindrop_snap_max_distkm     NUMERIC
+   ,IN  p_raindrop_path_max_distkm     NUMERIC
+   ,IN  p_limit_innetwork              BOOLEAN
+   ,IN  p_limit_navigable              BOOLEAN
+   ,IN  p_fallback_fcode_allow         INTEGER[]
+   ,IN  p_fallback_fcode_deny          INTEGER[]
+   ,IN  p_fallback_distance_max_distkm NUMERIC
+   ,IN  p_fallback_limit_innetwork     BOOLEAN
+   ,IN  p_fallback_limit_navigable     BOOLEAN
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,IN  p_known_catchment_nhdplusid    BIGINT   DEFAULT NULL
+   ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
 DECLARE
-   rec                     RECORD;
-   int_raster_srid         INTEGER;
-   sdo_input               GEOMETRY;
+   rec                 RECORD;
+   str_indexing_engine VARCHAR(4000) := UPPER(p_indexing_engine);
    
 BEGIN
 
@@ -12229,368 +15608,202 @@ BEGIN
    -- Check over incoming parameters
    --------------------------------------------------------------------------
    out_return_code := 0;
-   
-   IF p_point IS NULL OR ST_IsEmpty(p_point) 
-   OR ST_GeometryType(p_point) <> 'ST_Point'
-   THEN
-      out_return_code    := -99;
-      out_status_message := 'Input must be point geometry.';
-      RETURN;
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
+
+   -------------------------------------------------------------------------
    -- Step 20
-   -- Determine the projection
-   --------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_point
-      ,p_known_region   := p_known_region
-   );
-   int_raster_srid    := rec.out_srid;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
-   
-   IF out_return_code != 0
+   -- Check distance engines first
+   -------------------------------------------------------------------------
+   IF str_indexing_engine IN ('DISTANCE')
    THEN
-      RETURN;
-      
-   END IF;
+      rec := cipsrv_nhdplus_m.distance_index(
+          p_point                     => p_point
+         ,p_fcode_allow               => p_fcode_allow
+         ,p_fcode_deny                => p_fcode_deny
+         ,p_distance_max_distkm       => p_distance_max_distkm
+         ,p_limit_innetwork           => p_limit_innetwork
+         ,p_limit_navigable           => p_limit_navigable
+         ,p_return_link_path          => p_return_link_path
+         ,p_known_region              => p_known_region
+      );
      
-   --------------------------------------------------------------------------
+   -------------------------------------------------------------------------
    -- Step 30
-   -- Project input point if required
-   --------------------------------------------------------------------------
-   IF p_preprojected
-   OR ST_SRID(p_point) = int_raster_srid
+   -- Check cat constrained 
+   -------------------------------------------------------------------------
+   ELSIF str_indexing_engine IN ('CATCONSTRAINED')
    THEN
-      sdo_input := p_point;
-      
-   ELSE
-      sdo_input := ST_Transform(p_point,int_raster_srid);
-      
-   END IF;
+      rec := cipsrv_nhdplus_m.catconstrained_index(
+          p_point                     => p_point
+         ,p_return_link_path          => p_return_link_path
+         ,p_known_region              => p_known_region
+         ,p_known_catchment_nhdplusid => p_known_catchment_nhdplusid
+      );
 
    -------------------------------------------------------------------------
    -- Step 40
-   -- Query the grid as needed
-   --------------------------------------------------------------------------
-   IF int_raster_srid = 5070
+   -- Check raindrop
+   -------------------------------------------------------------------------
+   ELSIF str_indexing_engine = 'RAINDROP'
    THEN
-      SELECT
-       (ST_WorldToRasterCoord(
-           rast := a.rast
-          ,pt   := sdo_input
-       )).*
-      ,a.rid
-      ,a.rast
-      ,a.offset_x
-      ,a.offset_y
-      INTO
-       out_column_x
-      ,out_row_y
-      ,out_rid
-      ,out_raster
-      ,out_offset_x
-      ,out_offset_y
-      FROM
-      cipsrv_nhdplusgrid_h.fdr_5070_rdt a
-      WHERE 
-      ST_Intersects(a.rast,sdo_input);
-      
-   ELSIF int_raster_srid = 3338
-   THEN
-      SELECT
-       (ST_WorldToRasterCoord(
-           rast := a.rast
-          ,pt   := sdo_input
-       )).*
-      ,a.rid
-      ,a.rast
-      ,a.offset_x
-      ,a.offset_y
-      INTO
-       out_column_x
-      ,out_row_y
-      ,out_rid
-      ,out_raster
-      ,out_offset_x
-      ,out_offset_y
-      FROM
-      cipsrv_nhdplusgrid_h.fdr_3338_rdt a
-      WHERE 
-      ST_Intersects(a.rast,sdo_input);
-      
-   ELSIF int_raster_srid = 26904
-   THEN
-      SELECT
-       (ST_WorldToRasterCoord(
-           rast := a.rast
-          ,pt   := sdo_input
-       )).*
-      ,a.rid
-      ,a.rast
-      ,a.offset_x
-      ,a.offset_y
-      INTO
-       out_column_x
-      ,out_row_y
-      ,out_rid
-      ,out_raster
-      ,out_offset_x
-      ,out_offset_y
-      FROM
-      cipsrv_nhdplusgrid_h.fdr_26904_rdt a
-      WHERE 
-      ST_Intersects(a.rast,sdo_input);
-      
-   ELSIF int_raster_srid = 32161
-   THEN
-      SELECT
-       (ST_WorldToRasterCoord(
-           rast := a.rast
-          ,pt   := sdo_input
-       )).*
-      ,a.rid
-      ,a.rast
-      ,a.offset_x
-      ,a.offset_y
-      INTO
-       out_column_x
-      ,out_row_y
-      ,out_rid
-      ,out_raster
-      ,out_offset_x
-      ,out_offset_y 
-      FROM
-      cipsrv_nhdplusgrid_h.fdr_32161_rdt a
-      WHERE 
-      ST_Intersects(a.rast,sdo_input);
-      
-   ELSIF int_raster_srid = 32655
-   THEN
-      SELECT
-       (ST_WorldToRasterCoord(
-           rast := a.rast
-          ,pt   := sdo_input
-       )).*
-      ,a.rid
-      ,a.rast
-      ,a.offset_x
-      ,a.offset_y
-      INTO
-       out_column_x
-      ,out_row_y
-      ,out_rid
-      ,out_raster
-      ,out_offset_x
-      ,out_offset_y 
-      FROM
-      cipsrv_nhdplusgrid_h.fdr_32655_rdt a
-      WHERE 
-      ST_Intersects(a.rast,sdo_input);
-      
-   ELSIF int_raster_srid = 32702
-   THEN
-      SELECT
-       (ST_WorldToRasterCoord(
-           rast := a.rast
-          ,pt   := sdo_input
-       )).*
-      ,a.rid
-      ,a.rast
-      ,a.offset_x
-      ,a.offset_y
-      INTO
-       out_column_x
-      ,out_row_y
-      ,out_rid
-      ,out_raster
-      ,out_offset_x
-      ,out_offset_y
-      FROM
-      cipsrv_nhdplusgrid_h.fdr_32702_rdt a
-      WHERE 
-      ST_Intersects(a.rast,sdo_input);
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 50
-   -- Check output is okay
-   --------------------------------------------------------------------------
-   IF out_column_x IS NULL
-   OR out_row_y IS NULL
-   THEN
-      out_return_code    := -201;
-      out_status_message := 'Unable to obtain X,Y location from input point on ' 
-                     || int_raster_srid || ' raster grid';
-      RETURN;
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 60
-   -- Add the offsets
-   --------------------------------------------------------------------------
-   out_column_x := out_column_x + out_offset_x - 1;
-   out_row_y    := out_row_y    + out_offset_y - 1;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.raindrop_world_to_raster(
-    GEOMETRY
-   ,VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_world_to_raster(
-    GEOMETRY
-   ,VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
---******************************--
------ functions/raindrop_next_coordinate.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_next_coordinate';
-   IF b IS NOT NULL THEN
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_next_coordinate(
-    IN    p_raster                 RASTER
-   ,IN    p_grid_size_km           NUMERIC
-   ,IN    p_offset_x               INTEGER
-   ,IN    p_offset_y               INTEGER
-   ,INOUT inout_column_x           INTEGER
-   ,INOUT inout_row_y              INTEGER
-   ,OUT   out_distance_km          NUMERIC
-   ,OUT   out_direction            INTEGER
-   ,OUT   out_return_code          INTEGER
-   ,OUT   out_status_message       VARCHAR
-) 
-IMMUTABLE
-AS $BODY$ 
-DECLARE
-   num_corner_km NUMERIC;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   num_corner_km := p_grid_size_km * SQRT(2);
-
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Get the raster value
-   --------------------------------------------------------------------------
-   out_direction := cipsrv_nhdplus_m.raindrop_st_value(
-       p_raster    := p_raster
-      ,p_column_x  := inout_column_x
-      ,p_row_y     := inout_row_y
-      ,p_offset_x  := p_offset_x
-      ,p_offset_y  := p_offset_y
-   );
-
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Walk the grid
-   --------------------------------------------------------------------------
-   CASE out_direction
-   WHEN 1
-   THEN
-      inout_column_x  := inout_column_x + 1;
-      out_distance_km := p_grid_size_km;
-      
-   WHEN 2
-   THEN
-      inout_column_x  := inout_column_x + 1;
-      inout_row_y     := inout_row_y    + 1;
-      out_distance_km := num_corner_km;
-      
-   WHEN 4
-   THEN
-      inout_row_y     := inout_row_y    + 1;
-      out_distance_km := p_grid_size_km;
-      
-   WHEN 8
-   THEN
-      inout_column_x  := inout_column_x - 1;
-      inout_row_y     := inout_row_y    + 1;
-      out_distance_km := num_corner_km;
-      
-   WHEN 16
-   THEN
-      inout_column_x  := inout_column_x - 1;
-      out_distance_km := p_grid_size_km;
-      
-   WHEN 32
-   THEN
-      inout_column_x  := inout_column_x - 1;
-      inout_row_y     := inout_row_y    - 1;
-      out_distance_km := num_corner_km;
-      
-   WHEN 64
-   THEN
-      inout_row_y     := inout_row_y    - 1;
-      out_distance_km := p_grid_size_km;
-      
-   WHEN 128
-   THEN
-      inout_column_x  := inout_column_x + 1;
-      inout_row_y     := inout_row_y    - 1;
-      out_distance_km := num_corner_km;
-      
-   WHEN 0
-   THEN
-      out_return_code    := -20011;
-      out_status_message := 'Flow ends at sink';
-      RETURN;
-      
-   WHEN 255
-   THEN
-      out_return_code    := -20010;
-      out_status_message := 'Flow Direction Grid Out Of Bounds';
-      RETURN;
+      rec := cipsrv_nhdplus_m.raindrop_index(
+          p_point                     => p_point
+         ,p_fcode_allow               => p_fcode_allow
+         ,p_fcode_deny                => p_fcode_deny
+         ,p_raindrop_snap_max_distkm  => p_raindrop_snap_max_distkm
+         ,p_raindrop_path_max_distkm  => p_raindrop_path_max_distkm
+         ,p_limit_innetwork           => p_limit_innetwork
+         ,p_limit_navigable           => p_limit_navigable
+         ,p_return_link_path          => p_return_link_path
+         ,p_known_region              => p_known_region
+      );
       
    ELSE
-      out_return_code    := -20010;
-      out_status_message := 'Flow Direction Grid Out Of Bounds';
+      out_return_code    := -1;
+      out_status_message := 'Unknown indexing engine type.';
       RETURN;
       
-   END CASE;
+   END IF;
+   
+   -------------------------------------------------------------------------
+   -- Step 50
+   -- Return results
+   -------------------------------------------------------------------------
+   out_return_code      := rec.out_return_code;
+   out_status_message   := rec.out_status_message;
+
+   out_flowlines        := rec.out_flowlines;
+   out_path_distance_km := rec.out_path_distance_km;
+   out_end_point        := rec.out_end_point;
+   out_indexing_line    := rec.out_indexing_line;
+   out_region           := rec.out_region;
+   out_nhdplusid        := rec.out_nhdplusid;
 
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.raindrop_next_coordinate(
-    RASTER
+ALTER FUNCTION cipsrv_nhdplus_m.pointindexing(
+    GEOMETRY
+   ,VARCHAR
+   ,INTEGER[]
+   ,INTEGER[]
    ,NUMERIC
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
+   ,NUMERIC
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+   ,BIGINT
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_next_coordinate(
-    RASTER
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.pointindexing(
+    GEOMETRY
+   ,VARCHAR
+   ,INTEGER[]
+   ,INTEGER[]
    ,NUMERIC
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
-   ,INTEGER
+   ,NUMERIC
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,INTEGER[]
+   ,INTEGER[]
+   ,NUMERIC
+   ,BOOLEAN
+   ,BOOLEAN
+   ,BOOLEAN
+   ,VARCHAR
+   ,BIGINT
 ) TO PUBLIC;
+--******************************--
+----- functions/query_generic_common_mbr.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
+   IN  p_input  GEOMETRY
+) RETURNS VARCHAR
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+   sdo_point GEOGRAPHY;
+   
+BEGIN
+
+   IF p_input IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   sdo_point := ST_Transform(
+       ST_PointOnSurface(p_input)
+      ,4326
+   )::GEOGRAPHY;
+   
+   IF ST_Intersects(
+       sdo_point
+      ,cipsrv_nhdplus_m.generic_common_mbr('CONUS')
+   )
+   THEN
+      RETURN 'CONUS';
+      
+   ELSIF ST_Intersects(
+       sdo_point
+      ,cipsrv_nhdplus_m.generic_common_mbr('HI')
+   )
+   THEN
+      RETURN 'HI';
+      
+   ELSIF ST_Intersects(
+       sdo_point
+      ,cipsrv_nhdplus_m.generic_common_mbr('PRVI')
+   )
+   THEN
+      RETURN 'PRVI';
+      
+   ELSIF ST_Intersects(
+       sdo_point
+      ,cipsrv_nhdplus_m.generic_common_mbr('AK')
+   )
+   THEN
+      RETURN 'AK';
+      
+   ELSIF ST_Intersects(
+       sdo_point
+      ,cipsrv_nhdplus_m.generic_common_mbr('GUMP')
+   )
+   THEN
+      RETURN 'GUMP';
+      
+   ELSIF ST_Intersects(
+       sdo_point
+      ,cipsrv_nhdplus_m.generic_common_mbr('SAMOA')
+   )
+   THEN
+      RETURN 'SAMOA';
+      
+   END IF;
+   
+   RETURN NULL;  
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
+   GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
+   GEOMETRY
+) TO PUBLIC;
+
 --******************************--
 ----- functions/raindrop_coord_to_raster.sql 
 
@@ -12811,2142 +16024,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_coord_to_raster(
     INTEGER
    ,INTEGER
    ,VARCHAR
-) TO PUBLIC;
---******************************--
------ functions/distance_index_simple.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.distance_index_simple';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.distance_index_simple(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_distance_max_distkm       NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   rec                     RECORD;
-   curs_candidates         REFCURSOR;
-   num_distance_max_distkm NUMERIC  := p_distance_max_distkm;
-   boo_limit_innetwork     BOOLEAN  := p_limit_innetwork;
-   boo_limit_navigable     BOOLEAN  := p_limit_navigable;
-   int_raster_srid         INTEGER;
-   sdo_input               GEOMETRY;
-   rec_flowline            RECORD;
-   int_counter             INTEGER;
-   boo_check_fcode_allow   BOOLEAN := FALSE;
-   boo_check_fcode_deny    BOOLEAN := FALSE;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   IF p_point IS NULL OR ST_IsEmpty(p_point) 
-   OR ST_GeometryType(p_point) <> 'ST_Point'
-   THEN
-      out_return_code    := -99;
-      out_status_message := 'Input must be point geometry.';
-      RETURN;
-      
-   END IF;
-   
-   IF num_distance_max_distkm IS NULL
-   OR num_distance_max_distkm <= 0
-   THEN
-      num_distance_max_distkm := 99999;
-      
-   END IF;
-   
-   IF p_fcode_allow IS NOT NULL
-   AND array_length(p_fcode_allow,1) > 0
-   THEN
-      boo_check_fcode_allow := TRUE;
-   
-   END IF;
-   
-   IF p_fcode_deny IS NOT NULL
-   AND array_length(p_fcode_deny,1) > 0
-   THEN
-      boo_check_fcode_deny := TRUE;
-   
-   END IF;
-   
-   IF boo_limit_innetwork IS NULL
-   THEN
-      boo_limit_innetwork := FALSE;
-      
-   END IF;
-   
-   IF boo_limit_navigable IS NULL
-   THEN
-      boo_limit_navigable := FALSE;
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Determine the projection
-   --------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_point
-      ,p_known_region   := p_known_region
-   );
-   int_raster_srid    := rec.out_srid;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
-   
-   IF out_return_code != 0
-   THEN
-      RETURN;
-      
-   END IF;
-     
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Project input point if required
-   --------------------------------------------------------------------------
-   IF ST_SRID(p_point) = int_raster_srid
-   THEN
-      sdo_input := p_point;
-      
-   ELSE
-      sdo_input := ST_Transform(p_point,int_raster_srid);
-      
-   END IF;
-
-   -------------------------------------------------------------------------
-   -- Step 40
-   -- Open the cursor required
-   -------------------------------------------------------------------------
-   IF int_raster_srid = 5070
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.nhdplusid
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.nhdplusid
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_5070 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  boo_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  boo_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT 1
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm;
-      
-   ELSIF int_raster_srid = 3338
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.nhdplusid
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.nhdplusid
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_3338 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  boo_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  boo_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT 1
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm;
-      
-   ELSIF int_raster_srid = 26904
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.nhdplusid
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.nhdplusid
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_26904 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  boo_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  boo_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT 1
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm;
-      
-   ELSIF int_raster_srid = 32161
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.nhdplusid
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.nhdplusid
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32161 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  boo_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  boo_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT 1
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm;
-      
-   ELSIF int_raster_srid = 32655
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.nhdplusid
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.nhdplusid
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32655 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  boo_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  boo_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT 1
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm;
-      
-   ELSIF int_raster_srid = 32702
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.nhdplusid
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.nhdplusid
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32702 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  boo_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  boo_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT 1
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm;
-      
-   ELSE
-      RAISE EXCEPTION 'err';
-      
-   END IF;
-   
-   -------------------------------------------------------------------------
-   -- Step 50
-   -- Iterate the cursor into array of output type
-   --------------------------------------------------------------------------
-   int_counter := 0;
-   LOOP 
-      FETCH curs_candidates INTO rec_flowline; 
-      EXIT WHEN NOT FOUND; 
-      
-      int_counter          := int_counter + 1;
-      out_nhdplusid        := rec_flowline.nhdplusid;
-      out_path_distance_km := rec_flowline.snap_distancekm;
-      
-   END LOOP; 
-   
-   CLOSE curs_candidates; 
-   
-   --------------------------------------------------------------------------
-   -- Step 60
-   -- Error out if no results
-   --------------------------------------------------------------------------
-   IF int_counter = 0
-   OR out_nhdplusid IS NULL
-   THEN
-      out_return_code    := -1;
-      out_status_message := 'No results found';
-      RETURN;
-      
-   END IF;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.distance_index_simple(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.distance_index_simple(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;
---******************************--
------ functions/distance_index.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.distance_index';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.distance_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_distance_max_distkm       NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   rec                     RECORD;
-   curs_candidates         REFCURSOR;
-   num_distance_max_distkm NUMERIC  := p_distance_max_distkm;
-   boo_limit_innetwork     BOOLEAN  := p_limit_innetwork;
-   boo_limit_navigable     BOOLEAN  := p_limit_navigable;
-   boo_return_link_path    BOOLEAN  := p_return_link_path;
-   int_raster_srid         INTEGER;
-   sdo_input               GEOMETRY;
-   sdo_temp                GEOMETRY;
-   rec_flowline            RECORD;
-   rec_candidate           cipsrv_nhdplus_m.snapflowline;
-   int_counter             INTEGER;
-   num_nearest             NUMERIC;
-   boo_check_fcode_allow   BOOLEAN := FALSE;
-   boo_check_fcode_deny    BOOLEAN := FALSE;
-   int_limit               INTEGER := 16;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   IF p_point IS NULL OR ST_IsEmpty(p_point) 
-   OR ST_GeometryType(p_point) <> 'ST_Point'
-   THEN
-      out_return_code    := -99;
-      out_status_message := 'Input must be point geometry.';
-      RETURN;
-      
-   END IF;
-   
-   IF num_distance_max_distkm IS NULL
-   OR num_distance_max_distkm <= 0
-   THEN
-      num_distance_max_distkm := 99999;
-      
-   END IF;
-   
-   IF p_fcode_allow IS NOT NULL
-   AND array_length(p_fcode_allow,1) > 0
-   THEN
-      boo_check_fcode_allow := TRUE;
-   
-   END IF;
-   
-   IF p_fcode_deny IS NOT NULL
-   AND array_length(p_fcode_deny,1) > 0
-   THEN
-      boo_check_fcode_deny := TRUE;
-   
-   END IF;
-   
-   IF boo_limit_innetwork IS NULL
-   THEN
-      boo_limit_innetwork := FALSE;
-      
-   END IF;
-   
-   IF boo_limit_navigable IS NULL
-   THEN
-      boo_limit_navigable := FALSE;
-      
-   END IF;
-   
-   IF boo_return_link_path IS NULL
-   THEN
-      boo_return_link_path := FALSE;
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Determine the projection
-   --------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_point
-      ,p_known_region   := p_known_region
-   );
-   int_raster_srid    := rec.out_srid;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
-   out_region         := rec.out_srid::VARCHAR;
-   
-   IF out_return_code != 0
-   THEN
-      RETURN;
-      
-   END IF;
-
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Project input point if required
-   --------------------------------------------------------------------------
-   IF ST_SRID(p_point) = int_raster_srid
-   THEN
-      sdo_input := p_point;
-      
-   ELSE
-      sdo_input := ST_Transform(p_point,int_raster_srid);
-      
-   END IF;
-
-   -------------------------------------------------------------------------
-   -- Step 40
-   -- Open the cursor required
-   -------------------------------------------------------------------------
-   IF int_raster_srid = 5070
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_5070 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-      
-   ELSIF int_raster_srid = 3338
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_3338 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-   
-   ELSIF int_raster_srid = 26904
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_26904 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-      
-   ELSIF int_raster_srid = 32161
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32161 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-      
-   ELSIF int_raster_srid = 32655
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32655 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-      
-   ELSIF int_raster_srid = 32702
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32702 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-      
-   ELSE
-      RAISE EXCEPTION 'err';
-   
-   END IF;
-
-   -------------------------------------------------------------------------
-   -- Step 50
-   -- Iterate the cursor into array of output type
-   --------------------------------------------------------------------------
-   num_nearest := 0;
-   int_counter := 1;
-   FETCH NEXT FROM curs_candidates INTO rec_flowline;
-   WHILE (FOUND) 
-   LOOP 
-      rec_candidate.permanent_identifier        := rec_flowline.permanent_identifier;
-      rec_candidate.fdate                       := rec_flowline.fdate;
-      rec_candidate.resolution                  := rec_flowline.resolution::integer;
-      rec_candidate.gnis_id                     := rec_flowline.gnis_id;
-      rec_candidate.gnis_name                   := rec_flowline.gnis_name;
-      rec_candidate.lengthkm                    := rec_flowline.lengthkm;
-      rec_candidate.reachcode                   := rec_flowline.reachcode;
-      rec_candidate.flowdir                     := rec_flowline.flowdir;
-      rec_candidate.wbarea_permanent_identifier := rec_flowline.wbarea_permanent_identifier;
-      rec_candidate.ftype                       := rec_flowline.ftype;
-      rec_candidate.fcode                       := rec_flowline.fcode;
-      rec_candidate.mainpath                    := rec_flowline.mainpath; 
-      rec_candidate.innetwork                   := rec_flowline.innetwork;
-      rec_candidate.visibilityfilter            := rec_flowline.visibilityfilter;
-      rec_candidate.nhdplusid                   := rec_flowline.nhdplusid;
-      rec_candidate.vpuid                       := rec_flowline.vpuid;
-      rec_candidate.enabled                     := rec_flowline.enabled;
-      rec_candidate.fmeasure                    := rec_flowline.fmeasure;
-      rec_candidate.tmeasure                    := rec_flowline.tmeasure;
-      rec_candidate.hydroseq                    := rec_flowline.hydroseq;
-      rec_candidate.shape                       := ST_Transform(rec_flowline.shape,4269);
-      
-      rec_candidate.snap_measure := ROUND(ST_InterpolatePoint(
-          rec_flowline.shape
-         ,sdo_input
-      )::NUMERIC,5);
-      
-      rec_candidate.snap_distancekm             := rec_flowline.snap_distancekm;
-      
-      sdo_temp := ST_GeometryN(ST_LocateAlong(
-          rec_flowline.shape
-         ,rec_candidate.snap_measure
-      ),1);
-      
-      -- This is some weird numeric nuttiness which is corrected by reifying as text 
-      IF sdo_temp IS NULL
-      OR ST_IsEmpty(sdo_temp)
-      THEN
-         sdo_temp := ST_GeometryN(ST_LocateAlong(
-             ST_GeomFromEWKT(ST_AsEWKT(rec_flowline.shape))
-            ,rec_candidate.snap_measure
-         ),1);
-         
-      END IF;
- 
-      rec_candidate.snap_point := ST_Transform(ST_Force2D(
-         sdo_temp
-      ),4269);
-
-      IF num_nearest = 0
-      THEN
-         num_nearest = rec_candidate.snap_distancekm;
-         
-      END IF;
-      
-      EXIT WHEN rec_candidate.snap_distancekm > num_nearest;
-      
-      out_flowlines[int_counter] := rec_candidate;
-      int_counter := int_counter + 1;
-      
-      FETCH NEXT FROM curs_candidates INTO rec_flowline;
-      
-   END LOOP; 
-   
-   CLOSE curs_candidates;
-
-   --------------------------------------------------------------------------
-   -- Step 60
-   -- Bail if no results
-   --------------------------------------------------------------------------
-   IF int_counter = 1
-   OR out_flowlines IS NULL
-   OR array_length(out_flowlines,1) = 0
-   THEN
-      out_return_code    := -1;
-      out_status_message := 'No results found';
-      RETURN;
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 70
-   -- Finalize the output
-   --------------------------------------------------------------------------
-   out_path_distance_km := out_flowlines[1].snap_distancekm;
-   out_end_point        := out_flowlines[1].snap_point;
-   out_nhdplusid        := out_flowlines[1].nhdplusid;
-   
-   IF p_return_link_path
-   AND out_path_distance_km > 0.00005
-   THEN
-      out_indexing_line := ST_MakeLine(
-          ST_Transform(sdo_input,4269)
-         ,out_end_point
-      );
-  
-   END IF;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.distance_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.distance_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;
---******************************--
------ functions/catconstrained_index.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.catconstrained_index';
-   IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
-   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,IN  p_known_catchment_nhdplusid BIGINT DEFAULT NULL
-   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
-)
-STABLE
-AS $BODY$ 
-DECLARE
-   rec                     RECORD;
-   boo_return_link_path    BOOLEAN  := p_return_link_path;
-   int_raster_srid         INTEGER;
-   sdo_input               GEOMETRY;
-   rec_candidate           cipsrv_nhdplus_m.snapflowline;
-   int_nhdplusid           BIGINT;
-   boo_issink              BOOLEAN;
-   boo_isocean             BOOLEAN;
-   boo_isalaskan           BOOLEAN;
-   
-BEGIN
-
-   --------------------------------------------------------------------------
-   -- Step 10
-   -- Check over incoming parameters
-   --------------------------------------------------------------------------
-   out_return_code := 0;
-   
-   IF p_point IS NULL OR ST_IsEmpty(p_point) 
-   OR ST_GeometryType(p_point) <> 'ST_Point'
-   THEN
-      out_return_code    := -99;
-      out_status_message := 'Input must be point geometry.';
-      RETURN;
-      
-   END IF;
-   
-   IF boo_return_link_path IS NULL
-   THEN
-      boo_return_link_path := FALSE;
-      
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 20
-   -- Determine the projection
-   --------------------------------------------------------------------------
-   rec := cipsrv_nhdplus_m.determine_grid_srid(
-       p_geometry       := p_point
-      ,p_known_region   := p_known_region
-   );
-   int_raster_srid    := rec.out_srid;
-   out_return_code    := rec.out_return_code;
-   out_status_message := rec.out_status_message;
-   out_region         := rec.out_srid::VARCHAR;
-   
-   IF out_return_code != 0
-   THEN
-      RETURN;
-      
-   END IF;
-     
-   --------------------------------------------------------------------------
-   -- Step 30
-   -- Project input point if required
-   --------------------------------------------------------------------------
-   IF ST_SRID(p_point) = int_raster_srid
-   THEN
-      sdo_input := p_point;
-      
-   ELSE
-      sdo_input := ST_Transform(p_point,int_raster_srid);
-      
-   END IF;
-
-   --------------------------------------------------------------------------
-   -- Step 40
-   -- Determine the catchment if not provided
-   --------------------------------------------------------------------------
-   IF p_known_catchment_nhdplusid IS NOT NULL
-   THEN
-      int_nhdplusid := p_known_catchment_nhdplusid;
-      
-   ELSE
-      IF int_raster_srid = 5070
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.issink
-         ,a.isocean
-         ,a.isalaskan
-         INTO 
-          int_nhdplusid
-         ,boo_issink
-         ,boo_isocean
-         ,boo_isalaskan
-         FROM
-         cipsrv_nhdplus_m.catchment_5070 a
-         WHERE
-         ST_Intersects(
-             a.shape
-            ,sdo_input
-         )
-         LIMIT 1;
-         
-      ELSIF int_raster_srid = 3338
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.issink
-         ,a.isocean
-         ,a.isalaskan
-         INTO 
-          int_nhdplusid
-         ,boo_issink
-         ,boo_isocean
-         ,boo_isalaskan
-         FROM
-         cipsrv_nhdplus_m.catchment_3338 a
-         WHERE
-         ST_Intersects(
-             a.shape
-            ,sdo_input
-         )
-         LIMIT 1;
-         
-      ELSIF int_raster_srid = 22904
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.issink
-         ,a.isocean
-         ,a.isalaskan
-         INTO 
-          int_nhdplusid
-         ,boo_issink
-         ,boo_isocean
-         ,boo_isalaskan
-         FROM
-         cipsrv_nhdplus_m.catchment_22904 a
-         WHERE
-         ST_Intersects(
-             a.shape
-            ,sdo_input
-         )
-         LIMIT 1;
-         
-      ELSIF int_raster_srid = 32161
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.issink
-         ,a.isocean
-         ,a.isalaskan
-         INTO 
-          int_nhdplusid
-         ,boo_issink
-         ,boo_isocean
-         ,boo_isalaskan
-         FROM
-         cipsrv_nhdplus_m.catchment_32161 a
-         WHERE
-         ST_Intersects(
-             a.shape
-            ,sdo_input
-         )
-         LIMIT 1;
-         
-      ELSIF int_raster_srid = 32655
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.issink
-         ,a.isocean
-         ,a.isalaskan
-         INTO 
-          int_nhdplusid
-         ,boo_issink
-         ,boo_isocean
-         ,boo_isalaskan
-         FROM
-         cipsrv_nhdplus_m.catchment_32655 a
-         WHERE
-         ST_Intersects(
-             a.shape
-            ,sdo_input
-         )
-         LIMIT 1;
-         
-      ELSIF int_raster_srid = 32702
-      THEN
-         SELECT
-          a.nhdplusid
-         ,a.issink
-         ,a.isocean
-         ,a.isalaskan
-         INTO 
-         int_nhdplusid
-         FROM
-         cipsrv_nhdplus_m.catchment_32702 a
-         WHERE
-         ST_Intersects(
-             a.shape
-            ,sdo_input
-         )
-         LIMIT 1;
-         
-      ELSE
-         RAISE EXCEPTION 'err';
-      
-      END IF;
-   
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 50
-   -- Bail if no results
-   --------------------------------------------------------------------------
-   IF int_nhdplusid IS NULL
-   THEN
-      out_return_code    := -2;
-      out_status_message := 'no results found';
-      RETURN;
-   
-   END IF;
-   
-   IF boo_issink
-   OR boo_isocean
-   OR boo_isalaskan
-   THEN
-      out_return_code    := -3;
-      out_status_message := 'catchment without flowline for indexing';
-      out_nhdplusid      := int_nhdplusid;
-      RETURN;
-   
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 60
-   -- Pull the matching flowline
-   --------------------------------------------------------------------------
-   IF int_raster_srid = 5070
-   THEN
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,ROUND(
-           a.snap_measure::NUMERIC
-          ,5
-       ) AS snap_measure
-      ,a.snap_distancekm
-      ,ST_Transform(ST_Force2D(
-          ST_GeometryN(
-             ST_LocateAlong(
-                 a.shape
-                ,a.snap_measure
-             )
-            ,1
-          )
-       ),4269) AS snap_point
-      INTO
-       rec_candidate.permanent_identifier
-      ,rec_candidate.fdate
-      ,rec_candidate.resolution
-      ,rec_candidate.gnis_id
-      ,rec_candidate.gnis_name
-      ,rec_candidate.lengthkm
-      ,rec_candidate.reachcode
-      ,rec_candidate.flowdir
-      ,rec_candidate.wbarea_permanent_identifier
-      ,rec_candidate.ftype
-      ,rec_candidate.fcode
-      ,rec_candidate.mainpath
-      ,rec_candidate.innetwork
-      ,rec_candidate.visibilityfilter
-      ,rec_candidate.nhdplusid
-      ,rec_candidate.vpuid
-      ,rec_candidate.enabled
-      ,rec_candidate.fmeasure
-      ,rec_candidate.tmeasure
-      ,rec_candidate.hydroseq
-      ,rec_candidate.shape
-      ,rec_candidate.snap_measure
-      ,rec_candidate.snap_distancekm
-      ,rec_candidate.snap_point
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_InterpolatePoint(
-              aa.shape
-             ,sdo_input
-          ) AS snap_measure
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_5070 aa
-         WHERE
-         aa.nhdplusid = int_nhdplusid
-      ) a;
-   
-   ELSIF int_raster_srid = 3338
-   THEN
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,ROUND(
-           a.snap_measure::NUMERIC
-          ,5
-       ) AS snap_measure
-      ,a.snap_distancekm
-      ,ST_Transform(ST_Force2D(
-          ST_GeometryN(
-             ST_LocateAlong(
-                 a.shape
-                ,a.snap_measure
-             )
-            ,1
-          )
-       ),4269) AS snap_point
-      INTO
-       rec_candidate.permanent_identifier
-      ,rec_candidate.fdate
-      ,rec_candidate.resolution
-      ,rec_candidate.gnis_id
-      ,rec_candidate.gnis_name
-      ,rec_candidate.lengthkm
-      ,rec_candidate.reachcode
-      ,rec_candidate.flowdir
-      ,rec_candidate.wbarea_permanent_identifier
-      ,rec_candidate.ftype
-      ,rec_candidate.fcode
-      ,rec_candidate.mainpath
-      ,rec_candidate.innetwork
-      ,rec_candidate.visibilityfilter
-      ,rec_candidate.nhdplusid
-      ,rec_candidate.vpuid
-      ,rec_candidate.enabled
-      ,rec_candidate.fmeasure
-      ,rec_candidate.tmeasure
-      ,rec_candidate.hydroseq
-      ,rec_candidate.shape
-      ,rec_candidate.snap_measure
-      ,rec_candidate.snap_distancekm
-      ,rec_candidate.snap_point
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_InterpolatePoint(
-              aa.shape
-             ,sdo_input
-          ) AS snap_measure
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_3338 aa
-         WHERE
-         aa.nhdplusid = int_nhdplusid
-      ) a;
-   
-   ELSIF int_raster_srid = 26904
-   THEN
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,ROUND(
-           a.snap_measure::NUMERIC
-          ,5
-       ) AS snap_measure
-      ,a.snap_distancekm
-      ,ST_Transform(ST_Force2D(
-          ST_GeometryN(
-             ST_LocateAlong(
-                 a.shape
-                ,a.snap_measure
-             )
-            ,1
-          )
-       ),4269) AS snap_point
-      INTO
-       rec_candidate.permanent_identifier
-      ,rec_candidate.fdate
-      ,rec_candidate.resolution
-      ,rec_candidate.gnis_id
-      ,rec_candidate.gnis_name
-      ,rec_candidate.lengthkm
-      ,rec_candidate.reachcode
-      ,rec_candidate.flowdir
-      ,rec_candidate.wbarea_permanent_identifier
-      ,rec_candidate.ftype
-      ,rec_candidate.fcode
-      ,rec_candidate.mainpath
-      ,rec_candidate.innetwork
-      ,rec_candidate.visibilityfilter
-      ,rec_candidate.nhdplusid
-      ,rec_candidate.vpuid
-      ,rec_candidate.enabled
-      ,rec_candidate.fmeasure
-      ,rec_candidate.tmeasure
-      ,rec_candidate.hydroseq
-      ,rec_candidate.shape
-      ,rec_candidate.snap_measure
-      ,rec_candidate.snap_distancekm
-      ,rec_candidate.snap_point
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_InterpolatePoint(
-              aa.shape
-             ,sdo_input
-          ) AS snap_measure
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_26904 aa
-         WHERE
-         aa.nhdplusid = int_nhdplusid
-      ) a;
-      
-   ELSIF int_raster_srid = 32161
-   THEN
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,ROUND(
-           a.snap_measure::NUMERIC
-          ,5
-       ) AS snap_measure
-      ,a.snap_distancekm
-      ,ST_Transform(ST_Force2D(
-          ST_GeometryN(
-             ST_LocateAlong(
-                 a.shape
-                ,a.snap_measure
-             )
-            ,1
-          )
-       ),4269) AS snap_point
-      INTO
-       rec_candidate.permanent_identifier
-      ,rec_candidate.fdate
-      ,rec_candidate.resolution
-      ,rec_candidate.gnis_id
-      ,rec_candidate.gnis_name
-      ,rec_candidate.lengthkm
-      ,rec_candidate.reachcode
-      ,rec_candidate.flowdir
-      ,rec_candidate.wbarea_permanent_identifier
-      ,rec_candidate.ftype
-      ,rec_candidate.fcode
-      ,rec_candidate.mainpath
-      ,rec_candidate.innetwork
-      ,rec_candidate.visibilityfilter
-      ,rec_candidate.nhdplusid
-      ,rec_candidate.vpuid
-      ,rec_candidate.enabled
-      ,rec_candidate.fmeasure
-      ,rec_candidate.tmeasure
-      ,rec_candidate.hydroseq
-      ,rec_candidate.shape
-      ,rec_candidate.snap_measure
-      ,rec_candidate.snap_distancekm
-      ,rec_candidate.snap_point
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_InterpolatePoint(
-              aa.shape
-             ,sdo_input
-          ) AS snap_measure
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32161 aa
-         WHERE
-         aa.nhdplusid = int_nhdplusid
-      ) a;
-      
-   ELSIF int_raster_srid = 32655
-   THEN
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,ROUND(
-           a.snap_measure::NUMERIC
-          ,5
-       ) AS snap_measure
-      ,a.snap_distancekm
-      ,ST_Transform(ST_Force2D(
-          ST_GeometryN(
-             ST_LocateAlong(
-                 a.shape
-                ,a.snap_measure
-             )
-            ,1
-          )
-       ),4269) AS snap_point
-      INTO
-       rec_candidate.permanent_identifier
-      ,rec_candidate.fdate
-      ,rec_candidate.resolution
-      ,rec_candidate.gnis_id
-      ,rec_candidate.gnis_name
-      ,rec_candidate.lengthkm
-      ,rec_candidate.reachcode
-      ,rec_candidate.flowdir
-      ,rec_candidate.wbarea_permanent_identifier
-      ,rec_candidate.ftype
-      ,rec_candidate.fcode
-      ,rec_candidate.mainpath
-      ,rec_candidate.innetwork
-      ,rec_candidate.visibilityfilter
-      ,rec_candidate.nhdplusid
-      ,rec_candidate.vpuid
-      ,rec_candidate.enabled
-      ,rec_candidate.fmeasure
-      ,rec_candidate.tmeasure
-      ,rec_candidate.hydroseq
-      ,rec_candidate.shape
-      ,rec_candidate.snap_measure
-      ,rec_candidate.snap_distancekm
-      ,rec_candidate.snap_point
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_InterpolatePoint(
-              aa.shape
-             ,sdo_input
-          ) AS snap_measure
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32655 aa
-         WHERE
-         aa.nhdplusid = int_nhdplusid
-      ) a;
-      
-   ELSIF int_raster_srid = 32702
-   THEN
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,a.enabled
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,ROUND(
-           a.snap_measure::NUMERIC
-          ,5
-       ) AS snap_measure
-      ,a.snap_distancekm
-      ,ST_Transform(ST_Force2D(
-          ST_GeometryN(
-             ST_LocateAlong(
-                 a.shape
-                ,a.snap_measure
-             )
-            ,1
-          )
-       ),4269) AS snap_point
-      INTO
-       rec_candidate.permanent_identifier
-      ,rec_candidate.fdate
-      ,rec_candidate.resolution
-      ,rec_candidate.gnis_id
-      ,rec_candidate.gnis_name
-      ,rec_candidate.lengthkm
-      ,rec_candidate.reachcode
-      ,rec_candidate.flowdir
-      ,rec_candidate.wbarea_permanent_identifier
-      ,rec_candidate.ftype
-      ,rec_candidate.fcode
-      ,rec_candidate.mainpath
-      ,rec_candidate.innetwork
-      ,rec_candidate.visibilityfilter
-      ,rec_candidate.nhdplusid
-      ,rec_candidate.vpuid
-      ,rec_candidate.enabled
-      ,rec_candidate.fmeasure
-      ,rec_candidate.tmeasure
-      ,rec_candidate.hydroseq
-      ,rec_candidate.shape
-      ,rec_candidate.snap_measure
-      ,rec_candidate.snap_distancekm
-      ,rec_candidate.snap_point
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,aa.enabled
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_InterpolatePoint(
-              aa.shape
-             ,sdo_input
-          ) AS snap_measure
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_m.nhdflowline_32702 aa
-         WHERE
-         aa.nhdplusid = int_nhdplusid
-      ) a;
-   
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 70
-   -- Generate snap path if requested
-   --------------------------------------------------------------------------
-   out_flowlines[1]     := rec_candidate;
-   out_path_distance_km := out_flowlines[1].snap_distancekm;
-   out_end_point        := out_flowlines[1].snap_point;
-   out_nhdplusid        := out_flowlines[1].nhdplusid;
-   
-   IF p_return_link_path
-   AND out_path_distance_km > 0.00005
-   THEN
-      out_indexing_line := ST_MakeLine(
-          ST_Transform(sdo_input,4269)
-         ,out_end_point
-      );
-  
-   END IF;
-   
-   --------------------------------------------------------------------------
-   -- Step 90
-   -- Check for problems and mismatches
-   --------------------------------------------------------------------------
-   IF out_nhdplusid IS NULL
-   THEN
-      out_return_code    := -1;
-      out_status_message := 'Error matching catchment to flowline <<' || int_nhdplusid::VARCHAR || '>>';
-      RETURN;
-      
-   END IF;
-
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
 ) TO PUBLIC;
 --******************************--
 ----- functions/raindrop_index.sql 
@@ -15546,51 +16623,282 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_index(
    ,VARCHAR
 ) TO PUBLIC;
 --******************************--
------ functions/pointindexing.sql 
+----- functions/raindrop_next_coordinate.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.pointindexing';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_next_coordinate';
+   IF b IS NOT NULL THEN
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_next_coordinate(
+    IN    p_raster                 RASTER
+   ,IN    p_grid_size_km           NUMERIC
+   ,IN    p_offset_x               INTEGER
+   ,IN    p_offset_y               INTEGER
+   ,INOUT inout_column_x           INTEGER
+   ,INOUT inout_row_y              INTEGER
+   ,OUT   out_distance_km          NUMERIC
+   ,OUT   out_direction            INTEGER
+   ,OUT   out_return_code          INTEGER
+   ,OUT   out_status_message       VARCHAR
+) 
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   num_corner_km NUMERIC;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   num_corner_km := p_grid_size_km * SQRT(2);
+
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Get the raster value
+   --------------------------------------------------------------------------
+   out_direction := cipsrv_nhdplus_m.raindrop_st_value(
+       p_raster    := p_raster
+      ,p_column_x  := inout_column_x
+      ,p_row_y     := inout_row_y
+      ,p_offset_x  := p_offset_x
+      ,p_offset_y  := p_offset_y
+   );
+
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Walk the grid
+   --------------------------------------------------------------------------
+   CASE out_direction
+   WHEN 1
+   THEN
+      inout_column_x  := inout_column_x + 1;
+      out_distance_km := p_grid_size_km;
+      
+   WHEN 2
+   THEN
+      inout_column_x  := inout_column_x + 1;
+      inout_row_y     := inout_row_y    + 1;
+      out_distance_km := num_corner_km;
+      
+   WHEN 4
+   THEN
+      inout_row_y     := inout_row_y    + 1;
+      out_distance_km := p_grid_size_km;
+      
+   WHEN 8
+   THEN
+      inout_column_x  := inout_column_x - 1;
+      inout_row_y     := inout_row_y    + 1;
+      out_distance_km := num_corner_km;
+      
+   WHEN 16
+   THEN
+      inout_column_x  := inout_column_x - 1;
+      out_distance_km := p_grid_size_km;
+      
+   WHEN 32
+   THEN
+      inout_column_x  := inout_column_x - 1;
+      inout_row_y     := inout_row_y    - 1;
+      out_distance_km := num_corner_km;
+      
+   WHEN 64
+   THEN
+      inout_row_y     := inout_row_y    - 1;
+      out_distance_km := p_grid_size_km;
+      
+   WHEN 128
+   THEN
+      inout_column_x  := inout_column_x + 1;
+      inout_row_y     := inout_row_y    - 1;
+      out_distance_km := num_corner_km;
+      
+   WHEN 0
+   THEN
+      out_return_code    := -20011;
+      out_status_message := 'Flow ends at sink';
+      RETURN;
+      
+   WHEN 255
+   THEN
+      out_return_code    := -20010;
+      out_status_message := 'Flow Direction Grid Out Of Bounds';
+      RETURN;
+      
+   ELSE
+      out_return_code    := -20010;
+      out_status_message := 'Flow Direction Grid Out Of Bounds';
+      RETURN;
+      
+   END CASE;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.raindrop_next_coordinate(
+    RASTER
+   ,NUMERIC
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_next_coordinate(
+    RASTER
+   ,NUMERIC
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) TO PUBLIC;
+--******************************--
+----- functions/raindrop_st_pixelascentroid.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_st_pixelascentroid';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.pointindexing(
-    IN  p_point                        GEOMETRY
-   ,IN  p_indexing_engine              VARCHAR
-   ,IN  p_fcode_allow                  INTEGER[]
-   ,IN  p_fcode_deny                   INTEGER[]
-   ,IN  p_distance_max_distkm          NUMERIC
-   ,IN  p_raindrop_snap_max_distkm     NUMERIC
-   ,IN  p_raindrop_path_max_distkm     NUMERIC
-   ,IN  p_limit_innetwork              BOOLEAN
-   ,IN  p_limit_navigable              BOOLEAN
-   ,IN  p_fallback_fcode_allow         INTEGER[]
-   ,IN  p_fallback_fcode_deny          INTEGER[]
-   ,IN  p_fallback_distance_max_distkm NUMERIC
-   ,IN  p_fallback_limit_innetwork     BOOLEAN
-   ,IN  p_fallback_limit_navigable     BOOLEAN
-   ,IN  p_return_link_path             BOOLEAN
-   ,IN  p_known_region                 VARCHAR
-   ,IN  p_known_catchment_nhdplusid    BIGINT   DEFAULT NULL
-   ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km           NUMERIC
-   ,OUT out_end_point                  GEOMETRY
-   ,OUT out_indexing_line              GEOMETRY
-   ,OUT out_region                     VARCHAR
-   ,OUT out_nhdplusid                  BIGINT
-   ,OUT out_return_code                INTEGER
-   ,OUT out_status_message             VARCHAR
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
+    IN  p_raster                 RASTER
+   ,IN  p_column_x               INTEGER
+   ,IN  p_row_y                  INTEGER
+   ,IN  p_offset_x               INTEGER
+   ,IN  p_offset_y               INTEGER
+) RETURNS GEOMETRY
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+BEGIN
+
+   RETURN ST_PixelAsCentroid(
+       rast    := p_raster
+      ,x       := p_column_x - p_offset_x + 1
+      ,y       := p_row_y    - p_offset_y + 1
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_st_pixelascentroid(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) TO PUBLIC;
+--******************************--
+----- functions/raindrop_st_value.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_st_value';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
+    IN  p_raster                 RASTER
+   ,IN  p_column_x               INTEGER
+   ,IN  p_row_y                  INTEGER
+   ,IN  p_offset_x               INTEGER
+   ,IN  p_offset_y               INTEGER
+) RETURNS INTEGER
+IMMUTABLE
+AS $BODY$ 
+DECLARE 
+BEGIN
+
+   RETURN ST_Value(
+       rast     := p_raster
+      ,band     := 1
+      ,x        := p_column_x - p_offset_x + 1
+      ,y        := p_row_y    - p_offset_y + 1
+      ,exclude_nodata_value := true
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_st_value(
+    RASTER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+   ,INTEGER
+) TO PUBLIC;
+--******************************--
+----- functions/raindrop_world_to_raster.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_world_to_raster';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_world_to_raster(
+    IN  p_point                  GEOMETRY
+   ,IN  p_known_region           VARCHAR
+   ,IN  p_preprojected           BOOLEAN DEFAULT FALSE
+   ,OUT out_column_x             INTEGER
+   ,OUT out_row_y                INTEGER
+   ,OUT out_rid                  INTEGER
+   ,OUT out_raster               RASTER
+   ,OUT out_offset_x             INTEGER
+   ,OUT out_offset_y             INTEGER
+   ,OUT out_return_code          INTEGER
+   ,OUT out_status_message       VARCHAR
 )
 STABLE
 AS $BODY$ 
 DECLARE
-   rec                 RECORD;
-   str_indexing_engine VARCHAR(4000) := UPPER(p_indexing_engine);
+   rec                     RECORD;
+   int_raster_srid         INTEGER;
+   sdo_input               GEOMETRY;
    
 BEGIN
 
@@ -15599,116 +16907,2305 @@ BEGIN
    -- Check over incoming parameters
    --------------------------------------------------------------------------
    out_return_code := 0;
-
-   -------------------------------------------------------------------------
-   -- Step 20
-   -- Check distance engines first
-   -------------------------------------------------------------------------
-   IF str_indexing_engine IN ('DISTANCE')
+   
+   IF p_point IS NULL OR ST_IsEmpty(p_point) 
+   OR ST_GeometryType(p_point) <> 'ST_Point'
    THEN
-      rec := cipsrv_nhdplus_m.distance_index(
-          p_point                     => p_point
-         ,p_fcode_allow               => p_fcode_allow
-         ,p_fcode_deny                => p_fcode_deny
-         ,p_distance_max_distkm       => p_distance_max_distkm
-         ,p_limit_innetwork           => p_limit_innetwork
-         ,p_limit_navigable           => p_limit_navigable
-         ,p_return_link_path          => p_return_link_path
-         ,p_known_region              => p_known_region
-      );
-     
-   -------------------------------------------------------------------------
-   -- Step 30
-   -- Check cat constrained 
-   -------------------------------------------------------------------------
-   ELSIF str_indexing_engine IN ('CATCONSTRAINED')
-   THEN
-      rec := cipsrv_nhdplus_m.catconstrained_index(
-          p_point                     => p_point
-         ,p_return_link_path          => p_return_link_path
-         ,p_known_region              => p_known_region
-         ,p_known_catchment_nhdplusid => p_known_catchment_nhdplusid
-      );
-
-   -------------------------------------------------------------------------
-   -- Step 40
-   -- Check raindrop
-   -------------------------------------------------------------------------
-   ELSIF str_indexing_engine = 'RAINDROP'
-   THEN
-      rec := cipsrv_nhdplus_m.raindrop_index(
-          p_point                     => p_point
-         ,p_fcode_allow               => p_fcode_allow
-         ,p_fcode_deny                => p_fcode_deny
-         ,p_raindrop_snap_max_distkm  => p_raindrop_snap_max_distkm
-         ,p_raindrop_path_max_distkm  => p_raindrop_path_max_distkm
-         ,p_limit_innetwork           => p_limit_innetwork
-         ,p_limit_navigable           => p_limit_navigable
-         ,p_return_link_path          => p_return_link_path
-         ,p_known_region              => p_known_region
-      );
-      
-   ELSE
-      out_return_code    := -1;
-      out_status_message := 'Unknown indexing engine type.';
+      out_return_code    := -99;
+      out_status_message := 'Input must be point geometry.';
       RETURN;
       
    END IF;
    
-   -------------------------------------------------------------------------
-   -- Step 50
-   -- Return results
-   -------------------------------------------------------------------------
-   out_return_code      := rec.out_return_code;
-   out_status_message   := rec.out_status_message;
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the projection
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_point
+      ,p_known_region   := p_known_region
+   );
+   int_raster_srid    := rec.out_srid;
+   out_return_code    := rec.out_return_code;
+   out_status_message := rec.out_status_message;
+   
+   IF out_return_code != 0
+   THEN
+      RETURN;
+      
+   END IF;
+     
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project input point if required
+   --------------------------------------------------------------------------
+   IF p_preprojected
+   OR ST_SRID(p_point) = int_raster_srid
+   THEN
+      sdo_input := p_point;
+      
+   ELSE
+      sdo_input := ST_Transform(p_point,int_raster_srid);
+      
+   END IF;
 
-   out_flowlines        := rec.out_flowlines;
-   out_path_distance_km := rec.out_path_distance_km;
-   out_end_point        := rec.out_end_point;
-   out_indexing_line    := rec.out_indexing_line;
-   out_region           := rec.out_region;
-   out_nhdplusid        := rec.out_nhdplusid;
+   -------------------------------------------------------------------------
+   -- Step 40
+   -- Query the grid as needed
+   --------------------------------------------------------------------------
+   IF int_raster_srid = 5070
+   THEN
+      SELECT
+       (ST_WorldToRasterCoord(
+           rast := a.rast
+          ,pt   := sdo_input
+       )).*
+      ,a.rid
+      ,a.rast
+      ,a.offset_x
+      ,a.offset_y
+      INTO
+       out_column_x
+      ,out_row_y
+      ,out_rid
+      ,out_raster
+      ,out_offset_x
+      ,out_offset_y
+      FROM
+      cipsrv_nhdplusgrid_h.fdr_5070_rdt a
+      WHERE 
+      ST_Intersects(a.rast,sdo_input);
+      
+   ELSIF int_raster_srid = 3338
+   THEN
+      SELECT
+       (ST_WorldToRasterCoord(
+           rast := a.rast
+          ,pt   := sdo_input
+       )).*
+      ,a.rid
+      ,a.rast
+      ,a.offset_x
+      ,a.offset_y
+      INTO
+       out_column_x
+      ,out_row_y
+      ,out_rid
+      ,out_raster
+      ,out_offset_x
+      ,out_offset_y
+      FROM
+      cipsrv_nhdplusgrid_h.fdr_3338_rdt a
+      WHERE 
+      ST_Intersects(a.rast,sdo_input);
+      
+   ELSIF int_raster_srid = 26904
+   THEN
+      SELECT
+       (ST_WorldToRasterCoord(
+           rast := a.rast
+          ,pt   := sdo_input
+       )).*
+      ,a.rid
+      ,a.rast
+      ,a.offset_x
+      ,a.offset_y
+      INTO
+       out_column_x
+      ,out_row_y
+      ,out_rid
+      ,out_raster
+      ,out_offset_x
+      ,out_offset_y
+      FROM
+      cipsrv_nhdplusgrid_h.fdr_26904_rdt a
+      WHERE 
+      ST_Intersects(a.rast,sdo_input);
+      
+   ELSIF int_raster_srid = 32161
+   THEN
+      SELECT
+       (ST_WorldToRasterCoord(
+           rast := a.rast
+          ,pt   := sdo_input
+       )).*
+      ,a.rid
+      ,a.rast
+      ,a.offset_x
+      ,a.offset_y
+      INTO
+       out_column_x
+      ,out_row_y
+      ,out_rid
+      ,out_raster
+      ,out_offset_x
+      ,out_offset_y 
+      FROM
+      cipsrv_nhdplusgrid_h.fdr_32161_rdt a
+      WHERE 
+      ST_Intersects(a.rast,sdo_input);
+      
+   ELSIF int_raster_srid = 32655
+   THEN
+      SELECT
+       (ST_WorldToRasterCoord(
+           rast := a.rast
+          ,pt   := sdo_input
+       )).*
+      ,a.rid
+      ,a.rast
+      ,a.offset_x
+      ,a.offset_y
+      INTO
+       out_column_x
+      ,out_row_y
+      ,out_rid
+      ,out_raster
+      ,out_offset_x
+      ,out_offset_y 
+      FROM
+      cipsrv_nhdplusgrid_h.fdr_32655_rdt a
+      WHERE 
+      ST_Intersects(a.rast,sdo_input);
+      
+   ELSIF int_raster_srid = 32702
+   THEN
+      SELECT
+       (ST_WorldToRasterCoord(
+           rast := a.rast
+          ,pt   := sdo_input
+       )).*
+      ,a.rid
+      ,a.rast
+      ,a.offset_x
+      ,a.offset_y
+      INTO
+       out_column_x
+      ,out_row_y
+      ,out_rid
+      ,out_raster
+      ,out_offset_x
+      ,out_offset_y
+      FROM
+      cipsrv_nhdplusgrid_h.fdr_32702_rdt a
+      WHERE 
+      ST_Intersects(a.rast,sdo_input);
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Check output is okay
+   --------------------------------------------------------------------------
+   IF out_column_x IS NULL
+   OR out_row_y IS NULL
+   THEN
+      out_return_code    := -201;
+      out_status_message := 'Unable to obtain X,Y location from input point on ' 
+                     || int_raster_srid || ' raster grid';
+      RETURN;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Add the offsets
+   --------------------------------------------------------------------------
+   out_column_x := out_column_x + out_offset_x - 1;
+   out_row_y    := out_row_y    + out_offset_y - 1;
 
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.pointindexing(
+ALTER FUNCTION cipsrv_nhdplus_m.raindrop_world_to_raster(
     GEOMETRY
    ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
    ,BOOLEAN
-   ,BOOLEAN
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
 ) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.pointindexing(
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_world_to_raster(
     GEOMETRY
    ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
+   ,BOOLEAN
+) TO PUBLIC;
+--******************************--
+----- functions/randomcatchment.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomcatchment';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomcatchment(
+    IN  p_region                VARCHAR DEFAULT NULL
+   ,IN  p_include_extended      BOOLEAN DEFAULT FALSE
+   ,IN  p_return_geometry       BOOLEAN DEFAULT FALSE
+   ,OUT out_nhdplusid           BIGINT
+   ,OUT out_areasqkm            NUMERIC
+   ,OUT out_catchmentstatecodes VARCHAR[]
+   ,OUT out_shape               GEOMETRY
+   ,OUT out_centroid            GEOMETRY
+   ,OUT out_return_code         INTEGER
+   ,OUT out_status_message      VARCHAR
+)
+STABLE
+AS $BODY$
+DECLARE
+   boo_search      BOOLEAN;
+   int_sanity      INTEGER;
+   num_big_samp    NUMERIC := 0.001;
+   str_statecode   VARCHAR;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random navigable flowline
+   --------------------------------------------------------------------------
+   boo_search := TRUE;
+   int_sanity := 0;
+   
+   WHILE boo_search
+   LOOP
+      IF p_region IN ('CONUS','5070')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_m.catchment_5070 aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+               
+      ELSIF p_region IN ('ALASKA','AK','3338')
+      THEN     
+         IF NOT p_include_extended
+         THEN
+            out_status_message := 'Alaska is entirely extended H3 catchments.';
+            RETURN;
+            
+         END IF;
+         
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isalaskan
+            FROM
+            cipsrv_nhdplus_m.catchment_3338 aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isalaskan
+         ORDER BY RANDOM()
+         LIMIT 1;
+               
+      ELSIF p_region IN ('HAWAII','HI','26904')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_m.catchment_26904 aa
+            TABLESAMPLE SYSTEM(0.1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('PRVI','32161')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_m.catchment_32161 aa
+            TABLESAMPLE SYSTEM(0.1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('GUAMMAR','GUMP','32655')
+      THEN         
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_m.catchment_32655 aa
+            TABLESAMPLE SYSTEM(1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('AMSAMOA','AS','32702')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecodes[1]
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecodes
+            ,aa.isocean
+            FROM
+            cipsrv_nhdplus_m.catchment_32702 aa
+            TABLESAMPLE SYSTEM(1)
+         ) a
+         WHERE 
+         p_include_extended OR NOT a.isocean
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSE
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         INTO
+          out_nhdplusid
+         ,str_statecode
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.catchmentstatecode
+            ,aa.isocean
+            ,aa.isalaskan
+            FROM
+            cipsrv_nhdplus_m.catchment_fabric aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         p_include_extended OR (a.isocean = 'N' AND a.isalaskan = 'N')
+         ORDER BY RANDOM()
+         LIMIT 1;
+      
+      END IF;
+      
+      IF out_nhdplusid IS NOT NULL
+      THEN
+         boo_search := FALSE;
+         
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      IF int_sanity > 10
+      THEN
+         num_big_samp := num_big_samp * 2;
+         
+      END IF;
+      
+      IF int_sanity > 25
+      THEN
+         out_return_code := -9;
+         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
+         RETURN;
+         
+      END IF;
+      
+   END LOOP;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Get the catchment details
+   --------------------------------------------------------------------------
+   IF str_statecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_m.catchment_5070_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('AK')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_m.catchment_3338_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('HI')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_m.catchment_26904_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('PR','VI')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_m.catchment_32161_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('GU','MP')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_m.catchment_32655_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSIF str_statecode IN ('AS')
+   THEN
+      SELECT
+       a.areasqkm
+      ,a.catchmentstatecodes
+      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      INTO
+       out_areasqkm
+      ,out_catchmentstatecodes
+      ,out_shape
+      ,out_centroid
+      FROM
+      cipsrv_nhdplus_m.catchment_32702_full a
+      WHERE
+      a.nhdplusid = out_nhdplusid;
+      
+   ELSE
+      RAISE EXCEPTION 'err';
+      
+   END IF;   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.randomcatchment(
+    VARCHAR
    ,BOOLEAN
    ,BOOLEAN
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomcatchment(
+    VARCHAR
    ,BOOLEAN
    ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/randomnav.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomnav';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomnav(
+    IN  p_region               VARCHAR DEFAULT NULL
+   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
+   ,OUT out_nhdplusid          BIGINT
+   ,OUT out_reachcode          VARCHAR
+   ,OUT out_measure            NUMERIC
+   ,OUT out_shape              GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   num_fmeasure    NUMERIC;
+   num_tmeasure    NUMERIC;
+   num_random      NUMERIC;
+   boo_search      BOOLEAN;
+   int_sanity      INTEGER;
+   num_big_samp    NUMERIC := 0.001;
+   sdo_flowline    GEOMETRY;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random navigable flowline
+   --------------------------------------------------------------------------
+   boo_search := TRUE;
+   int_sanity := 0;
+   
+   WHILE boo_search
+   LOOP
+      IF p_region IN ('CONUS','5070')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.reachcode
+         ,a.fmeasure
+         ,a.tmeasure
+         ,a.shape
+         INTO
+          out_nhdplusid
+         ,out_reachcode
+         ,num_fmeasure
+         ,num_tmeasure
+         ,sdo_flowline
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.reachcode
+            ,aa.fmeasure
+            ,aa.tmeasure
+            ,aa.isnavigable
+            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_5070 aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         WHERE 
+         a.isnavigable
+         ORDER BY RANDOM()
+         LIMIT 1;
+            
+      ELSIF p_region IN ('HAWAII','HI','26904')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.reachcode
+         ,a.fmeasure
+         ,a.tmeasure
+         ,a.shape
+         INTO
+          out_nhdplusid
+         ,out_reachcode
+         ,num_fmeasure
+         ,num_tmeasure
+         ,sdo_flowline
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.reachcode
+            ,aa.fmeasure
+            ,aa.tmeasure
+            ,aa.isnavigable
+            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_26904 aa
+            TABLESAMPLE SYSTEM(0.1)
+         ) a
+         WHERE 
+         a.isnavigable
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('PRVI','32161')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.reachcode
+         ,a.fmeasure
+         ,a.tmeasure
+         ,a.shape
+         INTO
+          out_nhdplusid
+         ,out_reachcode
+         ,num_fmeasure
+         ,num_tmeasure
+         ,sdo_flowline
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.reachcode
+            ,aa.fmeasure
+            ,aa.tmeasure
+            ,aa.isnavigable
+            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32161 aa
+            TABLESAMPLE SYSTEM(0.1)
+         ) a
+         WHERE 
+         a.isnavigable
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('GUAMMAR','GUMP','32655')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.reachcode
+         ,a.fmeasure
+         ,a.tmeasure
+         ,a.shape
+         INTO
+          out_nhdplusid
+         ,out_reachcode
+         ,num_fmeasure
+         ,num_tmeasure
+         ,sdo_flowline
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.reachcode
+            ,aa.fmeasure
+            ,aa.tmeasure
+            ,aa.isnavigable
+            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32655 aa
+            TABLESAMPLE SYSTEM(1)
+         ) a
+         WHERE 
+         a.isnavigable
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSIF p_region IN ('AMSAMOA','AS','32702')
+      THEN
+         SELECT
+          a.nhdplusid
+         ,a.reachcode
+         ,a.fmeasure
+         ,a.tmeasure
+         ,a.shape
+         INTO
+          out_nhdplusid
+         ,out_reachcode
+         ,num_fmeasure
+         ,num_tmeasure
+         ,sdo_flowline
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.reachcode
+            ,aa.fmeasure
+            ,aa.tmeasure
+            ,aa.isnavigable
+            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32702 aa
+            TABLESAMPLE SYSTEM(1)
+         ) a
+         WHERE 
+         a.isnavigable = 'Y'
+         ORDER BY RANDOM()
+         LIMIT 1;
+         
+      ELSE
+         SELECT
+          a.nhdplusid
+         ,a.reachcode
+         ,a.fmeasure
+         ,a.tmeasure
+         ,a.shape
+         INTO
+          out_nhdplusid
+         ,out_reachcode
+         ,num_fmeasure
+         ,num_tmeasure
+         ,sdo_flowline
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.reachcode
+            ,aa.fmeasure
+            ,aa.tmeasure
+            ,aa.fcode
+            ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.nhdflowline aa
+            TABLESAMPLE SYSTEM(num_big_samp)
+         ) a
+         JOIN
+         cipsrv_nhdplus_m.nhdplusflowlinevaa b
+         ON
+         a.nhdplusid = b.nhdplusid
+         WHERE 
+         a.fcode NOT IN (56600)
+         ORDER BY RANDOM()
+         LIMIT 1;
+      
+      END IF;
+      
+      IF out_nhdplusid IS NOT NULL
+      THEN
+         boo_search := FALSE;
+         
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      IF int_sanity > 10
+      THEN
+         num_big_samp := num_big_samp * 2;
+         
+      END IF;
+      
+      IF int_sanity > 25
+      THEN
+         out_return_code := -9;
+         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
+         RETURN;
+         
+      END IF;
+      
+   END LOOP;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Determine random measure on flowline
+   --------------------------------------------------------------------------
+   out_measure := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
+   out_measure := ROUND(out_measure,5);
+   
+   IF p_return_geometry
+   THEN
+      sdo_flowline := ST_TRANSFORM(sdo_flowline,4326);   
+      out_shape    := ST_Force2D(ST_GeometryN(ST_LocateAlong(sdo_flowline,out_measure),1));
+      
+   END IF;
+   
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.randomnav(
+    VARCHAR
    ,BOOLEAN
-   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomnav(
+    VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/randompoint.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randompoint';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randompoint(
+    IN  p_region               VARCHAR DEFAULT NULL
+   ,IN  p_include_extended     BOOLEAN DEFAULT FALSE
+   ,OUT out_shape              GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec             RECORD;
+   sdo_box         GEOMETRY;
+   int_count       INTEGER;
+   num_min_x       NUMERIC;
+   num_min_y       NUMERIC;
+   num_max_x       NUMERIC;
+   num_max_y       NUMERIC;
+   num_rand_x      NUMERIC;
+   num_rand_y      NUMERIC;
+   boo_search      BOOLEAN;
+   int_sanity      INTEGER;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random catchment
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := p_region
+      ,p_include_extended := p_include_extended
+      ,p_return_geometry  := TRUE
+   );
+   
+   IF rec.out_return_code != 0
+   THEN
+      out_return_code    := rec.out_return_code;
+      out_status_message := rec.out_status_message;
+      RETURN;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Box the catchment and get bounds
+   --------------------------------------------------------------------------
+   sdo_box   := ST_Extent(rec.out_shape);
+   num_min_x := ST_XMin(sdo_box);
+   num_min_y := ST_YMin(sdo_box);
+   num_max_x := ST_XMax(sdo_box);
+   num_max_y := ST_YMax(sdo_box);
+   
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Limit the point to being within the catchment
+   --------------------------------------------------------------------------
+   boo_search := TRUE;
+   int_sanity := 0;
+   WHILE boo_search
+   LOOP
+      num_rand_x := RANDOM() * (num_max_x - num_min_x) + num_min_x;
+      num_rand_y := RANDOM() * (num_max_y - num_min_y) + num_min_y;
+      out_shape  := ST_SetSRID(ST_Point(num_rand_x,num_rand_y),ST_SRID(rec.out_shape));
+   
+      IF ST_Within(out_shape,rec.out_shape)
+      THEN
+         boo_search := FALSE;
+      
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      IF int_sanity > 25
+      THEN
+         out_return_code    := -9;
+         out_status_message := 'Unable to process ' || int_featureid::VARCHAR || '.';
+         RETURN;
+         
+      END IF;
+   
+   END LOOP;
+   
+   out_shape := ST_Transform(out_shape,4269);
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.randompoint(
+    VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randompoint(
+    VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/randomppnav.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomppnav';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomppnav(
+    IN  p_region               VARCHAR DEFAULT NULL
+   ,IN  p_return_geometry      BOOLEAN DEFAULT FALSE
+   ,OUT out_nhdplusid1         BIGINT
+   ,OUT out_reachcode1         VARCHAR
+   ,OUT out_measure1           NUMERIC
+   ,OUT out_shape1             GEOMETRY
+   ,OUT out_nhdplusid2         BIGINT
+   ,OUT out_reachcode2         VARCHAR
+   ,OUT out_measure2           NUMERIC
+   ,OUT out_shape2             GEOMETRY
+   ,OUT out_return_code        INTEGER
+   ,OUT out_status_message     VARCHAR
+)
+STABLE
+AS $BODY$ 
+DECLARE
+   rec                RECORD;
+   num_fmeasure       NUMERIC;
+   num_tmeasure       NUMERIC;
+   int_hydroseq       BIGINT;
+   int_dnhydroseq     BIGINT;
+   int_terminalpathid BIGINT;
+   boo_check          BOOLEAN;
+   int_sanity         INTEGER;
+   sdo_flowline       GEOMETRY;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   --------------------------------------------------------------------------
+   out_return_code := 0;
+   
+   boo_check := FALSE;
+   int_sanity := 1;
+   
+   WHILE NOT boo_check
+   LOOP
+   
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Select a random navigable flowline
+   --------------------------------------------------------------------------
+      rec := cipsrv_nhdplus_m.randomnav(
+          p_region          := p_region
+         ,p_return_geometry := p_return_geometry
+      );
+      
+      IF rec.out_return_code != 0
+      THEN
+         out_return_code    := rec.out_return_code;
+         out_status_message := rec.out_status_message;
+         RETURN;
+      
+      END IF;
+      
+      out_nhdplusid1  := rec.out_nhdplusid;
+      out_reachcode1  := rec.out_reachcode;
+      out_measure1    := rec.out_measure;
+      out_shape1      := rec.out_shape;
+   
+      SELECT
+       a.hydroseq
+      ,a.dnhydroseq
+      ,a.terminalpa
+      INTO
+       int_hydroseq
+      ,int_dnhydroseq
+      ,int_terminalpathid
+      FROM
+      cipsrv_nhdplus_m.nhdplusflowlinevaa a 
+      WHERE 
+      a.nhdplusid = out_nhdplusid1;
+      
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Select a random downstream location from the start point
+   --------------------------------------------------------------------------
+      WITH RECURSIVE pp(
+         nhdplusid
+        ,hydroseq
+        ,dnhydroseq
+        ,terminalpa
+        ,fmeasure
+        ,tmeasure
+      )
+      AS (
+         SELECT
+          out_nhdplusid1
+         ,int_hydroseq
+         ,int_dnhydroseq
+         ,int_terminalpathid
+         ,0::NUMERIC
+         ,0::NUMERIC
+         UNION
+         SELECT
+          mq.nhdplusid
+         ,mq.hydroseq
+         ,mq.dnhydroseq
+         ,mq.terminalpa
+         ,mq.fmeasure
+         ,mq.tmeasure
+         FROM
+         cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
+         CROSS JOIN
+         pp
+         WHERE
+             mq.ary_upstream_hydroseq @> ARRAY[pp.hydroseq]
+         AND mq.terminalpa =  pp.terminalpa
+      )
+      SELECT
+       a.nhdplusid
+      ,b.reachcode
+      ,a.fmeasure
+      ,a.tmeasure
+      ,CASE WHEN p_return_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
+      INTO
+       out_nhdplusid2
+      ,out_reachcode2
+      ,num_fmeasure
+      ,num_tmeasure
+      ,sdo_flowline
+      FROM
+      pp a
+      JOIN
+      cipsrv_nhdplus_m.nhdflowline b
+      ON
+      b.nhdplusid = a.nhdplusid
+      WHERE
+          a.nhdplusid <> out_nhdplusid1
+      AND RANDOM() < 0.01 
+      LIMIT 1;
+      
+      out_measure2 := RANDOM() * (num_tmeasure - num_fmeasure) + num_fmeasure;
+      out_measure2 := ROUND(out_measure2,5);
+      
+      IF out_nhdplusid2 IS NOT NULL
+      THEN
+         boo_check := TRUE;
+         
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      
+      IF int_sanity > 100
+      THEN
+         out_return_code := -9;
+         out_status_message := 'Sanity check failed';
+         RETURN;
+      
+      END IF;
+      
+   END LOOP;
+   
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Build shape2 point if requested
+   --------------------------------------------------------------------------
+   IF p_return_geometry
+   THEN
+      sdo_flowline := ST_TRANSFORM(sdo_flowline,4326);   
+      out_shape2   := ST_Force2D(ST_GeometryN(ST_LocateAlong(sdo_flowline,out_measure2),1));
+      
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.randomppnav(
+    VARCHAR
+   ,BOOLEAN
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomppnav(
+    VARCHAR
+   ,BOOLEAN
+) TO PUBLIC;
+
+--******************************--
+----- functions/snapflowline2geojson.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snapflowline2geojson';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
+    IN  p_input                        cipsrv_nhdplus_m.snapflowline
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+BEGIN
+
+   RETURN JSONB_BUILD_OBJECT(
+       'type'                ,'Feature'
+      ,'geometry'            ,ST_AsGeoJSON(ST_Transform(p_input.shape,4326))::JSONB
+      ,'properties'          ,JSONB_BUILD_OBJECT(
+          'permanent_identifier'       ,p_input.permanent_identifier
+         ,'fdate'                      ,p_input.fdate
+         ,'resolution'                 ,p_input.resolution
+         ,'gnis_id'                    ,p_input.gnis_id
+         ,'gnis_name'                  ,p_input.gnis_name
+         ,'lengthkm'                   ,p_input.lengthkm
+         ,'reachcode'                  ,p_input.reachcode
+         ,'flowdir'                    ,p_input.flowdir
+         ,'wbarea_permanent_identifier',p_input.wbarea_permanent_identifier
+         ,'ftype'                      ,p_input.ftype
+         ,'fcode'                      ,p_input.fcode
+         ,'mainpath'                   ,p_input.mainpath
+         ,'innetwork'                  ,p_input.innetwork
+         ,'visibilityfilter'           ,p_input.visibilityfilter
+         ,'nhdplusid'                  ,p_input.nhdplusid
+         ,'vpuid'                      ,p_input.vpuid
+         ,'enabled'                    ,p_input.enabled
+         ,'fmeasure'                   ,p_input.fmeasure
+         ,'tmeasure'                   ,p_input.tmeasure
+         ,'hydroseq'                   ,p_input.hydroseq
+         ,'snap_measure'               ,p_input.snap_measure
+         ,'snap_distancekm'            ,p_input.snap_distancekm
+      )
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
+    cipsrv_nhdplus_m.snapflowline
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.snapflowline2geojson(
+    cipsrv_nhdplus_m.snapflowline
+) TO PUBLIC;
+--******************************--
+----- functions/snapflowlines2geojson.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snapflowlines2geojson';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
+    IN  p_input                        cipsrv_nhdplus_m.snapflowline[]
+) RETURNS JSONB
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+BEGIN
+
+   RETURN JSONB_BUILD_OBJECT(
+       'type'                ,'FeatureCollection'
+      ,'features'            ,(
+         SELECT
+         array_agg(cipsrv_nhdplus_m.snapflowline2geojson(x))
+         FROM
+         UNNEST(p_input) AS x
+      )
+   );
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
+    cipsrv_nhdplus_m.snapflowline[]
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.snapflowlines2geojson(
+    cipsrv_nhdplus_m.snapflowline[]
+) TO PUBLIC;
+--******************************--
+----- functions/split_catchment.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.split_catchment';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.split_catchment(
+    IN  p_split_point  GEOMETRY
+   ,IN  p_nhdplusid    BIGINT   DEFAULT NULL
+   ,IN  p_known_region VARCHAR  DEFAULT NULL
+) RETURNS GEOMETRY
+STABLE
+AS $BODY$
+DECLARE 
+   rec               RECORD;
+   int_nhdplusid     BIGINT       := p_nhdplusid;
+   int_original_srid INTEGER;
+   int_raster_srid   INTEGER;
+   sdo_results       GEOMETRY;
+   sdo_results2      GEOMETRY;
+   sdo_point         GEOMETRY;
+   sdo_catchment     GEOMETRY;
+   sdo_catchmentsp   GEOMETRY;
+   sdo_temp          GEOMETRY;
+   sdo_temp2         GEOMETRY;
+   sdo_top_point     GEOMETRY;
+   sdo_downstream    GEOMETRY;
+   sdo_grid_point    GEOMETRY;
+   sdo_catch_buffer  GEOMETRY;
+   int_depth         INTEGER := 1;
+   rast              RASTER;
+   rast_fac          RASTER;
+   int_column_x      INTEGER;
+   int_row_y         INTEGER;
+   
+BEGIN
+
+   --------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters and set parameters
+   --------------------------------------------------------------------------
+   IF p_split_point IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;    
+   
+   IF ST_GeometryType(p_split_point) <> 'ST_Point'
+   THEN
+      RAISE EXCEPTION 'split point geometry must be single point';
+
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 20
+   -- Determine the projection 
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry       := p_split_point
+      ,p_known_region   := p_known_region
+   );
+   int_raster_srid    := rec.out_srid;
+   
+   IF rec.out_return_code != 0
+   THEN
+      RAISE EXCEPTION '%: %',rec.out_return_code,rec.out_status_message;
+      
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 30
+   -- Project initial point
+   --------------------------------------------------------------------------
+   int_original_srid := ST_Srid(p_split_point);
+
+   IF int_original_srid <> int_raster_srid
+   THEN
+      sdo_point := ST_Transform(p_split_point,int_raster_srid);
+      
+   ELSE
+      sdo_point := p_split_point;
+
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 40
+   -- Fetch the catchment outline to clip with
+   --------------------------------------------------------------------------
+   IF int_nhdplusid IS NOT NULL
+   THEN
+      IF int_raster_srid = 5070
+      THEN
+         SELECT
+         a.shape
+         INTO 
+         sdo_catchment
+         FROM
+         cipsrv_nhdplus_m.catchment_5070 a
+         WHERE
+         a.nhdplusid = int_nhdplusid;
+         
+      ELSIF int_raster_srid = 3338
+      THEN
+         SELECT
+         a.shape
+         INTO 
+         sdo_catchment
+         FROM
+         cipsrv_nhdplus_m.catchment_3338 a
+         WHERE
+         a.nhdplusid = int_nhdplusid;
+
+      ELSIF int_raster_srid = 26904
+      THEN
+         SELECT
+         a.shape
+         INTO 
+         sdo_catchment
+         FROM
+         cipsrv_nhdplus_m.catchment_26904 a
+         WHERE
+         a.nhdplusid = int_nhdplusid;
+
+      ELSIF int_raster_srid = 32161
+      THEN
+         SELECT
+         a.shape
+         INTO 
+         sdo_catchment
+         FROM
+         cipsrv_nhdplus_m.catchment_32161 a
+         WHERE
+         a.nhdplusid = int_nhdplusid;
+
+      ELSIF int_raster_srid = 32655
+      THEN
+         SELECT
+         a.shape
+         INTO 
+         sdo_catchment
+         FROM
+         cipsrv_nhdplus_m.catchment_32655 a
+         WHERE
+         a.nhdplusid = int_nhdplusid;
+
+      ELSIF int_raster_srid = 32702
+      THEN
+         SELECT
+         a.shape
+         INTO 
+         sdo_catchment
+         FROM
+         cipsrv_nhdplus_m.catchment_32702 a
+         WHERE
+         a.nhdplusid = int_nhdplusid;
+
+      ELSE
+         RAISE EXCEPTION 'err';
+         
+      END IF;
+   
+   ELSE
+      IF int_raster_srid = 5070
+      THEN
+         SELECT
+          ST_SnapToGrid(a.shape,0.05)
+         ,a.nhdplusid
+         INTO 
+          sdo_catchment
+         ,int_nhdplusid
+         FROM
+         cipsrv_nhdplus_m.catchment_np21_acu a
+         WHERE
+         ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
+
+      ELSIF int_raster_srid = 26904
+      THEN
+         SELECT
+          ST_SnapToGrid(a.shape,0.05)
+         ,a.nhdplusid
+         INTO 
+          sdo_catchment
+         ,int_nhdplusid
+         FROM
+         cipsrv_nhdplus_m.catchment_np21_uhi a
+         WHERE
+         ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
+
+      ELSIF int_raster_srid = 32161
+      THEN
+         SELECT
+          ST_SnapToGrid(a.shape,0.05)
+         ,a.nhdplusid
+         INTO 
+          sdo_catchment
+         ,int_nhdplusid
+         FROM
+         cipsrv_nhdplus_m.catchment_np21_lpv a
+         WHERE
+         ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
+
+      ELSIF int_raster_srid = 32655
+      THEN
+         SELECT
+          ST_SnapToGrid(a.shape,0.05)
+         ,a.nhdplusid
+         INTO 
+          sdo_catchment
+         ,int_nhdplusid
+         FROM
+         cipsrv_nhdplus_m.catchment_np21_ugm a
+         WHERE
+         ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
+
+      ELSIF int_raster_srid = 32702
+      THEN
+         SELECT
+          ST_SnapToGrid(a.shape,0.05)
+         ,a.nhdplusid
+         INTO 
+          sdo_catchment
+         ,int_nhdplusid
+         FROM
+         cipsrv_nhdplus_m.catchment_np21_uas a
+         WHERE
+         ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
+
+      ELSE
+         RAISE EXCEPTION 'err';
+         
+      END IF;
+
+   END IF;
+
+   IF sdo_catchment IS NULL
+   THEN
+      RETURN NULL;
+
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
+   -- Buffer the catchment to get a slightly larger fdr raster 
+   -- This size value may need tuning
+   --------------------------------------------------------------------------
+   sdo_catch_buffer := ST_Buffer(
+       sdo_catchment
+      ,50
+   );
+   
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Fetch the catchment rasters
+   --------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.fetch_grids_by_geometry(
+       p_FDR_input        := sdo_catch_buffer
+      ,p_FAC_input        := sdo_catchment
+      ,p_known_region     := int_raster_srid::VARCHAR
+      ,p_FDR_nodata       := 255
+      ,p_FAC_nodata       := -2147483647
+      ,p_crop             := TRUE
+   );
+   rast     := rec.out_FDR;
+   rast_fac := rec.out_FAC;
+   
+   IF rast IS NULL
+   THEN
+      RAISE EXCEPTION 'No results for FDR raster';
+      
+   ELSIF rast_fac IS NULL
+   THEN
+      RAISE EXCEPTION 'No results for FAC raster';
+   
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 70
+   -- Determine what we think is the top of the flowline
+   --------------------------------------------------------------------------
+   sdo_top_point := cipsrv_nhdplus_m.top_of_flow(
+       p_nhdplusid            := int_nhdplusid
+      ,p_permanent_identifier := NULL
+      ,p_reachcode            := NULL 
+      ,p_known_region         := int_raster_srid::VARCHAR
+      ,p_2d_flag              := TRUE
+      ,p_polygon_mask         := ST_Buffer(sdo_catchment,-1)
+   );
+   --RAISE WARNING '%', st_astext(st_transform(st_collect(sdo_top_point,sdo_catchment),4269));
+
+   --------------------------------------------------------------------------
+   -- Step 80
+   -- Get the nearest cell on the flow grid
+   --------------------------------------------------------------------------   
+   rec := cipsrv_engine.deepest_cell(
+       p_input               := sdo_top_point
+      ,p_FDR                 := rast
+      ,p_FAC                 := rast_fac 
+   );
+   int_column_x := rec.out_columnX;
+   int_row_y    := rec.out_rowY;
+   
+   --------------------------------------------------------------------------
+   -- Step 90
+   -- Convert downstream path into multipoint and get closest point to input
+   --------------------------------------------------------------------------
+   sdo_downstream := cipsrv_engine.raster_raindrop(
+       p_raster       := rast
+      ,p_columnX      := int_column_x
+      ,p_rowY         := int_row_y
+   );
+   --raise warning '%', st_astext(st_transform(st_collect(sdo_catchment,st_collect(null,sdo_downstream)),4269));
+
+   --------------------------------------------------------------------------
+   -- Step 100
+   -- Convert downstream path into multipoint and get closest point to input
+   --------------------------------------------------------------------------
+   SELECT 
+   ST_Collect(geom) 
+   INTO 
+   sdo_downstream
+   FROM
+   ST_DumpPoints(sdo_downstream);
+   
+   sdo_grid_point := ST_ClosestPoint(
+       sdo_downstream
+      ,sdo_point
+   );
+   --raise warning '%', st_astext(st_transform(st_collect(sdo_catchment,st_collect(null,sdo_grid_point)),4269));
+   
+   --------------------------------------------------------------------------
+   -- Step 110
+   -- Use new grid point to split catchment
+   --------------------------------------------------------------------------
+   rec := ST_WorldToRasterCoord(
+       rast
+      ,sdo_grid_point
+   );
+   IF rec IS NULL
+   THEN
+      RAISE EXCEPTION 'point not on raster error';
+      
+   END IF;
+   
+   int_column_x := rec.columnx;
+   int_row_y    := rec.rowy;
+
+   --------------------------------------------------------------------------
+   -- Step 120
+   -- Recursively delineation the upstream cells
+   --------------------------------------------------------------------------
+   rec := nhdplus.fdr_upstream_norecursion(
+       p_column_x := int_column_x
+      ,p_row_y    := int_row_y
+      ,iout_rast  := rast
+   );
+
+   --------------------------------------------------------------------------
+   -- Step 130
+   -- Blank out all but the delineated cells (make nodata 0 for ST_Polygon)
+   --------------------------------------------------------------------------
+   rast := ST_Reclass(
+       rec.iout_rast
+      ,1
+      ,'[0-98]:0,99:99,[100-255]:0'
+      ,'8BUI'
+      ,0
+   );
+   --raise warning '%', st_astext(st_transform(ST_Polygon(rast),4269));
+   
+   --------------------------------------------------------------------------
+   -- Step 140
+   -- Build a polygon from the remaining cells with value 99
+   -- Clip the results down the original catchment size to remove padding
+   --------------------------------------------------------------------------
+   sdo_results := ST_Polygon(
+       ST_Clip(
+           rast
+          ,sdo_catchment
+          ,255
+          ,TRUE
+       )
+      ,1
+   );
+   --raise warning '%', st_astext(st_transform(ST_Collect(sdo_results,sdo_catchment),4269));
+   
+   --------------------------------------------------------------------------
+   -- Step 150
+   -- Reduce to single polygon if possible
+   --------------------------------------------------------------------------
+   IF ST_NumGeometries(sdo_results) = 1
+   THEN
+      sdo_results := ST_GeometryN(sdo_results,1);
+
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 180
+   -- Project to match input point
+   --------------------------------------------------------------------------
+   IF int_original_srid <> int_raster_srid
+   THEN
+      sdo_results := ST_Transform(
+          sdo_results
+         ,int_original_srid
+      );
+      
+   END IF;
+
+   --------------------------------------------------------------------------
+   -- Step 190
+   -- Return what we got
+   --------------------------------------------------------------------------
+   RETURN sdo_results;
+
+END;
+$BODY$ LANGUAGE 'plpgsql';
+
+ALTER FUNCTION cipsrv_nhdplus_m.split_catchment(
+    GEOMETRY
    ,BIGINT
+   ,VARCHAR
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.split_catchment(
+    GEOMETRY
+   ,BIGINT
+   ,VARCHAR
+) TO PUBLIC;
+--******************************--
+----- functions/top_of_flow.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.top_of_flow';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.top_of_flow(
+    IN  p_nhdplusid                 BIGINT
+   ,IN  p_permanent_identifier      VARCHAR
+   ,IN  p_reachcode                 VARCHAR
+   ,IN  p_known_region              VARCHAR
+   ,IN  p_2d_flag                   BOOLEAN  DEFAULT TRUE
+   ,IN  p_polygon_mask              GEOMETRY DEFAULT NULL
+) RETURNS GEOMETRY
+STABLE
+AS
+$BODY$ 
+DECLARE
+   rec                RECORD;
+   sdo_results        GEOMETRY;
+   sdo_polygon_mask   GEOMETRY := p_polygon_mask;
+   sdo_flowline       GEOMETRY;
+   sdo_temp           GEOMETRY;
+   num_highest        NUMERIC;
+   num_top_measure    NUMERIC;
+   int_raster_srid    INTEGER;
+   int_original_srid  INTEGER;
+   str_vpuid          VARCHAR(255);
+   boo_2d_flag        BOOLEAN := p_2d_flag;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF boo_2d_flag IS NULL
+   THEN
+      boo_2d_flag := TRUE;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Grab the flowline if no mask
+   ----------------------------------------------------------------------------
+   IF sdo_polygon_mask IS NULL
+   THEN
+      IF p_nhdplusid IS NOT NULL
+      THEN
+         SELECT
+          a.shape
+         ,a.tmeasure
+         ,ST_PointN(a.shape,1)
+         ,a.vpuid
+         INTO
+          sdo_flowline
+         ,num_top_measure
+         ,sdo_results
+         ,str_vpuid
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         WHERE
+         a.nhdplusid = p_nhdplusid;
+      
+      ELSIF p_permanent_identifier IS NOT NULL
+      THEN
+         SELECT
+          a.shape
+         ,a.tmeasure
+         ,ST_PointN(a.shape,1)
+         ,a.vpuid
+         INTO
+          sdo_flowline
+         ,num_top_measure
+         ,sdo_results
+         ,str_vpuid
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         WHERE
+         a.permanent_identifier = p_permanent_identifier;
+      
+      ELSIF p_reachcode IS NOT NULL
+      THEN
+         SELECT
+          a.shape
+         ,a.tmeasure
+         ,ST_PointN(a.shape,1)
+         ,a.vpuid
+         INTO
+          sdo_flowline
+         ,num_top_measure
+         ,sdo_results
+         ,str_vpuid
+         FROM
+         cipsrv_nhdplus_m.nhdflowline a
+         WHERE
+             a.reachcode = p_reachcode
+         AND a.tmeasure = 100;
+         
+      ELSE
+         RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';
+         
+      END IF;
+      
+      rec := cipsrv_nhdplus_m.determine_grid_srid(
+          p_geometry       := sdo_results
+         ,p_known_region   := p_known_region
+      );
+      int_raster_srid    := rec.out_srid;
+
+      sdo_results := ST_Transform(sdo_results,int_raster_srid);
+         
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Determine the projection if p_polygon_mask provided
+   ----------------------------------------------------------------------------
+   IF sdo_polygon_mask IS NOT NULL
+   THEN
+      int_original_srid := ST_SRID(sdo_polygon_mask);
+      
+      IF int_original_srid = 5070
+      THEN
+         int_raster_srid := 5070;
+         
+      ELSIF int_original_srid = 3338
+      THEN
+         int_raster_srid := 3338;
+         
+      ELSIF int_original_srid = 32161
+      THEN
+         int_raster_srid := 32161;
+         
+      ELSIF int_original_srid = 26904
+      THEN
+         int_raster_srid := 26904;
+         
+      ELSIF int_original_srid = 32655
+      THEN
+         int_raster_srid := 32655;
+         
+      ELSIF int_original_srid = 32702
+      THEN
+         int_raster_srid := 32702;
+         
+      ELSE
+         rec := nhdplus.determine_grid_srid(
+             p_geometry       := ST_Centroid(sdo_polygon_mask)
+            ,p_known_region   := p_known_region
+         );
+         int_raster_srid    := rec.out_srid;
+
+         IF rec.out_return_code <> 0
+         THEN
+            RAISE EXCEPTION '%: %', rec.out_return_code,rec.out_status_message;
+            
+         END IF;
+         
+         sdo_polygon_mask := ST_Transform(sdo_polygon_mask,int_raster_srid);
+         
+      END IF;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Grab flowline including polygon mask
+   ----------------------------------------------------------------------------
+   IF sdo_polygon_mask IS NOT NULL
+   THEN
+      IF p_nhdplusid IS NOT NULL
+      THEN
+         IF int_raster_srid = 5070
+         THEN 
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_5070 a
+            WHERE
+                a.nhdplusid = p_nhdplusid
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 3338
+         THEN 
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_3338 a
+            WHERE
+                a.nhdplusid = p_nhdplusid
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 26904
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_26904 a
+            WHERE
+                a.nhdplusid = p_nhdplusid
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 32161
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32161 a
+            WHERE
+                a.nhdplusid = p_nhdplusid
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 32655
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32655 a
+            WHERE
+                a.nhdplusid = p_nhdplusid
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 32702
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32702 a
+            WHERE
+                a.nhdplusid = p_nhdplusid
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSE
+             RAISE EXCEPTION 'err';
+             
+         END IF;
+         
+      ELSIF p_permanent_identifier IS NOT NULL
+      THEN
+         IF int_raster_srid = 5070
+         THEN 
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_5070 a
+            WHERE
+                a.permanent_identifier = p_permanent_identifier
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 3338
+         THEN 
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_3338 a
+            WHERE
+                a.permanent_identifier = p_permanent_identifier
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 26904
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_26904 a
+            WHERE
+                a.permanent_identifier = p_permanent_identifier
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 32161
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32161 a
+            WHERE
+                a.permanent_identifier = p_permanent_identifier
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 32655
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32655 a
+            WHERE
+                a.permanent_identifier = p_permanent_identifier
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSIF int_raster_srid = 32702
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM
+            cipsrv_nhdplus_m.nhdflowline_32702 a
+            WHERE
+                a.permanent_identifier = p_permanent_identifier
+            AND ST_Intersects(a.shape,sdo_polygon_mask);
+            
+         ELSE
+             RAISE EXCEPTION 'err';
+             
+         END IF;
+         
+      ELSIF p_reachcode IS NOT NULL
+      THEN
+         IF int_raster_srid = 5070
+         THEN 
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM (
+               SELECT
+               aa.shape
+               FROM
+               cipsrv_nhdplus_m.nhdflowline_5070 aa
+               WHERE
+                   aa.reachcode = p_reachcode
+               AND ST_Intersects(aa.shape,sdo_polygon_mask)
+               ORDER BY
+               aa.tmeasure DESC
+            ) a
+            LIMIT 1;
+            
+         ELSIF int_raster_srid = 3338
+         THEN 
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM (
+               SELECT
+               aa.shape
+               FROM
+               cipsrv_nhdplus_m.nhdflowline_3338 aa
+               WHERE
+                   aa.reachcode = p_reachcode
+               AND ST_Intersects(aa.shape,sdo_polygon_mask)
+               ORDER BY
+               aa.tmeasure DESC
+            ) a
+            LIMIT 1;
+            
+         ELSIF int_raster_srid = 26904
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM (
+               SELECT
+               aa.shape
+               FROM
+               cipsrv_nhdplus_m.nhdflowline_26904 aa
+               WHERE
+                   aa.reachcode = p_reachcode
+               AND ST_Intersects(aa.shape,sdo_polygon_mask)
+               ORDER BY
+               aa.tmeasure DESC
+            ) a
+            LIMIT 1;
+            
+         ELSIF int_raster_srid = 32161
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM (
+               SELECT
+               aa.shape
+               FROM
+               cipsrv_nhdplus_m.nhdflowline_32161 aa
+               WHERE
+                   aa.reachcode = p_reachcode
+               AND ST_Intersects(aa.shape,sdo_polygon_mask)
+               ORDER BY
+               aa.tmeasure DESC
+            ) a
+            LIMIT 1;
+            
+         ELSIF int_raster_srid = 32655
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM (
+               SELECT
+               aa.shape
+               FROM
+               cipsrv_nhdplus_m.nhdflowline_32655 aa
+               WHERE
+                   aa.reachcode = p_reachcode
+               AND ST_Intersects(aa.shape,sdo_polygon_mask)
+               ORDER BY
+               aa.tmeasure DESC
+            ) a
+            LIMIT 1;
+            
+         ELSIF int_raster_srid = 32702
+         THEN
+            SELECT
+            a.shape
+            INTO
+            sdo_flowline
+            FROM (
+               SELECT
+               aa.shape
+               FROM
+               cipsrv_nhdplus_m.nhdflowline_32702 aa
+               WHERE
+                   aa.reachcode = p_reachcode
+               AND ST_Intersects(aa.shape,sdo_polygon_mask)
+               ORDER BY
+               aa.tmeasure DESC
+            ) a
+            LIMIT 1;
+            
+         ELSE
+             RAISE EXCEPTION 'err';
+             
+         END IF;
+
+      ELSE
+         RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';
+         
+      END IF;
+      --raise warning '%', st_astext(st_transform(sdo_flowline,4269));
+
+      IF sdo_flowline IS NULL
+      THEN
+         RAISE EXCEPTION 'no flowline returned that intersects polygon mask';
+         
+      END IF;
+            
+      sdo_flowline := cipsrv_engine.lrs_intersection(
+          p_geometry1 := sdo_flowline
+         ,p_geometry2 := sdo_polygon_mask
+      );
+      
+      IF sdo_flowline IS NULL
+      THEN
+         sdo_results := NULL;
+         
+      ELSIF ST_NumGeometries(sdo_flowline) = 1
+      THEN
+         sdo_results := ST_StartPoint(ST_GeometryN(sdo_flowline,1));
+         
+      ELSE
+         num_highest := -1;
+         
+         FOR i IN 1 .. ST_NumGeometries(sdo_flowline)
+         LOOP
+            sdo_temp := ST_GeometryN(sdo_flowline,i);
+            IF ST_M(ST_StartPoint(sdo_temp)) > num_highest
+            THEN
+               num_highest := ST_M(ST_StartPoint(sdo_temp));
+               
+            END IF;
+            
+         END LOOP;
+         
+         FOR i IN 1 .. ST_NumGeometries(sdo_flowline)
+         LOOP
+            sdo_temp := ST_GeometryN(sdo_flowline,i);
+            IF ST_M(ST_StartPoint(sdo_temp)) = num_highest
+            THEN
+               sdo_results := ST_StartPoint(sdo_temp);
+               EXIT;
+               
+            END IF;
+         
+         END LOOP;
+         
+      END IF;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Bail if nothing found
+   ----------------------------------------------------------------------------
+   IF sdo_results IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 60
+   -- Swap back cs if needed
+   ----------------------------------------------------------------------------
+   IF int_original_srid <> int_raster_srid
+   THEN
+      sdo_results := ST_Transform(sdo_results,int_original_srid);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Return what we got
+   ----------------------------------------------------------------------------
+   IF boo_2d_flag
+   THEN
+      RETURN ST_Force2D(sdo_results);
+      
+   ELSE
+      RETURN sdo_results;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_nhdplus_m.top_of_flow(
+    BIGINT
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,BOOLEAN
+   ,GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.top_of_flow(
+    BIGINT
+   ,VARCHAR
+   ,VARCHAR
+   ,VARCHAR
+   ,BOOLEAN
+   ,GEOMETRY
 ) TO PUBLIC;
