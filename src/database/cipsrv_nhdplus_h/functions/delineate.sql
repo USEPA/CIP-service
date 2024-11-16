@@ -681,7 +681,7 @@ BEGIN
       ,a.areasqkm
       ,a.shape
       FROM
-      cipsrv_nhdpluswshed_m.catchment_watershed a
+      cipsrv_nhdpluswshd_h.catchment_watershed a
       WHERE
       a.nhdplusid = int_catchment_nhdplusid;
 

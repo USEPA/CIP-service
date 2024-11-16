@@ -12,4 +12,5 @@ CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA tap;
 ALTER DATABASE cipsrv SET search_path TO public,tap;
 CREATE EXTENSION IF NOT EXISTS plprofiler;
 
-GRANT ALL ON TABLE public.spatial_ref_sys TO cipsrv,cipsrv_user,cipsrv_upload;
+GRANT ALL ON TABLE public.spatial_ref_sys TO cipsrv,cipsrv_user,cipsrv_upload,cipsrv_gis;
+GRANT ALL ON SCHEMA topology TO cipsrv;

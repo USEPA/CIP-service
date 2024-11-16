@@ -96,7 +96,7 @@
             ,"functions/snapflowline2geojson.sql"
             ,"functions/snapflowlines2geojson.sql"
             ,"functions/split_catchment.sql"
-            ,"functions/topo_of_flow.sql"
+            ,"functions/top_of_flow.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
