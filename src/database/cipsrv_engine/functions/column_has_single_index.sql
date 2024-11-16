@@ -7,7 +7,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.column_has_single_index(
+CREATE OR REPLACE FUNCTION cipsrv_engine.column_has_single_index(
     IN  p_schema_name  VARCHAR
    ,IN  p_table_name   VARCHAR
    ,IN  p_column_name  VARCHAR
@@ -65,7 +65,8 @@ BEGIN
    RETURN COALESCE(boo_results,FALSE);
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.column_has_single_index(
     VARCHAR

@@ -7,7 +7,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.field_exists(
+CREATE OR REPLACE FUNCTION cipsrv_engine.field_exists(
     IN  p_schema_name VARCHAR
    ,IN  p_table_name  VARCHAR
    ,IN  p_field_name  VARCHAR
@@ -70,7 +70,8 @@ BEGIN
    END IF;
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.field_exists(
     VARCHAR

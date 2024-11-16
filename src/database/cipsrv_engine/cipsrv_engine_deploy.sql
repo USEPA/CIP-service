@@ -937,7 +937,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.column_has_single_index(
+CREATE OR REPLACE FUNCTION cipsrv_engine.column_has_single_index(
     IN  p_schema_name  VARCHAR
    ,IN  p_table_name   VARCHAR
    ,IN  p_column_name  VARCHAR
@@ -995,7 +995,8 @@ BEGIN
    RETURN COALESCE(boo_results,FALSE);
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.column_has_single_index(
     VARCHAR
@@ -2751,7 +2752,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.field_exists(
+CREATE OR REPLACE FUNCTION cipsrv_engine.field_exists(
     IN  p_schema_name VARCHAR
    ,IN  p_table_name  VARCHAR
    ,IN  p_field_name  VARCHAR
@@ -2814,7 +2815,8 @@ BEGIN
    END IF;
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.field_exists(
     VARCHAR
@@ -2840,7 +2842,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.index_exists(
+CREATE OR REPLACE FUNCTION cipsrv_engine.index_exists(
     IN  p_schema_name VARCHAR
    ,IN  p_table_name  VARCHAR
    ,IN  p_index_name  VARCHAR
@@ -2880,7 +2882,8 @@ BEGIN
    END IF;
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.index_exists(
     VARCHAR
@@ -4809,7 +4812,7 @@ BEGIN
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE or REPLACE FUNCTION cipsrv_engine.table_exists(
+CREATE OR REPLACE FUNCTION cipsrv_engine.table_exists(
     IN  p_schema_name VARCHAR
    ,IN  p_table_name  VARCHAR
 ) RETURNS BOOLEAN 
@@ -4852,7 +4855,8 @@ BEGIN
    END IF;
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.table_exists(
     VARCHAR
@@ -4867,7 +4871,16 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.table_exists(
 --******************************--
 ----- functions/temp_table_exists.sql 
 
-CREATE or REPLACE FUNCTION cipsrv_engine.temp_table_exists(
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.temp_table_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.temp_table_exists(
    IN p_table_name VARCHAR
 ) RETURNS BOOLEAN 
 STABLE
@@ -4909,7 +4922,8 @@ BEGIN
    END IF;
 
 END;
-$BODY$ LANGUAGE plpgsql;
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_engine.temp_table_exists(
    VARCHAR

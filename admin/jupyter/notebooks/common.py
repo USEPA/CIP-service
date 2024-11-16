@@ -52,7 +52,7 @@ def load_sqlfile(conn,sqlfile,echo=False):
       ,'^ALTER .*'
       ,'^GRANT .*'
       ,'^DROP .*'
-      ,'^DO $$.*'
+      ,r'^DO \$\$.*'
       ,'^ANALYZE .*'
    ];
    splitmatch = "(" + ")|(".join(splitters) + ")";
