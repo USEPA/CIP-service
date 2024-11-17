@@ -110,18 +110,23 @@
                <input name="pSearchMaxDistanceKm" type="text" class="text" id="pSearchMaxDistanceKm" style="display:inline; width:30px" value="15" />&nbsp;km
                <br/>
                <br/>
+               <span style="font-family: Arial; font-size: 12px;">Aggregation Engine: </span>
+               &nbsp;
                <select name="p_aggregation_engine" id="p_aggregation_engine" style="margin-top: 6px;">
-                 <option value="TOPO" SELECTED>Topology</option>
-                 <option value="SPATIAL">Spatial</option>
+                 <option value="TOPO">Topology</option>
+                 <option value="SPATIAL" SELECTED>Spatial</option>
                  <option value="NONE">No Aggregation</option>
                </select>
-               &nbsp;&nbsp;Split Inital Catchment:&nbsp;<input name="p_split_initial_catchment" id="p_split_initial_catchment" type="checkbox" CHECKED>
-               &nbsp;&nbsp;Fill Basin Holes:&nbsp;<input name="p_fill_basin_holes" id="p_fill_basin_holes" type="checkbox" CHECKED>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Split Inital Catchment:</span>
+               <input name="p_split_initial_catchment" id="p_split_initial_catchment" type="checkbox" CHECKED>
+               &nbsp;&nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Fill Basin Holes:</span>
+               <input name="p_fill_basin_holes" id="p_fill_basin_holes" type="checkbox" CHECKED>
                <br/>
                <br/>
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
-               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
-          
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
             </div>
          </div>
       </div>
@@ -335,8 +340,8 @@
             
             ,"max_distancekm"              : document.getElementById("pSearchMaxDistanceKm").value
             ,"aggregation_engine"          : get_select_values(document.getElementById("p_aggregation_engine"))
-            ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").value
-            ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").value
+            ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").checked
+            ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").checked
             ,"force_no_cache"              : true
             ,"return_delineation_geometry" : true
             ,"return_flowlines"            : false
@@ -535,8 +540,8 @@
             
             ,"max_distancekm"              : document.getElementById("pSearchMaxDistanceKm").value
             ,"aggregation_engine"          : get_select_values(document.getElementById("p_aggregation_engine"))
-            ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").value
-            ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").value
+            ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").checked
+            ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").checked
             ,"force_no_cache"              : true
             ,"return_delineation_geometry" : true
             ,"return_flowlines"            : false
@@ -602,8 +607,8 @@
          
          ,"max_distancekm"              : document.getElementById("pSearchMaxDistanceKm").value
          ,"aggregation_engine"          : get_select_values(document.getElementById("p_aggregation_engine"))
-         ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").value
-         ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").value
+         ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").checked
+         ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").checked
          ,"force_no_cache"              : true
          ,"return_delineation_geometry" : true
          ,"return_flowlines"            : false

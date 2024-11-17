@@ -331,7 +331,7 @@ BEGIN
       out_stop_measure               := rec.out_stop_measure;
       
    END IF;
-   raise warning '%',out_grid_srid;
+
    ----------------------------------------------------------------------------
    -- Step 60
    -- Examine the navigation results
@@ -693,14 +693,12 @@ BEGIN
       INSERT INTO tmp_catchments(
           nhdplusid
          ,sourcefc
-         ,gridcode
          ,areasqkm
          ,shape
       )
       SELECT
        -9999999
       ,'AGGR'
-      ,-9999
       ,a.areasqkm
       ,a.shape
       FROM
@@ -816,13 +814,11 @@ BEGIN
          INSERT INTO tmp_catchments(
              nhdplusid
             ,sourcefc
-            ,gridcode
             ,areasqkm
             ,shape
          ) VALUES (
              -9999999
             ,'AGGR'
-            ,-9999
             ,num_area
             ,sdo_output
          );
