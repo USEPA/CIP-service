@@ -1,5 +1,16 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.point_at_measure';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.point_at_measure(
-    IN  p_nhdplusid               INTEGER
+    IN  p_nhdplusid               BIGINT
    ,IN  p_permanent_identifier    VARCHAR
    ,IN  p_reachcode               VARCHAR 
    ,IN  p_measure                 NUMERIC
@@ -205,7 +216,7 @@ $BODY$
 LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_nhdplus_h.point_at_measure(
-    INTEGER
+    BIGINT
    ,VARCHAR
    ,VARCHAR
    ,NUMERIC
@@ -213,7 +224,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.point_at_measure(
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.point_at_measure(
-    INTEGER
+    BIGINT
    ,VARCHAR
    ,VARCHAR
    ,NUMERIC

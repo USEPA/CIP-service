@@ -1203,10 +1203,8 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_catchments(
           nhdplusid                   BIGINT
-         ,sourcefc                    VARCHAR(40)
-         ,gridcode                    INTEGER
+         ,sourcefc                    VARCHAR
          ,areasqkm                    NUMERIC
-         ,vpuid                       VARCHAR(16)
          ,hydroseq                    BIGINT
          ,shape                       GEOMETRY
          ,shape_3338                  GEOMETRY
@@ -1896,6 +1894,303 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.determine_grid_srid(
    ,VARCHAR
    ,VARCHAR
 ) TO PUBLIC;
+
+--******************************--
+----- functions/edges2rings.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.edges2rings';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.edges2rings()
+RETURNS BOOLEAN
+VOLATILE
+AS $BODY$ 
+DECLARE
+   int_edge_id        INTEGER;
+   ary_edge_id        INTEGER[];
+   ary_interior_side  VARCHAR(1)[];
+   ary_start_node_id  INTEGER[];
+   ary_end_node_id    INTEGER[];
+   ary_shape          GEOMETRY[];
+   int_touch_count    INTEGER;
+   
+   str_snake_interior VARCHAR(1);
+   int_snake_start_id INTEGER;
+   int_snake_end_id   INTEGER;
+   sdo_snake_shape    GEOMETRY;
+   ary_snake_body     INTEGER[];
+   
+   boo_forwards       BOOLEAN;
+   boo_backwards      BOOLEAN;
+   boo_ccw            BOOLEAN;
+   str_ring_type      VARCHAR(1);
+   int_sanity         INTEGER;
+   
+BEGIN
+
+   -----------------------------------------------------------------------------
+   -- Step 10
+   -- Pick out a random edge
+   -----------------------------------------------------------------------------
+   SELECT
+    a.edge_id
+   ,a.interior_side
+   ,a.start_node_id
+   ,a.end_node_id
+   ,a.shape
+   ,a.touch_count
+   INTO
+    int_edge_id
+   ,str_snake_interior
+   ,int_snake_start_id
+   ,int_snake_end_id
+   ,sdo_snake_shape
+   ,int_touch_count
+   FROM
+   tmp_delineation_edges a
+   ORDER BY
+   a.touch_count ASC
+   LIMIT 1;
+      
+   IF int_edge_id IS NULL
+   THEN  
+      RETURN FALSE;
+      
+   END IF;
+
+   ary_snake_body := ARRAY[int_edge_id];
+   
+   -----------------------------------------------------------------------------
+   -- Step 20
+   -- Grow the search snake
+   -----------------------------------------------------------------------------
+   boo_forwards  := TRUE;
+   boo_backwards := TRUE;
+   
+   WHILE boo_forwards AND boo_backwards
+   LOOP
+      SELECT
+       array_agg(a.edge_id)
+      ,array_agg(a.interior_side)
+      ,array_agg(a.start_node_id)
+      ,array_agg(a.end_node_id)
+      ,array_agg(a.shape)
+      INTO
+       ary_edge_id
+      ,ary_interior_side
+      ,ary_start_node_id
+      ,ary_end_node_id
+      ,ary_shape
+      FROM (
+         SELECT
+          aa.edge_id
+         ,CASE
+          WHEN int_snake_end_id = aa.start_node_id
+          THEN
+            aa.interior_side
+          ELSE
+            CASE
+            WHEN aa.interior_side = 'R'
+            THEN
+              'L'::VARCHAR(1)
+            ELSE
+              'R'::VARCHAR(1)
+            END
+          END AS interior_side
+         ,CASE
+          WHEN int_snake_end_id = aa.start_node_id
+          THEN
+            aa.start_node_id
+          ELSE
+            aa.end_node_id
+          END AS start_node_id
+         ,CASE
+          WHEN int_snake_end_id = aa.start_node_id
+          THEN
+            aa.end_node_id
+          ELSE
+            aa.start_node_id
+          END AS end_node_id
+         ,CASE
+          WHEN int_snake_end_id = aa.start_node_id
+          THEN
+            aa.shape
+          ELSE
+            ST_Reverse(aa.shape)
+          END AS shape
+         FROM
+         tmp_delineation_edges aa
+         WHERE (
+               ( int_snake_end_id = aa.start_node_id AND aa.interior_side  = str_snake_interior )
+            OR ( int_snake_end_id = aa.end_node_id   AND aa.interior_side <> str_snake_interior )
+         ) 
+         AND aa.edge_id <> ALL(ary_snake_body)            
+      ) a;
+      
+      IF array_length(ary_edge_id,1) = 1
+      THEN
+         int_snake_end_id := ary_end_node_id[1];
+         sdo_snake_shape  := ST_MakeLine(sdo_snake_shape,ary_shape[1]);
+         ary_snake_body   := array_append(ary_snake_body,ary_edge_id[1]);
+
+      ELSE
+         boo_forwards := FALSE;
+      
+      END IF;
+      
+      SELECT
+       array_agg(a.edge_id)
+      ,array_agg(a.interior_side)
+      ,array_agg(a.start_node_id)
+      ,array_agg(a.end_node_id)
+      ,array_agg(a.shape)
+      INTO
+       ary_edge_id
+      ,ary_interior_side
+      ,ary_start_node_id
+      ,ary_end_node_id
+      ,ary_shape
+      FROM (
+         SELECT
+          aa.edge_id
+         ,CASE
+          WHEN int_snake_start_id = aa.end_node_id
+          THEN
+            aa.interior_side
+          ELSE
+            CASE
+            WHEN aa.interior_side = 'R'
+            THEN
+              'L'::VARCHAR(1)
+            ELSE
+              'R'::VARCHAR(1)
+            END
+          END AS interior_side
+         ,CASE
+          WHEN int_snake_start_id = aa.end_node_id
+          THEN
+            aa.start_node_id
+          ELSE
+            aa.end_node_id
+          END AS start_node_id
+         ,CASE
+          WHEN int_snake_start_id = aa.end_node_id
+          THEN
+            aa.end_node_id
+          ELSE
+            aa.start_node_id
+          END AS end_node_id
+         ,CASE
+          WHEN int_snake_start_id = aa.end_node_id
+          THEN
+            aa.shape
+          ELSE
+            ST_Reverse(aa.shape)
+          END AS shape
+         FROM
+         tmp_delineation_edges aa
+         WHERE (
+               ( int_snake_start_id = aa.end_node_id   AND aa.interior_side  = str_snake_interior )
+            OR ( int_snake_start_id = aa.start_node_id AND aa.interior_side <> str_snake_interior )
+         ) 
+         AND aa.edge_id <> ALL(ary_snake_body)            
+      ) a;
+      
+      IF array_length(ary_edge_id,1) = 1
+      THEN
+         int_snake_start_id := ary_start_node_id[1];
+         sdo_snake_shape    := ST_MakeLine(ary_shape[1],sdo_snake_shape);
+         ary_snake_body     := array_append(ary_snake_body,ary_edge_id[1]);
+
+      ELSE
+         boo_backwards := FALSE;
+      
+      END IF;
+      
+      int_sanity := int_sanity + 1;
+      
+      IF int_sanity > 50000
+      THEN
+         RAISE EXCEPTION 'sanity check';
+      
+      END IF;
+      
+   END LOOP;
+   
+   -----------------------------------------------------------------------------
+   -- Test for completed ring
+   -----------------------------------------------------------------------------
+   IF int_snake_start_id = int_snake_end_id
+   THEN
+      boo_ccw := ST_IsPolygonCCW(ST_MakePolygon(sdo_snake_shape));
+      
+      IF boo_ccw AND str_snake_interior = 'L'
+      OR NOT boo_ccw AND str_snake_interior = 'R'
+      THEN
+         str_ring_type := 'E';
+         
+      ELSE
+         str_ring_type := 'I';
+         
+      END IF;
+      
+      INSERT INTO tmp_delineation_rings(
+          ring_id
+         ,ring_type
+         ,shape
+      ) VALUES (
+          int_edge_id
+         ,str_ring_type
+         ,sdo_snake_shape
+      );
+      
+      DELETE FROM tmp_delineation_edges
+      WHERE edge_id = ANY(ary_snake_body);
+   
+   -----------------------------------------------------------------------------
+   -- Scrunch the edges
+   -----------------------------------------------------------------------------
+   ELSE
+      DELETE FROM tmp_delineation_edges
+      WHERE edge_id = ANY(ary_snake_body);
+      
+      INSERT INTO tmp_delineation_edges(
+          edge_id
+         ,interior_side
+         ,start_node_id
+         ,end_node_id
+         ,shape 
+         ,touch_count
+      ) VALUES (
+          int_edge_id
+         ,str_snake_interior
+         ,int_snake_start_id
+         ,int_snake_end_id
+         ,sdo_snake_shape
+         ,int_touch_count + 1
+      );
+   
+   END IF;
+   
+   RETURN TRUE;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.edges2rings
+OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.edges2rings
+TO PUBLIC;
 
 --******************************--
 ----- functions/fdr_upstream_norecursion.sql 
@@ -2896,6 +3191,61 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.index_exists(
    ,VARCHAR
    ,VARCHAR
 ) TO PUBLIC;
+
+--******************************--
+----- functions/is_lrs.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.is_lrs';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.is_lrs(
+    IN  p_geometry          GEOMETRY
+) RETURNS BOOLEAN
+AS
+$BODY$
+DECLARE
+BEGIN
+
+   IF ST_M(
+      ST_PointN(
+          ST_GeometryN(p_geometry,1)
+         ,1
+      )
+   ) IS NULL
+   OR ST_M(
+      ST_PointN(
+          ST_GeometryN(p_geometry,1)
+         ,ST_NumPoints(ST_GeometryN(p_geometry,1))
+      )
+   ) IS NULL
+   THEN
+      RETURN FALSE;
+
+   ELSE
+      RETURN TRUE;
+
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.is_lrs(
+   GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.is_lrs(
+   GEOMETRY
+) TO PUBLIC;
+
 
 --******************************--
 ----- functions/json2geometry.sql 
@@ -3917,7 +4267,7 @@ BEGIN
       
       IF ST_GeometryType(sdo_initial) = 'ST_LineString'
       THEN
-         sdo_initial := dz_lrs.overlay_measures(
+         sdo_initial := cipsrv_engine.overlay_measures(
              p_geometry1 := sdo_initial
             ,p_geometry2 := p_geometry1
          );
@@ -3927,7 +4277,7 @@ BEGIN
             sdo_newinter := sdo_initial;
             
          ELSE
-            sdo_newinter := dz_lrs.safe_concatenate_geom_segments(
+            sdo_newinter := cipsrv_engine.safe_concatenate_geom_segments(
                 sdo_newinter
                ,sdo_initial
             );
@@ -4721,6 +5071,105 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.raster_raindrop(
 ) TO PUBLIC;
 
 --******************************--
+----- functions/remove_holes.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.remove_holes';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.remove_holes(
+    IN  p_input         GEOMETRY 
+) RETURNS GEOMETRY
+IMMUTABLE
+AS
+$BODY$ 
+DECLARE
+   sdo_results   GEOMETRY;
+   ary_testing   GEOMETRY[];
+   ary_clean     GEOMETRY[];
+   int_counter   INTEGER;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF GeometryType(p_input) NOT IN ('POLYGON','MULTIPOLYGON')
+   OR ST_NRings(p_input) = 1
+   THEN
+      RETURN p_input;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Grab all exterior rings as array
+   ----------------------------------------------------------------------------
+   SELECT
+   array_agg(a.shape)
+   INTO
+   ary_testing
+   FROM (
+      SELECT
+      ST_MakePolygon(aa.shape) AS shape
+      FROM (
+         SELECT
+         ST_ExteriorRing(aaa.geom) AS shape
+         FROM
+         ST_Dump(p_input) aaa
+      ) aa
+   ) a;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Flush away any interior islands
+   ----------------------------------------------------------------------------
+   IF array_length(ary_testing,1) = 1
+   THEN
+      RETURN ary_testing[1];
+      
+   ELSE
+      ary_clean[1] := ary_testing[1];
+      
+      int_counter := 2;
+      FOR i IN 2 .. array_length(ary_testing,1)
+      LOOP
+         IF NOT ST_Within(ary_testing[i],ary_clean[1])
+         THEN
+            ary_clean[int_counter] := ary_testing[i];
+            int_counter := int_counter + 1;
+         
+         END IF;
+      
+      END LOOP;
+   
+      sdo_results := ST_Collect(ary_clean);
+      
+      RETURN sdo_results;
+   
+   END IF;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.remove_holes(
+   GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.remove_holes(
+   GEOMETRY
+) TO PUBLIC;
+
+--******************************--
 ----- functions/reverse_linestring.sql 
 
 DO $$DECLARE 
@@ -4800,6 +5249,232 @@ ALTER FUNCTION cipsrv_engine.reverse_linestring(
 GRANT EXECUTE ON FUNCTION cipsrv_engine.reverse_linestring(
     GEOMETRY
 ) TO PUBLIC;
+--******************************--
+----- functions/safe_concatenate_geom_segments.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.safe_concatenate_geom_segments';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_engine.safe_concatenate_geom_segments(
+    IN  p_geometry1           GEOMETRY
+   ,IN  p_geometry2           GEOMETRY
+) RETURNS GEOMETRY 
+AS
+$BODY$ 
+DECLARE
+   sdo_array_in      GEOMETRY[];
+   sdo_array_in2     GEOMETRY[];
+   sdo_concatenate   GEOMETRY;
+   sdo_output        GEOMETRY;
+   num_remove1       NUMERIC;
+   num_remove2       NUMERIC;
+   int_counter       INTEGER;
+   int_sanity        INTEGER := 0;
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_geometry1 IS NULL
+   THEN
+      RETURN NULL;
+      
+   END IF;
+   
+   IF p_geometry2 IS NULL
+   THEN
+      RETURN p_geometry1;
+      
+   END IF;
+
+   IF ST_GeometryType(p_geometry1) NOT IN ('ST_LineString','ST_MultiLineString')
+   OR NOT cipsrv_engine.is_lrs(p_geometry := p_geometry1)
+   THEN
+      RAISE EXCEPTION 'geometry 1 must be LRS linestring';
+      
+   END IF;
+   
+   IF ST_GeometryType(p_geometry2) NOT IN ('ST_LineString','ST_MultiLineString')
+   OR NOT cipsrv_engine.is_lrs(p_geometry := p_geometry2)
+   THEN
+      RAISE EXCEPTION 'geometry 2 must be LRS linestring';
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Do the easiest solution of two single linestrings
+   ----------------------------------------------------------------------------
+   IF  ST_GeometryType(p_geometry1) = 'ST_LineString'
+   AND ST_GeometryType(p_geometry2) = 'ST_LineString'
+   THEN
+      IF ST_M(ST_EndPoint(p_geometry1)) = ST_M(ST_StartPoint(p_geometry2))
+      THEN
+         RETURN ST_MakeLine(
+             p_geometry1
+            ,p_geometry2
+         );
+         
+      ELSIF ST_M(ST_EndPoint(p_geometry2)) = ST_M(ST_StartPoint(p_geometry1))
+      THEN
+         RETURN ST_MakeLine(
+             p_geometry2
+            ,p_geometry1
+         );
+         
+      ELSE
+         RETURN ST_Collect(
+             p_geometry2
+            ,p_geometry1
+         );
+      
+      END IF;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Create an array of all the linestrings in both geometries
+   ----------------------------------------------------------------------------
+   SELECT
+   array_agg(a.geom)
+   INTO
+   sdo_array_in
+   FROM (
+      SELECT (ST_Dump(
+         ST_Collect(p_geometry1,p_geometry2)
+      )).*
+   ) a;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
+   -- Set an anchor point for processing
+   ----------------------------------------------------------------------------
+   <<start_over>>
+   LOOP
+      num_remove1   := NULL;
+      num_remove2   := NULL;
+      sdo_array_in2 := NULL;
+      
+   ----------------------------------------------------------------------------
+   -- Step 50
+   -- Loop over all the linestrings and search for match
+   ----------------------------------------------------------------------------
+      <<outer_loop>>
+      FOR i IN 1 .. array_length(sdo_array_in, 1)
+      LOOP
+         FOR j IN 1 .. array_length(sdo_array_in, 1)
+         LOOP
+            IF i <> j
+            AND ST_M(ST_EndPoint(sdo_array_in[i])) = ST_M(ST_StartPoint(sdo_array_in[j]))
+            THEN
+               sdo_concatenate := ST_MakeLine(
+                   sdo_array_in[i]
+                  ,sdo_array_in[j]
+               );
+               
+               IF ST_GeometryType(sdo_concatenate) = 'ST_LineString'
+               THEN
+                  num_remove1 := i;
+                  num_remove2 := j;
+                  EXIT outer_loop;
+                  
+               END IF;
+               
+            END IF;
+            
+         END LOOP;
+         
+      END LOOP outer_loop;
+
+   --------------------------------------------------------------------------
+   -- Step 60
+   -- Bail if there are no matches in the mess
+   --------------------------------------------------------------------------
+      IF num_remove1 IS NULL
+      THEN
+         sdo_output := ST_Collect(sdo_array_in);
+         
+         IF ST_NumGeometries(sdo_output) = 1
+         THEN
+            RETURN ST_GeometryN(sdo_output,1);
+         
+         ELSE
+            RETURN sdo_output;
+         
+         END IF;
+         
+      END IF;
+  
+   --------------------------------------------------------------------------
+   -- Step 70
+   -- Add match to start of array and remove parts from array
+   --------------------------------------------------------------------------
+      int_counter := 1;
+      sdo_array_in2[int_counter] := sdo_concatenate;
+      int_counter := int_counter + 1;
+      
+      FOR i IN 1 .. array_length(sdo_array_in,1)
+      LOOP
+         IF  i <> num_remove1
+         AND i <> num_remove2
+         THEN
+            sdo_array_in2[int_counter] := sdo_array_in[i];
+            int_counter := int_counter + 1;
+            
+         END IF;
+         
+      END LOOP;
+      
+      sdo_array_in := sdo_array_in2;
+   
+   --------------------------------------------------------------------------
+   -- Step 80
+   -- Check that loop is not stuck
+   --------------------------------------------------------------------------
+      IF int_sanity > array_length(sdo_array_in,1) * array_length(sdo_array_in,1)
+      THEN
+         sdo_output := ST_Collect(sdo_array_in);
+         
+         IF ST_NumGeometries(sdo_output) = 1
+         THEN
+            RETURN ST_GeometryN(sdo_output,1);
+         
+         ELSE
+            RETURN sdo_output;
+         
+         END IF;
+         
+      END IF;
+   
+      int_sanity := int_sanity + 1;
+      
+   END LOOP start_over; 
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+ALTER FUNCTION cipsrv_engine.safe_concatenate_geom_segments(
+    GEOMETRY
+   ,GEOMETRY
+) OWNER TO cipsrv;
+
+GRANT EXECUTE ON FUNCTION cipsrv_engine.safe_concatenate_geom_segments(
+    GEOMETRY
+   ,GEOMETRY
+) TO PUBLIC;
+
 --******************************--
 ----- functions/table_exists.sql 
 

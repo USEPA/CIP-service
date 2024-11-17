@@ -123,16 +123,14 @@ BEGIN
    
    sdo_output := ST_Transform(sdo_output,4269);
    
-   INSERT INTO nhdplus_delineation.tmp_catchments(
+   INSERT INTO tmp_catchments(
        nhdplusid
       ,sourcefc
-      ,gridcode
       ,areasqkm
       ,shape
    ) VALUES (
        -9999999
       ,'AGGR'
-      ,-9999
       ,num_areasqkm
       ,sdo_output
    );

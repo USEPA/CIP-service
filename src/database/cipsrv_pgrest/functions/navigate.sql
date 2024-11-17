@@ -44,6 +44,7 @@ DECLARE
    str_status_message                VARCHAR;
    
    json_flowlines                    JSONB;
+   str_known_region                  VARCHAR;
    
 BEGIN
    
@@ -191,6 +192,14 @@ BEGIN
       
    END IF;
    
+   IF JSONB_PATH_EXISTS(json_input,'$.known_region')
+   AND json_input->>'known_region' IS NOT NULL
+   AND json_input->>'known_region' != ''
+   THEN
+      str_known_region := json_input->>'known_region';
+      
+   END IF;
+   
    ----------------------------------------------------------------------------
    -- Step 20
    -- Call the indexing engine
@@ -198,21 +207,22 @@ BEGIN
    IF str_nhdplus_version = 'nhdplus_m'
    THEN
       rec := cipsrv_nhdplus_m.navigate(
-          p_search_type                := str_search_type
-         ,p_start_nhdplusid            := int_start_nhdplusid
-         ,p_start_permanent_identifier := str_start_permanent_identifier
-         ,p_start_reachcode            := str_start_reachcode
-         ,p_start_hydroseq             := int_start_hydroseq
-         ,p_start_measure              := num_start_measure
-         ,p_stop_nhdplusid             := int_stop_nhdplusid
-         ,p_stop_permanent_identifier  := str_stop_permanent_identifier
-         ,p_stop_reachcode             := str_stop_reachcode
-         ,p_stop_hydroseq              := int_stop_hydroseq
-         ,p_stop_measure               := num_stop_measure
-         ,p_max_distancekm             := num_max_distancekm
-         ,p_max_flowtimeday            := num_max_flowtimeday
-         ,p_return_flowline_details    := boo_return_flowline_details
-         ,p_return_flowline_geometry   := boo_return_flowline_geometry
+          p_search_type                 := str_search_type
+         ,p_start_nhdplusid             := int_start_nhdplusid
+         ,p_start_permanent_identifier  := str_start_permanent_identifier
+         ,p_start_reachcode             := str_start_reachcode
+         ,p_start_hydroseq              := int_start_hydroseq
+         ,p_start_measure               := num_start_measure
+         ,p_stop_nhdplusid              := int_stop_nhdplusid
+         ,p_stop_permanent_identifier   := str_stop_permanent_identifier
+         ,p_stop_reachcode              := str_stop_reachcode
+         ,p_stop_hydroseq               := int_stop_hydroseq
+         ,p_stop_measure                := num_stop_measure
+         ,p_max_distancekm              := num_max_distancekm
+         ,p_max_flowtimeday             := num_max_flowtimeday
+         ,p_return_flowline_details     := boo_return_flowline_details
+         ,p_return_flowline_geometry    := boo_return_flowline_geometry
+         ,p_known_region                := str_known_region
       );
       int_start_nhdplusid := rec.out_start_nhdplusid;
       str_start_permanent_identifier := rec.out_start_permanent_identifier;
@@ -227,21 +237,22 @@ BEGIN
    ELSIF str_nhdplus_version = 'nhdplus_h'
    THEN
       rec := cipsrv_nhdplus_h.navigate(
-          p_search_type                := str_search_type
-         ,p_start_nhdplusid            := int_start_nhdplusid
-         ,p_start_permanent_identifier := str_start_permanent_identifier
-         ,p_start_reachcode            := str_start_reachcode
-         ,p_start_hydroseq             := int_start_hydroseq
-         ,p_start_measure              := num_start_measure
-         ,p_stop_nhdplusid             := int_stop_nhdplusid
-         ,p_stop_permanent_identifier  := str_stop_permanent_identifier
-         ,p_stop_reachcode             := str_stop_reachcode
-         ,p_stop_hydroseq              := int_stop_hydroseq
-         ,p_stop_measure               := num_stop_measure
-         ,p_max_distancekm             := num_max_distancekm
-         ,p_max_flowtimeday            := num_max_flowtimeday
-         ,p_return_flowline_details    := boo_return_flowline_details
-         ,p_return_flowline_geometry   := boo_return_flowline_geometry
+          p_search_type                 := str_search_type
+         ,p_start_nhdplusid             := int_start_nhdplusid
+         ,p_start_permanent_identifier  := str_start_permanent_identifier
+         ,p_start_reachcode             := str_start_reachcode
+         ,p_start_hydroseq              := int_start_hydroseq
+         ,p_start_measure               := num_start_measure
+         ,p_stop_nhdplusid              := int_stop_nhdplusid
+         ,p_stop_permanent_identifier   := str_stop_permanent_identifier
+         ,p_stop_reachcode              := str_stop_reachcode
+         ,p_stop_hydroseq               := int_stop_hydroseq
+         ,p_stop_measure                := num_stop_measure
+         ,p_max_distancekm              := num_max_distancekm
+         ,p_max_flowtimeday             := num_max_flowtimeday
+         ,p_return_flowline_details     := boo_return_flowline_details
+         ,p_return_flowline_geometry    := boo_return_flowline_geometry
+         ,p_known_region                := str_known_region
       );
       int_start_nhdplusid := rec.out_start_nhdplusid;
       str_start_permanent_identifier := rec.out_start_permanent_identifier;

@@ -85,7 +85,7 @@ BEGIN
       
       IF ST_GeometryType(sdo_initial) = 'ST_LineString'
       THEN
-         sdo_initial := dz_lrs.overlay_measures(
+         sdo_initial := cipsrv_engine.overlay_measures(
              p_geometry1 := sdo_initial
             ,p_geometry2 := p_geometry1
          );
@@ -95,7 +95,7 @@ BEGIN
             sdo_newinter := sdo_initial;
             
          ELSE
-            sdo_newinter := dz_lrs.safe_concatenate_geom_segments(
+            sdo_newinter := cipsrv_engine.safe_concatenate_geom_segments(
                 sdo_newinter
                ,sdo_initial
             );

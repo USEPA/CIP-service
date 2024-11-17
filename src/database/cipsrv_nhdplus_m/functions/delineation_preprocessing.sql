@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.delineation_preprocessing(
     IN  p_aggregation_flag            BOOLEAN
-   ,IN  p_known_grid                  INTEGER
+   ,IN  p_srid                        INTEGER
    ,IN  p_return_delineation_geometry BOOLEAN
    ,IN  p_return_topology_results     BOOLEAN
    ,IN  p_extra_catchments            BIGINT[]
@@ -40,17 +40,13 @@ BEGIN
          ,sourcefc
          ,gridcode
          ,areasqkm
-         ,vpuid
          ,hydroseq
          ,shape
       )
       SELECT
        b.nhdplusid
-      ,b.sourcefc
-      ,b.gridcode
       ,b.areasqkm
-      ,b.vpuid
-      ,a.hydrosequence
+      ,a.hydroseq
       ,CASE WHEN p_return_delineation_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
       FROM
       tmp_navigation_results a
@@ -66,19 +62,13 @@ BEGIN
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape
          )
          SELECT
           a.nhdplusid
-         ,a.sourcefc
-         ,a.gridcode
          ,a.areasqkm
-         ,a.vpuid
          ,0
          ,CASE WHEN p_return_delineation_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
          FROM
@@ -97,24 +87,18 @@ BEGIN
    -- Load the temp table based on the grid locality value
    -----------------------------------------------------------------------------
    ELSE
-      IF p_known_grid = 5070
+      IF p_srid = 5070
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_5070
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -130,19 +114,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_5070
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -156,24 +134,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 3338
+      ELSIF p_srid = 3338
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_3338
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -189,19 +161,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_3338
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -215,24 +181,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 26904
+      ELSIF p_srid = 26904
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_26904
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -248,19 +208,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_26904
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -274,24 +228,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 32161
+      ELSIF p_srid = 32161
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_32161
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -307,19 +255,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_32161
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -333,24 +275,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 32655
+      ELSIF p_srid = 32655
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_32655
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -366,19 +302,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_32655
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -392,24 +322,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 32702
+      ELSIF p_srid = 32702
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_32702
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -425,19 +349,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_32702
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM

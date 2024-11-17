@@ -44,8 +44,10 @@ DECLARE
    int_flowline_count                INTEGER;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
+   json_delineated_area              JSONB;
    json_flowlines                    JSONB;
    str_aggregation_used              VARCHAR;
+   str_known_region                  VARCHAR;
    
 BEGIN
    
@@ -241,6 +243,14 @@ BEGIN
       
    END IF;
    
+   IF JSONB_PATH_EXISTS(json_input,'$.known_region')
+   AND json_input->>'known_region' IS NOT NULL
+   AND json_input->>'known_region' != ''
+   THEN
+      str_known_region := json_input->>'known_region';
+      
+   END IF;
+   
    ----------------------------------------------------------------------------
    -- Step 20
    -- Call the indexing engine
@@ -266,8 +276,10 @@ BEGIN
          ,p_fill_basin_holes            := boo_fill_basin_holes
          ,p_force_no_cache              := boo_force_no_cache
          ,p_return_delineation_geometry := boo_return_delineation_geometry
+         ,p_return_flowlines            := boo_return_flowlines
          ,p_return_flowline_details     := boo_return_flowline_details
          ,p_return_flowline_geometry    := boo_return_flowline_geometry
+         ,p_known_region                := str_known_region
       );
       str_aggregation_used  := rec.out_aggregation_used;
       int_start_nhdplusid   := rec.out_start_nhdplusid;
@@ -277,6 +289,7 @@ BEGIN
       int_stop_nhdplusid    := rec.out_stop_nhdplusid;
       num_stop_measure      := rec.out_stop_measure;
       int_flowline_count    := rec.out_flowline_count;
+      boo_return_flowlines  := rec.out_return_flowlines;
       int_return_code       := rec.out_return_code;
       str_status_message    := rec.out_status_message;
       
@@ -301,8 +314,10 @@ BEGIN
          ,p_fill_basin_holes            := boo_fill_basin_holes
          ,p_force_no_cache              := boo_force_no_cache
          ,p_return_delineation_geometry := boo_return_delineation_geometry
+         ,p_return_flowlines            := boo_return_flowlines
          ,p_return_flowline_details     := boo_return_flowline_details
          ,p_return_flowline_geometry    := boo_return_flowline_geometry
+         ,p_known_region                := str_known_region
       );
       str_aggregation_used  := rec.out_aggregation_used;
       int_start_nhdplusid   := rec.out_start_nhdplusid;
@@ -312,6 +327,7 @@ BEGIN
       int_stop_nhdplusid    := rec.out_stop_nhdplusid;
       num_stop_measure      := rec.out_stop_measure;
       int_flowline_count    := rec.out_flowline_count;
+      boo_return_flowlines  := rec.out_return_flowlines;
       int_return_code       := rec.out_return_code;
       str_status_message    := rec.out_status_message;
    
@@ -323,11 +339,13 @@ BEGIN
    IF int_return_code != 0
    THEN
       RETURN JSONB_BUILD_OBJECT(
-          'flowlines',       NULL
-         ,'flowline_count',  NULL
-         ,'nhdplus_version', str_nhdplus_version
-         ,'return_code',     int_return_code
-         ,'status_message',  str_status_message
+          'delineated_area',  NULL
+         ,'aggregation_used', NULL
+         ,'flowlines',        NULL
+         ,'flowline_count',   NULL
+         ,'nhdplus_version',  str_nhdplus_version
+         ,'return_code',      int_return_code
+         ,'status_message',   str_status_message
       );
    
    END IF;
@@ -339,88 +357,142 @@ BEGIN
    IF int_flowline_count = 0
    THEN
       RETURN JSONB_BUILD_OBJECT(
-          'flowlines',       NULL
-         ,'flowline_count',  NULL
-         ,'nhdplus_version', str_nhdplus_version
-         ,'return_code',     -1
-         ,'status_message',  'Navigation returned no results'
+          'delineated_area',  NULL
+         ,'aggregation_used', NULL
+         ,'flowlines',        NULL
+         ,'flowline_count',   NULL
+         ,'nhdplus_version',  str_nhdplus_version
+         ,'return_code',      -1
+         ,'status_message',   'Navigation returned no results'
       );
       
    END IF;
    
    ----------------------------------------------------------------------------
    -- Step 40
-   -- Build the flowlines featurecollection
+   -- Build the delineated_area featurecollection
    ----------------------------------------------------------------------------
-   json_flowlines := (
+   json_delineated_area := (
       SELECT 
       JSONB_AGG(j.my_json) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(
              'type',       'Feature'
-            ,'obj_type',   'navigated_flowline_properties'
+            ,'obj_type',   'delineated_area_properties'
             ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
             ,'properties', TO_JSONB(t.*) - 'geom'
          ) AS my_json
          FROM (
             SELECT
              a.nhdplusid
+            ,a.sourcefc
             ,a.hydroseq
-            ,a.fmeasure
-            ,a.tmeasure
-            ,a.levelpathi
-            ,a.terminalpa
-            ,a.uphydroseq
-            ,a.dnhydroseq
-            ,TRUNC(a.lengthkm,8)    AS lengthkm
-            ,TRUNC(a.flowtimeday,8) AS flowtimeday
-            /* +++++++++ */
-            ,TRUNC(a.network_distancekm,8)  AS network_distancekm
-            ,TRUNC(a.network_flowtimeday,8) AS network_flowtimeday
-            /* +++++++++ */
-            ,a.permanent_identifier
-            ,a.reachcode
-            ,a.fcode
-            ,a.gnis_id
-            ,a.gnis_name
-            ,a.wbarea_permanent_identifier
-            /* +++++++++ */
-            ,a.navtermination_flag
-            ,a.nav_order
-            ,ST_Transform(a.shape,4326) AS geom
+            ,a.areasqkm
+            ,CASE WHEN boo_return_delineation_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
             FROM
-            tmp_delineation_results a
+            tmp_catchments a
             ORDER BY
-             a.nav_order
-            ,a.network_distancekm
+             a.nhdplusid
          ) t
       ) j
    );
          
-   IF json_flowlines IS NULL
-   OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+   IF json_delineated_area IS NULL
+   OR JSONB_ARRAY_LENGTH(json_delineated_area) = 0
    THEN
-      json_flowlines := NULL;
+      json_delineated_area := NULL;
       
    ELSE
-      json_flowlines := JSON_BUILD_OBJECT(
+      json_delineated_area := JSON_BUILD_OBJECT(
           'type'    , 'FeatureCollection'
-         ,'features', json_flowlines
+         ,'features', json_delineated_area
       );
       
    END IF;
-      
+   
    ----------------------------------------------------------------------------
    -- Step 50
+   -- Build the flowlines featurecollection
+   ----------------------------------------------------------------------------
+   IF boo_return_flowlines
+   THEN
+      json_flowlines := (
+         SELECT 
+         JSONB_AGG(j.my_json) AS my_feats
+         FROM (
+            SELECT 
+            JSONB_BUILD_OBJECT(
+                'type',       'Feature'
+               ,'obj_type',   'navigated_flowline_properties'
+               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+               ,'properties', TO_JSONB(t.*) - 'geom'
+            ) AS my_json
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.hydroseq
+               ,a.fmeasure
+               ,a.tmeasure
+               ,a.levelpathi
+               ,a.terminalpa
+               ,a.uphydroseq
+               ,a.dnhydroseq
+               ,TRUNC(a.lengthkm,8)    AS lengthkm
+               ,TRUNC(a.flowtimeday,8) AS flowtimeday
+               /* +++++++++ */
+               ,TRUNC(a.network_distancekm,8)  AS network_distancekm
+               ,TRUNC(a.network_flowtimeday,8) AS network_flowtimeday
+               /* +++++++++ */
+               ,a.permanent_identifier
+               ,a.reachcode
+               ,a.fcode
+               ,a.gnis_id
+               ,a.gnis_name
+               ,a.wbarea_permanent_identifier
+               /* +++++++++ */
+               ,a.navtermination_flag
+               ,a.nav_order
+               ,CASE WHEN boo_return_flowline_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
+               FROM
+               tmp_navigation_results a
+               ORDER BY
+                a.nav_order
+               ,a.network_distancekm
+            ) t
+         ) j
+      );
+            
+      IF json_flowlines IS NULL
+      OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+      THEN
+         json_flowlines := NULL;
+         
+      ELSE
+         json_flowlines := JSON_BUILD_OBJECT(
+             'type'    , 'FeatureCollection'
+            ,'features', json_flowlines
+         );
+         
+      END IF;
+      
+   ELSE
+      json_flowlines := NULL;
+   
+   END IF;
+      
+   ----------------------------------------------------------------------------
+   -- Step 60
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSONB_BUILD_OBJECT(
-       'flowlines',       json_flowlines
-      ,'flowline_count',  int_flowline_count
-      ,'nhdplus_version', str_nhdplus_version
-      ,'return_code',     int_return_code
-      ,'status_message',  str_status_message
+       'delineated_area',  json_delineated_area
+      ,'aggregation_used', str_aggregation_used
+      ,'flowlines',        json_flowlines
+      ,'flowline_count',   int_flowline_count
+      ,'nhdplus_version',  str_nhdplus_version
+      ,'return_code',      int_return_code
+      ,'status_message',   str_status_message
    );
       
 END;

@@ -353,7 +353,7 @@ BEGIN
    -- Step 120
    -- Recursively delineation the upstream cells
    --------------------------------------------------------------------------
-   rec := nhdplus.fdr_upstream_norecursion(
+   rec := cipsrv_engine.fdr_upstream_norecursion(
        p_column_x := int_column_x
       ,p_row_y    := int_row_y
       ,iout_rast  := rast

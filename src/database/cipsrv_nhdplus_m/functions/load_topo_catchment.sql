@@ -506,7 +506,7 @@ BEGIN
    boo_running := TRUE;
    WHILE boo_running
    LOOP
-      boo_running := nhdplus_delineation.edges2rings();
+      boo_running := cipsrv_engine.edges2rings();
       
       int_sanity := int_sanity + 1;
       

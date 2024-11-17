@@ -3402,9 +3402,9 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.delineate(
    ,IN  p_return_flowlines             BOOLEAN   
    ,IN  p_return_flowline_details      BOOLEAN
    ,IN  p_return_flowline_geometry     BOOLEAN
+   ,IN  p_known_region                 VARCHAR DEFAULT NULL
    
    ,OUT out_aggregation_used           VARCHAR
-   ,OUT out_return_flowlines           BOOLEAN
    ,OUT out_start_nhdplusid            BIGINT
    ,OUT out_start_permanent_identifier VARCHAR
    ,OUT out_start_measure              NUMERIC
@@ -3412,6 +3412,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.delineate(
    ,OUT out_stop_nhdplusid             BIGINT
    ,OUT out_stop_measure               NUMERIC
    ,OUT out_flowline_count             INTEGER
+   ,OUT out_return_flowlines           BOOLEAN
    ,OUT out_return_code                NUMERIC
    ,OUT out_status_message             VARCHAR
 )
@@ -3426,13 +3427,6 @@ DECLARE
    num_maximum_flowtimeday         NUMERIC     := p_max_flowtimeday;
    int_counter                     INTEGER;
    int_check                       INTEGER;
-   int_grid_srid                   INTEGER;
-   int_start_nhdplusid             BIGINT;
-   str_start_permanent_identifier  VARCHAR(40);
-   num_start_measure               NUMERIC;
-   int_stop_nhdplusid              BIGINT;
-   num_stop_measure                NUMERIC;
-   int_flowlines                   INTEGER;
    int_catchments                  INTEGER;
    sdo_splitpoint                  GEOMETRY;
    sdo_split_catchment             GEOMETRY;
@@ -3581,6 +3575,15 @@ BEGIN
       boo_return_flowline_geometry := TRUE;
       
    END IF;
+   
+   boo_cached_watershed  := FALSE;
+   boo_zero_length_delin := FALSE;
+   
+   BEGIN
+      out_grid_srid := p_known_region::INTEGER;
+   EXCEPTION
+      WHEN OTHERS THEN NULL;
+   END;
 
    ----------------------------------------------------------------------------
    -- Step 20
@@ -3609,7 +3612,8 @@ BEGIN
 
    ----------------------------------------------------------------------------
    -- Step 40
-   -- For cached watershed, verify that nhdplusid matches actual catchment
+   -- For cached watershed or zero delineation, 
+   -- verify that nhdplusid matches actual existing catchment
    ----------------------------------------------------------------------------
    IF boo_cached_watershed
    OR boo_zero_length_delin
@@ -3621,14 +3625,17 @@ BEGIN
          ,p_reachcode            := p_start_reachcode
          ,p_hydroseq             := p_start_hydroseq
          ,p_measure              := p_start_measure
+         ,p_known_region         := out_grid_srid::VARCHAR
       );
       out_return_code        := rec.out_return_code;
       out_status_message     := rec.out_status_message;
-      
+
       IF out_return_code <> 0
       THEN
          IF out_return_code = -10
          THEN
+            out_flowline_count := 0;
+            
             out_status_message := 'Flowline ' || COALESCE(
                 p_start_nhdplusid::VARCHAR
                ,p_start_permanent_identifier
@@ -3650,6 +3657,11 @@ BEGIN
          RETURN;
          
       END IF;
+
+      out_grid_srid          := rec.out_region::INTEGER;
+      out_start_nhdplusid    := (rec.out_flowline).nhdplusid;
+      out_start_measure      := (rec.out_flowline).out_measure;
+      out_start_permanent_identifier := (rec.out_flowline).permanent_identifier;
       
    END IF;
 
@@ -3674,20 +3686,23 @@ BEGIN
          ,p_stop_measure               := p_stop_measure
          ,p_max_distancekm             := num_maximum_distancekm
          ,p_max_flowtimeday            := num_maximum_flowtimeday
+         ,p_return_flowline_details    := boo_return_flowline_details
+         ,p_return_flowline_geometry   := boo_return_flowline_geometry
+         ,p_known_region               := out_grid_srid::VARCHAR
       );
       
       out_return_code                := rec.out_return_code;
       out_status_message             := rec.out_status_message;
-      int_start_nhdplusid            := rec.out_start_nhdplusid;
-      num_start_measure              := rec.out_start_measure;
-      str_start_permanent_identifier := rec.out_start_permanent_identifier;
-      int_grid_srid                  := rec.out_grid_srid;   
-      int_flowlines                  := rec.out_flowline_count;
-      int_stop_nhdplusid                 := rec.out_stop_nhdplusid;
-      num_stop_measure               := rec.out_stop_measure;
+      out_start_nhdplusid            := rec.out_start_nhdplusid;
+      out_start_measure              := rec.out_start_measure;
+      out_start_permanent_identifier := rec.out_start_permanent_identifier;
+      out_grid_srid                  := rec.out_grid_srid;   
+      out_flowline_count             := rec.out_flowline_count;
+      out_stop_nhdplusid             := rec.out_stop_nhdplusid;
+      out_stop_measure               := rec.out_stop_measure;
       
    END IF;
-
+   raise warning '%',out_grid_srid;
    ----------------------------------------------------------------------------
    -- Step 60
    -- Examine the navigation results
@@ -3707,6 +3722,7 @@ BEGIN
          ,p_reachcode            := p_start_reachcode
          ,p_hydroseq             := p_start_hydroseq
          ,p_measure              := p_start_measure
+         ,p_known_region         := out_grid_srid::VARCHAR
       );
       out_return_code        := rec.out_return_code;
       out_status_message     := rec.out_status_message;
@@ -3715,6 +3731,8 @@ BEGIN
       THEN
          IF out_return_code = -10
          THEN
+            out_flowline_count := 0;
+            
             out_status_message := 'Flowline ' || COALESCE(
                 p_start_nhdplusid::VARCHAR
                ,p_start_permanent_identifier
@@ -3762,7 +3780,7 @@ BEGIN
    THEN
       rec := cipsrv_nhdplus_h.delineation_preprocessing(
           p_aggregation_flag             := boo_aggregation_flag
-         ,p_known_grid                   := int_grid_srid::VARCHAR
+         ,p_srid                         := out_grid_srid
          ,p_return_delineation_geometry  := boo_return_delineation_geometry
          ,p_return_topology_results      := FALSE
          ,p_extra_catchments             := NULL
@@ -3773,6 +3791,7 @@ BEGIN
 
       IF out_return_code <> 0
       THEN
+         out_flowline_count := 0;
          RETURN;
       
       END IF;
@@ -3785,12 +3804,13 @@ BEGIN
    -----------------------------------------------------------------------------
    IF  NOT boo_cached_watershed
    AND NOT boo_zero_length_delin
-   AND boo_split_catchment
+   AND boo_split_initial_catchment
    THEN
       IF str_search_type <> 'UT'
       THEN
          out_return_code := -700;
          out_status_message := 'Catchment split only supported for upstream with tributary navigation';
+         out_flowline_count := 0;
          
          RETURN;
          
@@ -3798,22 +3818,23 @@ BEGIN
    
       -- This might need to be adjusted to be a bit further downstream, dunno
       sdo_splitpoint := cipsrv_nhdplus_h.point_at_measure(
-          p_nhdplusid            := int_start_nhdplusid
+          p_nhdplusid            := out_start_nhdplusid
          ,p_permanent_identifier := NULL
          ,p_reachcode            := NULL 
-         ,p_measure              := num_start_measure
+         ,p_measure              := out_start_measure
          ,p_2d_flag              := TRUE
       );
 
       sdo_split_catchment := cipsrv_nhdplus_h.split_catchment(
-          p_split_point  := ST_Transform(sdo_splitpoint,int_grid_srid)
-         ,p_nhdplusid    := int_start_nhdplusid
-         ,p_known_region := int_grid_srid::VARCHAR
+          p_split_point  := ST_Transform(sdo_splitpoint,out_grid_srid)
+         ,p_nhdplusid    := out_start_nhdplusid
+         ,p_known_region := out_grid_srid::VARCHAR
       );
       --raise warning '% %',int_catchments, st_astext(st_transform(st_collect(sdo_splitpoint,NULL),4269));
       
       IF sdo_split_catchment IS NULL
       THEN
+         out_flowline_count := 0;
          out_return_code := -702;
          out_status_message := 'Catchment split process failed';
          
@@ -3829,16 +3850,16 @@ BEGIN
    -----------------------------------------------------------------------------
    IF  NOT boo_cached_watershed
    AND NOT boo_zero_length_delin
-   AND boo_split_catchment
+   AND boo_split_initial_catchment
    THEN
       IF boo_topology_flag
       THEN
          DELETE FROM tmp_catchments a
          WHERE
-         a.nhdplusid  = int_start_nhdplusid;
+         a.nhdplusid  = out_start_nhdplusid;
          
       ELSE
-         IF int_grid_srid = 5070
+         IF out_grid_srid = 5070
          THEN
             UPDATE tmp_catchments a
             SET
@@ -3846,9 +3867,9 @@ BEGIN
             ,shape_5070  = sdo_split_catchment
             ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
             WHERE
-            a.nhdplusid = int_start_nhdplusid;
+            a.nhdplusid = out_start_nhdplusid;
             
-         ELSIF int_grid_srid = 3338
+         ELSIF out_grid_srid = 3338
          THEN
             UPDATE tmp_catchments a
             SET
@@ -3856,9 +3877,9 @@ BEGIN
             ,shape_3338  = sdo_split_catchment
             ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
             WHERE
-            a.nhdplusid = int_start_nhdplusid;
+            a.nhdplusid = out_start_nhdplusid;
             
-         ELSIF int_grid_srid = 26904
+         ELSIF out_grid_srid = 26904
          THEN
             UPDATE tmp_catchments a
             SET
@@ -3866,9 +3887,9 @@ BEGIN
             ,shape_26904 = sdo_split_catchment
             ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
             WHERE
-            a.nhdplusid = int_start_nhdplusid;
+            a.nhdplusid = out_start_nhdplusid;
             
-         ELSIF int_grid_srid = 32161
+         ELSIF out_grid_srid = 32161
          THEN
             UPDATE tmp_catchments a
             SET
@@ -3876,9 +3897,9 @@ BEGIN
             ,shape_32161 = sdo_split_catchment
             ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
             WHERE
-            a.nhdplusid = int_start_nhdplusid;
+            a.nhdplusid = out_start_nhdplusid;
             
-         ELSIF int_grid_srid = 32655
+         ELSIF out_grid_srid = 32655
          THEN
             UPDATE tmp_catchments a
             SET
@@ -3886,9 +3907,9 @@ BEGIN
             ,shape_32655 = sdo_split_catchment
             ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
             WHERE
-            a.nhdplusid = int_start_nhdplusid;
+            a.nhdplusid = out_start_nhdplusid;
             
-         ELSIF int_grid_srid = 32702
+         ELSIF out_grid_srid = 32702
          THEN
             UPDATE tmp_catchments a
             SET
@@ -3896,7 +3917,7 @@ BEGIN
             ,shape_32702 = sdo_split_catchment
             ,areasqkm    = ROUND(ST_Area(sdo_split_catchment)::NUMERIC * 0.000001,5)
             WHERE
-            a.nhdplusid = int_start_nhdplusid;
+            a.nhdplusid = out_start_nhdplusid;
             
          END IF;
 
@@ -3914,7 +3935,7 @@ BEGIN
       IF boo_topology_flag
       THEN
          rec := cipsrv_nhdplus_h.load_topo_catchment(
-             p_grid_srid       := int_grid_srid
+             p_grid_srid       := out_grid_srid
             ,p_catchment_count := int_catchments
          );
          out_return_code     := rec.out_return_code;
@@ -3923,19 +3944,21 @@ BEGIN
       
          IF out_return_code <> 0
          THEN
+            out_flowline_count := 0;
             RETURN;
          
          END IF;
          
       ELSE
          rec := cipsrv_nhdplus_h.load_aggregated_catchment(
-             p_grid_srid       := int_grid_srid
+             p_grid_srid       := out_grid_srid
          );
          out_return_code     := rec.out_return_code;
          out_status_message  := rec.out_status_message;
       
          IF out_return_code <> 0
          THEN
+            out_flowline_count := 0;
             RETURN;
          
          END IF;         
@@ -3950,7 +3973,7 @@ BEGIN
    -----------------------------------------------------------------------------
    IF  NOT boo_cached_watershed
    AND NOT boo_zero_length_delin
-   AND boo_split_catchment
+   AND boo_split_initial_catchment
    AND boo_topology_flag
    THEN
       SELECT
@@ -3980,7 +4003,7 @@ BEGIN
    AND NOT boo_zero_length_delin
    AND boo_aggregation_flag
    THEN
-      IF int_grid_srid = 5070
+      IF out_grid_srid = 5070
       THEN
          UPDATE tmp_catchments a
          SET
@@ -3988,7 +4011,7 @@ BEGIN
          WHERE
          a.sourcefc <> 'AGGR';
          
-      ELSIF int_grid_srid = 3338
+      ELSIF out_grid_srid = 3338
       THEN
          UPDATE tmp_catchments a
          SET
@@ -3996,7 +4019,7 @@ BEGIN
          WHERE
          a.sourcefc <> 'AGGR';
          
-      ELSIF int_grid_srid = 26904
+      ELSIF out_grid_srid = 26904
       THEN
          UPDATE tmp_catchments a
          SET
@@ -4004,7 +4027,7 @@ BEGIN
          WHERE
          a.sourcefc <> 'AGGR';
          
-      ELSIF int_grid_srid = 32161
+      ELSIF out_grid_srid = 32161
       THEN
          UPDATE tmp_catchments a
          SET
@@ -4012,7 +4035,7 @@ BEGIN
          WHERE
          a.sourcefc <> 'AGGR';
          
-      ELSIF int_grid_srid = 32655
+      ELSIF out_grid_srid = 32655
       THEN
          UPDATE tmp_catchments a
          SET
@@ -4020,7 +4043,7 @@ BEGIN
          WHERE
          a.sourcefc <> 'AGGR';
          
-      ELSIF int_grid_srid = 32702
+      ELSIF out_grid_srid = 32702
       THEN
          UPDATE tmp_catchments a
          SET
@@ -4054,7 +4077,7 @@ BEGIN
       FROM
       cipsrv_nhdpluswshd_h.catchment_watershed a
       WHERE
-      a.nhdplusid = int_catchment_nhdplusid;
+      a.nhdplusid = out_start_nhdplusid;
 
    END IF;
    
@@ -4124,30 +4147,31 @@ BEGIN
          ON
          a.nhdplusid = b.nhdplusid
          WHERE
-         a.nhdplusid = int_start_nhdplusid;
+         a.nhdplusid = out_start_nhdplusid;
          
       END IF;
       
-      IF boo_split_catchment
+      IF boo_split_initial_catchment
       THEN
          sdo_splitpoint := cipsrv_nhdplus_h.point_at_measure(
-             p_nhdplusid             := int_start_nhdplusid
+             p_nhdplusid             := out_start_nhdplusid
             ,p_permanent_identifier  := NULL
             ,p_reachcode             := NULL 
-            ,p_measure               := num_start_measure
+            ,p_measure               := out_start_measure
             ,p_2d_flag               := 'TRUE'
          );
 
          sdo_split_catchment := cipsrv_nhdplus_h.split_catchment(
-             p_split_point  := ST_Transform(sdo_splitpoint,int_grid_srid)
-            ,p_nhdplusid    := int_catchment_nhdplusid
-            ,p_known_region := int_grid_srid::VARCHAR
+             p_split_point  := ST_Transform(sdo_splitpoint,out_grid_srid)
+            ,p_nhdplusid    := out_start_nhdplusid
+            ,p_known_region := out_grid_srid::VARCHAR
          );
 
          IF sdo_split_catchment IS NULL
          THEN
             out_return_code := -702;
             out_status_message := 'Catchment split process failed';
+            out_flowline_count := 0;
             
             RETURN;
             
@@ -4182,7 +4206,7 @@ BEGIN
    -- Step 150
    -- Remove holes if requested
    -----------------------------------------------------------------------------
-   IF boo_fill_holes
+   IF boo_fill_basin_holes
    THEN
       UPDATE tmp_catchments a
       SET
@@ -4224,6 +4248,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.delineate(
    ,BOOLEAN
    ,BOOLEAN
    ,BOOLEAN
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.delineate(
@@ -4248,6 +4273,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.delineate(
    ,BOOLEAN
    ,BOOLEAN
    ,BOOLEAN
+   ,VARCHAR
 )  TO PUBLIC;
 
 --******************************--
@@ -4266,7 +4292,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.delineation_preprocessing(
     IN  p_aggregation_flag            BOOLEAN
-   ,IN  p_known_grid                  INTEGER
+   ,IN  p_srid                        INTEGER
    ,IN  p_return_delineation_geometry BOOLEAN
    ,IN  p_return_topology_results     BOOLEAN
    ,IN  p_extra_catchments            BIGINT[]
@@ -4295,17 +4321,13 @@ BEGIN
          ,sourcefc
          ,gridcode
          ,areasqkm
-         ,vpuid
          ,hydroseq
          ,shape
       )
       SELECT
        b.nhdplusid
-      ,b.sourcefc
-      ,b.gridcode
       ,b.areasqkm
-      ,b.vpuid
-      ,a.hydrosequence
+      ,a.hydroseq
       ,CASE WHEN p_return_delineation_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
       FROM
       tmp_navigation_results a
@@ -4321,19 +4343,13 @@ BEGIN
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape
          )
          SELECT
           a.nhdplusid
-         ,a.sourcefc
-         ,a.gridcode
          ,a.areasqkm
-         ,a.vpuid
          ,0
          ,CASE WHEN p_return_delineation_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
          FROM
@@ -4352,24 +4368,18 @@ BEGIN
    -- Load the temp table based on the grid locality value
    -----------------------------------------------------------------------------
    ELSE
-      IF p_known_grid = 5070
+      IF p_srid = 5070
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_5070
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -4385,19 +4395,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_5070
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -4411,24 +4415,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 3338
+      ELSIF p_srid = 3338
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_3338
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -4444,19 +4442,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_3338
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -4470,24 +4462,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 26904
+      ELSIF p_srid = 26904
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_26904
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -4503,19 +4489,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_26904
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -4529,24 +4509,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 32161
+      ELSIF p_srid = 32161
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_32161
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -4562,19 +4536,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_32161
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -4588,24 +4556,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 32655
+      ELSIF p_srid = 32655
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_32655
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -4621,19 +4583,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_32655
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -4647,24 +4603,18 @@ BEGIN
 
          END IF;
       
-      ELSIF p_known_grid = 32702
+      ELSIF p_srid = 32702
       THEN
          INSERT INTO tmp_catchments(
              nhdplusid
-            ,sourcefc
-            ,gridcode
             ,areasqkm
-            ,vpuid
             ,hydroseq
             ,shape_32702
          )
          SELECT
           b.nhdplusid
-         ,b.sourcefc
-         ,b.gridcode
          ,b.areasqkm
-         ,b.vpuid
-         ,a.hydrosequence
+         ,a.hydroseq
          ,CASE WHEN NOT p_return_topology_results THEN b.shape ELSE NULL::GEOMETRY END AS shape
          FROM
          tmp_navigation_results a
@@ -4680,19 +4630,13 @@ BEGIN
          THEN
             INSERT INTO tmp_catchments(
                 nhdplusid
-               ,sourcefc
-               ,gridcode
                ,areasqkm
-               ,vpuid
                ,hydroseq
                ,shape_32702
             )
             SELECT
              a.nhdplusid
-            ,a.sourcefc
-            ,a.gridcode
             ,a.areasqkm
-            ,a.vpuid
             ,0
             ,CASE WHEN NOT p_return_topology_results THEN a.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -6183,7 +6127,7 @@ BEGIN
    -- Determine the grid projection 
    --------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.determine_grid_srid(
-       p_geometry       := p_split_point
+       p_geometry       := sdo_fdr_selector
       ,p_known_region   := p_known_region
    );
    int_raster_srid    := rec.out_srid;
@@ -6508,23 +6452,38 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.generic_common_mbr(
 --******************************--
 ----- functions/get_flowline.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.get_flowline';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.get_flowline(
-    IN  p_direction            VARCHAR DEFAULT NULL
-   ,IN  p_nhdplusid            BIGINT  DEFAULT NULL
-   ,IN  p_permanent_identifier VARCHAR DEFAULT NULL
-   ,IN  p_reachcode            VARCHAR DEFAULT NULL
-   ,IN  p_hydroseq             BIGINT  DEFAULT NULL
-   ,IN  p_measure              NUMERIC DEFAULT NULL
-   ,OUT out_flowline           cipsrv_nhdplus_h.flowline
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_direction                    VARCHAR DEFAULT NULL
+   ,IN  p_nhdplusid                    BIGINT  DEFAULT NULL
+   ,IN  p_permanent_identifier         VARCHAR DEFAULT NULL
+   ,IN  p_reachcode                    VARCHAR DEFAULT NULL
+   ,IN  p_hydroseq                     BIGINT  DEFAULT NULL
+   ,IN  p_measure                      NUMERIC DEFAULT NULL
+   ,IN  p_known_region                 VARCHAR DEFAULT NULL
+   ,OUT out_flowline                   cipsrv_nhdplus_h.flowline
+   ,OUT out_region                     VARCHAR
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
 DECLARE
+   rec                RECORD;
    str_direction      VARCHAR(5) := UPPER(p_direction);
    num_difference     NUMERIC;
    num_end_of_line    NUMERIC := 0.0001;
+   sdo_point          GEOMETRY;
    
 BEGIN
 
@@ -7260,29 +7219,30 @@ BEGIN
    -- Step 50
    -- Determine grid srid
    --------------------------------------------------------------------------
-   IF out_flowline.vpuid = '20'
-   OR SUBSTR(out_flowline.vpuid,1,2) = '20'
+   IF p_known_region IS NOT NULL
    THEN
-      out_flowline.out_grid_srid := 26904;
+      out_region                 := p_known_region::VARCHAR;
+      out_flowline.out_grid_srid := p_known_region::INTEGER;
       
-   ELSIF out_flowline.vpuid = '21'
-   OR SUBSTR(out_flowline.vpuid,1,2) = '21'
-   THEN
-      out_flowline.out_grid_srid := 32161;
-      
-   ELSIF out_flowline.vpuid IN ('22G','22M')
-   OR SUBSTR(out_flowline.vpuid,1,4) IN ('2201','2202')
-   THEN
-      out_flowline.out_grid_srid := 32655;
-      
-   ELSIF out_flowline.vpuid = '22A'
-   OR SUBSTR(out_flowline.vpuid,1,4) = '2203'
-   THEN
-      out_flowline.out_grid_srid := 32702;
-   
    ELSE
-      out_flowline.out_grid_srid := 5070;
+      SELECT 
+      ST_StartPoint(a.shape)
+      INTO
+      sdo_point
+      FROM 
+      cipsrv_nhdplus_h.nhdflowline a
+      WHERE
+      a.nhdplusid = out_flowline.nhdplusid;
       
+      rec := cipsrv_nhdplus_h.determine_grid_srid(
+          p_geometry      := sdo_point
+         ,p_known_region  := p_known_region
+      );
+      out_region                 := rec.out_srid::VARCHAR;
+      out_return_code            := rec.out_return_code;
+      out_status_message         := rec.out_status_message;
+      out_flowline.out_grid_srid := rec.out_srid;
+ 
    END IF;
    
 EXCEPTION
@@ -7290,7 +7250,7 @@ EXCEPTION
    WHEN NO_DATA_FOUND
    THEN
       out_return_code    := -10;
-      out_status_message := 'no results found in NHDPlus';
+      out_status_message := 'no results found in cipsrv_nhdplus_h nhdflowline';
       RETURN;
 
    WHEN OTHERS
@@ -7308,6 +7268,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.get_flowline(
    ,VARCHAR
    ,BIGINT
    ,NUMERIC
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.get_flowline(
@@ -7317,6 +7278,7 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.get_flowline(
    ,VARCHAR
    ,BIGINT
    ,NUMERIC
+   ,VARCHAR
 ) TO PUBLIC;
 
 --******************************--
@@ -10866,16 +10828,14 @@ BEGIN
    
    sdo_output := ST_Transform(sdo_output,4269);
    
-   INSERT INTO nhdplus_delineation.tmp_catchments(
+   INSERT INTO tmp_catchments(
        nhdplusid
       ,sourcefc
-      ,gridcode
       ,areasqkm
       ,shape
    ) VALUES (
        -9999999
       ,'AGGR'
-      ,-9999
       ,num_areasqkm
       ,sdo_output
    );
@@ -11406,7 +11366,7 @@ BEGIN
    boo_running := TRUE;
    WHILE boo_running
    LOOP
-      boo_running := nhdplus_delineation.edges2rings();
+      boo_running := cipsrv_engine.edges2rings();
       
       int_sanity := int_sanity + 1;
       
@@ -14520,6 +14480,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.navigate(
    ,IN  p_max_flowtimeday              NUMERIC
    ,IN  p_return_flowline_details      BOOLEAN
    ,IN  p_return_flowline_geometry     BOOLEAN
+   ,IN  p_known_region                 VARCHAR DEFAULT NULL
    ,OUT out_start_nhdplusid            BIGINT
    ,OUT out_start_permanent_identifier VARCHAR
    ,OUT out_start_measure              NUMERIC
@@ -14637,6 +14598,7 @@ BEGIN
       ,p_reachcode            := p_start_reachcode
       ,p_hydroseq             := p_start_hydroseq
       ,p_measure              := p_start_measure
+      ,p_known_region         := p_known_region
    );
    out_return_code        := rec.out_return_code;
    out_status_message     := rec.out_status_message;
@@ -14706,6 +14668,7 @@ BEGIN
          ,p_reachcode            := p_stop_reachcode
          ,p_hydroseq             := p_stop_hydroseq
          ,p_measure              := p_stop_measure
+         ,p_known_region         := p_known_region
       );
       out_return_code       := rec.out_return_code;
       out_status_message    := rec.out_status_message;
@@ -14756,6 +14719,7 @@ BEGIN
          ,p_reachcode            := p_stop_reachcode
          ,p_hydroseq             := p_stop_hydroseq
          ,p_measure              := p_stop_measure
+         ,p_known_region         := p_known_region
       );
       out_return_code        := rec.out_return_code;
       out_status_message     := rec.out_status_message;
@@ -14768,6 +14732,7 @@ BEGIN
          ,p_reachcode            := p_start_reachcode
          ,p_hydroseq             := p_start_hydroseq
          ,p_measure              := p_start_measure
+         ,p_known_region         := p_known_region
       );
       out_return_code       := rec.out_return_code;
       out_status_message    := rec.out_status_message;
@@ -15081,11 +15046,11 @@ BEGIN
             OR   aa.tmeasure <> bb.fmeasure
             THEN
                ST_GeometryN(
-                   ST_LocateBetween(ST_Force3DM(bb.shape),aa.fmeasure,aa.tmeasure)
+                   ST_LocateBetween(bb.shape,aa.fmeasure,aa.tmeasure)
                   ,1
                )
             ELSE
-               ST_Force3DM(bb.shape)
+               bb.shape
             END
           ELSE
             NULL::GEOMETRY
@@ -15200,6 +15165,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.navigate(
    ,NUMERIC
    ,BOOLEAN
    ,BOOLEAN
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.navigate(
@@ -15218,13 +15184,25 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.navigate(
    ,NUMERIC
    ,BOOLEAN
    ,BOOLEAN
+   ,VARCHAR
 )  TO PUBLIC;
 
 --******************************--
 ----- functions/point_at_measure.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.point_at_measure';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.point_at_measure(
-    IN  p_nhdplusid               INTEGER
+    IN  p_nhdplusid               BIGINT
    ,IN  p_permanent_identifier    VARCHAR
    ,IN  p_reachcode               VARCHAR 
    ,IN  p_measure                 NUMERIC
@@ -15430,7 +15408,7 @@ $BODY$
 LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_nhdplus_h.point_at_measure(
-    INTEGER
+    BIGINT
    ,VARCHAR
    ,VARCHAR
    ,NUMERIC
@@ -15438,7 +15416,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.point_at_measure(
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.point_at_measure(
-    INTEGER
+    BIGINT
    ,VARCHAR
    ,VARCHAR
    ,NUMERIC
@@ -18454,7 +18432,7 @@ BEGIN
    -- Step 120
    -- Recursively delineation the upstream cells
    --------------------------------------------------------------------------
-   rec := nhdplus.fdr_upstream_norecursion(
+   rec := cipsrv_engine.fdr_upstream_norecursion(
        p_column_x := int_column_x
       ,p_row_y    := int_row_y
       ,iout_rast  := rast
@@ -18567,7 +18545,6 @@ DECLARE
    num_top_measure    NUMERIC;
    int_raster_srid    INTEGER;
    int_original_srid  INTEGER;
-   str_vpuid          VARCHAR(255);
    boo_2d_flag        BOOLEAN := p_2d_flag;
    
 BEGIN
@@ -18594,12 +18571,10 @@ BEGIN
           a.shape
          ,a.tmeasure
          ,ST_PointN(a.shape,1)
-         ,a.vpuid
          INTO
           sdo_flowline
          ,num_top_measure
          ,sdo_results
-         ,str_vpuid
          FROM
          cipsrv_nhdplus_h.nhdflowline a
          WHERE
@@ -18611,12 +18586,10 @@ BEGIN
           a.shape
          ,a.tmeasure
          ,ST_PointN(a.shape,1)
-         ,a.vpuid
          INTO
           sdo_flowline
          ,num_top_measure
          ,sdo_results
-         ,str_vpuid
          FROM
          cipsrv_nhdplus_h.nhdflowline a
          WHERE
@@ -18628,12 +18601,10 @@ BEGIN
           a.shape
          ,a.tmeasure
          ,ST_PointN(a.shape,1)
-         ,a.vpuid
          INTO
           sdo_flowline
          ,num_top_measure
          ,sdo_results
-         ,str_vpuid
          FROM
          cipsrv_nhdplus_h.nhdflowline a
          WHERE
@@ -18688,7 +18659,7 @@ BEGIN
          int_raster_srid := 32702;
          
       ELSE
-         rec := nhdplus.determine_grid_srid(
+         rec := cipsrv_nhdplus_h.determine_grid_srid(
              p_geometry       := ST_Centroid(sdo_polygon_mask)
             ,p_known_region   := p_known_region
          );

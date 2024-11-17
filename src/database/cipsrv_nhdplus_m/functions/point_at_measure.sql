@@ -10,7 +10,7 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.point_at_measure(
-    IN  p_nhdplusid               INTEGER
+    IN  p_nhdplusid               BIGINT
    ,IN  p_permanent_identifier    VARCHAR
    ,IN  p_reachcode               VARCHAR 
    ,IN  p_measure                 NUMERIC
@@ -216,7 +216,7 @@ $BODY$
 LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_nhdplus_m.point_at_measure(
-    INTEGER
+    BIGINT
    ,VARCHAR
    ,VARCHAR
    ,NUMERIC
@@ -224,7 +224,7 @@ ALTER FUNCTION cipsrv_nhdplus_m.point_at_measure(
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.point_at_measure(
-    INTEGER
+    BIGINT
    ,VARCHAR
    ,VARCHAR
    ,NUMERIC

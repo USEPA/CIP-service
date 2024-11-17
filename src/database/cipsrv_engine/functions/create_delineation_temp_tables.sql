@@ -16,10 +16,8 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_catchments(
           nhdplusid                   BIGINT
-         ,sourcefc                    VARCHAR(40)
-         ,gridcode                    INTEGER
+         ,sourcefc                    VARCHAR
          ,areasqkm                    NUMERIC
-         ,vpuid                       VARCHAR(16)
          ,hydroseq                    BIGINT
          ,shape                       GEOMETRY
          ,shape_3338                  GEOMETRY

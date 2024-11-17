@@ -91,7 +91,7 @@ BEGIN
    -- Determine the grid projection 
    --------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.determine_grid_srid(
-       p_geometry       := p_split_point
+       p_geometry       := sdo_fdr_selector
       ,p_known_region   := p_known_region
    );
    int_raster_srid    := rec.out_srid;

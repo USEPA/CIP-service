@@ -1,20 +1,35 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.get_flowline';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.get_flowline(
-    IN  p_direction            VARCHAR DEFAULT NULL
-   ,IN  p_nhdplusid            BIGINT  DEFAULT NULL
-   ,IN  p_permanent_identifier VARCHAR DEFAULT NULL
-   ,IN  p_reachcode            VARCHAR DEFAULT NULL
-   ,IN  p_hydroseq             BIGINT  DEFAULT NULL
-   ,IN  p_measure              NUMERIC DEFAULT NULL
-   ,OUT out_flowline           cipsrv_nhdplus_h.flowline
-   ,OUT out_return_code        INTEGER
-   ,OUT out_status_message     VARCHAR
+    IN  p_direction                    VARCHAR DEFAULT NULL
+   ,IN  p_nhdplusid                    BIGINT  DEFAULT NULL
+   ,IN  p_permanent_identifier         VARCHAR DEFAULT NULL
+   ,IN  p_reachcode                    VARCHAR DEFAULT NULL
+   ,IN  p_hydroseq                     BIGINT  DEFAULT NULL
+   ,IN  p_measure                      NUMERIC DEFAULT NULL
+   ,IN  p_known_region                 VARCHAR DEFAULT NULL
+   ,OUT out_flowline                   cipsrv_nhdplus_h.flowline
+   ,OUT out_region                     VARCHAR
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
 DECLARE
+   rec                RECORD;
    str_direction      VARCHAR(5) := UPPER(p_direction);
    num_difference     NUMERIC;
    num_end_of_line    NUMERIC := 0.0001;
+   sdo_point          GEOMETRY;
    
 BEGIN
 
@@ -750,29 +765,30 @@ BEGIN
    -- Step 50
    -- Determine grid srid
    --------------------------------------------------------------------------
-   IF out_flowline.vpuid = '20'
-   OR SUBSTR(out_flowline.vpuid,1,2) = '20'
+   IF p_known_region IS NOT NULL
    THEN
-      out_flowline.out_grid_srid := 26904;
+      out_region                 := p_known_region::VARCHAR;
+      out_flowline.out_grid_srid := p_known_region::INTEGER;
       
-   ELSIF out_flowline.vpuid = '21'
-   OR SUBSTR(out_flowline.vpuid,1,2) = '21'
-   THEN
-      out_flowline.out_grid_srid := 32161;
-      
-   ELSIF out_flowline.vpuid IN ('22G','22M')
-   OR SUBSTR(out_flowline.vpuid,1,4) IN ('2201','2202')
-   THEN
-      out_flowline.out_grid_srid := 32655;
-      
-   ELSIF out_flowline.vpuid = '22A'
-   OR SUBSTR(out_flowline.vpuid,1,4) = '2203'
-   THEN
-      out_flowline.out_grid_srid := 32702;
-   
    ELSE
-      out_flowline.out_grid_srid := 5070;
+      SELECT 
+      ST_StartPoint(a.shape)
+      INTO
+      sdo_point
+      FROM 
+      cipsrv_nhdplus_h.nhdflowline a
+      WHERE
+      a.nhdplusid = out_flowline.nhdplusid;
       
+      rec := cipsrv_nhdplus_h.determine_grid_srid(
+          p_geometry      := sdo_point
+         ,p_known_region  := p_known_region
+      );
+      out_region                 := rec.out_srid::VARCHAR;
+      out_return_code            := rec.out_return_code;
+      out_status_message         := rec.out_status_message;
+      out_flowline.out_grid_srid := rec.out_srid;
+ 
    END IF;
    
 EXCEPTION
@@ -780,7 +796,7 @@ EXCEPTION
    WHEN NO_DATA_FOUND
    THEN
       out_return_code    := -10;
-      out_status_message := 'no results found in NHDPlus';
+      out_status_message := 'no results found in cipsrv_nhdplus_h nhdflowline';
       RETURN;
 
    WHEN OTHERS
@@ -798,6 +814,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.get_flowline(
    ,VARCHAR
    ,BIGINT
    ,NUMERIC
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.get_flowline(
@@ -807,5 +824,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.get_flowline(
    ,VARCHAR
    ,BIGINT
    ,NUMERIC
+   ,VARCHAR
 ) TO PUBLIC;
 

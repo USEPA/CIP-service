@@ -30,7 +30,6 @@ DECLARE
    num_top_measure    NUMERIC;
    int_raster_srid    INTEGER;
    int_original_srid  INTEGER;
-   str_vpuid          VARCHAR(255);
    boo_2d_flag        BOOLEAN := p_2d_flag;
    
 BEGIN
@@ -57,12 +56,10 @@ BEGIN
           a.shape
          ,a.tmeasure
          ,ST_PointN(a.shape,1)
-         ,a.vpuid
          INTO
           sdo_flowline
          ,num_top_measure
          ,sdo_results
-         ,str_vpuid
          FROM
          cipsrv_nhdplus_h.nhdflowline a
          WHERE
@@ -74,12 +71,10 @@ BEGIN
           a.shape
          ,a.tmeasure
          ,ST_PointN(a.shape,1)
-         ,a.vpuid
          INTO
           sdo_flowline
          ,num_top_measure
          ,sdo_results
-         ,str_vpuid
          FROM
          cipsrv_nhdplus_h.nhdflowline a
          WHERE
@@ -91,12 +86,10 @@ BEGIN
           a.shape
          ,a.tmeasure
          ,ST_PointN(a.shape,1)
-         ,a.vpuid
          INTO
           sdo_flowline
          ,num_top_measure
          ,sdo_results
-         ,str_vpuid
          FROM
          cipsrv_nhdplus_h.nhdflowline a
          WHERE
@@ -151,7 +144,7 @@ BEGIN
          int_raster_srid := 32702;
          
       ELSE
-         rec := nhdplus.determine_grid_srid(
+         rec := cipsrv_nhdplus_h.determine_grid_srid(
              p_geometry       := ST_Centroid(sdo_polygon_mask)
             ,p_known_region   := p_known_region
          );

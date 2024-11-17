@@ -25,6 +25,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.navigate(
    ,IN  p_max_flowtimeday              NUMERIC
    ,IN  p_return_flowline_details      BOOLEAN
    ,IN  p_return_flowline_geometry     BOOLEAN
+   ,IN  p_known_region                 VARCHAR DEFAULT NULL
    ,OUT out_start_nhdplusid            BIGINT
    ,OUT out_start_permanent_identifier VARCHAR
    ,OUT out_start_measure              NUMERIC
@@ -142,6 +143,7 @@ BEGIN
       ,p_reachcode            := p_start_reachcode
       ,p_hydroseq             := p_start_hydroseq
       ,p_measure              := p_start_measure
+      ,p_known_region         := p_known_region
    );
    out_return_code        := rec.out_return_code;
    out_status_message     := rec.out_status_message;
@@ -211,6 +213,7 @@ BEGIN
          ,p_reachcode            := p_stop_reachcode
          ,p_hydroseq             := p_stop_hydroseq
          ,p_measure              := p_stop_measure
+         ,p_known_region         := p_known_region
       );
       out_return_code       := rec.out_return_code;
       out_status_message    := rec.out_status_message;
@@ -261,6 +264,7 @@ BEGIN
          ,p_reachcode            := p_stop_reachcode
          ,p_hydroseq             := p_stop_hydroseq
          ,p_measure              := p_stop_measure
+         ,p_known_region         := p_known_region
       );
       out_return_code        := rec.out_return_code;
       out_status_message     := rec.out_status_message;
@@ -273,6 +277,7 @@ BEGIN
          ,p_reachcode            := p_start_reachcode
          ,p_hydroseq             := p_start_hydroseq
          ,p_measure              := p_start_measure
+         ,p_known_region         := p_known_region
       );
       out_return_code       := rec.out_return_code;
       out_status_message    := rec.out_status_message;
@@ -586,11 +591,11 @@ BEGIN
             OR   aa.tmeasure <> bb.fmeasure
             THEN
                ST_GeometryN(
-                   ST_LocateBetween(ST_Force3DM(bb.shape),aa.fmeasure,aa.tmeasure)
+                   ST_LocateBetween(bb.shape,aa.fmeasure,aa.tmeasure)
                   ,1
                )
             ELSE
-               ST_Force3DM(bb.shape)
+               bb.shape
             END
           ELSE
             NULL::GEOMETRY
@@ -705,6 +710,7 @@ ALTER FUNCTION cipsrv_nhdplus_h.navigate(
    ,NUMERIC
    ,BOOLEAN
    ,BOOLEAN
+   ,VARCHAR
 ) OWNER TO cipsrv;
 
 GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.navigate(
@@ -723,5 +729,6 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.navigate(
    ,NUMERIC
    ,BOOLEAN
    ,BOOLEAN
+   ,VARCHAR
 )  TO PUBLIC;
 
