@@ -1836,6 +1836,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.deepest_cell(
 --******************************--
 ----- functions/determine_grid_srid.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.determine_grid_srid';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.determine_grid_srid(
     IN  p_geometry             GEOMETRY
    ,IN  p_nhdplus_version      VARCHAR
@@ -2651,6 +2660,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.feature_clip(
 --******************************--
 ----- functions/featurecat.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.featurecat';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.featurecat(
     IN  p_features           cipsrv_engine.cip_feature[]
    ,IN  p_cat                cipsrv_engine.cip_feature[]
@@ -2879,6 +2897,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.feature2jsonb(
 
 --******************************--
 ----- functions/features2geomcollection.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.features2geomcollection';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.features2geomcollection(
     IN  p_features           cipsrv_engine.cip_feature[]
@@ -3250,6 +3277,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.is_lrs(
 --******************************--
 ----- functions/json2geometry.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.json2geometry';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.json2geometry(
     IN  p_in                         JSONB
 ) RETURNS GEOMETRY
@@ -3325,6 +3361,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.json2geometry(
 --******************************--
 ----- functions/json2numeric.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.json2numeric';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_engine.json2numeric(
     IN  p_in                         JSONB
 ) RETURNS NUMERIC
@@ -3373,6 +3418,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_engine.json2numeric(
 
 --******************************--
 ----- functions/json2bigint.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.json2bigint';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_engine.json2bigint(
     IN  p_in                         JSONB

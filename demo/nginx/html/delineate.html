@@ -110,7 +110,15 @@
                <input name="pSearchMaxDistanceKm" type="text" class="text" id="pSearchMaxDistanceKm" style="display:inline; width:30px" value="15" />&nbsp;km
                <br/>
                <br/>
-               
+               <select name="p_aggregation_engine" id="p_aggregation_engine" style="margin-top: 6px;">
+                 <option value="TOPO" SELECTED>Topology</option>
+                 <option value="SPATIAL">Spatial</option>
+                 <option value="NONE">No Aggregation</option>
+               </select>
+               &nbsp;&nbsp;Split Inital Catchment:&nbsp;<input name="p_split_initial_catchment" id="p_split_initial_catchment" type="checkbox" CHECKED>
+               &nbsp;&nbsp;Fill Basin Holes:&nbsp;<input name="p_fill_basin_holes" id="p_fill_basin_holes" type="checkbox" CHECKED>
+               <br/>
+               <br/>
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
                <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
           
@@ -326,9 +334,9 @@
             ,"stop_measure"                : document.getElementById("pStopMeasure").value
             
             ,"max_distancekm"              : document.getElementById("pSearchMaxDistanceKm").value
-            ,"aggregation_engine"          : "SPATIAL"
-            ,"split_initial_catchment"     : true
-            ,"fill_basin_holes"            : true
+            ,"aggregation_engine"          : get_select_values(document.getElementById("p_aggregation_engine"))
+            ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").value
+            ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").value
             ,"force_no_cache"              : true
             ,"return_delineation_geometry" : true
             ,"return_flowlines"            : false
@@ -526,9 +534,9 @@
             ,"stop_measure"                : document.getElementById("pStopMeasure").value
             
             ,"max_distancekm"              : document.getElementById("pSearchMaxDistanceKm").value
-            ,"aggregation_engine"          : "SPATIAL"
-            ,"split_initial_catchment"     : true
-            ,"fill_basin_holes"            : true
+            ,"aggregation_engine"          : get_select_values(document.getElementById("p_aggregation_engine"))
+            ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").value
+            ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").value
             ,"force_no_cache"              : true
             ,"return_delineation_geometry" : true
             ,"return_flowlines"            : false
@@ -593,9 +601,9 @@
          ,"stop_measure"                : document.getElementById("pStopMeasure").value
          
          ,"max_distancekm"              : document.getElementById("pSearchMaxDistanceKm").value
-         ,"aggregation_engine"          : "SPATIAL"
-         ,"split_initial_catchment"     : true
-         ,"fill_basin_holes"            : true
+         ,"aggregation_engine"          : get_select_values(document.getElementById("p_aggregation_engine"))
+         ,"split_initial_catchment"     : document.getElementById("p_split_initial_catchment").value
+         ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").value
          ,"force_no_cache"              : true
          ,"return_delineation_geometry" : true
          ,"return_flowlines"            : false
@@ -615,6 +623,7 @@
       document.getElementById("output").innerHTML = "";
       snap_path.clearLayers();
       flowlines.clearLayers();
+      delineated_area.clearLayers();
       blank_pts();
       blank_nhdplusids()
       busy_off();
@@ -625,6 +634,7 @@
       document.getElementById("output").innerHTML = "";
       snap_path.clearLayers();
       flowlines.clearLayers();
+      delineated_area.clearLayers();
       busy_off();
       document.getElementById("dz_run_service").disabled = true;
    }

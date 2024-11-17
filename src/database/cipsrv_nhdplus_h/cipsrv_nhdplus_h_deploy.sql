@@ -6392,6 +6392,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.fetch_grids_by_geometry(
 --******************************--
 ----- functions/generic_common_mbr.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.generic_common_mbr';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.generic_common_mbr(
    IN  p_input  VARCHAR
 ) RETURNS GEOMETRY 
@@ -11675,6 +11684,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.measure_lengthkm(
 --******************************--
 ----- functions/nav_dd.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_dd';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_dd(
     IN  obj_start_flowline       cipsrv_nhdplus_h.flowline
    ,IN  num_maximum_distancekm   NUMERIC
@@ -12096,6 +12114,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_dd(
 --******************************--
 ----- functions/nav_dm.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_dm';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_dm(
     IN  obj_start_flowline       cipsrv_nhdplus_h.flowline
    ,IN  num_maximum_distancekm   NUMERIC
@@ -12283,6 +12310,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_dm(
 
 --******************************--
 ----- functions/nav_pp.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_pp';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_pp(
     IN  obj_start_flowline        cipsrv_nhdplus_h.flowline
@@ -12890,6 +12926,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_pp(
 --******************************--
 ----- functions/nav_ppall.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ppall';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ppall(
     IN  obj_start_flowline        cipsrv_nhdplus_h.flowline
    ,IN  obj_stop_flowline         cipsrv_nhdplus_h.flowline
@@ -13376,6 +13421,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_ppall(
 --******************************--
 ----- functions/nav_single.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_single';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_single(
     IN  str_search_type           VARCHAR
    ,IN  obj_start_flowline        cipsrv_nhdplus_h.flowline
@@ -13534,6 +13588,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_single(
 --******************************--
 ----- functions/nav_trim_temp.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_trim_temp';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_trim_temp(
     IN  p_search_type          VARCHAR
    ,IN  p_fmeasure             NUMERIC
@@ -13657,6 +13720,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_trim_temp(
 
 --******************************--
 ----- functions/nav_um.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_um';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_um(
     IN  obj_start_flowline       cipsrv_nhdplus_h.flowline
@@ -13849,6 +13921,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_um(
 --******************************--
 ----- functions/nav_ut_concise.sql 
 
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_concise';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut_concise(
     IN  obj_start_flowline       cipsrv_nhdplus_h.flowline
    ,IN  num_maximum_distancekm   NUMERIC
@@ -14030,6 +14111,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_ut_concise(
 
 --******************************--
 ----- functions/nav_ut_extended.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_extended';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut_extended(
     IN  obj_start_flowline       cipsrv_nhdplus_h.flowline
@@ -15592,6 +15682,15 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.pointindexing(
 ) TO PUBLIC;
 --******************************--
 ----- functions/query_generic_common_mbr.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.query_generic_common_mbr';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.query_generic_common_mbr(
    IN  p_input  GEOMETRY
