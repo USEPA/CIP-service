@@ -125,7 +125,7 @@ BEGIN
       END IF;
       
    END IF;
-   
+
    --------------------------------------------------------------------------
    -- Step 40
    -- Fetch the FDR raster if requested
@@ -228,7 +228,7 @@ BEGIN
       END IF;
    
    END IF;
-   
+
    --------------------------------------------------------------------------
    -- Step 50
    -- Fetch the FAC raster if requested

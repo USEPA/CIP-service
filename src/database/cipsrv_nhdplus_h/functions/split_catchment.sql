@@ -100,7 +100,7 @@ BEGIN
          INTO 
          sdo_catchment
          FROM
-         cipsrv_nhdplus_h.catchment_5070 a
+         cipsrv_nhdplus_h.catchment_5070_full a
          WHERE
          a.nhdplusid = int_nhdplusid;
          
@@ -111,7 +111,7 @@ BEGIN
          INTO 
          sdo_catchment
          FROM
-         cipsrv_nhdplus_h.catchment_3338 a
+         cipsrv_nhdplus_h.catchment_3338_full a
          WHERE
          a.nhdplusid = int_nhdplusid;
 
@@ -122,7 +122,7 @@ BEGIN
          INTO 
          sdo_catchment
          FROM
-         cipsrv_nhdplus_h.catchment_26904 a
+         cipsrv_nhdplus_h.catchment_26904_full a
          WHERE
          a.nhdplusid = int_nhdplusid;
 
@@ -133,7 +133,7 @@ BEGIN
          INTO 
          sdo_catchment
          FROM
-         cipsrv_nhdplus_h.catchment_32161 a
+         cipsrv_nhdplus_h.catchment_32161_full a
          WHERE
          a.nhdplusid = int_nhdplusid;
 
@@ -144,7 +144,7 @@ BEGIN
          INTO 
          sdo_catchment
          FROM
-         cipsrv_nhdplus_h.catchment_32655 a
+         cipsrv_nhdplus_h.catchment_32655_full a
          WHERE
          a.nhdplusid = int_nhdplusid;
 
@@ -155,7 +155,7 @@ BEGIN
          INTO 
          sdo_catchment
          FROM
-         cipsrv_nhdplus_h.catchment_32702 a
+         cipsrv_nhdplus_h.catchment_32702_full a
          WHERE
          a.nhdplusid = int_nhdplusid;
 
@@ -174,7 +174,20 @@ BEGIN
           sdo_catchment
          ,int_nhdplusid
          FROM
-         cipsrv_nhdplus_h.catchment_np21_acu a
+         cipsrv_nhdplus_h.catchment_5070_full a
+         WHERE
+         ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
+
+      ELSIF int_raster_srid = 3338
+      THEN
+         SELECT
+          ST_SnapToGrid(a.shape,0.05)
+         ,a.nhdplusid
+         INTO 
+          sdo_catchment
+         ,int_nhdplusid
+         FROM
+         cipsrv_nhdplus_h.catchment_3338_full a
          WHERE
          ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
 
@@ -187,7 +200,7 @@ BEGIN
           sdo_catchment
          ,int_nhdplusid
          FROM
-         cipsrv_nhdplus_h.catchment_np21_uhi a
+         cipsrv_nhdplus_h.catchment_26904_full a
          WHERE
          ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
 
@@ -200,7 +213,7 @@ BEGIN
           sdo_catchment
          ,int_nhdplusid
          FROM
-         cipsrv_nhdplus_h.catchment_np21_lpv a
+         cipsrv_nhdplus_h.catchment_32161_full a
          WHERE
          ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
 
@@ -213,7 +226,7 @@ BEGIN
           sdo_catchment
          ,int_nhdplusid
          FROM
-         cipsrv_nhdplus_h.catchment_np21_ugm a
+         cipsrv_nhdplus_h.catchment_32655_full a
          WHERE
          ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
 
@@ -226,7 +239,7 @@ BEGIN
           sdo_catchment
          ,int_nhdplusid
          FROM
-         cipsrv_nhdplus_h.catchment_np21_uas a
+         cipsrv_nhdplus_h.catchment_32702_full a
          WHERE
          ST_INTERSECTS(a.shape,sdo_point) LIMIT 1; 
 
@@ -242,7 +255,7 @@ BEGIN
       RETURN NULL;
 
    END IF;
-   
+  
    --------------------------------------------------------------------------
    -- Step 50
    -- Buffer the catchment to get a slightly larger fdr raster 

@@ -125,7 +125,7 @@ BEGIN
       END IF;
       
    END IF;
-   
+
    --------------------------------------------------------------------------
    -- Step 40
    -- Fetch the FDR raster if requested
@@ -143,7 +143,7 @@ BEGIN
          )
          INTO out_FDR
          FROM
-         cipsrv_nhdplusgrid_m.fdr_5070_rdt a
+         cipsrv_nhdplusgrid_h.fdr_5070_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fdr_selector);
 
@@ -158,7 +158,7 @@ BEGIN
          )
          INTO out_FDR
          FROM
-         cipsrv_nhdplusgrid_m.fdr_3338_rdt a
+         cipsrv_nhdplusgrid_h.fdr_3338_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fdr_selector);
 
@@ -173,7 +173,7 @@ BEGIN
          )
          INTO out_FDR
          FROM
-         cipsrv_nhdplusgrid_m.fdr_26904_rdt a
+         cipsrv_nhdplusgrid_h.fdr_26904_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fdr_selector);
 
@@ -188,7 +188,7 @@ BEGIN
          )
          INTO out_FDR
          FROM
-         cipsrv_nhdplusgrid_m.fdr_32161_rdt a
+         cipsrv_nhdplusgrid_h.fdr_32161_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fdr_selector);
 
@@ -203,7 +203,7 @@ BEGIN
          )
          INTO out_FDR
          FROM
-         cipsrv_nhdplusgrid_m.fdr_32655_rdt a
+         cipsrv_nhdplusgrid_h.fdr_32655_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fdr_selector);
 
@@ -218,7 +218,7 @@ BEGIN
          )
          INTO out_FDR
          FROM
-         cipsrv_nhdplusgrid_m.fdr_32702_rdt a
+         cipsrv_nhdplusgrid_h.fdr_32702_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fdr_selector);
 
@@ -228,7 +228,7 @@ BEGIN
       END IF;
    
    END IF;
-   
+
    --------------------------------------------------------------------------
    -- Step 50
    -- Fetch the FAC raster if requested
@@ -246,7 +246,7 @@ BEGIN
          )
          INTO out_FAC
          FROM
-         cipsrv_nhdplusgrid_m.fac_5070_rdt a
+         cipsrv_nhdplusgrid_h.fac_5070_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fac_selector);
 
@@ -261,7 +261,7 @@ BEGIN
          )
          INTO out_FAC
          FROM
-         cipsrv_nhdplusgrid_m.fac_3338_rdt a
+         cipsrv_nhdplusgrid_h.fac_3338_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fac_selector); 
 
@@ -276,7 +276,7 @@ BEGIN
          )
          INTO out_FAC
          FROM
-         cipsrv_nhdplusgrid_m.fac_26904_rdt a
+         cipsrv_nhdplusgrid_h.fac_26904_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fac_selector); 
 
@@ -291,7 +291,7 @@ BEGIN
          )
          INTO out_FAC
          FROM
-         cipsrv_nhdplusgrid_m.fac_32161_rdt a
+         cipsrv_nhdplusgrid_h.fac_32161_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fac_selector);
 
@@ -306,7 +306,7 @@ BEGIN
          )
          INTO out_FAC
          FROM
-         cipsrv_nhdplusgrid_m.fac_32655_rdt a
+         cipsrv_nhdplusgrid_h.fac_32655_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fac_selector);
 
@@ -321,7 +321,7 @@ BEGIN
          )
          INTO out_FAC
          FROM
-         cipsrv_nhdplusgrid_m.fac_32702_rdt a
+         cipsrv_nhdplusgrid_h.fac_32702_rdt a
          WHERE
          ST_INTERSECTS(a.rast,sdo_fac_selector);
 

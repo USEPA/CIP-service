@@ -124,6 +124,9 @@
                <span style="font-family: Arial; font-size: 12px;">Fill Basin Holes:</span>
                <input name="p_fill_basin_holes" id="p_fill_basin_holes" type="checkbox" CHECKED>
                <br/>
+               <span style="font-family: Arial; font-size: 12px;">Return Flowlines:</span>
+               <input name="p_return_flowlines" id="p_return_flowlines" type="checkbox" CHECKED>
+               <br/>
                <br/>
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
                <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
@@ -344,9 +347,9 @@
             ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").checked
             ,"force_no_cache"              : true
             ,"return_delineation_geometry" : true
-            ,"return_flowlines"            : false
-            ,"return_flowline_details"     : true
-            ,"return_flowline_geometry"    : true
+            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
          }
       
          httpPost(
@@ -544,9 +547,9 @@
             ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").checked
             ,"force_no_cache"              : true
             ,"return_delineation_geometry" : true
-            ,"return_flowlines"            : false
-            ,"return_flowline_details"     : true
-            ,"return_flowline_geometry"    : true
+            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
          }
       
          httpPost(
@@ -611,9 +614,9 @@
          ,"fill_basin_holes"            : document.getElementById("p_fill_basin_holes").checked
          ,"force_no_cache"              : true
          ,"return_delineation_geometry" : true
-         ,"return_flowlines"            : false
-         ,"return_flowline_details"     : true
-         ,"return_flowline_geometry"    : true
+         ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
       }
       
       httpPost(
