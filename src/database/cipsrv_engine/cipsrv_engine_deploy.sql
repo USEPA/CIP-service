@@ -2244,7 +2244,7 @@ BEGIN
       RAISE EXCEPTION 'Input raster is null';
       
    END IF;
-   --raise warning 'raster % by %', st_height(iout_rast), st_width(iout_rast);
+   --RAISE WARNING 'raster % by %',ST_Height(iout_rast),ST_Width(iout_rast);
    
    ----------------------------------------------------------------------------
    -- Step 20
@@ -2286,7 +2286,7 @@ BEGIN
    -- Step 60
    -- Loop through the working stack
    ----------------------------------------------------------------------------
-      --raise warning '%', array_length(int_working_x,1);
+      --RAISE WARNING '%', array_length(int_working_x,1);
       FOR i IN 1 .. array_length(int_working_x,1)
       LOOP
          
@@ -4914,7 +4914,7 @@ BEGIN
       ,int_column_x
       ,int_row_y
    );
-   --raise warning '% % %', int_column_x, int_row_y, st_astext(st_transform(sdo_temp,4269));
+   --RAISE WARNING '% % %', int_column_x,int_row_y,ST_AsEWKT(ST_Transform(sdo_temp,4269));
    
    IF sdo_temp IS NULL
    THEN

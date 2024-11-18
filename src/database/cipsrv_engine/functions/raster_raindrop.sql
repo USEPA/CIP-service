@@ -58,7 +58,7 @@ BEGIN
       ,int_column_x
       ,int_row_y
    );
-   --raise warning '% % %', int_column_x, int_row_y, st_astext(st_transform(sdo_temp,4269));
+   --RAISE WARNING '% % %', int_column_x,int_row_y,ST_AsEWKT(ST_Transform(sdo_temp,4269));
    
    IF sdo_temp IS NULL
    THEN

@@ -3542,6 +3542,7 @@ DECLARE
    boo_zero_length_delin           BOOLEAN;   
    boo_force_no_cache              BOOLEAN;
    boo_cached_watershed            BOOLEAN;
+   int_temp                        INTEGER;
 
 BEGIN
 
@@ -3915,7 +3916,7 @@ BEGIN
          RETURN;
          
       END IF;
-   
+
       -- This might need to be adjusted to be a bit further downstream, dunno
       sdo_splitpoint := cipsrv_nhdplus_m.point_at_measure(
           p_nhdplusid            := out_start_nhdplusid
@@ -3930,7 +3931,7 @@ BEGIN
          ,p_nhdplusid    := out_start_nhdplusid
          ,p_known_region := out_grid_srid::VARCHAR
       );
-      --raise warning '% %',int_catchments, st_astext(st_transform(st_collect(sdo_splitpoint,NULL),4269));
+      --RAISE WARNING '% %',int_catchments, st_astext(st_transform(st_collect(sdo_splitpoint,NULL),4269));
       
       IF sdo_split_catchment IS NULL
       THEN
@@ -3941,7 +3942,8 @@ BEGIN
          RETURN;
          
       END IF;
-   
+      --RAISE WARNING 'boo_topology_flag: % %',boo_topology_flag,out_grid_srid;
+      
    -----------------------------------------------------------------------------
    -- Step 90
    -- Swap in the split catchment for catchment and geometric aggregation
@@ -4018,7 +4020,7 @@ BEGIN
       END IF;
       
    END IF;
-   
+
    -----------------------------------------------------------------------------
    -- Step 100
    -- Branch based on aggregation decision - return aggregated catchment poly
@@ -4081,7 +4083,7 @@ BEGIN
       END IF;
    
    END IF;
-   
+
    -----------------------------------------------------------------------------
    -- Step 110
    -- Migrate catchment geometry if requested
@@ -6232,13 +6234,13 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.distance_index_simple(
 --******************************--
 ----- functions/fetch_grids_by_geometry.sql 
 
-DO $$DECLARE 
+DO $$DECLARE
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.fetch_grids_by_geometry';
-   IF b IS NOT NULL THEN 
+   IF b IS NOT NULL THEN
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
@@ -6257,7 +6259,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
 )
 STABLE
 AS
-$BODY$ 
+$BODY$
 DECLARE
    rec                RECORD;
    int_raster_srid    INTEGER;
@@ -6267,7 +6269,7 @@ DECLARE
    sdo_fac_selector   GEOMETRY := p_FAC_input;
    int_fdr_nodata     INTEGER  := p_FDR_nodata;
    int_fac_nodata     INTEGER  := p_FAC_nodata;
-   
+  
 BEGIN
 
    ----------------------------------------------------------------------------
@@ -6278,51 +6280,51 @@ BEGIN
    AND sdo_fac_selector IS NULL
    THEN
       RAISE EXCEPTION 'input selections cannot both be null';
-      
+     
    ELSIF sdo_fdr_selector IS NULL
    THEN
       sdo_test_input := sdo_fac_selector;
-      
+     
    ELSE
       sdo_test_input := sdo_fdr_selector;
-   
+  
    END IF;
-   
-   IF  sdo_fdr_selector IS NOT NULL 
+  
+   IF  sdo_fdr_selector IS NOT NULL
    AND ST_GeometryType(sdo_fdr_selector) NOT IN ('ST_Polygon','ST_MultiPolygon')
    THEN
       RAISE EXCEPTION 'fdr geometry selector must be polygon';
-      
+     
    END IF;
-   
-   IF  sdo_fac_selector IS NOT NULL 
+  
+   IF  sdo_fac_selector IS NOT NULL
    AND ST_GeometryType(sdo_fac_selector) NOT IN ('ST_Polygon','ST_MultiPolygon')
    THEN
       RAISE EXCEPTION 'fac geometry selector must be polygon';
-      
+     
    END IF;
-   
+  
    IF int_fdr_nodata IS NULL
    THEN
       int_fdr_nodata := 255;
-      
+     
    END IF;
-   
+  
    IF int_fac_nodata IS NULL
    THEN
       int_fac_nodata := 2147483647;
-      
+     
    END IF;
-   
+  
    IF int_fdr_nodata < 0
    THEN
       RAISE EXCEPTION 'fdr nodata value must be unsigned 8 bit integer';
-   
-   END IF;   
-   
+  
+   END IF;  
+  
    --------------------------------------------------------------------------
    -- Step 20
-   -- Determine the grid projection 
+   -- Determine the grid projection
    --------------------------------------------------------------------------
    rec := cipsrv_nhdplus_m.determine_grid_srid(
        p_geometry       := sdo_fdr_selector
@@ -6331,13 +6333,13 @@ BEGIN
    int_raster_srid    := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-   
+  
    IF out_return_code != 0
    THEN
       RETURN;
-      
+     
    END IF;
-   
+  
    --------------------------------------------------------------------------
    -- Step 30
    -- Project initial point
@@ -6349,15 +6351,15 @@ BEGIN
       IF sdo_fdr_selector IS NOT NULL
       THEN
          sdo_fdr_selector := ST_Transform(sdo_fdr_selector,int_raster_srid);
-      
+     
       END IF;
-      
+     
       IF sdo_fac_selector IS NOT NULL
       THEN
          sdo_fac_selector := ST_Transform(sdo_fac_selector,int_raster_srid);
-      
+     
       END IF;
-      
+     
    END IF;
 
    --------------------------------------------------------------------------
@@ -6368,7 +6370,7 @@ BEGIN
    THEN
       IF int_raster_srid = 5070
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -6383,7 +6385,7 @@ BEGIN
 
       ELSIF int_raster_srid = 3338
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -6398,7 +6400,7 @@ BEGIN
 
       ELSIF int_raster_srid = 26904
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -6413,7 +6415,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32161
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -6428,7 +6430,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32655
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -6443,7 +6445,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32702
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -6458,11 +6460,12 @@ BEGIN
 
       ELSE
          RAISE EXCEPTION 'err';
-         
+        
       END IF;
-   
+  
    END IF;
-
+   --RAISE WARNING 'fdr % % % %',int_raster_srid,ST_SRID(out_FDR),ST_SummaryStats(out_FDR),ST_ASEWKT(ST_MinConvexHull(out_FDR));
+   
    --------------------------------------------------------------------------
    -- Step 50
    -- Fetch the FAC raster if requested
@@ -6471,7 +6474,7 @@ BEGIN
    THEN
       IF int_raster_srid = 5070
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -6486,7 +6489,7 @@ BEGIN
 
       ELSIF int_raster_srid = 3338
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -6497,11 +6500,11 @@ BEGIN
          FROM
          cipsrv_nhdplusgrid_m.fac_3338_rdt a
          WHERE
-         ST_INTERSECTS(a.rast,sdo_fac_selector); 
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
 
       ELSIF int_raster_srid = 26904
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -6512,11 +6515,11 @@ BEGIN
          FROM
          cipsrv_nhdplusgrid_m.fac_26904_rdt a
          WHERE
-         ST_INTERSECTS(a.rast,sdo_fac_selector); 
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
 
       ELSIF int_raster_srid = 32161
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -6531,7 +6534,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32655
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -6546,7 +6549,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32702
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -6561,10 +6564,11 @@ BEGIN
 
       ELSE
          RAISE EXCEPTION 'err';
-         
+        
       END IF;
-   
+  
    END IF;
+   --RAISE WARNING 'fac % % % %',int_raster_srid,ST_SRID(out_FAC),ST_SummaryStats(out_FAC),ST_ASEWKT(ST_MinConvexHull(out_FAC));
    
 END;
 $BODY$
@@ -18666,6 +18670,9 @@ BEGIN
       RAISE EXCEPTION 'No results for FAC raster';
    
    END IF;
+   --RAISE WARNING 'inc area %',ST_AREA(sdo_catchment);
+   --RAISE WARNING 'fdr area % sum %',ST_AREA(ST_MinConvexHull(rast)),ST_Summary(rast);
+   --RAISE WARNING 'fac area % sum %',ST_AREA(ST_MinConvexHull(rast_fac)),ST_Summary(rast_fac);
 
    --------------------------------------------------------------------------
    -- Step 70
@@ -18679,7 +18686,7 @@ BEGIN
       ,p_2d_flag              := TRUE
       ,p_polygon_mask         := ST_Buffer(sdo_catchment,-1)
    );
-   --RAISE WARNING '%', st_astext(st_transform(st_collect(sdo_top_point,sdo_catchment),4269));
+   --RAISE WARNING '%',ST_ASEWKT(ST_Transform(ST_Collect(sdo_top_point,sdo_catchment),4269));
 
    --------------------------------------------------------------------------
    -- Step 80
@@ -18692,17 +18699,19 @@ BEGIN
    );
    int_column_x := rec.out_columnX;
    int_row_y    := rec.out_rowY;
-   
+   --RAISE WARNING '% %',int_column_x,int_row_y;
+   --RAISE WARNING 'deepest cell %',ST_AsEWKT(ST_Transform(ST_PixelAsPoint(rast,int_column_x,int_row_y),4269));
+
    --------------------------------------------------------------------------
    -- Step 90
-   -- Convert downstream path into multipoint and get closest point to input
+   -- Generate the downstream path
    --------------------------------------------------------------------------
    sdo_downstream := cipsrv_engine.raster_raindrop(
        p_raster       := rast
       ,p_columnX      := int_column_x
       ,p_rowY         := int_row_y
    );
-   --raise warning '%', st_astext(st_transform(st_collect(sdo_catchment,st_collect(null,sdo_downstream)),4269));
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(sdo_downstream,4269));
 
    --------------------------------------------------------------------------
    -- Step 100
@@ -18719,7 +18728,8 @@ BEGIN
        sdo_downstream
       ,sdo_point
    );
-   --raise warning '%', st_astext(st_transform(st_collect(sdo_catchment,st_collect(null,sdo_grid_point)),4269));
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(sdo_catchment,4269));
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(sdo_grid_point,4269));
    
    --------------------------------------------------------------------------
    -- Step 110
@@ -18737,7 +18747,10 @@ BEGIN
    
    int_column_x := rec.columnx;
    int_row_y    := rec.rowy;
-
+   --RAISE WARNING '% %',int_column_x,int_row_y;
+   --RAISE WARNING 'split point %',ST_AsEWKT(ST_Transform(ST_PixelAsPoint(rast,int_column_x,int_row_y),4269));
+   --RAISE WARNING '% %',ST_Width(rast),ST_Height(rast);
+   
    --------------------------------------------------------------------------
    -- Step 120
    -- Recursively delineation the upstream cells
@@ -18747,7 +18760,9 @@ BEGIN
       ,p_row_y    := int_row_y
       ,iout_rast  := rast
    );
-
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(ST_MinConvexHull(rec.iout_rast),4269));
+   --RAISE WARNING '% %',ST_Width(rec.iout_rast),ST_Height(rec.iout_rast);
+   
    --------------------------------------------------------------------------
    -- Step 130
    -- Blank out all but the delineated cells (make nodata 0 for ST_Polygon)
@@ -18759,7 +18774,7 @@ BEGIN
       ,'8BUI'
       ,0
    );
-   --raise warning '%', st_astext(st_transform(ST_Polygon(rast),4269));
+   --RAISE WARNING 'reclassed % %',ST_AREA(ST_MinConvexHull(rast)),ST_Summary(rast);
    
    --------------------------------------------------------------------------
    -- Step 140
@@ -18775,7 +18790,8 @@ BEGIN
        )
       ,1
    );
-   --raise warning '%', st_astext(st_transform(ST_Collect(sdo_results,sdo_catchment),4269));
+   --RAISE WARNING '%',ST_Area(sdo_catchment);
+   --RAISE WARNING '% %',ST_Area(sdo_results),ST_AsEWKT(ST_Transform(sdo_results,4269));
    
    --------------------------------------------------------------------------
    -- Step 150
@@ -18807,7 +18823,8 @@ BEGIN
    RETURN sdo_results;
 
 END;
-$BODY$ LANGUAGE 'plpgsql';
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_nhdplus_m.split_catchment(
     GEOMETRY

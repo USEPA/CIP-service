@@ -1,10 +1,10 @@
-DO $$DECLARE 
+DO $$DECLARE
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.fetch_grids_by_geometry';
-   IF b IS NOT NULL THEN 
+   IF b IS NOT NULL THEN
    EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
    IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
 END$$;
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
 )
 STABLE
 AS
-$BODY$ 
+$BODY$
 DECLARE
    rec                RECORD;
    int_raster_srid    INTEGER;
@@ -33,7 +33,7 @@ DECLARE
    sdo_fac_selector   GEOMETRY := p_FAC_input;
    int_fdr_nodata     INTEGER  := p_FDR_nodata;
    int_fac_nodata     INTEGER  := p_FAC_nodata;
-   
+  
 BEGIN
 
    ----------------------------------------------------------------------------
@@ -44,51 +44,51 @@ BEGIN
    AND sdo_fac_selector IS NULL
    THEN
       RAISE EXCEPTION 'input selections cannot both be null';
-      
+     
    ELSIF sdo_fdr_selector IS NULL
    THEN
       sdo_test_input := sdo_fac_selector;
-      
+     
    ELSE
       sdo_test_input := sdo_fdr_selector;
-   
+  
    END IF;
-   
-   IF  sdo_fdr_selector IS NOT NULL 
+  
+   IF  sdo_fdr_selector IS NOT NULL
    AND ST_GeometryType(sdo_fdr_selector) NOT IN ('ST_Polygon','ST_MultiPolygon')
    THEN
       RAISE EXCEPTION 'fdr geometry selector must be polygon';
-      
+     
    END IF;
-   
-   IF  sdo_fac_selector IS NOT NULL 
+  
+   IF  sdo_fac_selector IS NOT NULL
    AND ST_GeometryType(sdo_fac_selector) NOT IN ('ST_Polygon','ST_MultiPolygon')
    THEN
       RAISE EXCEPTION 'fac geometry selector must be polygon';
-      
+     
    END IF;
-   
+  
    IF int_fdr_nodata IS NULL
    THEN
       int_fdr_nodata := 255;
-      
+     
    END IF;
-   
+  
    IF int_fac_nodata IS NULL
    THEN
       int_fac_nodata := 2147483647;
-      
+     
    END IF;
-   
+  
    IF int_fdr_nodata < 0
    THEN
       RAISE EXCEPTION 'fdr nodata value must be unsigned 8 bit integer';
-   
-   END IF;   
-   
+  
+   END IF;  
+  
    --------------------------------------------------------------------------
    -- Step 20
-   -- Determine the grid projection 
+   -- Determine the grid projection
    --------------------------------------------------------------------------
    rec := cipsrv_nhdplus_m.determine_grid_srid(
        p_geometry       := sdo_fdr_selector
@@ -97,13 +97,13 @@ BEGIN
    int_raster_srid    := rec.out_srid;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
-   
+  
    IF out_return_code != 0
    THEN
       RETURN;
-      
+     
    END IF;
-   
+  
    --------------------------------------------------------------------------
    -- Step 30
    -- Project initial point
@@ -115,15 +115,15 @@ BEGIN
       IF sdo_fdr_selector IS NOT NULL
       THEN
          sdo_fdr_selector := ST_Transform(sdo_fdr_selector,int_raster_srid);
-      
+     
       END IF;
-      
+     
       IF sdo_fac_selector IS NOT NULL
       THEN
          sdo_fac_selector := ST_Transform(sdo_fac_selector,int_raster_srid);
-      
+     
       END IF;
-      
+     
    END IF;
 
    --------------------------------------------------------------------------
@@ -134,7 +134,7 @@ BEGIN
    THEN
       IF int_raster_srid = 5070
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -149,7 +149,7 @@ BEGIN
 
       ELSIF int_raster_srid = 3338
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -164,7 +164,7 @@ BEGIN
 
       ELSIF int_raster_srid = 26904
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -179,7 +179,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32161
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -194,7 +194,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32655
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -209,7 +209,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32702
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fdr_selector
@@ -224,11 +224,12 @@ BEGIN
 
       ELSE
          RAISE EXCEPTION 'err';
-         
+        
       END IF;
-   
+  
    END IF;
-
+   --RAISE WARNING 'fdr % % % %',int_raster_srid,ST_SRID(out_FDR),ST_SummaryStats(out_FDR),ST_ASEWKT(ST_MinConvexHull(out_FDR));
+   
    --------------------------------------------------------------------------
    -- Step 50
    -- Fetch the FAC raster if requested
@@ -237,7 +238,7 @@ BEGIN
    THEN
       IF int_raster_srid = 5070
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -252,7 +253,7 @@ BEGIN
 
       ELSIF int_raster_srid = 3338
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -263,11 +264,11 @@ BEGIN
          FROM
          cipsrv_nhdplusgrid_m.fac_3338_rdt a
          WHERE
-         ST_INTERSECTS(a.rast,sdo_fac_selector); 
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
 
       ELSIF int_raster_srid = 26904
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -278,11 +279,11 @@ BEGIN
          FROM
          cipsrv_nhdplusgrid_m.fac_26904_rdt a
          WHERE
-         ST_INTERSECTS(a.rast,sdo_fac_selector); 
+         ST_INTERSECTS(a.rast,sdo_fac_selector);
 
       ELSIF int_raster_srid = 32161
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -297,7 +298,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32655
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -312,7 +313,7 @@ BEGIN
 
       ELSIF int_raster_srid = 32702
       THEN
-         SELECT 
+         SELECT
          ST_Clip(
              ST_Union(a.rast)
             ,sdo_fac_selector
@@ -327,10 +328,11 @@ BEGIN
 
       ELSE
          RAISE EXCEPTION 'err';
-         
+        
       END IF;
-   
+  
    END IF;
+   --RAISE WARNING 'fac % % % %',int_raster_srid,ST_SRID(out_FAC),ST_SummaryStats(out_FAC),ST_ASEWKT(ST_MinConvexHull(out_FAC));
    
 END;
 $BODY$

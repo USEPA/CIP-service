@@ -73,6 +73,7 @@ DECLARE
    boo_zero_length_delin           BOOLEAN;   
    boo_force_no_cache              BOOLEAN;
    boo_cached_watershed            BOOLEAN;
+   int_temp                        INTEGER;
 
 BEGIN
 
@@ -446,7 +447,7 @@ BEGIN
          RETURN;
          
       END IF;
-   
+
       -- This might need to be adjusted to be a bit further downstream, dunno
       sdo_splitpoint := cipsrv_nhdplus_m.point_at_measure(
           p_nhdplusid            := out_start_nhdplusid
@@ -461,7 +462,7 @@ BEGIN
          ,p_nhdplusid    := out_start_nhdplusid
          ,p_known_region := out_grid_srid::VARCHAR
       );
-      --raise warning '% %',int_catchments, st_astext(st_transform(st_collect(sdo_splitpoint,NULL),4269));
+      --RAISE WARNING '% %',int_catchments, st_astext(st_transform(st_collect(sdo_splitpoint,NULL),4269));
       
       IF sdo_split_catchment IS NULL
       THEN
@@ -472,7 +473,8 @@ BEGIN
          RETURN;
          
       END IF;
-   
+      --RAISE WARNING 'boo_topology_flag: % %',boo_topology_flag,out_grid_srid;
+      
    -----------------------------------------------------------------------------
    -- Step 90
    -- Swap in the split catchment for catchment and geometric aggregation
@@ -549,7 +551,7 @@ BEGIN
       END IF;
       
    END IF;
-   
+
    -----------------------------------------------------------------------------
    -- Step 100
    -- Branch based on aggregation decision - return aggregated catchment poly
@@ -612,7 +614,7 @@ BEGIN
       END IF;
    
    END IF;
-   
+
    -----------------------------------------------------------------------------
    -- Step 110
    -- Migrate catchment geometry if requested

@@ -392,6 +392,8 @@ BEGIN
             ,CASE WHEN boo_return_delineation_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
             FROM
             tmp_catchments a
+            WHERE
+            a.sourcefc   = 'AGGR'
             ORDER BY
              a.nhdplusid
          ) t

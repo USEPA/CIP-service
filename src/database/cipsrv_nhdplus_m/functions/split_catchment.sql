@@ -290,6 +290,9 @@ BEGIN
       RAISE EXCEPTION 'No results for FAC raster';
    
    END IF;
+   --RAISE WARNING 'inc area %',ST_AREA(sdo_catchment);
+   --RAISE WARNING 'fdr area % sum %',ST_AREA(ST_MinConvexHull(rast)),ST_Summary(rast);
+   --RAISE WARNING 'fac area % sum %',ST_AREA(ST_MinConvexHull(rast_fac)),ST_Summary(rast_fac);
 
    --------------------------------------------------------------------------
    -- Step 70
@@ -303,7 +306,7 @@ BEGIN
       ,p_2d_flag              := TRUE
       ,p_polygon_mask         := ST_Buffer(sdo_catchment,-1)
    );
-   --RAISE WARNING '%', st_astext(st_transform(st_collect(sdo_top_point,sdo_catchment),4269));
+   --RAISE WARNING '%',ST_ASEWKT(ST_Transform(ST_Collect(sdo_top_point,sdo_catchment),4269));
 
    --------------------------------------------------------------------------
    -- Step 80
@@ -316,17 +319,19 @@ BEGIN
    );
    int_column_x := rec.out_columnX;
    int_row_y    := rec.out_rowY;
-   
+   --RAISE WARNING '% %',int_column_x,int_row_y;
+   --RAISE WARNING 'deepest cell %',ST_AsEWKT(ST_Transform(ST_PixelAsPoint(rast,int_column_x,int_row_y),4269));
+
    --------------------------------------------------------------------------
    -- Step 90
-   -- Convert downstream path into multipoint and get closest point to input
+   -- Generate the downstream path
    --------------------------------------------------------------------------
    sdo_downstream := cipsrv_engine.raster_raindrop(
        p_raster       := rast
       ,p_columnX      := int_column_x
       ,p_rowY         := int_row_y
    );
-   --raise warning '%', st_astext(st_transform(st_collect(sdo_catchment,st_collect(null,sdo_downstream)),4269));
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(sdo_downstream,4269));
 
    --------------------------------------------------------------------------
    -- Step 100
@@ -343,7 +348,8 @@ BEGIN
        sdo_downstream
       ,sdo_point
    );
-   --raise warning '%', st_astext(st_transform(st_collect(sdo_catchment,st_collect(null,sdo_grid_point)),4269));
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(sdo_catchment,4269));
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(sdo_grid_point,4269));
    
    --------------------------------------------------------------------------
    -- Step 110
@@ -361,7 +367,10 @@ BEGIN
    
    int_column_x := rec.columnx;
    int_row_y    := rec.rowy;
-
+   --RAISE WARNING '% %',int_column_x,int_row_y;
+   --RAISE WARNING 'split point %',ST_AsEWKT(ST_Transform(ST_PixelAsPoint(rast,int_column_x,int_row_y),4269));
+   --RAISE WARNING '% %',ST_Width(rast),ST_Height(rast);
+   
    --------------------------------------------------------------------------
    -- Step 120
    -- Recursively delineation the upstream cells
@@ -371,7 +380,9 @@ BEGIN
       ,p_row_y    := int_row_y
       ,iout_rast  := rast
    );
-
+   --RAISE WARNING '%',ST_AsEWKT(ST_Transform(ST_MinConvexHull(rec.iout_rast),4269));
+   --RAISE WARNING '% %',ST_Width(rec.iout_rast),ST_Height(rec.iout_rast);
+   
    --------------------------------------------------------------------------
    -- Step 130
    -- Blank out all but the delineated cells (make nodata 0 for ST_Polygon)
@@ -383,7 +394,7 @@ BEGIN
       ,'8BUI'
       ,0
    );
-   --raise warning '%', st_astext(st_transform(ST_Polygon(rast),4269));
+   --RAISE WARNING 'reclassed % %',ST_AREA(ST_MinConvexHull(rast)),ST_Summary(rast);
    
    --------------------------------------------------------------------------
    -- Step 140
@@ -399,7 +410,8 @@ BEGIN
        )
       ,1
    );
-   --raise warning '%', st_astext(st_transform(ST_Collect(sdo_results,sdo_catchment),4269));
+   --RAISE WARNING '%',ST_Area(sdo_catchment);
+   --RAISE WARNING '% %',ST_Area(sdo_results),ST_AsEWKT(ST_Transform(sdo_results,4269));
    
    --------------------------------------------------------------------------
    -- Step 150
@@ -431,7 +443,8 @@ BEGIN
    RETURN sdo_results;
 
 END;
-$BODY$ LANGUAGE 'plpgsql';
+$BODY$ 
+LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_nhdplus_m.split_catchment(
     GEOMETRY
