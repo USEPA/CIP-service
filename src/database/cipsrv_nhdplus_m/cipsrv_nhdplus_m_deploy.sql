@@ -3606,23 +3606,27 @@ BEGIN
       str_aggregation_engine := 'SPATIAL';
       boo_aggregation_flag   := TRUE;
       boo_topology_flag      := FALSE;
+      out_aggregation_used   := 'SPATIAL';
       
    ELSIF str_aggregation_engine IN ('TOPO')
    THEN
       str_aggregation_engine := 'TOPO';
       boo_aggregation_flag   := TRUE;
       boo_topology_flag      := TRUE;
+      out_aggregation_used   := 'TOPO';
    
    ELSIF str_aggregation_engine IN ('NONE')
    THEN
       str_aggregation_engine := 'NONE';
       boo_aggregation_flag   := FALSE;
       boo_topology_flag      := FALSE;
+      out_aggregation_used   := 'NONE';
    
    ELSE
       str_aggregation_engine := 'TOPO';
       boo_aggregation_flag   := TRUE;
       boo_topology_flag      := TRUE;
+      out_aggregation_used   := 'TOPO';
       
    END IF;
    
@@ -4027,6 +4031,7 @@ BEGIN
    -----------------------------------------------------------------------------
    IF  NOT boo_cached_watershed
    AND NOT boo_zero_length_delin
+   AND boo_aggregation_flag
    THEN
       IF boo_topology_flag
       THEN
@@ -4516,31 +4521,8 @@ BEGIN
    ---------------------------------------------------------------------------- 
    IF NOT p_aggregation_flag
    THEN
-      INSERT INTO tmp_catchments(
-          nhdplusid
-         ,sourcefc
-         ,gridcode
-         ,areasqkm
-         ,hydroseq
-         ,shape
-      )
-      SELECT
-       b.nhdplusid
-      ,b.areasqkm
-      ,a.hydroseq
-      ,CASE WHEN p_return_delineation_geometry THEN b.shape ELSE NULL::GEOMETRY END AS shape
-      FROM
-      tmp_navigation_results a
-      JOIN
-      cipsrv_nhdplus_m.nhdpluscatchment b
-      ON
-      b.nhdplusid = a.nhdplusid;
-
-      GET DIAGNOSTICS int_inserted = ROW_COUNT;
-      out_records_inserted := out_records_inserted + int_inserted;
-      
-      IF array_length(p_extra_catchments,1) > 0
-      THEN
+      IF p_srid = 5070
+      THEN      
          INSERT INTO tmp_catchments(
              nhdplusid
             ,areasqkm
@@ -4548,19 +4530,282 @@ BEGIN
             ,shape
          )
          SELECT
-          a.nhdplusid
-         ,a.areasqkm
-         ,0
-         ,CASE WHEN p_return_delineation_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+          b.nhdplusid
+         ,b.areasqkm
+         ,a.hydroseq
+         ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(b.shape,4269) ELSE NULL::GEOMETRY END AS shape
          FROM
-         cipsrv_nhdplus_m.nhdpluscatchment a
-         WHERE
-         a.nhdplusid = ANY(p_extra_catchments)
-         ON CONFLICT DO NOTHING;
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_5070_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
 
          GET DIAGNOSTICS int_inserted = ROW_COUNT;
          out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,areasqkm
+               ,hydroseq
+               ,shape
+            )
+            SELECT
+             a.nhdplusid
+            ,a.areasqkm
+            ,0
+            ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(a.shape,4269) ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_5070_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
 
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+         
+      ELSIF p_srid = 3338
+      THEN      
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,areasqkm
+            ,hydroseq
+            ,shape
+         )
+         SELECT
+          b.nhdplusid
+         ,b.areasqkm
+         ,a.hydroseq
+         ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(b.shape,4269) ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_3338_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,areasqkm
+               ,hydroseq
+               ,shape
+            )
+            SELECT
+             a.nhdplusid
+            ,a.areasqkm
+            ,0
+            ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(a.shape,4269) ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_3338_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+         
+      ELSIF p_srid = 26904
+      THEN      
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,areasqkm
+            ,hydroseq
+            ,shape
+         )
+         SELECT
+          b.nhdplusid
+         ,b.areasqkm
+         ,a.hydroseq
+         ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(b.shape,4269) ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_26904_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,areasqkm
+               ,hydroseq
+               ,shape
+            )
+            SELECT
+             a.nhdplusid
+            ,a.areasqkm
+            ,0
+            ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(a.shape,4269) ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_26904_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+         
+      ELSIF p_srid = 32161
+      THEN      
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,areasqkm
+            ,hydroseq
+            ,shape
+         )
+         SELECT
+          b.nhdplusid
+         ,b.areasqkm
+         ,a.hydroseq
+         ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(b.shape,4269) ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_32161_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,areasqkm
+               ,hydroseq
+               ,shape
+            )
+            SELECT
+             a.nhdplusid
+            ,a.areasqkm
+            ,0
+            ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(a.shape,4269) ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_32161_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+         
+      ELSIF p_srid = 32655
+      THEN      
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,areasqkm
+            ,hydroseq
+            ,shape
+         )
+         SELECT
+          b.nhdplusid
+         ,b.areasqkm
+         ,a.hydroseq
+         ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(b.shape,4269) ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_32655_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,areasqkm
+               ,hydroseq
+               ,shape
+            )
+            SELECT
+             a.nhdplusid
+            ,a.areasqkm
+            ,0
+            ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(a.shape,4269) ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_32655_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+         
+      ELSIF p_srid = 32702
+      THEN      
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,areasqkm
+            ,hydroseq
+            ,shape
+         )
+         SELECT
+          b.nhdplusid
+         ,b.areasqkm
+         ,a.hydroseq
+         ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(b.shape,4269) ELSE NULL::GEOMETRY END AS shape
+         FROM
+         tmp_navigation_results a
+         JOIN
+         cipsrv_nhdplus_m.catchment_32702_full b
+         ON
+         b.nhdplusid = a.nhdplusid;
+
+         GET DIAGNOSTICS int_inserted = ROW_COUNT;
+         out_records_inserted := out_records_inserted + int_inserted;
+         
+         IF array_length(p_extra_catchments,1) > 0
+         THEN
+            INSERT INTO tmp_catchments(
+                nhdplusid
+               ,areasqkm
+               ,hydroseq
+               ,shape
+            )
+            SELECT
+             a.nhdplusid
+            ,a.areasqkm
+            ,0
+            ,CASE WHEN p_return_delineation_geometry THEN ST_Transform(a.shape,4269) ELSE NULL::GEOMETRY END AS shape
+            FROM
+            cipsrv_nhdplus_m.catchment_32702_full a
+            WHERE
+            a.nhdplusid = ANY(p_extra_catchments)
+            ON CONFLICT DO NOTHING;
+
+            GET DIAGNOSTICS int_inserted = ROW_COUNT;
+            out_records_inserted := out_records_inserted + int_inserted;
+
+         END IF;
+         
+      ELSE
+         RAISE EXCEPTION 'err';
+         
       END IF;
       
    -----------------------------------------------------------------------------
@@ -10941,7 +11186,7 @@ BEGIN
    IF p_grid_srid = 5070
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(shape_5070,0.05))
+      ST_Union(shape_5070)
       INTO sdo_output
       FROM (
          SELECT
@@ -10955,7 +11200,7 @@ BEGIN
    ELSIF p_grid_srid = 3338
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(shape_3338,0.05))
+      ST_Union(shape_3338)
       INTO sdo_output
       FROM (
          SELECT
@@ -10969,7 +11214,7 @@ BEGIN
    ELSIF p_grid_srid = 26904
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_26904,0.05))
+      ST_Union(a.shape_26904)
       INTO sdo_output
       FROM (
          SELECT
@@ -10983,7 +11228,7 @@ BEGIN
    ELSIF p_grid_srid = 32161
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_32161,0.05))
+      ST_Union(a.shape_32161)
       INTO sdo_output
       FROM (
          SELECT
@@ -10997,7 +11242,7 @@ BEGIN
    ELSIF p_grid_srid = 32655
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_32655,0.05))
+      ST_Union(a.shape_32655)
       INTO sdo_output
       FROM (
          SELECT
@@ -11011,7 +11256,7 @@ BEGIN
    ELSIF p_grid_srid = 32702
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_32702,0.05))
+      ST_Union(a.shape_32702)
       INTO sdo_output
       FROM (
          SELECT
@@ -11197,7 +11442,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
 
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -11255,7 +11501,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
 
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -11298,7 +11545,7 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_3338.relation a 
+      cipsrv_nhdplustopo_m_catchment_fabric_26904.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
@@ -11313,7 +11560,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
       
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -11371,7 +11619,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
       
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -11429,7 +11678,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
       
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -11487,7 +11737,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
    
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -11664,13 +11915,11 @@ BEGIN
    INSERT INTO tmp_catchments(
        nhdplusid
       ,sourcefc
-      ,gridcode
       ,areasqkm
       ,shape
    ) VALUES (
        -9999999
       ,'AGGR'
-      ,-9999
       ,out_total_areasqkm
       ,ST_Transform(out_geometry,4269)
    );

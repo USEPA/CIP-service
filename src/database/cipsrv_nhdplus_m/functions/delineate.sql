@@ -137,23 +137,27 @@ BEGIN
       str_aggregation_engine := 'SPATIAL';
       boo_aggregation_flag   := TRUE;
       boo_topology_flag      := FALSE;
+      out_aggregation_used   := 'SPATIAL';
       
    ELSIF str_aggregation_engine IN ('TOPO')
    THEN
       str_aggregation_engine := 'TOPO';
       boo_aggregation_flag   := TRUE;
       boo_topology_flag      := TRUE;
+      out_aggregation_used   := 'TOPO';
    
    ELSIF str_aggregation_engine IN ('NONE')
    THEN
       str_aggregation_engine := 'NONE';
       boo_aggregation_flag   := FALSE;
       boo_topology_flag      := FALSE;
+      out_aggregation_used   := 'NONE';
    
    ELSE
       str_aggregation_engine := 'TOPO';
       boo_aggregation_flag   := TRUE;
       boo_topology_flag      := TRUE;
+      out_aggregation_used   := 'TOPO';
       
    END IF;
    
@@ -558,6 +562,7 @@ BEGIN
    -----------------------------------------------------------------------------
    IF  NOT boo_cached_watershed
    AND NOT boo_zero_length_delin
+   AND boo_aggregation_flag
    THEN
       IF boo_topology_flag
       THEN

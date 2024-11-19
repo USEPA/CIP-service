@@ -111,12 +111,12 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_5070.relation a 
+      cipsrv_nhdplustopo_h_catchment_fabric_5070.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
          FROM 
-         cipsrv_nhdplustopo_m.catchment_5070_topo aa 
+         cipsrv_nhdplustopo_h.catchment_5070_topo aa 
          JOIN
          tmp_catchments bb
          ON
@@ -144,7 +144,7 @@ BEGIN
       ,a1.geom
       ,0
       FROM
-      cipsrv_nhdplustopo_m_catchment_fabric_5070.edge_data a1 
+      cipsrv_nhdplustopo_h_catchment_fabric_5070.edge_data a1 
       WHERE 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
@@ -156,7 +156,7 @@ BEGIN
       ,a2.geom
       ,0
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_5070.edge_data a2 
+      cipsrv_nhdplustopo_h_catchment_fabric_5070.edge_data a2 
       WHERE 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
@@ -169,12 +169,12 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_3338.relation a 
+      cipsrv_nhdplustopo_h_catchment_fabric_3338.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
          FROM 
-         cipsrv_nhdplustopo_m.catchment_3338_topo aa 
+         cipsrv_nhdplustopo_h.catchment_3338_topo aa 
          JOIN
          tmp_catchments bb
          ON
@@ -202,7 +202,7 @@ BEGIN
       ,a1.geom
       ,0
       FROM
-      cipsrv_nhdplustopo_m_catchment_fabric_3338.edge_data a1 
+      cipsrv_nhdplustopo_h_catchment_fabric_3338.edge_data a1 
       WHERE 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
@@ -214,7 +214,7 @@ BEGIN
       ,a2.geom
       ,0
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_3338.edge_data a2 
+      cipsrv_nhdplustopo_h_catchment_fabric_3338.edge_data a2 
       WHERE 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
@@ -227,12 +227,12 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_3338.relation a 
+      cipsrv_nhdplustopo_h_catchment_fabric_26904.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
          FROM 
-         cipsrv_nhdplustopo_m.catchment_26904_topo aa 
+         cipsrv_nhdplustopo_h.catchment_26904_topo aa 
          JOIN
          tmp_catchments bb
          ON
@@ -260,7 +260,7 @@ BEGIN
       ,a1.geom
       ,0
       FROM
-      cipsrv_nhdplustopo_m_catchment_fabric_26904.edge_data a1 
+      cipsrv_nhdplustopo_h_catchment_fabric_26904.edge_data a1 
       WHERE 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
@@ -272,7 +272,7 @@ BEGIN
       ,a2.geom
       ,0
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_26904.edge_data a2 
+      cipsrv_nhdplustopo_h_catchment_fabric_26904.edge_data a2 
       WHERE 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
@@ -285,12 +285,12 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_32161.relation a 
+      cipsrv_nhdplustopo_h_catchment_fabric_32161.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
          FROM 
-         cipsrv_nhdplustopo_m.catchment_32161_topo aa 
+         cipsrv_nhdplustopo_h.catchment_32161_topo aa 
          JOIN
          tmp_catchments bb
          ON
@@ -318,7 +318,7 @@ BEGIN
       ,a1.geom
       ,0
       FROM
-      cipsrv_nhdplustopo_m_catchment_fabric_32161.edge_data a1 
+      cipsrv_nhdplustopo_h_catchment_fabric_32161.edge_data a1 
       WHERE 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
@@ -330,7 +330,7 @@ BEGIN
       ,a2.geom
       ,0
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_32161.edge_data a2 
+      cipsrv_nhdplustopo_h_catchment_fabric_32161.edge_data a2 
       WHERE 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
@@ -343,12 +343,12 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_32655.relation a 
+      cipsrv_nhdplustopo_h_catchment_fabric_32655.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
          FROM 
-         cipsrv_nhdplustopo_m.catchment_32655_topo aa 
+         cipsrv_nhdplustopo_h.catchment_32655_topo aa 
          JOIN
          tmp_catchments bb
          ON
@@ -376,7 +376,7 @@ BEGIN
       ,a1.geom
       ,0
       FROM
-      cipsrv_nhdplustopo_m_catchment_fabric_32655.edge_data a1 
+      cipsrv_nhdplustopo_h_catchment_fabric_32655.edge_data a1 
       WHERE 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
@@ -388,7 +388,7 @@ BEGIN
       ,a2.geom
       ,0
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_32655.edge_data a2 
+      cipsrv_nhdplustopo_h_catchment_fabric_32655.edge_data a2 
       WHERE 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
@@ -401,12 +401,12 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_32702.relation a 
+      cipsrv_nhdplustopo_h_catchment_fabric_32702.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
          FROM 
-         cipsrv_nhdplustopo_m.catchment_32702_topo aa 
+         cipsrv_nhdplustopo_h.catchment_32702_topo aa 
          JOIN
          tmp_catchments bb
          ON
@@ -434,7 +434,7 @@ BEGIN
       ,a1.geom
       ,0
       FROM
-      cipsrv_nhdplustopo_m_catchment_fabric_32702.edge_data a1 
+      cipsrv_nhdplustopo_h_catchment_fabric_32702.edge_data a1 
       WHERE 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f1 where f1.face_id = a1.left_face) AND 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f2 WHERE f2.face_id = a1.right_face) 
@@ -446,7 +446,7 @@ BEGIN
       ,a2.geom
       ,0
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_32702.edge_data a2 
+      cipsrv_nhdplustopo_h_catchment_fabric_32702.edge_data a2 
       WHERE 
       NOT EXISTS (SELECT 1 FROM tmp_delineation_faces f3 where f3.face_id = a2.left_face) AND 
       EXISTS (SELECT 1 FROM tmp_delineation_faces f4 WHERE f4.face_id = a2.right_face);
@@ -593,13 +593,11 @@ BEGIN
    INSERT INTO tmp_catchments(
        nhdplusid
       ,sourcefc
-      ,gridcode
       ,areasqkm
       ,shape
    ) VALUES (
        -9999999
       ,'AGGR'
-      ,-9999
       ,out_total_areasqkm
       ,ST_Transform(out_geometry,4269)
    );

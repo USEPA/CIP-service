@@ -372,33 +372,66 @@ BEGIN
    -- Step 40
    -- Build the delineated_area featurecollection
    ----------------------------------------------------------------------------
-   json_delineated_area := (
-      SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
-      FROM (
+   IF str_aggregation_used = 'NONE'
+   THEN
+      json_delineated_area := (
          SELECT 
-         JSONB_BUILD_OBJECT(
-             'type',       'Feature'
-            ,'obj_type',   'delineated_area_properties'
-            ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-            ,'properties', TO_JSONB(t.*) - 'geom'
-         ) AS my_json
+         JSONB_AGG(j.my_json) AS my_feats
          FROM (
-            SELECT
-             a.nhdplusid
-            ,a.sourcefc
-            ,a.hydroseq
-            ,a.areasqkm
-            ,CASE WHEN boo_return_delineation_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
-            FROM
-            tmp_catchments a
-            WHERE
-            a.sourcefc   = 'AGGR'
-            ORDER BY
-             a.nhdplusid
-         ) t
-      ) j
-   );
+            SELECT 
+            JSONB_BUILD_OBJECT(
+                'type',       'Feature'
+               ,'obj_type',   'delineated_area_properties'
+               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+               ,'properties', TO_JSONB(t.*) - 'geom'
+            ) AS my_json
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.sourcefc
+               ,a.hydroseq
+               ,a.areasqkm
+               ,CASE WHEN boo_return_delineation_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
+               FROM
+               tmp_catchments a
+               WHERE
+               a.sourcefc IS NULL
+               ORDER BY
+                a.nhdplusid
+            ) t
+         ) j
+      );
+   
+   ELSE
+      json_delineated_area := (
+         SELECT 
+         JSONB_AGG(j.my_json) AS my_feats
+         FROM (
+            SELECT 
+            JSONB_BUILD_OBJECT(
+                'type',       'Feature'
+               ,'obj_type',   'delineated_area_properties'
+               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
+               ,'properties', TO_JSONB(t.*) - 'geom'
+            ) AS my_json
+            FROM (
+               SELECT
+                a.nhdplusid
+               ,a.sourcefc
+               ,a.hydroseq
+               ,a.areasqkm
+               ,CASE WHEN boo_return_delineation_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
+               FROM
+               tmp_catchments a
+               WHERE
+               a.sourcefc  = 'AGGR'
+               ORDER BY
+                a.nhdplusid
+            ) t
+         ) j
+      );
+      
+   END IF;
          
    IF json_delineated_area IS NULL
    OR JSONB_ARRAY_LENGTH(json_delineated_area) = 0

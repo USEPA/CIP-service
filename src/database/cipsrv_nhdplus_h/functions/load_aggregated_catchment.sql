@@ -25,7 +25,7 @@ BEGIN
    IF p_grid_srid = 5070
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(shape_5070,0.05))
+      ST_Union(shape_5070)
       INTO sdo_output
       FROM (
          SELECT
@@ -39,7 +39,7 @@ BEGIN
    ELSIF p_grid_srid = 3338
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(shape_3338,0.05))
+      ST_Union(shape_3338)
       INTO sdo_output
       FROM (
          SELECT
@@ -53,7 +53,7 @@ BEGIN
    ELSIF p_grid_srid = 26904
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_26904,0.05))
+      ST_Union(a.shape_26904)
       INTO sdo_output
       FROM (
          SELECT
@@ -67,7 +67,7 @@ BEGIN
    ELSIF p_grid_srid = 32161
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_32161,0.05))
+      ST_Union(a.shape_32161)
       INTO sdo_output
       FROM (
          SELECT
@@ -81,7 +81,7 @@ BEGIN
    ELSIF p_grid_srid = 32655
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_32655,0.05))
+      ST_Union(a.shape_32655)
       INTO sdo_output
       FROM (
          SELECT
@@ -95,7 +95,7 @@ BEGIN
    ELSIF p_grid_srid = 32702
    THEN
       SELECT 
-      ST_Union(ST_SnapToGrid(a.shape_32702,0.05))
+      ST_Union(a.shape_32702)
       INTO sdo_output
       FROM (
          SELECT

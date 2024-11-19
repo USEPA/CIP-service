@@ -126,7 +126,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
 
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -184,7 +185,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
 
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -227,7 +229,7 @@ BEGIN
       SELECT 
       a.element_id 
       FROM 
-      cipsrv_nhdplustopo_m_catchment_fabric_3338.relation a 
+      cipsrv_nhdplustopo_m_catchment_fabric_26904.relation a 
       JOIN (   
          SELECT 
          aa.topo_geom 
@@ -242,7 +244,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
       
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -300,7 +303,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
       
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -358,7 +362,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
       
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -416,7 +421,8 @@ BEGIN
       a.layer_id = (b.topo_geom).layer_id AND 
       a.topogeo_id = (b.topo_geom).id 
       WHERE 
-      a.element_type = 3;
+      a.element_type = 3
+      ON CONFLICT DO NOTHING;
    
       INSERT INTO tmp_delineation_edges(
           edge_id
@@ -593,13 +599,11 @@ BEGIN
    INSERT INTO tmp_catchments(
        nhdplusid
       ,sourcefc
-      ,gridcode
       ,areasqkm
       ,shape
    ) VALUES (
        -9999999
       ,'AGGR'
-      ,-9999
       ,out_total_areasqkm
       ,ST_Transform(out_geometry,4269)
    );
