@@ -3,6 +3,7 @@
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(
@@ -15,6 +16,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(
    ,connector_fromnode
    ,connector_tonode
    ,lengthkm
+   ,fcode
 )
 AS
 WITH cat AS (
@@ -27,10 +29,11 @@ WITH cat AS (
     ,aa.fromnode
     ,aa.tonode
     ,aa.lengthkm
+    ,aa.fcode
     FROM
-    cipsrv_nhdplus_h.nhdplusflowlinevaa aa
+    cipsrv_nhdplus_h.networknhdflowline aa
     WHERE 
-    EXISTS (SELECT 1 FROM cipsrv_nhdplus_h.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
+    EXISTS (SELECT 1 FROM cipsrv_epageofab_h.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
 )
 ,nocat AS (
    SELECT
@@ -39,9 +42,9 @@ WITH cat AS (
    ,cc.fromnode
    ,cc.tonode
    FROM
-   cipsrv_nhdplus_h.nhdplusflowlinevaa cc
+   cipsrv_nhdplus_h.networknhdflowline cc
    WHERE 
-   NOT EXISTS (SELECT 1 FROM cipsrv_nhdplus_h.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
+   NOT EXISTS (SELECT 1 FROM cipsrv_epageofab_h.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
 ) 
 SELECT
  NEXTVAL('cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes_seq') AS objectid
@@ -53,6 +56,7 @@ SELECT
 ,b.fromnode
 ,c.tonode
 ,a.lengthkm
+,a.fcode
 FROM
 cat a
 LEFT JOIN
@@ -91,6 +95,9 @@ ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(connector_fromnode);
 CREATE INDEX nhdplusflowlinevaa_catnodes_05i
 ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(connector_tonode);
 
+CREATE INDEX nhdplusflowlinevaa_catnodes_06i
+ON cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(fcode);
+
 ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes;
 
 --VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes;
@@ -114,8 +121,8 @@ SELECT
 ,a.levelpathi
 ,a.max_hydroseq
 ,a.min_hydroseq
-,(SELECT c.fromnode FROM cipsrv_nhdplus_h.nhdplusflowlinevaa c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
-,(SELECT d.tonode   FROM cipsrv_nhdplus_h.nhdplusflowlinevaa d WHERE d.hydroseq = a.min_hydroseq) AS tonode
+,(SELECT c.fromnode FROM cipsrv_nhdplus_h.networknhdflowline c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
+,(SELECT d.tonode   FROM cipsrv_nhdplus_h.networknhdflowline d WHERE d.hydroseq = a.min_hydroseq) AS tonode
 ,a.levelpathilengthkm 
 FROM (
    SELECT
@@ -125,7 +132,7 @@ FROM (
    ,MIN(aa.hydroseq) AS min_hydroseq
    ,SUM(aa.lengthkm) AS levelpathilengthkm
    FROM
-   cipsrv_nhdplus_h.nhdplusflowlinevaa aa
+   cipsrv_nhdplus_h.networknhdflowline aa
    GROUP BY
    aa.levelpathi
 ) a;
@@ -159,6 +166,7 @@ ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_3338 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.catchment_3338_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_3338_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
@@ -205,7 +213,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -247,7 +255,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_h.catchment_fabric aa
+   cipsrv_epageofab_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('AK')
    UNION ALL 
@@ -285,7 +293,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_h.catchment_fabric bbb
+      cipsrv_epageofab_h.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode IN ('AK')
       AND bbb.state_count > 1
@@ -296,11 +304,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_h.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_h.catchment_3338 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_3338 TO public;
@@ -359,6 +363,7 @@ ANALYZE cipsrv_nhdplus_h.catchment_3338;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_5070 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.catchment_5070_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_5070_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_5070(
@@ -405,7 +410,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -447,7 +452,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_h.catchment_fabric aa
+   cipsrv_epageofab_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
    UNION ALL 
@@ -485,7 +490,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_h.catchment_fabric bbb
+      cipsrv_epageofab_h.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
       AND bbb.state_count > 1
@@ -496,11 +501,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_h.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_h.catchment_5070 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_5070 TO public;
@@ -559,6 +560,7 @@ ANALYZE cipsrv_nhdplus_h.catchment_5070;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_26904 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.catchment_26904_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_26904_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_26904(
@@ -605,7 +607,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -647,7 +649,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_h.catchment_fabric aa
+   cipsrv_epageofab_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('HI')
    UNION ALL 
@@ -685,7 +687,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_h.catchment_fabric bbb
+      cipsrv_epageofab_h.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode IN ('HI')
       AND bbb.state_count > 1
@@ -696,11 +698,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_h.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_h.catchment_26904 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_26904 TO public;
@@ -759,6 +757,7 @@ ANALYZE cipsrv_nhdplus_h.catchment_26904;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_32161 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.catchment_32161_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_32161_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
@@ -805,7 +804,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -847,7 +846,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_h.catchment_fabric aa
+   cipsrv_epageofab_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('PR','VI')
    UNION ALL 
@@ -885,7 +884,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_h.catchment_fabric bbb
+      cipsrv_epageofab_h.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode IN ('PR','VI')
       AND bbb.state_count > 1
@@ -896,11 +895,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_h.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_h.catchment_32161 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_32161 TO public;
@@ -959,6 +954,7 @@ ANALYZE cipsrv_nhdplus_h.catchment_32161;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_32655 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.catchment_32655_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_32655_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32655(
@@ -1005,7 +1001,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -1047,7 +1043,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_h.catchment_fabric aa
+   cipsrv_epageofab_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('GU','MP')
    UNION ALL 
@@ -1085,7 +1081,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_h.catchment_fabric bbb
+      cipsrv_epageofab_h.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode IN ('GU','MP')
       AND bbb.state_count > 1
@@ -1096,11 +1092,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_h.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_h.catchment_32655 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_32655 TO public;
@@ -1159,6 +1151,7 @@ ANALYZE cipsrv_nhdplus_h.catchment_32655;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.catchment_32702 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.catchment_32702_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.catchment_32702_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32702(
@@ -1205,7 +1198,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -1247,7 +1240,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_h.catchment_fabric aa
+   cipsrv_epageofab_h.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('AS')
    UNION ALL 
@@ -1285,7 +1278,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_h.catchment_fabric bbb
+      cipsrv_epageofab_h.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode IN ('AS')
       AND bbb.state_count > 1
@@ -1296,11 +1289,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_h.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_h.catchment_32702 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_32702 TO public;
@@ -1359,6 +1348,9 @@ ANALYZE cipsrv_nhdplus_h.catchment_32702;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_3338 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_3338_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_3338_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_3338(
     objectid
    ,permanent_identifier
@@ -1377,7 +1369,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_3338(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -1387,7 +1378,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_3338(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_3338_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -1404,34 +1395,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,3338) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,2) IN ('19');
+SUBSTR(a.vpuid,1,2) IN ('19')
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_3338_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,3338) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,2) IN ('19');
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_3338 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_3338 TO public;
@@ -1466,6 +1474,9 @@ ANALYZE cipsrv_nhdplus_h.nhdflowline_3338;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_5070 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_5070_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_5070_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_5070(
     objectid
    ,permanent_identifier
@@ -1484,7 +1495,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_5070(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -1494,7 +1504,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_5070(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_5070_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -1511,34 +1521,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,5070) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,2) NOT IN ('19','20','21','22');
+SUBSTR(a.vpuid,1,2) NOT IN ('19','20','21','22')
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_5070_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,5070) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,2) NOT IN ('19','20','21','22');
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_5070 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_5070 TO public;
@@ -1573,6 +1600,9 @@ ANALYZE cipsrv_nhdplus_h.nhdflowline_5070;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_26904 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_26904_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_26904_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_26904(
     objectid
    ,permanent_identifier
@@ -1591,7 +1621,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_26904(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -1601,7 +1630,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_26904(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_26904_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -1618,34 +1647,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,26904) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,2) IN ('20');
+SUBSTR(a.vpuid,1,2) IN ('20')
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_26904_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,26904) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,2) IN ('20');
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_26904 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_26904 TO public;
@@ -1680,6 +1726,9 @@ ANALYZE cipsrv_nhdplus_h.nhdflowline_26904;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_32161 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_32161_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_32161_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
     objectid
    ,permanent_identifier
@@ -1698,7 +1747,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -1708,7 +1756,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32161_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -1725,34 +1773,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,32161) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,2) IN ('21');
+SUBSTR(a.vpuid,1,2) IN ('21')
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32161_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,32161) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,2) IN ('21');
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_32161 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_32161 TO public;
@@ -1787,6 +1852,9 @@ ANALYZE cipsrv_nhdplus_h.nhdflowline_32161;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_32655 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_32655_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_32655_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32655(
     objectid
    ,permanent_identifier
@@ -1805,7 +1873,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32655(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -1815,7 +1882,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32655(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32655_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -1832,34 +1899,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,32655) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,4) IN ('2201','2202');
+SUBSTR(a.vpuid,1,4) IN ('2201','2202')
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32655_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,32655) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,4) IN ('2201','2202');
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_32655 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_32655 TO public;
@@ -1894,6 +1978,9 @@ ANALYZE cipsrv_nhdplus_h.nhdflowline_32655;
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_32702 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_32702_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_32702_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32702(
     objectid
    ,permanent_identifier
@@ -1912,7 +1999,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32702(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -1922,7 +2008,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32702(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32702_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -1939,34 +2025,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,32702) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,4) = '2203';
+SUBSTR(a.vpuid,1,4) = '2203'
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32702_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,32702) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,4) = '2203';
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_32702 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_32702 TO public;
@@ -2036,8 +2139,8 @@ SELECT
  CAST(a.objectid AS INTEGER) AS objectid
 ,CAST(a.nhdplusid  AS BIGINT) AS nhdplusid
 ,CAST(a.hydroseq   AS BIGINT) AS hydroseq 
-,b.fmeasure
-,b.tmeasure
+,a.frommeas
+,a.tomeas
 ,CAST(a.levelpathi AS BIGINT) AS levelpathi
 ,CAST(a.terminalpa AS BIGINT) AS terminalpa
 ,CASE
@@ -2065,7 +2168,7 @@ SELECT
 ,CAST(a.fromnode AS BIGINT)   AS fromnode
 ,CAST(a.tonode AS BIGINT)     AS tonode
 /* ++++++++++ */
-,CAST(b.lengthkm AS NUMERIC) AS lengthkm
+,CAST(a.lengthkm AS NUMERIC) AS lengthkm
 ,CASE
  WHEN a.totma IN (-9999,-9998)
  THEN
@@ -2129,14 +2232,10 @@ SELECT
 /* ++++++++++ */
 ,a.vpuid
 FROM
-cipsrv_nhdplus_h.nhdplusflowlinevaa a
-JOIN
-cipsrv_nhdplus_h.nhdflowline b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
     a.pathlength NOT IN (-9999,-9998)
-AND b.fcode <> 56600;
+AND a.fcode <> 56600;
 
 ALTER TABLE cipsrv_nhdplus_h.nhdplusflowlinevaa_nav OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav TO public;
@@ -4111,18 +4210,18 @@ BEGIN
          )
          SELECT
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
          ,a.lengthkm
-         ,b.totma
+         ,a.totma
          /* ++++++++++ */
          ,a.lengthkm AS network_distancekm
-         ,b.totma    AS network_flowtimeday
+         ,a.totma    AS network_flowtimeday
          /* ++++++++++ */
          ,a.permanent_identifier
          ,a.reachcode
@@ -4135,11 +4234,7 @@ BEGIN
          ,a.shape
          ,1
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = out_start_nhdplusid;
          
@@ -6888,19 +6983,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -6909,11 +7004,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -6925,11 +7020,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
 
@@ -6955,19 +7046,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -6976,11 +7067,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -6992,11 +7083,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE 
              a.nhdplusid = p_nhdplusid
          AND (
@@ -7057,19 +7144,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -7078,11 +7165,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -7094,11 +7181,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
 
@@ -7124,19 +7207,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -7145,11 +7228,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -7161,11 +7244,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              a.permanent_identifier = p_permanent_identifier
          AND (
@@ -7226,19 +7305,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -7247,11 +7326,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -7263,11 +7342,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          b.hydroseq = p_hydroseq;
 
@@ -7293,19 +7368,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -7314,11 +7389,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -7330,11 +7405,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              b.hydroseq = p_hydroseq
          AND (
@@ -7399,19 +7470,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -7420,11 +7491,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -7436,11 +7507,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE 
              a.reachcode = p_reachcode 
          AND (
@@ -7475,19 +7542,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -7496,11 +7563,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -7512,11 +7579,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE 
              a.reachcode = p_reachcode 
          AND (
@@ -7588,7 +7651,7 @@ BEGIN
       INTO
       sdo_point
       FROM 
-      cipsrv_nhdplus_h.nhdflowline a
+      cipsrv_nhdplus_h.networknhdflowline a
       WHERE
       a.nhdplusid = out_flowline.nhdplusid;
       
@@ -15496,7 +15559,7 @@ BEGIN
          FROM
          tmp_navigation_working30 aa
          JOIN
-         cipsrv_nhdplus_h.nhdflowline bb
+         cipsrv_nhdplus_h.networknhdflowline bb
          ON
          aa.nhdplusid = bb.nhdplusid
          WHERE
@@ -15685,7 +15748,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid
          AND (
@@ -15701,7 +15764,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier
          AND (
@@ -15717,7 +15780,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.reachcode = p_reachcode
          AND (
@@ -15746,7 +15809,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
       
@@ -15757,7 +15820,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
       
@@ -15768,7 +15831,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
          AND a.tmeasure = 100;
@@ -15793,7 +15856,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
       
@@ -15804,7 +15867,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
       
@@ -15815,7 +15878,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
          AND a.fmeasure = 0;
@@ -18037,13 +18100,9 @@ BEGIN
             ,aa.fcode
             ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
             FROM
-            cipsrv_nhdplus_h.nhdflowline aa
+            cipsrv_nhdplus_h.networknhdflowline aa
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
-         JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
          WHERE 
          a.fcode NOT IN (56600)
          ORDER BY RANDOM()
@@ -18306,8 +18365,8 @@ BEGIN
       ,int_dnhydroseq
       ,int_terminalpathid
       FROM
-      cipsrv_nhdplus_h.nhdplusflowlinevaa a 
-      WHERE 
+      cipsrv_nhdplus_h.networknhdflowline a 
+      WHERE
       a.nhdplusid = out_nhdplusid1;
       
    --------------------------------------------------------------------------
@@ -18361,7 +18420,7 @@ BEGIN
       FROM
       pp a
       JOIN
-      cipsrv_nhdplus_h.nhdflowline b
+      cipsrv_nhdplus_h.networknhdflowline b
       ON
       b.nhdplusid = a.nhdplusid
       WHERE
@@ -19048,7 +19107,7 @@ BEGIN
          ,num_top_measure
          ,sdo_results
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
       
@@ -19063,7 +19122,7 @@ BEGIN
          ,num_top_measure
          ,sdo_results
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
       
@@ -19078,7 +19137,7 @@ BEGIN
          ,num_top_measure
          ,sdo_results
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
          AND a.tmeasure = 100;

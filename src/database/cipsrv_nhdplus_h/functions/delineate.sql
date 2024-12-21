@@ -740,18 +740,18 @@ BEGIN
          )
          SELECT
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
          ,a.lengthkm
-         ,b.totma
+         ,a.totma
          /* ++++++++++ */
          ,a.lengthkm AS network_distancekm
-         ,b.totma    AS network_flowtimeday
+         ,a.totma    AS network_flowtimeday
          /* ++++++++++ */
          ,a.permanent_identifier
          ,a.reachcode
@@ -764,11 +764,7 @@ BEGIN
          ,a.shape
          ,1
          FROM
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = out_start_nhdplusid;
          

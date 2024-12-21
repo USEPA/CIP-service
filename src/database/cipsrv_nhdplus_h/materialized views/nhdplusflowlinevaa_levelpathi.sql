@@ -15,8 +15,8 @@ SELECT
 ,a.levelpathi
 ,a.max_hydroseq
 ,a.min_hydroseq
-,(SELECT c.fromnode FROM cipsrv_nhdplus_h.nhdplusflowlinevaa c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
-,(SELECT d.tonode   FROM cipsrv_nhdplus_h.nhdplusflowlinevaa d WHERE d.hydroseq = a.min_hydroseq) AS tonode
+,(SELECT c.fromnode FROM cipsrv_nhdplus_h.networknhdflowline c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
+,(SELECT d.tonode   FROM cipsrv_nhdplus_h.networknhdflowline d WHERE d.hydroseq = a.min_hydroseq) AS tonode
 ,a.levelpathilengthkm 
 FROM (
    SELECT
@@ -26,7 +26,7 @@ FROM (
    ,MIN(aa.hydroseq) AS min_hydroseq
    ,SUM(aa.lengthkm) AS levelpathilengthkm
    FROM
-   cipsrv_nhdplus_h.nhdplusflowlinevaa aa
+   cipsrv_nhdplus_h.networknhdflowline aa
    GROUP BY
    aa.levelpathi
 ) a;

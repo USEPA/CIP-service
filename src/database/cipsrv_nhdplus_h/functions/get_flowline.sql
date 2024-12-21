@@ -76,19 +76,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -97,11 +97,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -113,11 +113,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
 
@@ -143,19 +139,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -164,11 +160,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -180,11 +176,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE 
              a.nhdplusid = p_nhdplusid
          AND (
@@ -245,19 +237,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -266,11 +258,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -282,11 +274,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
 
@@ -312,19 +300,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -333,11 +321,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -349,11 +337,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              a.permanent_identifier = p_permanent_identifier
          AND (
@@ -414,19 +398,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -435,11 +419,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -451,11 +435,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
          b.hydroseq = p_hydroseq;
 
@@ -481,19 +461,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -502,11 +482,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -518,11 +498,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              b.hydroseq = p_hydroseq
          AND (
@@ -587,19 +563,19 @@ BEGIN
       THEN
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -608,11 +584,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema 
+         ,a.pathlength
+         ,a.pathtimema 
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -624,11 +600,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE 
              a.reachcode = p_reachcode 
          AND (
@@ -663,19 +635,19 @@ BEGIN
       ELSE
          SELECT 
           a.nhdplusid
-         ,b.hydroseq
+         ,a.hydroseq
          ,a.fmeasure
          ,a.tmeasure
-         ,b.levelpathi
-         ,b.terminalpa
-         ,b.uphydroseq
-         ,b.dnhydroseq
-         ,b.dnminorhyd
-         ,b.divergence
-         ,b.streamleve
-         ,b.arbolatesu
-         ,b.fromnode
-         ,b.tonode
+         ,a.levelpathi
+         ,a.terminalpa
+         ,a.uphydroseq
+         ,a.dnhydroseq
+         ,a.dnminorhyd
+         ,a.divergence
+         ,a.streamleve
+         ,a.arbolatesu
+         ,a.fromnode
+         ,a.tonode
          ,a.vpuid
          /* ++++++++++ */
          ,a.permanent_identifier
@@ -684,11 +656,11 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tmeasure - a.fmeasure)
-         ,b.totma AS flowtimeday
-         ,b.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma AS flowtimeday
+         ,a.totma / (a.tmeasure - a.fmeasure)
          /* ++++++++++ */
-         ,b.pathlength
-         ,b.pathtimema
+         ,a.pathlength
+         ,a.pathtimema
          /* ++++++++++ */
          ,NULL::INTEGER
          ,NULL::NUMERIC
@@ -700,11 +672,7 @@ BEGIN
          INTO STRICT
          out_flowline
          FROM 
-         cipsrv_nhdplus_h.nhdflowline a
-         LEFT JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
+         cipsrv_nhdplus_h.networknhdflowline a
          WHERE 
              a.reachcode = p_reachcode 
          AND (
@@ -776,7 +744,7 @@ BEGIN
       INTO
       sdo_point
       FROM 
-      cipsrv_nhdplus_h.nhdflowline a
+      cipsrv_nhdplus_h.networknhdflowline a
       WHERE
       a.nhdplusid = out_flowline.nhdplusid;
       

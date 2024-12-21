@@ -56,7 +56,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         cipsrv_nhdplus_m.nhdflowline a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid
          AND (
@@ -72,7 +72,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         cipsrv_nhdplus_m.nhdflowline a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier
          AND (
@@ -88,7 +88,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         cipsrv_nhdplus_m.nhdflowline a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.reachcode = p_reachcode
          AND (
@@ -117,7 +117,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
       
@@ -128,7 +128,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
       
@@ -139,7 +139,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
          AND a.tmeasure = 100;
@@ -164,7 +164,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
       
@@ -175,7 +175,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
       
@@ -186,7 +186,7 @@ BEGIN
          INTO
          sdo_output
          FROM
-         nhdplus.nhdflowline_np21 a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
          AND a.fmeasure = 0;

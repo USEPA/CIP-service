@@ -17,6 +17,11 @@ parser.add_argument("--mr_dumpfile_copyin"      ,required=False,default=None);
 parser.add_argument("--hr_dumpfile"             ,required=False,default=None);
 parser.add_argument("--hr_dumpfile_copyin"      ,required=False,default=None);
 
+parser.add_argument("--mrgf_dumpfile"           ,required=False,default=None);
+parser.add_argument("--mrgf_dumpfile_copyin"    ,required=False,default=None);
+parser.add_argument("--hrgf_dumpfile"           ,required=False,default=None);
+parser.add_argument("--hrgf_dumpfile_copyin"    ,required=False,default=None);
+
 parser.add_argument("--mr2_dumpfile"            ,required=False,default=None);
 parser.add_argument("--mr2_dumpfile_copyin"     ,required=False,default=None);
 parser.add_argument("--hr2_dumpfile"            ,required=False,default=None);
@@ -26,6 +31,16 @@ parser.add_argument("--mrgrid_dumpfile"         ,required=False,default=None);
 parser.add_argument("--mrgrid_dumpfile_copyin"  ,required=False,default=None);
 parser.add_argument("--hrgrid_dumpfile"         ,required=False,default=None);
 parser.add_argument("--hrgrid_dumpfile_copyin"  ,required=False,default=None);
+
+parser.add_argument("--mrtp_dumpfile"           ,required=False,default=None);
+parser.add_argument("--mrtp_dumpfile_copyin"    ,required=False,default=None);
+parser.add_argument("--hrtp_dumpfile"           ,required=False,default=None);
+parser.add_argument("--hrtp_dumpfile_copyin"    ,required=False,default=None);
+
+parser.add_argument("--mrws_dumpfile"           ,required=False,default=None);
+parser.add_argument("--mrws_dumpfile_copyin"    ,required=False,default=None);
+parser.add_argument("--hrws_dumpfile"           ,required=False,default=None);
+parser.add_argument("--hrws_dumpfile_copyin"    ,required=False,default=None);
 
 parser.add_argument("--support_dumpfile"        ,required=False,default=None);
 parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
@@ -43,6 +58,11 @@ def main(
    ,hr_dumpfile
    ,hr_dumpfile_copyin
    
+   ,mrgf_dumpfile
+   ,mrgf_dumpfile_copyin
+   ,hrgf_dumpfile
+   ,hrgf_dumpfile_copyin
+   
    ,mr2_dumpfile
    ,mr2_dumpfile_copyin
    ,hr2_dumpfile
@@ -52,6 +72,16 @@ def main(
    ,mrgrid_dumpfile_copyin
    ,hrgrid_dumpfile
    ,hrgrid_dumpfile_copyin
+   
+   ,mrtp_dumpfile
+   ,mrtp_dumpfile_copyin
+   ,hrtp_dumpfile
+   ,hrtp_dumpfile_copyin
+   
+   ,mrws_dumpfile
+   ,mrws_dumpfile_copyin
+   ,hrws_dumpfile
+   ,hrws_dumpfile_copyin
    
    ,support_dumpfile
    ,support_dumpfile_copyin
@@ -86,6 +116,39 @@ def main(
             if line.strip() != "":
                print(".  " + ' '.join(line.split()));
          sys.exit(rc);
+         
+   ################################################################################## 
+   def cipld(
+       ipnyb
+      ,dumpfile
+      ,dumpfile_copyin
+      ,dumpfile_parm
+   ):
+      cmd = [
+          "docker","compose","exec","cip_jp","jupyter"
+         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_" + ipnyb + ".ipynb"
+         ,"--to","python","--output","/tmp/pg_restore_" + ipnyb + ".py"
+      ];
+      dzproc(cmd);
+
+      if dumpfile_copyin is not None:
+         mdf = os.path.basename(dumpfile_copyin);
+         print("Loading local " + ipnyb + " dumpfile " + mdf + " into container.");
+         cmd = ["docker","compose","cp",dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+         dzproc(cmd);
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py","--use_existing",dumpfile_parm,mdf];
+         dzproc(cmd);
+         
+      else:
+         if dumpfile is None:
+            print("Downloading and importing default " + ipnyb + " data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py"];
+            dzproc(cmd);
+            
+         else:
+            print("Downloading and importing " + dumpfile + " of " + ipnyb + " data.");
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py",dumpfile_parm,dumpfile];
+            dzproc(cmd);
          
    ###############################################################################
    print("Downing any existing compose services");
@@ -243,28 +306,15 @@ def main(
    dzproc(cmd);
 
    ###############################################################################
-   cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_support.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_support.py"];
-   dzproc(cmd);
-
-   if support_dumpfile_copyin is not None:
-      sdf = os.path.basename(support_dumpfile_copyin);
-      print("Copying in external support dumpfile " + sdf + " into container.");
-      cmd = ["docker","compose","cp",support_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + sdf];
-      dzproc(cmd);
-      cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_support.py","--use_existing","--support_dumpfile",sdf];
-      dzproc(cmd);
-
-   else:
-      if support_dumpfile is None:
-         print("Downloading and importing default CIP support data.");
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_support.py"];
-         dzproc(cmd);
-         
-      else:
-         print("Downloading and importing " + support_dumpfile + " support data.");
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_support.py","--support_dumpfile",support_dumpfile];
-         dzproc(cmd);
-      
+   # Support
+   cipld(
+       ipnyb           = 'cipsrv_support'
+      ,dumpfile        = support_dumpfile
+      ,dumpfile_copyin = support_dumpfile_copyin
+      ,dumpfile_parm   = '--support_dumpfile'
+   );
+   
+   # Support Logic   
    print("Fetching and loading CIP support logic.");
    cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_support.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_support.py"];
    dzproc(cmd);
@@ -274,59 +324,47 @@ def main(
    z = 0;
    ###############################################################################
    if recipe in ['MRONLY','ALL','VPU09','EXTENDED']:
-      cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus_m.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus_m.py"];
-      dzproc(cmd);
-
-      if mr_dumpfile_copyin is not None:
-         mdf = os.path.basename(mr_dumpfile_copyin);
-         print("Loading local mr dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",mr_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus_m.py","--use_existing","--mr_dumpfile",mdf];
-         dzproc(cmd);
-         
-      else:
-         if mr_dumpfile is None:
-            print("Downloading and importing default NHDPlus MR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus_m.py"];
-            dzproc(cmd);
+      # NHDPlus MR
+      cipld(
+          ipnyb           = 'cipsrv_nhdplus_m'
+         ,dumpfile        = mr_dumpfile
+         ,dumpfile_copyin = mr_dumpfile_copyin
+         ,dumpfile_parm   = '--mr_dumpfile'
+      );
+      # EPAGeoFab MR
+      cipld(
+          ipnyb           = 'cipsrv_epageofab_m'
+         ,dumpfile        = mrgf_dumpfile
+         ,dumpfile_copyin = mrgf_dumpfile_copyin
+         ,dumpfile_parm   = '--mrgf_dumpfile'
+      );
             
-         else:
-            print("Downloading and importing " + mr_dumpfile + " NHDPlus MR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus_m.py","--mr_dumpfile",mr_dumpfile];
-            dzproc(cmd);
-            
+      # NHDPlus MR Logic
       print("Fetching, building and loading NHDPlus MR logic.");
       cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_nhdplus_m.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_nhdplus_m.py"];
       dzproc(cmd);
       cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_nhdplus_m.py"];
       dzproc(cmd);
       z += 1;
-
+      
    ###############################################################################
    if recipe in ['HRONLY','ALL','VPU09','EXTENDED']:
-      cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus_h.ipynb","--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus_h.py"];
-      dzproc(cmd);
-
-      if hr_dumpfile_copyin is not None:
-         hdf = os.path.basename(hr_dumpfile_copyin);
-         print("Loading local hr dumpfile " + hdf + " into container.");
-         cmd = ["docker","compose","cp",hr_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + hdf];
-         dzproc(cmd);
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus_h.py","--use_existing","--hr_dumpfile",hdf];
-         dzproc(cmd);
-         
-      else:
-         if hr_dumpfile is None:
-            print("Downloading and importing default NHDPlus HR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus_h.py"];
-            dzproc(cmd);
-            
-         else:
-            print("Downloading and importing " + hr_dumpfile + " NHDPlus HR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus_h.py","--hr_dumpfile",hr_dumpfile];
-            dzproc(cmd);
-       
+      # NHDPlus HR
+      cipld(
+          ipnyb           = 'cipsrv_nhdplus_h'
+         ,dumpfile        = hr_dumpfile
+         ,dumpfile_copyin = hr_dumpfile_copyin
+         ,dumpfile_parm   = '--hr_dumpfile'
+      );
+      # EPAGeoFab HR
+      cipld(
+          ipnyb           = 'cipsrv_epageofab_h'
+         ,dumpfile        = hrgf_dumpfile
+         ,dumpfile_copyin = hrgf_dumpfile_copyin
+         ,dumpfile_parm   = '--hrgf_dumpfile'
+      );
+      
+      # HR Logic      
       print("Fetching, building and loading NHDPlus HR logic.");
       cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_nhdplus_h.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_nhdplus_h.py"];
       dzproc(cmd);
@@ -340,116 +378,70 @@ def main(
       sys.exit(-50);
    
    ###############################################################################
-   if recipe in ['EXTENDED']:
-      cmd = [
-          "docker","compose","exec","cip_jp","jupyter"
-         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus2_m.ipynb"
-         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus2_m.py"
-      ];
-      dzproc(cmd);
-
-      if mr2_dumpfile_copyin is not None:
-         mdf = os.path.basename(mr2_dumpfile_copyin);
-         print("Loading local mr2 dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",mr2_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_m.py","--use_existing","--mr2_dumpfile",mdf];
-         dzproc(cmd);
-         
-      else:
-         if mr2_dumpfile is None:
-            print("Downloading and importing default NHDPlus2 MR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_m.py"];
-            dzproc(cmd);
-            
-         else:
-            print("Downloading and importing " + mr2_dumpfile + " NHDPlus2 MR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_m.py","--mr2_dumpfile",mr2_dumpfile];
-            dzproc(cmd);
-            
+   # NHDPLUS 2
    ###############################################################################
    if recipe in ['EXTENDED']:
-      cmd = [
-          "docker","compose","exec","cip_jp","jupyter"
-         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplus2_h.ipynb"
-         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplus2_h.py"
-      ];
-      dzproc(cmd);
-
-      if hr2_dumpfile_copyin is not None:
-         mdf = os.path.basename(hr2_dumpfile_copyin);
-         print("Loading local hrgrid dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",hr2_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_h.py","--use_existing","--hr2_dumpfile",mdf];
-         dzproc(cmd);
-         
-      else:
-         if hr2_dumpfile is None:
-            print("Downloading and importing default NHDPlus2 HR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_h.py"];
-            dzproc(cmd);
-            
-         else:
-            print("Downloading and importing " + hrgrid_dumpfile + " NHDPlus2 HR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplus2_h.py","--hr2_dumpfile",hr2_dumpfile];
-            dzproc(cmd);
+      # NHDPlus MR 2
+      cipld(
+          ipnyb           = 'cipsrv_nhdplus2_m'
+         ,dumpfile        = mr2_dumpfile
+         ,dumpfile_copyin = mr2_dumpfile_copyin
+         ,dumpfile_parm   = '--mr2_dumpfile'
+      );
+           
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      # NHDPlus HR 2
+      cipld(
+          ipnyb           = 'cipsrv_nhdplus2_h'
+         ,dumpfile        = hr2_dumpfile
+         ,dumpfile_copyin = hr2_dumpfile_copyin
+         ,dumpfile_parm   = '--hr2_dumpfile'
+      );
    
    ###############################################################################
+   # GRIDS
+   ###############################################################################
    if recipe in ['EXTENDED']:
-      cmd = [
-          "docker","compose","exec","cip_jp","jupyter"
-         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplusgrid_m.ipynb"
-         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py"
-      ];
-      dzproc(cmd);
-
-      if mrgrid_dumpfile_copyin is not None:
-         mdf = os.path.basename(mrgrid_dumpfile_copyin);
-         print("Loading local mrgrid dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",mrgrid_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py","--use_existing","--mrgrid_dumpfile",mdf];
-         dzproc(cmd);
-         
-      else:
-         if mrgrid_dumpfile is None:
-            print("Downloading and importing default NHDPlus Grid MR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py"];
-            dzproc(cmd);
-            
-         else:
-            print("Downloading and importing " + mrgrid_dumpfile + " NHDPlus Grid MR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_m.py","--mrgrid_dumpfile",mrgrid_dumpfile];
-            dzproc(cmd);
+      # NHDPlus MR Grid
+      cipld(
+          ipnyb           = 'cipsrv_nhdplusgrid_m'
+         ,dumpfile        = mrgrid_dumpfile
+         ,dumpfile_copyin = mrgrid_dumpfile_copyin
+         ,dumpfile_parm   = '--mrgrid_dumpfile'
+      );
 
    ###############################################################################
    if recipe in ['EXTENDED']:
-      cmd = [
-          "docker","compose","exec","cip_jp","jupyter"
-         ,"nbconvert","/home/jovyan/notebooks/setup/pg_restore_cipsrv_nhdplusgrid_h.ipynb"
-         ,"--to","python","--output","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py"
-      ];
-      dzproc(cmd);
-
-      if hrgrid_dumpfile_copyin is not None:
-         mdf = os.path.basename(hrgrid_dumpfile_copyin);
-         print("Loading local hrgrid dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",hrgrid_dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py","--use_existing","--hrgrid_dumpfile",mdf];
-         dzproc(cmd);
-         
-      else:
-         if hrgrid_dumpfile is None:
-            print("Downloading and importing default NHDPlus Grid HR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py"];
-            dzproc(cmd);
+      # NHDPlus HR Grid
+      cipld(
+          ipnyb           = 'cipsrv_nhdplusgrid_h'
+         ,dumpfile        = hrgrid_dumpfile
+         ,dumpfile_copyin = hrgrid_dumpfile_copyin
+         ,dumpfile_parm   = '--hrgrid_dumpfile'
+      );
             
-         else:
-            print("Downloading and importing " + hrgrid_dumpfile + " NHDPlus Grid HR data.");
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_cipsrv_nhdplusgrid_h.py","--hrgrid_dumpfile",hrgrid_dumpfile];
-            dzproc(cmd);
+   ###############################################################################
+   # TOPO
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      # NHDPlus MR TOPO
+      cipld(
+          ipnyb           = 'cipsrv_nhdplustopo_m'
+         ,dumpfile        = mrtp_dumpfile
+         ,dumpfile_copyin = mrtp_dumpfile_copyin
+         ,dumpfile_parm   = '--mrtp_dumpfile'
+      );
+
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      # NHDPlus HR Topo
+      cipld(
+          ipnyb           = 'cipsrv_nhdplustopo_h'
+         ,dumpfile        = hrtp_dumpfile
+         ,dumpfile_copyin = hrtp_dumpfile_copyin
+         ,dumpfile_parm   = '--hrtp_dumpfile'
+      );
 
    ###############################################################################
    print("Fetching and loading CIP Engine logic.");
@@ -480,6 +472,11 @@ if __name__ == '__main__':
       ,hr_dumpfile              = args.hr_dumpfile
       ,hr_dumpfile_copyin       = args.hr_dumpfile_copyin
       
+      ,mrgf_dumpfile            = args.mrgf_dumpfile
+      ,mrgf_dumpfile_copyin     = args.mrgf_dumpfile_copyin
+      ,hrgf_dumpfile            = args.hrgf_dumpfile
+      ,hrgf_dumpfile_copyin     = args.hrgf_dumpfile_copyin
+      
       ,mr2_dumpfile             = args.mr2_dumpfile
       ,mr2_dumpfile_copyin      = args.mr2_dumpfile_copyin
       ,hr2_dumpfile             = args.hr2_dumpfile
@@ -489,6 +486,16 @@ if __name__ == '__main__':
       ,mrgrid_dumpfile_copyin   = args.mrgrid_dumpfile_copyin
       ,hrgrid_dumpfile          = args.hrgrid_dumpfile
       ,hrgrid_dumpfile_copyin   = args.hrgrid_dumpfile_copyin
+      
+      ,mrtp_dumpfile            = args.mrtp_dumpfile
+      ,mrtp_dumpfile_copyin     = args.mrtp_dumpfile_copyin
+      ,hrtp_dumpfile            = args.hrtp_dumpfile
+      ,hrtp_dumpfile_copyin     = args.hrtp_dumpfile_copyin
+      
+      ,mrws_dumpfile            = args.mrws_dumpfile
+      ,mrws_dumpfile_copyin     = args.mrws_dumpfile_copyin
+      ,hrws_dumpfile            = args.hrws_dumpfile
+      ,hrws_dumpfile_copyin     = args.hrws_dumpfile_copyin
       
       ,support_dumpfile         = args.support_dumpfile
       ,support_dumpfile_copyin  = args.support_dumpfile_copyin

@@ -604,7 +604,7 @@ BEGIN
          FROM
          tmp_navigation_working30 aa
          JOIN
-         cipsrv_nhdplus_h.nhdflowline bb
+         cipsrv_nhdplus_h.networknhdflowline bb
          ON
          aa.nhdplusid = bb.nhdplusid
          WHERE

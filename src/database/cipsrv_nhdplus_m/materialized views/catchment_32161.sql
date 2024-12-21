@@ -1,5 +1,6 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.catchment_32161 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_m.catchment_32161_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_m.catchment_32161_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
@@ -46,7 +47,7 @@ SELECT
 ,b.connector_tonode
 ,b.connector_fromnode
 ---
-,c.fcode::INTEGER           AS fcode
+,b.fcode::INTEGER           AS fcode
 ---
 ,a.istribal
 ,a.istribal_areasqkm
@@ -88,7 +89,7 @@ FROM (
       1::INTEGER
     END AS statesplit
    FROM
-   cipsrv_nhdplus_m.catchment_fabric aa
+   cipsrv_epageofab_m.catchment_fabric aa
    WHERE
    aa.catchmentstatecode IN ('PR','VI')
    UNION ALL 
@@ -126,7 +127,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_nhdplus_m.catchment_fabric bbb
+      cipsrv_epageofab_m.catchment_fabric bbb
       WHERE
           bbb.catchmentstatecode IN ('PR','VI')
       AND bbb.state_count > 1
@@ -137,11 +138,7 @@ FROM (
 LEFT JOIN
 cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes b
 ON
-a.nhdplusid = b.nhdplusid
-LEFT JOIN
-cipsrv_nhdplus_m.nhdflowline c
-ON
-a.nhdplusid = c.nhdplusid;
+a.nhdplusid = b.nhdplusid;
 
 ALTER TABLE cipsrv_nhdplus_m.catchment_32161 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_32161 TO public;

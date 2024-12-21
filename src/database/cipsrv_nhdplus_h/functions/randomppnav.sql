@@ -81,8 +81,8 @@ BEGIN
       ,int_dnhydroseq
       ,int_terminalpathid
       FROM
-      cipsrv_nhdplus_h.nhdplusflowlinevaa a 
-      WHERE 
+      cipsrv_nhdplus_h.networknhdflowline a 
+      WHERE
       a.nhdplusid = out_nhdplusid1;
       
    --------------------------------------------------------------------------
@@ -136,7 +136,7 @@ BEGIN
       FROM
       pp a
       JOIN
-      cipsrv_nhdplus_h.nhdflowline b
+      cipsrv_nhdplus_h.networknhdflowline b
       ON
       b.nhdplusid = a.nhdplusid
       WHERE

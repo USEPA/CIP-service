@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdflowline_32161 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdflowline_32161_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdflowline_32161_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
     objectid
    ,permanent_identifier
@@ -18,7 +21,6 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
    ,visibilityfilter
    ,nhdplusid
    ,vpuid
-   ,enabled
    ,fmeasure
    ,tmeasure
    ,hasvaa
@@ -28,7 +30,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_32161(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32161_seq') AS objectid
 ,a.permanent_identifier
 ,a.fdate
 ,a.resolution
@@ -45,34 +47,51 @@ SELECT
 ,a.visibilityfilter
 ,a.nhdplusid
 ,a.vpuid
-,a.enabled
-,a.fmeasure
-,a.tmeasure
-,CASE 
- WHEN b.nhdplusid IS NOT NULL
- THEN
-   TRUE
- ELSE
-   FALSE
- END AS hasvaa
+,a.frommeas AS fmeasure
+,a.tomeas   AS tmeasure
+,TRUE AS hasvaa
 ,CASE
- WHEN b.nhdplusid IS NOT NULL
- AND a.fcode NOT IN (56600)
+ WHEN a.fcode NOT IN (56600)
  THEN
    TRUE
  ELSE
    FALSE
  END AS isnavigable
-,b.hydroseq
+,a.hydroseq
 ,ST_Transform(a.shape,32161) AS shape
 FROM
-cipsrv_nhdplus_h.nhdflowline a
-LEFT JOIN
-cipsrv_nhdplus_h.nhdplusflowlinevaa b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
-SUBSTR(a.vpuid,1,2) IN ('21');
+SUBSTR(a.vpuid,1,2) IN ('21')
+UNION ALL
+SELECT
+ NEXTVAL('cipsrv_nhdplus_h.nhdflowline_32161_seq') AS objectid
+,b.permanent_identifier
+,b.fdate
+,b.resolution
+,b.gnis_id
+,b.gnis_name
+,b.lengthkm
+,b.reachcode
+,b.flowdir
+,b.wbarea_permanent_identifier
+,b.ftype
+,b.fcode
+,b.mainpath
+,b.innetwork
+,b.visibilityfilter
+,b.nhdplusid
+,b.vpuid
+,ROUND(ST_M(ST_EndPoint(b.shape))::NUMERIC,5)   AS fmeasure
+,ROUND(ST_M(ST_StartPoint(b.shape))::NUMERIC,5) AS tmeasure
+,FALSE AS hasvaa
+,FALSE AS isnavigable
+,NULL AS hydroseq
+,ST_Transform(b.shape,32161) AS shape
+FROM
+cipsrv_nhdplus_h.nonnetworknhdflowline b
+WHERE
+SUBSTR(b.vpuid,1,2) IN ('21');
 
 ALTER TABLE cipsrv_nhdplus_h.nhdflowline_32161 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdflowline_32161 TO public;

@@ -224,13 +224,9 @@ BEGIN
             ,aa.fcode
             ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
             FROM
-            cipsrv_nhdplus_h.nhdflowline aa
+            cipsrv_nhdplus_h.networknhdflowline aa
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
-         JOIN
-         cipsrv_nhdplus_h.nhdplusflowlinevaa b
-         ON
-         a.nhdplusid = b.nhdplusid
          WHERE 
          a.fcode NOT IN (56600)
          ORDER BY RANDOM()

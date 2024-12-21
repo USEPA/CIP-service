@@ -1,5 +1,6 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes_seq;
 CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes_seq START WITH 1;
 
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(
@@ -12,6 +13,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(
    ,connector_fromnode
    ,connector_tonode
    ,lengthkm
+   ,fcode
 )
 AS
 WITH cat AS (
@@ -24,10 +26,11 @@ WITH cat AS (
     ,aa.fromnode
     ,aa.tonode
     ,aa.lengthkm
+    ,aa.fcode
     FROM
-    cipsrv_nhdplus_m.nhdplusflowlinevaa aa
+    cipsrv_nhdplus_m.networknhdflowline aa
     WHERE 
-    EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
+    EXISTS (SELECT 1 FROM cipsrv_epageofab_m.catchment_fabric bb WHERE bb.nhdplusid = aa.nhdplusid)
 )
 ,nocat AS (
    SELECT
@@ -36,9 +39,9 @@ WITH cat AS (
    ,cc.fromnode
    ,cc.tonode
    FROM
-   cipsrv_nhdplus_m.nhdplusflowlinevaa cc
+   cipsrv_nhdplus_m.networknhdflowline cc
    WHERE 
-   NOT EXISTS (SELECT 1 FROM cipsrv_nhdplus_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
+   NOT EXISTS (SELECT 1 FROM cipsrv_epageofab_m.catchment_fabric dd WHERE dd.nhdplusid = cc.nhdplusid)
 ) 
 SELECT
  NEXTVAL('cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes_seq') AS objectid
@@ -50,6 +53,7 @@ SELECT
 ,b.fromnode
 ,c.tonode
 ,a.lengthkm
+,a.fcode
 FROM
 cat a
 LEFT JOIN
@@ -87,6 +91,9 @@ ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_fromnode);
 
 CREATE INDEX nhdplusflowlinevaa_catnodes_05i
 ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(connector_tonode);
+
+CREATE INDEX nhdplusflowlinevaa_catnodes_06i
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes(fcode);
 
 ANALYZE cipsrv_nhdplus_m.nhdplusflowlinevaa_catnodes;
 

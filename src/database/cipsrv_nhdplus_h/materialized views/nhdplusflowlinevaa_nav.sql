@@ -35,8 +35,8 @@ SELECT
  CAST(a.objectid AS INTEGER) AS objectid
 ,CAST(a.nhdplusid  AS BIGINT) AS nhdplusid
 ,CAST(a.hydroseq   AS BIGINT) AS hydroseq 
-,b.fmeasure
-,b.tmeasure
+,a.frommeas
+,a.tomeas
 ,CAST(a.levelpathi AS BIGINT) AS levelpathi
 ,CAST(a.terminalpa AS BIGINT) AS terminalpa
 ,CASE
@@ -64,7 +64,7 @@ SELECT
 ,CAST(a.fromnode AS BIGINT)   AS fromnode
 ,CAST(a.tonode AS BIGINT)     AS tonode
 /* ++++++++++ */
-,CAST(b.lengthkm AS NUMERIC) AS lengthkm
+,CAST(a.lengthkm AS NUMERIC) AS lengthkm
 ,CASE
  WHEN a.totma IN (-9999,-9998)
  THEN
@@ -128,14 +128,10 @@ SELECT
 /* ++++++++++ */
 ,a.vpuid
 FROM
-cipsrv_nhdplus_h.nhdplusflowlinevaa a
-JOIN
-cipsrv_nhdplus_h.nhdflowline b
-ON
-a.nhdplusid = b.nhdplusid
+cipsrv_nhdplus_h.networknhdflowline a
 WHERE
     a.pathlength NOT IN (-9999,-9998)
-AND b.fcode <> 56600;
+AND a.fcode <> 56600;
 
 ALTER TABLE cipsrv_nhdplus_h.nhdplusflowlinevaa_nav OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdplusflowlinevaa_nav TO public;

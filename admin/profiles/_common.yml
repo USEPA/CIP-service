@@ -15,5 +15,5 @@ github_repo:
 #
 s3_bucket:
    ows3: 
-      url: "https://dmap-data-commons-ow.s3.amazonaws.com/data/"
+      url: "https://dmap-data-commons-ow.s3.amazonaws.com/data/cipsrv/"
 #

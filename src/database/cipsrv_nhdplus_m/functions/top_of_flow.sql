@@ -61,7 +61,7 @@ BEGIN
          ,num_top_measure
          ,sdo_results
          FROM
-         cipsrv_nhdplus_m.nhdflowline a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.nhdplusid = p_nhdplusid;
       
@@ -76,7 +76,7 @@ BEGIN
          ,num_top_measure
          ,sdo_results
          FROM
-         cipsrv_nhdplus_m.nhdflowline a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
          a.permanent_identifier = p_permanent_identifier;
       
@@ -91,7 +91,7 @@ BEGIN
          ,num_top_measure
          ,sdo_results
          FROM
-         cipsrv_nhdplus_m.nhdflowline a
+         cipsrv_nhdplus_m.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
          AND a.tmeasure = 100;
