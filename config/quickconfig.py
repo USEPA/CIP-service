@@ -47,6 +47,7 @@ parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
 
 parser.add_argument("--override_postgresql_port",required=False,default=None);
 parser.add_argument("--override_demo_pgrst_host",required=False,default=None);
+parser.add_argument("--override_engine_profile" ,required=False,default=None);
 parser.add_argument("--down_volumes"            ,required=False,default=False,action=argparse.BooleanOptionalAction);
 parser.add_argument("--build_nocache"           ,required=False,default=False,action=argparse.BooleanOptionalAction);
 
@@ -88,6 +89,7 @@ def main(
    
    ,override_postgresql_port
    ,override_demo_pgrst_host
+   ,override_engine_profile
    ,down_volumes
    ,build_nocache
 ):
@@ -202,11 +204,19 @@ def main(
       support_dumpfile = 'cipsrv_support_1_vpu09.dmp';
 
    ###############################################################################
-   print("Configuring compose for engine containers using default settings.");
-   cc.main(
-       bundle    = "engine"
-      ,bprofile  = "default"
-   );
+   if override_engine_profile is not None:
+      print("Configuring compose for engine containers using " + override_engine_profile + " profile.");
+      cc.main(
+          bundle    = "engine"
+         ,bprofile  = override_engine_profile
+      );
+      
+   else:
+      print("Configuring compose for engine containers using default settings.");
+      cc.main(
+          bundle    = "engine"
+         ,bprofile  = "default"
+      );
 
    ###############################################################################
    print("Configuring compose for admin containers using default settings.");
@@ -502,6 +512,7 @@ if __name__ == '__main__':
       
       ,override_postgresql_port = args.override_postgresql_port
       ,override_demo_pgrst_host = args.override_demo_pgrst_host
+      ,override_engine_profile  = args.override_engine_profile
       ,down_volumes             = args.down_volumes
       ,build_nocache            = args.build_nocache
    );
