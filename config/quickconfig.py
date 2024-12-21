@@ -199,8 +199,10 @@ def main(
 
    elif recipe == 'VPU09':
       print("using recipe VPU09");
-      mr_dumpfile      = 'cipsrv_nhdplus_m_3_vpu09.dmp';
-      hr_dumpfile      = 'cipsrv_nhdplus_h_3_vpu09.dmp';
+      mr_dumpfile      = 'cipsrv_nhdplus_m_v21_vpu09_1.dmp';
+      mrgf_dumpfile    = 'cipsrv_epageofab_m_v21_vpu09_1.dmp';
+      hr_dumpfile      = 'cipsrv_nhdplus_h_beta_vpu09_1.dmp';
+      hrgf_dumpfile    = 'cipsrv_epageofab_h_beta_hr1_vpu09_1.dmp';
       support_dumpfile = 'cipsrv_support_1_vpu09.dmp';
 
    ###############################################################################

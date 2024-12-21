@@ -276,7 +276,7 @@ BEGIN
       ,a.visibilityfilter
       ,a.nhdplusid
       ,a.vpuid
-      ,a.enabled
+      ,NULL
       ,a.fmeasure
       ,a.tmeasure
       ,a.hydroseq
@@ -338,7 +338,7 @@ BEGIN
          ,aa.visibilityfilter
          ,aa.nhdplusid
          ,aa.vpuid
-         ,aa.enabled
+         ,NULL
          ,aa.fmeasure
          ,aa.tmeasure
          ,aa.hydroseq
@@ -376,7 +376,7 @@ BEGIN
       ,a.visibilityfilter
       ,a.nhdplusid
       ,a.vpuid
-      ,a.enabled
+      ,NULL
       ,a.fmeasure
       ,a.tmeasure
       ,a.hydroseq
@@ -438,7 +438,7 @@ BEGIN
          ,aa.visibilityfilter
          ,aa.nhdplusid
          ,aa.vpuid
-         ,aa.enabled
+         ,NULL
          ,aa.fmeasure
          ,aa.tmeasure
          ,aa.hydroseq
@@ -476,7 +476,7 @@ BEGIN
       ,a.visibilityfilter
       ,a.nhdplusid
       ,a.vpuid
-      ,a.enabled
+      ,NULL
       ,a.fmeasure
       ,a.tmeasure
       ,a.hydroseq
@@ -538,7 +538,7 @@ BEGIN
          ,aa.visibilityfilter
          ,aa.nhdplusid
          ,aa.vpuid
-         ,aa.enabled
+         ,NULL
          ,aa.fmeasure
          ,aa.tmeasure
          ,aa.hydroseq
@@ -576,7 +576,7 @@ BEGIN
       ,a.visibilityfilter
       ,a.nhdplusid
       ,a.vpuid
-      ,a.enabled
+      ,NULL
       ,a.fmeasure
       ,a.tmeasure
       ,a.hydroseq
@@ -638,7 +638,7 @@ BEGIN
          ,aa.visibilityfilter
          ,aa.nhdplusid
          ,aa.vpuid
-         ,aa.enabled
+         ,NULL
          ,aa.fmeasure
          ,aa.tmeasure
          ,aa.hydroseq
@@ -676,7 +676,7 @@ BEGIN
       ,a.visibilityfilter
       ,a.nhdplusid
       ,a.vpuid
-      ,a.enabled
+      ,NULL
       ,a.fmeasure
       ,a.tmeasure
       ,a.hydroseq
@@ -738,7 +738,7 @@ BEGIN
          ,aa.visibilityfilter
          ,aa.nhdplusid
          ,aa.vpuid
-         ,aa.enabled
+         ,NULL
          ,aa.fmeasure
          ,aa.tmeasure
          ,aa.hydroseq
@@ -776,7 +776,7 @@ BEGIN
       ,a.visibilityfilter
       ,a.nhdplusid
       ,a.vpuid
-      ,a.enabled
+      ,NULL
       ,a.fmeasure
       ,a.tmeasure
       ,a.hydroseq
@@ -838,7 +838,7 @@ BEGIN
          ,aa.visibilityfilter
          ,aa.nhdplusid
          ,aa.vpuid
-         ,aa.enabled
+         ,NULL
          ,aa.fmeasure
          ,aa.tmeasure
          ,aa.hydroseq
@@ -865,7 +865,7 @@ BEGIN
    --------------------------------------------------------------------------
    out_flowlines[1]     := rec_candidate;
    out_path_distance_km := out_flowlines[1].snap_distancekm;
-   out_end_point        := out_flowlines[1].snap_point; 
+   out_end_point        := out_flowlines[1].snap_point;
    out_nhdplusid        := out_flowlines[1].nhdplusid;
    
    IF p_return_link_path
