@@ -741,8 +741,8 @@ BEGIN
          SELECT
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq

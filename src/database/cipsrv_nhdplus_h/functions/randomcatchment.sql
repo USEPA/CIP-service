@@ -199,7 +199,7 @@ BEGIN
             ,aa.isocean
             ,aa.isalaskan
             FROM
-            cipsrv_nhdplus_h.catchment_fabric aa
+            cipsrv_epageofab_m.catchment_fabric aa
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
          WHERE 

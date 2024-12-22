@@ -54,7 +54,7 @@ BEGIN
       THEN
          SELECT
           a.shape
-         ,a.tmeasure
+         ,a.tomeas AS tmeasure
          ,ST_PointN(a.shape,1)
          INTO
           sdo_flowline
@@ -69,7 +69,7 @@ BEGIN
       THEN
          SELECT
           a.shape
-         ,a.tmeasure
+         ,a.tomeas AS tmeasure
          ,ST_PointN(a.shape,1)
          INTO
           sdo_flowline
@@ -84,7 +84,7 @@ BEGIN
       THEN
          SELECT
           a.shape
-         ,a.tmeasure
+         ,a.tomeas AS tmeasure
          ,ST_PointN(a.shape,1)
          INTO
           sdo_flowline
@@ -94,7 +94,7 @@ BEGIN
          cipsrv_nhdplus_h.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
-         AND a.tmeasure = 100;
+         AND a.tomeas = 100;
          
       ELSE
          RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';

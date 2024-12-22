@@ -77,8 +77,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -96,9 +96,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -140,8 +140,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -159,9 +159,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -180,9 +180,9 @@ BEGIN
          WHERE 
              a.nhdplusid = p_nhdplusid
          AND (
-            a.fmeasure = p_measure
+            a.frommeas = p_measure
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
          
          out_flowline.out_measure := p_measure;
@@ -197,7 +197,7 @@ BEGIN
             
             END IF;
             
-            num_difference                 := out_flowline.out_measure - out_flowline.fmeasure;
+            num_difference                   := out_flowline.out_measure - out_flowline.fmeasure;
             out_flowline.out_node            := out_flowline.tonode;
             
             out_flowline.out_lengthkm        := num_difference * out_flowline.lengthkm_ratio;
@@ -238,8 +238,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -257,9 +257,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -301,8 +301,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -320,9 +320,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -341,9 +341,9 @@ BEGIN
          WHERE
              a.permanent_identifier = p_permanent_identifier
          AND (
-            a.fmeasure = p_measure
+            a.frommeas = p_measure
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
          
          out_flowline.out_measure := p_measure;
@@ -399,8 +399,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -418,9 +418,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -462,8 +462,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -481,9 +481,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -502,9 +502,9 @@ BEGIN
          WHERE
              b.hydroseq = p_hydroseq
          AND (
-            a.fmeasure = p_measure
+            a.frommeas = p_measure
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
          
          out_flowline.out_measure := p_measure;
@@ -564,8 +564,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -583,9 +583,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -604,8 +604,8 @@ BEGIN
          WHERE 
              a.reachcode = p_reachcode 
          AND (
-               (str_direction = 'D' AND a.tmeasure = 100)
-            OR (str_direction = 'U' AND a.fmeasure = 0 )
+               (str_direction = 'D' AND a.tomeas = 100)
+            OR (str_direction = 'U' AND a.frommeas = 0 )
          );
          
          out_flowline.out_lengthkm           := out_flowline.lengthkm;
@@ -636,8 +636,8 @@ BEGIN
          SELECT 
           a.nhdplusid
          ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
+         ,a.frommeas AS fmeasure
+         ,a.tomeas   AS tmeasure
          ,a.levelpathi
          ,a.terminalpa
          ,a.uphydroseq
@@ -655,9 +655,9 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tmeasure - a.fmeasure)
+         ,a.lengthkm / (a.tomeas - a.frommeas)
          ,a.totma AS flowtimeday
-         ,a.totma / (a.tmeasure - a.fmeasure)
+         ,a.totma / (a.tomeas - a.frommeas)
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -676,9 +676,9 @@ BEGIN
          WHERE 
              a.reachcode = p_reachcode 
          AND (
-            (p_measure = 0 AND a.fmeasure = 0)
+            (p_measure = 0 AND a.frommeas = 0)
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
          
          out_flowline.out_measure := p_measure;

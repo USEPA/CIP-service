@@ -13,6 +13,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_catnodes(
    ,connector_fromnode
    ,connector_tonode
    ,lengthkm
+   ,totma
    ,fcode
 )
 AS
@@ -25,7 +26,8 @@ WITH cat AS (
     ,aa.dnhydroseq
     ,aa.fromnode
     ,aa.tonode
-    ,aa.lengthkm
+    ,CAST(aa.lengthkm AS NUMERIC) AS lengthkm
+    ,CAST(aa.totma    AS NUMERIC) AS totma
     ,aa.fcode
     FROM
     cipsrv_nhdplus_h.networknhdflowline aa
@@ -53,6 +55,7 @@ SELECT
 ,b.fromnode
 ,c.tonode
 ,a.lengthkm
+,a.totma
 ,a.fcode
 FROM
 cat a

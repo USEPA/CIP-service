@@ -60,9 +60,9 @@ BEGIN
          WHERE
          a.nhdplusid = p_nhdplusid
          AND (
-            p_measure = a.fmeasure
+            p_measure = a.frommeas
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
       
       ELSIF p_permanent_identifier IS NOT NULL
@@ -76,9 +76,9 @@ BEGIN
          WHERE
          a.permanent_identifier = p_permanent_identifier
          AND (
-            p_measure = a.fmeasure
+            p_measure = a.frommeas
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
       
       ELSIF p_reachcode IS NOT NULL
@@ -92,9 +92,9 @@ BEGIN
          WHERE
          a.reachcode = p_reachcode
          AND (
-            p_measure = a.fmeasure
+            p_measure = a.frommeas
             OR
-            (a.fmeasure < p_measure AND a.tmeasure >= p_measure)
+            (a.frommeas < p_measure AND a.tomeas >= p_measure)
          );
          
       ELSE
@@ -142,7 +142,7 @@ BEGIN
          cipsrv_nhdplus_m.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
-         AND a.tmeasure = 100;
+         AND a.tomeas = 100;
          
       ELSE
          RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';
@@ -189,7 +189,7 @@ BEGIN
          cipsrv_nhdplus_m.networknhdflowline a
          WHERE
              a.reachcode = p_reachcode
-         AND a.fmeasure = 0;
+         AND a.frommeas = 0;
          
       ELSE
          RAISE EXCEPTION 'nhdplusid, permanent_identifier or reachcode required';

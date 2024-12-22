@@ -587,8 +587,8 @@ BEGIN
           WHEN boo_return_flowline_geometry
           THEN
             CASE
-            WHEN aa.fmeasure <> bb.fmeasure
-            OR   aa.tmeasure <> bb.fmeasure
+            WHEN aa.fmeasure <> bb.frommeas
+            OR   aa.tmeasure <> bb.frommeas
             THEN
                ST_GeometryN(
                    ST_LocateBetween(bb.shape,aa.fmeasure,aa.tmeasure)

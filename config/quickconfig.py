@@ -48,6 +48,7 @@ parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
 parser.add_argument("--override_postgresql_port",required=False,default=None);
 parser.add_argument("--override_demo_pgrst_host",required=False,default=None);
 parser.add_argument("--override_engine_profile" ,required=False,default=None);
+parser.add_argument("--override_git_branch"     ,required=False,default=None);
 parser.add_argument("--down_volumes"            ,required=False,default=False,action=argparse.BooleanOptionalAction);
 parser.add_argument("--build_nocache"           ,required=False,default=False,action=argparse.BooleanOptionalAction);
 
@@ -90,6 +91,7 @@ def main(
    ,override_postgresql_port
    ,override_demo_pgrst_host
    ,override_engine_profile
+   ,override_git_branch
    ,down_volumes
    ,build_nocache
 ):
@@ -151,7 +153,71 @@ def main(
             print("Downloading and importing " + dumpfile + " of " + ipnyb + " data.");
             cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py",dumpfile_parm,dumpfile];
             dzproc(cmd);
-         
+        
+   ################################################################################## 
+   def cipgt(
+       ipnyb
+      ,override_git_branch = None
+   ):
+      print("Fetching and loading " + ipnyb + " logic.");
+      cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_" + ipnyb + ".ipynb","--to","python","--output","/tmp/git_checkout_" + ipnyb + ".py"];
+      dzproc(cmd);
+      if override_git_branch is not None:
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--override_git_branch",override_git_branch];
+      else:
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py"];
+      dzproc(cmd);
+   
+   
+   ###############################################################################
+   if mr_dumpfile_copyin is not None:
+      if not os.path.exists(mr_dumpfile_copyin):
+         raise Exception("mr_dumpfile_copyin not found - " + str(mr_dumpfile_copyin));
+   
+   if hr_dumpfile_copyin is not None:
+      if not os.path.exists(hr_dumpfile_copyin):
+         raise Exception("hr_dumpfile_copyin not found - " + str(hr_dumpfile_copyin));
+   
+   if mrgf_dumpfile_copyin is not None:
+      if not os.path.exists(mrgf_dumpfile_copyin):
+         raise Exception("mrgf_dumpfile_copyin not found - " + str(mrgf_dumpfile_copyin));
+   
+   if hrgf_dumpfile_copyin is not None:
+      if not os.path.exists(hrgf_dumpfile_copyin):
+         raise Exception("hrgf_dumpfile_copyin not found - " + str(hrgf_dumpfile_copyin));
+   
+   if mr2_dumpfile_copyin is not None:
+      if not os.path.exists(mr2_dumpfile_copyin):
+         raise Exception("mr2_dumpfile_copyin not found - " + str(mr2_dumpfile_copyin));
+   
+   if hr2_dumpfile_copyin is not None:
+      if not os.path.exists(hr2_dumpfile_copyin):
+         raise Exception("hr2_dumpfile_copyin not found - " + str(hr2_dumpfile_copyin));
+   
+   if mrgrid_dumpfile_copyin is not None:
+      if not os.path.exists(mrgrid_dumpfile_copyin):
+         raise Exception("mrgrid_dumpfile_copyin not found - " + str(mrgrid_dumpfile_copyin));
+   
+   if hrgrid_dumpfile_copyin is not None:
+      if not os.path.exists(hrgrid_dumpfile_copyin):
+         raise Exception("hrgrid_dumpfile_copyin not found - " + str(hrgrid_dumpfile_copyin));
+   
+   if mrtp_dumpfile_copyin is not None:
+      if not os.path.exists(mrtp_dumpfile_copyin):
+         raise Exception("mrtp_dumpfile_copyin not found - " + str(mrtp_dumpfile_copyin));
+   
+   if hrtp_dumpfile_copyin is not None:
+      if not os.path.exists(hrtp_dumpfile_copyin):
+         raise Exception("hrtp_dumpfile_copyin not found - " + str(hrtp_dumpfile_copyin));
+   
+   if mrws_dumpfile_copyin is not None:
+      if not os.path.exists(mrws_dumpfile_copyin):
+         raise Exception("mrws_dumpfile_copyin not found - " + str(mrws_dumpfile_copyin));
+   
+   if hrws_dumpfile_copyin is not None:
+      if not os.path.exists(hrws_dumpfile_copyin):
+         raise Exception("hrws_dumpfile_copyin not found - " + str(hrws_dumpfile_copyin));
+   
    ###############################################################################
    print("Downing any existing compose services");
 
@@ -320,68 +386,65 @@ def main(
    ###############################################################################
    # Support
    cipld(
-       ipnyb           = 'cipsrv_support'
-      ,dumpfile        = support_dumpfile
-      ,dumpfile_copyin = support_dumpfile_copyin
-      ,dumpfile_parm   = '--support_dumpfile'
+       ipnyb               = 'cipsrv_support'
+      ,dumpfile            = support_dumpfile
+      ,dumpfile_copyin     = support_dumpfile_copyin
+      ,dumpfile_parm       = '--support_dumpfile'
    );
    
-   # Support Logic   
-   print("Fetching and loading CIP support logic.");
-   cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_support.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_support.py"];
-   dzproc(cmd);
-   cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_support.py"];
-   dzproc(cmd);
+   # Support Logic
+   cipgt(
+       ipnyb               = 'cipsrv_support'
+      ,override_git_branch = override_git_branch
+   );
 
    z = 0;
    ###############################################################################
    if recipe in ['MRONLY','ALL','VPU09','EXTENDED']:
       # NHDPlus MR
       cipld(
-          ipnyb           = 'cipsrv_nhdplus_m'
-         ,dumpfile        = mr_dumpfile
-         ,dumpfile_copyin = mr_dumpfile_copyin
-         ,dumpfile_parm   = '--mr_dumpfile'
+          ipnyb               = 'cipsrv_nhdplus_m'
+         ,dumpfile            = mr_dumpfile
+         ,dumpfile_copyin     = mr_dumpfile_copyin
+         ,dumpfile_parm       = '--mr_dumpfile'
       );
       # EPAGeoFab MR
       cipld(
-          ipnyb           = 'cipsrv_epageofab_m'
-         ,dumpfile        = mrgf_dumpfile
-         ,dumpfile_copyin = mrgf_dumpfile_copyin
-         ,dumpfile_parm   = '--mrgf_dumpfile'
+          ipnyb               = 'cipsrv_epageofab_m'
+         ,dumpfile            = mrgf_dumpfile
+         ,dumpfile_copyin     = mrgf_dumpfile_copyin
+         ,dumpfile_parm       = '--mrgf_dumpfile'
       );
             
       # NHDPlus MR Logic
-      print("Fetching, building and loading NHDPlus MR logic.");
-      cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_nhdplus_m.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_nhdplus_m.py"];
-      dzproc(cmd);
-      cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_nhdplus_m.py"];
-      dzproc(cmd);
+      cipgt(
+          ipnyb               = 'cipsrv_nhdplus_m'
+         ,override_git_branch = override_git_branch
+      );
       z += 1;
       
    ###############################################################################
    if recipe in ['HRONLY','ALL','VPU09','EXTENDED']:
       # NHDPlus HR
       cipld(
-          ipnyb           = 'cipsrv_nhdplus_h'
-         ,dumpfile        = hr_dumpfile
-         ,dumpfile_copyin = hr_dumpfile_copyin
-         ,dumpfile_parm   = '--hr_dumpfile'
+          ipnyb               = 'cipsrv_nhdplus_h'
+         ,dumpfile            = hr_dumpfile
+         ,dumpfile_copyin     = hr_dumpfile_copyin
+         ,dumpfile_parm       = '--hr_dumpfile'
       );
       # EPAGeoFab HR
       cipld(
-          ipnyb           = 'cipsrv_epageofab_h'
-         ,dumpfile        = hrgf_dumpfile
-         ,dumpfile_copyin = hrgf_dumpfile_copyin
-         ,dumpfile_parm   = '--hrgf_dumpfile'
+          ipnyb               = 'cipsrv_epageofab_h'
+         ,dumpfile            = hrgf_dumpfile
+         ,dumpfile_copyin     = hrgf_dumpfile_copyin
+         ,dumpfile_parm       = '--hrgf_dumpfile'
       );
       
       # HR Logic      
-      print("Fetching, building and loading NHDPlus HR logic.");
-      cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_nhdplus_h.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_nhdplus_h.py"];
-      dzproc(cmd);
-      cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_nhdplus_h.py"];
-      dzproc(cmd);
+      cipgt(
+          ipnyb               = 'cipsrv_nhdplus_h'
+         ,override_git_branch = override_git_branch
+      );
       z += 1;
 
    ###############################################################################
@@ -454,20 +517,30 @@ def main(
          ,dumpfile_copyin = hrtp_dumpfile_copyin
          ,dumpfile_parm   = '--hrtp_dumpfile'
       );
+      
+   ###############################################################################
+   # Watersheds
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      # NHDPlus MR Watersheds
+      cipld(
+          ipnyb           = 'cipsrv_nhdpluswshd_m'
+         ,dumpfile        = mrws_dumpfile
+         ,dumpfile_copyin = mrws_dumpfile_copyin
+         ,dumpfile_parm   = '--mrws_dumpfile'
+      );
 
    ###############################################################################
-   print("Fetching and loading CIP Engine logic.");
-   cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_engine.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_engine.py"];
-   dzproc(cmd);
-   cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_engine.py"];
-   dzproc(cmd);
+   cipgt(
+       ipnyb               = 'cipsrv_engine'
+      ,override_git_branch = override_git_branch
+   );
 
    ###############################################################################
-   print("Fetching and loading CIP PostgREST logic.");
-   cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_cipsrv_pgrest.ipynb","--to","python","--output","/tmp/git_checkout_cipsrv_pgrest.py"];
-   dzproc(cmd);
-   cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_cipsrv_pgrest.py"];
-   dzproc(cmd);
+   cipgt(
+       ipnyb               = 'cipsrv_pgrest'
+      ,override_git_branch = override_git_branch
+   );
 
    ###############################################################################
    print("CIP-Service loaded and ready for evaluation.");
@@ -515,6 +588,7 @@ if __name__ == '__main__':
       ,override_postgresql_port = args.override_postgresql_port
       ,override_demo_pgrst_host = args.override_demo_pgrst_host
       ,override_engine_profile  = args.override_engine_profile
+      ,override_git_branch      = args.override_git_branch
       ,down_volumes             = args.down_volumes
       ,build_nocache            = args.build_nocache
    );

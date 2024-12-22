@@ -560,8 +560,8 @@ BEGIN
                   ,a.gnis_id
                   ,a.gnis_name
                   ,a.reachcode
-                  ,a.fmeasure
-                  ,a.tmeasure
+                  ,a.frommeas AS fmeasure
+                  ,a.tomeas   AS tmeasure
                   ,CASE
                    WHEN boo_return_flowline_geometry
                    THEN
@@ -570,7 +570,7 @@ BEGIN
                       CAST(NULL AS GEOMETRY)
                    END AS geom
                    FROM
-                   cipsrv_nhdplus_m.nhdflowline a
+                   cipsrv_nhdplus_m.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
                    ORDER BY
@@ -611,8 +611,8 @@ BEGIN
                   ,a.gnis_id
                   ,a.gnis_name
                   ,a.reachcode
-                  ,a.fmeasure
-                  ,a.tmeasure
+                  ,a.frommeas AS fmeasure
+                  ,a.tomeas   AS tmeasure
                   ,CASE
                    WHEN boo_return_flowline_geometry
                    THEN
@@ -621,7 +621,7 @@ BEGIN
                       CAST(NULL AS GEOMETRY)
                    END AS geom
                    FROM
-                   cipsrv_nhdplus_h.nhdflowline a
+                   cipsrv_nhdplus_h.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
                    ORDER BY

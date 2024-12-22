@@ -615,7 +615,7 @@ BEGIN
          CAST(NULL AS GEOMETRY)       
        END AS shape
       FROM
-      cipsrv_nhdplus_m.catchment_fabric a
+      cipsrv_epageofab_m.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
@@ -648,7 +648,7 @@ BEGIN
          CAST(NULL AS GEOMETRY)       
        END AS shape
       FROM
-      cipsrv_nhdplus_h.catchment_fabric a
+      cipsrv_epageofab_h.catchment_fabric a
       WHERE
       EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
       AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )

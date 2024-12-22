@@ -673,7 +673,6 @@ BEGIN
       rec_candidate.visibilityfilter            := rec_flowline.visibilityfilter;
       rec_candidate.nhdplusid                   := rec_flowline.nhdplusid;
       rec_candidate.vpuid                       := rec_flowline.vpuid;
-      rec_candidate.enabled                     := rec_flowline.enabled;
       rec_candidate.fmeasure                    := rec_flowline.fmeasure;
       rec_candidate.tmeasure                    := rec_flowline.tmeasure;
       rec_candidate.hydroseq                    := rec_flowline.hydroseq;

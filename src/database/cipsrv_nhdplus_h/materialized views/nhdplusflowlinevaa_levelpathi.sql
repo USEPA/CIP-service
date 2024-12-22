@@ -17,7 +17,7 @@ SELECT
 ,a.min_hydroseq
 ,(SELECT c.fromnode FROM cipsrv_nhdplus_h.networknhdflowline c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
 ,(SELECT d.tonode   FROM cipsrv_nhdplus_h.networknhdflowline d WHERE d.hydroseq = a.min_hydroseq) AS tonode
-,a.levelpathilengthkm 
+,CAST(a.levelpathilengthkm AS NUMERIC) AS levelpathilengthkm 
 FROM (
    SELECT
     MAX(aa.objectid) AS objectid

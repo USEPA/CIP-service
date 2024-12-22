@@ -219,8 +219,8 @@ BEGIN
             SELECT
              aa.nhdplusid
             ,aa.reachcode
-            ,aa.fmeasure
-            ,aa.tmeasure
+            ,aa.frommeas AS fmeasure
+            ,aa.tomeas   AS tmeasure
             ,aa.fcode
             ,CASE WHEN p_return_geometry THEN aa.shape ELSE NULL::GEOMETRY END AS shape
             FROM
@@ -271,7 +271,6 @@ BEGIN
       
    END IF;
    
-
 END;
 $BODY$
 LANGUAGE plpgsql;

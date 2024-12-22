@@ -24,7 +24,7 @@ BEGIN
    -- Step 10
    -- Create tmp_network_working30 temp table
    ----------------------------------------------------------------------------
-   IF cipsrv_nhdplus_h.temp_table_exists('tmp_network_working30')
+   IF cipsrv_engine.temp_table_exists('tmp_network_working30')
    THEN
       TRUNCATE TABLE tmp_network_working30;
       

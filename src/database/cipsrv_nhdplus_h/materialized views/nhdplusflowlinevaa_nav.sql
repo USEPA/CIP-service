@@ -32,13 +32,13 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_nav(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
-,CAST(a.nhdplusid  AS BIGINT) AS nhdplusid
-,CAST(a.hydroseq   AS BIGINT) AS hydroseq 
-,a.frommeas
-,a.tomeas
-,CAST(a.levelpathi AS BIGINT) AS levelpathi
-,CAST(a.terminalpa AS BIGINT) AS terminalpa
+ CAST(a.objectid   AS INTEGER) AS objectid
+,CAST(a.nhdplusid  AS BIGINT)  AS nhdplusid
+,CAST(a.hydroseq   AS BIGINT)  AS hydroseq 
+,CAST(a.frommeas   AS NUMERIC) AS frommeas
+,CAST(a.tomeas     AS NUMERIC) AS tomeas
+,CAST(a.levelpathi AS BIGINT)  AS levelpathi
+,CAST(a.terminalpa AS BIGINT)  AS terminalpa
 ,CASE
  WHEN a.uphydroseq = 0
  THEN
