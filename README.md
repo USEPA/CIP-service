@@ -2,7 +2,7 @@
 
 ### Overview
 
-CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) providing containers, logic and data for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containized [PostgreSQL]([)](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
+CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) providing containers, logic and data for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL]([)](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
 
 ### Requirements
 
