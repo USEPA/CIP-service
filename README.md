@@ -1,109 +1,43 @@
 # CIP (Catchment Index Processing) Service
 
-The Catchment Index Processing Service provides the ability to associate hydrologic features with NHDPlus catchments. The current project is divided into three "bundles" providing functionality through several combinations of containers and standalone resources.
+### Overview
+
+CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) providing containers, logic and data for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containized [PostgreSQL]([)](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
+
+### Requirements
+
+* Docker compose compatible containizeration environment such [Docker engine](https://docs.docker.com/engine/), [Docker Desktop](https://www.docker.com/products/docker-desktop/), [Rancher Desktop](https://rancherdesktop.io/) or the ability to translate compose projects into other environments such as Kubernetes.  Each CIP-service container is portable and can be built and deployed individually into Kubnertes-like environments with minor effort.  However, the prepackaged deployment logic in the project uses compose commands.  If using Windows, the [Rancher Desktop](https://rancherdesktop.io/) environment is an open source alternative to Docker Desktop.
+
+* Knowledge of containers, [Python coding](https://www.python.org/), GIS, PostgreSQL and the [PLpgSQL stored procedure language](https://www.postgresql.org/docs/current/plpgsql.html) is recommended.
+
+* Usage of the quickconfig.py setup utility requires Python 3 to be available on the host system.  Most flavors of Linux will provide Python by default.  Python can be added to Windows by hand or you may already have it as part of ArcGIS Pro, QGIS or other software installations.  Using [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about) is also a convenient way to have Python at the ready.
+
+### Install
+
+The quickconfig.py utility is meant to provide a quick and easy way to spin up a complete working environment.  If seeking to evaluate whether CIP-service is useful for your needs the *VPU09* recipe is ideal.  This recipe pulls in a very small subset of NHDPlus data confined to the Red River/Rainy watershed in the Upper Midwest.  Total disk space requirements are about 7 GB.
+
+    python config/quickconfig.py --recipe=VPU09
+
+Other recipe values:
+
+* **ALL** Loads both medium and high resolution national datasets supporting catchment indexing and netowrk navigation.  Requires about 250 GB of disk.
+* **MEDONLY** Loads only the medium resolution national dataset supporting catchment indexing and netowrk navigation.  Requires about 25 GB of disk.
+* **EXTENDED** Load all datasets of both medium and high resolution supporting extended capoabilities including watershed delineation.  Requires about 510 GB.
+
+Each recipe downloads and loads one or more PostgreSQL dump files from an [EPA Simple Storage System](https://dmap-data-commons-ow.s3.amazonaws.com/index.html#data/cipsrv/).  Some of these file are rather large and downloading them multiple times is unideal.  If you have the downloads prepositioned in a location on the host, use the copyin parameters to skip the downloading.
+
+### Components
+
+The current project is divided into "bundles" providing functionality through several combinations of containers and standalone resources.
 
 1. **Engine**: The engine bundle provides the core functionality of CIP.  At present there are two components, the database and the middleware API.
 2. **Admin**: The admin bundle provides a set of Jupyter notebooks used in the deployment of CIP data and code to the engine.  The admin notebooks also provide a simple interface for batch processing.
 3. **Demo**: The demo bundle provides a simple Nginx web server that hosts simple examples of CIP indexing.
-
-[Streamlined Installation Instructions](docs/streamlined_installation.md)
+4. **GIS**: The GIS bundle provides a [Geoserver](https://geoserver.org/) for visualizing indexing and navigation results in cartographic form.
 
 ### Capabilities
 
 To explore the CIP-service API capabilities, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. For example, see the [Swagger Next Editor](https://editor-next.swagger.io/?spec=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
-
-### Overview
-
-At this time hosting options for deploying the CIP-service bundles are quite varied ranging from Windows desktops to Linux servers to cloud hosting.  As such a single compose environment is challenging to present.  To accommodate this the project uses a jinja2 template combined with varied profile configurations to dynamically generate the needed compose and dockerfile artifacts that drive each bundle.  
-
-To keep things simple the project promotes two general approaches, a complete local desktop containerized installation and a cloud option where the engine components are hosted in the EPA cloud. 
-
-__Local Desktop__
-
-![Local Desktop](docs/architecture_local.drawio.png)
-
-__Cloud Hosted__
-
-![Cloud-Hosted](docs/architecture_cloud.drawio.png)
-
-### Prerequisites
-
-- container runtime such as Docker Engine or Kubernetes\
-  (Windows users may wish to utilize container management software such as [Docker Desktop](https://www.docker.com/products/docker-desktop/) or [Rancher Desktop](https://rancherdesktop.io/))
-- at least 16 GB of memory
-- at least 80 GB of free disk
-- internet access
-
-### Containers Utilized
-
-The project uses the following containers which are standard, stable and trusted images.  If you have any reason to distrust or find problematic any of the following, please open a ticket.
-
-- postgis/postgis:15-3.4
-- postgrest/postgrest:v12.0.3
-- ghcr.io/osgeo/gdal:ubuntu-full-3.9.0
-- nginx:1.25.5
-
-### Profile Configuration
-
-- inspect the provided profiles or generate a new profile meeting your host specifications.  Generally for testing purposes the default keyword will choose a profile which will work for most users.
-
-- generate the needed compose artifacts against the selected profile:
-
-  cd config
-
-  - windows powershell: 
-    - config-compose.ps1 engine default
-    - config-compose.ps1 admin  default
-    - config-compose.ps1 demo   default
-  - linux shell:   
-    - config-compose.sh  engine default
-    - config-compose.sh  admin  default
-    - config-compose.sh  demo   default
-  - python 3:  
-    - python config-compose.py --bundle engine --bprofile default
-    - python config-compose.py --bundle admin  --bprofile default
-    - python config-compose.py --bundle demo   --bprofile default
-
-Note running the Python configuration code directly on your host is the quickest and simplest of the above methods but requires Python 3 with the jinja2 package installed.
-
-These steps will generate the needed compose and dockerfiles in each bundle directory.  If no existing .env secrets file is found, the env.sample file will be deployed.  Make sure to inspect the resulting .env files for appropriate settings.  No changes will be made to preexisting .env files.
-
-### Typical Deployment Steps
-
-__Engine__
-
-1. in the engine directory, type **docker compose -p engine build**.  This will download and configure the engine containers.  It may take a while.
-
-2. next type **docker compose -p engine up --detach**.  This will spin up the engine containers.  Note the cip_pr container will spin up fast and throw errors while it waits for the cip_pg database to come up.  These errors can be ignored.
-
-3. next type **docker ps** to make sure the engine containers are up and running as expected.  You should see cip_pg and cip_pr containers running.
-
-4. At this point the engine API endpoint should be available.  For information on how to use the API, see the [OpenAPI specification here](https://petstore.swagger.io/?url=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml)
-
-__Admin__
-
-1. in the admin directory, type **docker compose -p admin build**.  The admin_local profile will attach o the engine_cip network created above.  
-
-2. then type **docker compose -p admin up --detach**.
-
-__[Demo](./docs/demo.md)__
-
-1. in the demo directory, type **docker compose -p demo build**. The nginx_demo profile expects to find the engine API at localhost, port 3000.
-
-2. then type **docker compose -p demo up --detach**. 
-
-### Typical Engine Setup Steps
-
-1. open the admin bundle jupyter notebook using the token you provided, e.g. http://localhost:8888/?token=easy
-
-2. pilot to the **setup** folder.
-
-3. for a straightforward load of the medium resolution NHDPlus, choose the **recipe_quick_setup_medonly** notebook and execute all cells.  This will download and stage the data and logic required.  Alternatively the **recipe_quick_setup_all** notebook will load the same plus the high resolution NHDPlus.  Note the high resolution datasets will require significant disk and time to stage and load.
-
-After completion of the steps, point your browser to the demo bundle nginx server, probably at http://localhost:8080/cipsrv_indexer.html
-The indexer application should load up and allow you to draw a point, line or polygon and submit it for indexing.  Note the high resolution NHDPlus option will only work if the high resolution NHDPlus data and code was loaded.
-
-Alternatively, try the ATTAINS comparison application, probably at http://localhost:8080/cipsrv_attains.html.  This web app is meant to show the results of CIP Service indexing against indexing previous done by ATTAINS.
 
 ### Disclaimer
 
