@@ -219,6 +219,9 @@ def main(
          raise Exception("hrws_dumpfile_copyin not found - " + str(hrws_dumpfile_copyin));
    
    ###############################################################################
+   os.chdir(os.path.dirname(os.path.realpath(__file__)));   
+   
+   ###############################################################################
    print("Downing any existing compose services");
 
    os.chdir('../engine');
