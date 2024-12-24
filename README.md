@@ -2,7 +2,7 @@
 
 ### Overview
 
-CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) [Office of Water](https://www.epa.gov/aboutepa/about-office-water) providing containers, logic and data for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
+CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) [Office of Water](https://www.epa.gov/aboutepa/about-office-water) providing containers, logic and [data](docs/data.md) for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
 
 ### Requirements
 
@@ -24,7 +24,7 @@ Other recipe values:
 * **MEDONLY** Loads only the medium resolution national dataset supporting catchment indexing and network navigation.  Requires about 25 GB of disk.
 * **EXTENDED** Load all datasets of both medium and high resolution supporting extended capabilities including watershed delineation.  Requires about 510 GB.
 
-Each recipe downloads and loads one or more PostgreSQL dump files from an [EPA Simple Storage System](https://dmap-data-commons-ow.s3.amazonaws.com/index.html#data/cipsrv/).  Some of these files are rather large and downloading them more than once is unideal.  If you have the downloads prepositioned in a location on the host, use the copyin parameters to skip the downloading.
+Each recipe downloads and loads one or more PostgreSQL [dump files](docs/data.md) from an [EPA Simple Storage System](https://dmap-data-commons-ow.s3.amazonaws.com/index.html#data/cipsrv/).  Some of these files are rather large and downloading them more than once is unideal.  If you have the downloads prepositioned in a location on the host, use the copyin parameters to skip the downloading.
 
 Please review additional notes on [security](docs/security.md).
 
