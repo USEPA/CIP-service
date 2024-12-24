@@ -1,3 +1,4 @@
+# Catchment Indexing
 ## Current Indexing Methods:
 
 1. [Point Simple](#point-simple) ([code](../src/database/cipsrv_nhdplus_m/functions/index_point_simple.sql))
