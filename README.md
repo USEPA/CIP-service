@@ -26,6 +26,8 @@ Other recipe values:
 
 Each recipe downloads and loads one or more PostgreSQL dump files from an [EPA Simple Storage System](https://dmap-data-commons-ow.s3.amazonaws.com/index.html#data/cipsrv/).  Some of these files are rather large and downloading them more than once is unideal.  If you have the downloads prepositioned in a location on the host, use the copyin parameters to skip the downloading.
 
+Please review additional notes on [security](docs/security.md).
+
 ### Getting Help
 
 * Open a GitHub issue.
