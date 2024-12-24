@@ -35,13 +35,13 @@ Please review additional notes on [security](docs/security.md).
 
 ### Current Capabilities
 
-* Catchment Indexing
+* [Catchment Indexing](docs/catchment_indexing.md)
 * Point Reach Indexing
 * Network Navigation
 * Watershed Delineation
 * Support Utilities
 
-To explore the API capabilities, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. For example, see the [Swagger Next Editor](https://editor-next.swagger.io/?spec=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
+To explore these capabilities as expose via the API, see the [OpenAPI documentation](docs/openapi.yml).  Various OpenAPI 3.1 online renderers may be used to see the API rendered as document. For example, see the [Swagger Next Editor](https://editor-next.swagger.io/?spec=https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml). Such viewers may not allow direct linking in which case the [direct link](https://raw.githubusercontent.com/USEPA/CIP-service/main/docs/openapi.yml) can be used to work around such issues.
 
 ### Disclaimer
 
