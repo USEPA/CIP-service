@@ -1,16 +1,16 @@
-# CIP (Catchment Index Processing) Service
+# ![USEPA](https://avatars.githubusercontent.com/u/1304320?s=70) CIP (Catchment Index Processing) Service
 
 ### Overview
 
-CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) providing containers, logic and data for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
+CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) [Office of Water](https://www.epa.gov/aboutepa/about-office-water) providing containers, logic and data for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
 
 ### Requirements
 
-* Docker compose compatible containizeration environment such [Docker engine](https://docs.docker.com/engine/), [Docker Desktop](https://www.docker.com/products/docker-desktop/), [Rancher Desktop](https://rancherdesktop.io/) or the ability to translate compose projects into other environments such as Kubernetes.  Each CIP-service container is portable and can be built and deployed individually into Kubnertes-like environments with minor effort.  However, the prepackaged deployment logic in the project uses compose commands.  If using Windows, the [Rancher Desktop](https://rancherdesktop.io/) environment is an open source alternative to Docker Desktop.
+* Docker compose compatible containerization environment such [Docker engine](https://docs.docker.com/engine/), [Docker Desktop](https://www.docker.com/products/docker-desktop/), [Rancher Desktop](https://rancherdesktop.io/) or the ability to translate compose projects into other environments such as Kubernetes.  Each CIP-service container is portable and can be built and deployed individually into Kubernetes-like environments with minor effort.  However, the prepackaged deployment logic in the project uses compose commands.  If using Windows, the [Rancher Desktop](https://rancherdesktop.io/) environment is an open source alternative to Docker Desktop.
 
 * Knowledge of containers, [Python coding](https://www.python.org/), GIS, PostgreSQL and the [PLpgSQL stored procedure language](https://www.postgresql.org/docs/current/plpgsql.html) is recommended.
 
-* Usage of the quickconfig.py setup utility requires Python 3 to be available on the host system.  Most flavors of Linux will provide Python by default.  Python can be added to Windows by hand or you may already have it as part of ArcGIS Pro, QGIS or other software installations.  Using [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about) is also a convenient way to have Python at the ready.
+* Usage of the quickconfig.py setup utility requires Python 3 to be available on the host system.  Most flavors of Linux will provide Python by default.  Python can be added to Windows by hand, or you may already have it as part of ArcGIS Pro, QGIS or other software installations.  Using [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about) is also a convenient way to have Python at the ready.
 
 ### Install
 
@@ -20,11 +20,16 @@ The quickconfig.py utility is meant to provide a quick and easy way to spin up a
 
 Other recipe values:
 
-* **ALL** Loads both medium and high resolution national datasets supporting catchment indexing and netowrk navigation.  Requires about 250 GB of disk.
-* **MEDONLY** Loads only the medium resolution national dataset supporting catchment indexing and netowrk navigation.  Requires about 25 GB of disk.
-* **EXTENDED** Load all datasets of both medium and high resolution supporting extended capoabilities including watershed delineation.  Requires about 510 GB.
+* **ALL** Loads both medium and high resolution national datasets supporting catchment indexing and network navigation.  Requires about 250 GB of disk.
+* **MEDONLY** Loads only the medium resolution national dataset supporting catchment indexing and network navigation.  Requires about 25 GB of disk.
+* **EXTENDED** Load all datasets of both medium and high resolution supporting extended capabilities including watershed delineation.  Requires about 510 GB.
 
-Each recipe downloads and loads one or more PostgreSQL dump files from an [EPA Simple Storage System](https://dmap-data-commons-ow.s3.amazonaws.com/index.html#data/cipsrv/).  Some of these file are rather large and downloading them multiple times is unideal.  If you have the downloads prepositioned in a location on the host, use the copyin parameters to skip the downloading.
+Each recipe downloads and loads one or more PostgreSQL dump files from an [EPA Simple Storage System](https://dmap-data-commons-ow.s3.amazonaws.com/index.html#data/cipsrv/).  Some of these files are rather large and downloading them more than once is unideal.  If you have the downloads prepositioned in a location on the host, use the copyin parameters to skip the downloading.
+
+### Getting Help
+
+* Open a GitHub issue.
+* Email WATERS Support at WATERS_SUPPORT@epa.gov.
 
 ### Components
 
