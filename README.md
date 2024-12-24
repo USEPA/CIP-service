@@ -2,7 +2,7 @@
 
 ### Overview
 
-CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) [Office of Water](https://www.epa.gov/aboutepa/about-office-water) providing containers, logic and [data](docs/data.md) for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
+CIP-service is a project of the [US Environmental Protection Agency](https://www.epa.gov) [Office of Water](https://www.epa.gov/aboutepa/about-office-water) providing [containers](docs/containers.md), logic and [data](docs/data.md) for the task of associating or _indexing_ hydrologic features with [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus) features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  The majority of logic occurs within a containerized [PostgreSQL](https://www.postgresql.org/) database with additional containers providing support products such as an [API](https://docs.postgrest.org/en/v12/), [Jupyter Notebooks](https://jupyter.org/) and sample demo applications.  All components of the provided container stack are open source. 
 
 ### Requirements
 
@@ -32,15 +32,6 @@ Please review additional notes on [security](docs/security.md).
 
 * Open a GitHub issue.
 * Email WATERS Support at WATERS_SUPPORT@epa.gov.
-
-### Components
-
-The current project is divided into "bundles" providing functionality through several combinations of containers and standalone resources.
-
-1. **Engine**: The engine bundle provides the core functionality of CIP.  At present there are two components, the database and the middleware API.
-2. **Admin**: The admin bundle provides a set of Jupyter notebooks used in the deployment of CIP data and code to the engine.  The admin notebooks also provide a simple interface for batch processing.
-3. **Demo**: The demo bundle provides a simple Nginx web server that hosts simple examples of CIP indexing.
-4. **GIS**: The GIS bundle provides a [Geoserver](https://geoserver.org/) for visualizing indexing and navigation results in cartographic form.
 
 ### Capabilities
 
