@@ -10,12 +10,24 @@
 
 ### Upstream with Tributaries
 
+![ut](ut_navigation.png)
+
 ### Upstream Mainline
+
+![um](um_navigation.png)
 
 ### Downstream with Divergences
 
+![dd](dd_navigation.png)
+
 ### Downstream Mainline
+
+![dm](dm_navigation.png)
 
 ### Point to Point
 
+![pp](pp_navigation.png)
+
 ### Point to Point All Between
+
+![ppall](ppall_navigation.png)
