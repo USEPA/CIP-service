@@ -7,6 +7,12 @@
 
 ### Distance
 
+![distance](point_distance.png)
+
 ### Raindrop
 
+![raindrop](point_raindrop.png)
+
 ### Catchment Constrained
+
+![catchment constrained](point_catconstrained.png)
