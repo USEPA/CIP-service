@@ -119,7 +119,7 @@
                </select>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Split Inital Catchment:</span>
-               <input name="p_split_initial_catchment" id="p_split_initial_catchment" type="checkbox" CHECKED>
+               <input name="p_split_initial_catchment" id="p_split_initial_catchment" type="checkbox">
                &nbsp;&nbsp;&nbsp;&nbsp;
                <span style="font-family: Arial; font-size: 12px;">Fill Basin Holes:</span>
                <input name="p_fill_basin_holes" id="p_fill_basin_holes" type="checkbox" CHECKED>
@@ -456,6 +456,7 @@
          delineated_area.addData(response.delineated_area).setStyle({
              "color": "#E38A1E"
             ,"fillColor": "#F0A851"
+            ,"fillOpacity": 0.6
             ,"weight": 2
          });
          
