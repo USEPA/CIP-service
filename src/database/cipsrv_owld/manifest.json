@@ -20,20 +20,9 @@
    ,"tasks": [
        {
           "id": "concatenate"
-         ,"output": "cipsrv_pgrest_deploy.sql"
+         ,"output": "cipsrv_owld_deploy.sql"
          ,"includes": [
-             "functions/cipsrv_domains.sql"
-            ,"functions/cipsrv_index.sql"
-            ,"functions/delineate.sql"
-            ,"functions/healthcheck.sql"
-            ,"functions/navigate.sql"
-            ,"functions/pointindexing.sql"
-            ,"functions/upstreamdownstream.sql"
-            ,"functions/randomcatchment.sql"
-            ,"functions/randomhuc12.sql"
-            ,"functions/randomnav.sql"
-            ,"functions/randompoint.sql"
-            ,"functions/randomppnav.sql"
+             "functions/upstreamdownstream.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
@@ -64,7 +53,7 @@
       ,{
           "id": "artifacts"
          ,"targets": [
-             "cipsrv_pgrest_deploy.sql"
+             "cipsrv_owld_deploy.sql"
          ]
        }
    ]

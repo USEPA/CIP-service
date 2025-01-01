@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta
+         name="description"
+         content="SwaggerUI"
+      />
+      <title>CIP-service OpenAPI Documentation</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui.css" />
+   </head>
+   <body>
+      <div id="swagger-ui"></div>
+      <script src="./config.js" onerror="return null;"></script>
+      <script src="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui-bundle.js" crossorigin></script>
+      <script src="https://unpkg.com/swagger-ui-dist@5.18.2/swagger-ui-standalone-preset.js" crossorigin></script>
+      <script>
+         window.onload = function() {
+            // Begin Swagger UI call region
+            const ui = SwaggerUIBundle({
+               url: 'openapi.yml',
+               dom_id: '#swagger-ui',
+               deepLinking: true,
+               presets: [
+                  SwaggerUIBundle.presets.apis,
+                  SwaggerUIStandalonePreset
+               ],
+               plugins: [
+                  SwaggerUIBundle.plugins.DownloadUrl,
+                  // Custom plugin that replaces the server list with the current url
+                  function() {
+                     return {
+                        statePlugins: {
+                           spec: {
+                              wrapActions: {
+                                 updateJsonSpec: function(oriAction, system) {
+                                    return (spec) => {
+                                       spec.servers = [{url: postgrest_prot + '://' + postgrest_host + ':' + postgrest_port}]
+                                       return oriAction(spec)
+                                    }
+                                 }
+                              }
+                           }
+                        }
+                     }
+                  }
+               ],
+               layout: "StandaloneLayout"
+            });
+            // End Swagger UI call region
+
+            window.ui = ui;
+         };
+      </script>
+   </body>
+</html>

@@ -37,7 +37,7 @@ def main(
       outdir = templates;
 
    profiles = os.path.join(templates,"profiles");
-   time_now = datetime.datetime.utcnow();
+   time_now = datetime.datetime.now(datetime.timezone.utc);
 
    environment = jinja2.Environment(loader=jinja2.FileSystemLoader(templates));
 
