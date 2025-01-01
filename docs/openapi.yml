@@ -325,12 +325,9 @@ components:
           minimum: 0
           maximum: 100
         known_region:
-          description: >
-             Provided value to use to determine the proper spatial reference system to use in geometric analysis.
-             Providing an SRID value such as 5070 or a US state code such as MN will skip the sometimes expensive determination of the correct SRID for the feature.
-             However, if the feature does not actually apply to the provide known_region hint, then indexing may fail or return incorrect results.
-             If in doubt, leave this parameter blank.
-          type: ['string','null']
+          oneOf:
+          - $ref: '#/components/schemas/known_region'
+          - type: 'null'
         return_indexing_summary:
           description: Flag as to whether to return a detailed summary of the indexing actions.  Setting this false will slightly improve performance and throughput.
           type: ['boolean','null']
@@ -411,33 +408,61 @@ components:
         search_type:
           $ref: '#/components/schemas/search_type'
         start_nhdplusid:
-          $ref: '#/components/schemas/start_nhdplusid'
+          oneOf:
+          - $ref: '#/components/schemas/start_nhdplusid'
+          - type: 'null'
         start_permanent_identifier:
-          $ref: '#/components/schemas/start_permanent_identifier'
+          oneOf:
+          - $ref: '#/components/schemas/start_permanent_identifier'
+          - type: 'null'
         start_reachcode:
-          $ref: '#/components/schemas/start_reachcode'
+          oneOf:
+          - $ref: '#/components/schemas/start_reachcode'
+          - type: 'null'
         start_hydroseq:
-          $ref: '#/components/schemas/start_hydroseq'
+          oneOf:
+          - $ref: '#/components/schemas/start_hydroseq'
+          - type: 'null'
         start_measure:
-          $ref: '#/components/schemas/start_measure'
+          oneOf:
+          - $ref: '#/components/schemas/start_measure'
+          - type: 'null'
         stop_nhdplusid:
-          $ref: '#/components/schemas/stop_nhdplusid'
+          oneOf:
+          - $ref: '#/components/schemas/stop_nhdplusid'
+          - type: 'null'
         stop_permanent_identifier:
-          $ref: '#/components/schemas/stop_permanent_identifier'
+          oneOf:
+          - $ref: '#/components/schemas/stop_permanent_identifier'
+          - type: 'null'
         stop_reachcode:
-          $ref: '#/components/schemas/stop_reachcode'
+          oneOf:
+          - $ref: '#/components/schemas/stop_reachcode'
+          - type: 'null'
         stop_hydroseq:
-          $ref: '#/components/schemas/stop_hydroseq'
+          oneOf:
+          - $ref: '#/components/schemas/stop_hydroseq'
+          - type: 'null'
         stop_measure:
-          $ref: '#/components/schemas/stop_measure'
+          oneOf:
+          - $ref: '#/components/schemas/stop_measure'
+          - type: 'null'
         max_distancekm:
-          $ref: '#/components/schemas/max_distancekm'
+          oneOf:
+          - $ref: '#/components/schemas/max_distancekm'
+          - type: 'null'
         max_flowtimeday:
-          $ref: '#/components/schemas/max_flowtimeday'
+          oneOf:
+          - $ref: '#/components/schemas/max_flowtimeday'
+          - type: 'null'
         return_flowline_details:
-          $ref: '#/components/schemas/return_flowline_details'
+          oneOf:
+          - $ref: '#/components/schemas/return_flowline_details'
+          - type: 'null'
         return_flowline_geometry:
-          $ref: '#/components/schemas/return_flowline_geometry'
+          oneOf:
+          - $ref: '#/components/schemas/return_flowline_geometry'
+          - type: 'null'
     navigate_resp:
       type: object
       properties:
@@ -460,33 +485,61 @@ components:
         search_type:
           $ref: '#/components/schemas/search_type'
         start_nhdplusid:
-          $ref: '#/components/schemas/start_nhdplusid'
+          oneOf:
+          - $ref: '#/components/schemas/start_nhdplusid'
+          - type: 'null'
         start_permanent_identifier:
-          $ref: '#/components/schemas/start_permanent_identifier'
+          oneOf:
+          - $ref: '#/components/schemas/start_permanent_identifier'
+          - type: 'null'
         start_reachcode:
-          $ref: '#/components/schemas/start_reachcode'
+          oneOf:
+          - $ref: '#/components/schemas/start_reachcode'
+          - type: 'null'
         start_hydroseq:
-          $ref: '#/components/schemas/start_hydroseq'
+          oneOf:
+          - $ref: '#/components/schemas/start_hydroseq'
+          - type: 'null'
         start_measure:
-          $ref: '#/components/schemas/start_measure'
+          oneOf:
+          - $ref: '#/components/schemas/start_measure'
+          - type: 'null'
         stop_nhdplusid:
-          $ref: '#/components/schemas/stop_nhdplusid'
+          oneOf:
+          - $ref: '#/components/schemas/stop_nhdplusid'
+          - type: 'null'
         stop_permanent_identifier:
-          $ref: '#/components/schemas/stop_permanent_identifier'
+          oneOf:
+          - $ref: '#/components/schemas/stop_permanent_identifier'
+          - type: 'null'
         stop_reachcode:
-          $ref: '#/components/schemas/stop_reachcode'
+          oneOf:
+          - $ref: '#/components/schemas/stop_reachcode'
+          - type: 'null'
         stop_hydroseq:
-          $ref: '#/components/schemas/stop_hydroseq'
+          oneOf:
+          - $ref: '#/components/schemas/stop_hydroseq'
+          - type: 'null'
         stop_measure:
-          $ref: '#/components/schemas/stop_measure'
+          oneOf:
+          - $ref: '#/components/schemas/stop_measure'
+          - type: 'null'
         max_distancekm:
-          $ref: '#/components/schemas/max_distancekm'
+          oneOf:
+          - $ref: '#/components/schemas/max_distancekm'
+          - type: 'null'
         max_flowtimeday:
-          $ref: '#/components/schemas/max_flowtimeday'
+          oneOf:
+          - $ref: '#/components/schemas/max_flowtimeday'
+          - type: 'null'
         return_flowline_details:
-          $ref: '#/components/schemas/return_flowline_details'
+          oneOf:
+          - $ref: '#/components/schemas/return_flowline_details'
+          - type: 'null'
         return_flowline_geometry:
-          $ref: '#/components/schemas/return_flowline_geometry'
+          oneOf:
+          - $ref: '#/components/schemas/return_flowline_geometry'
+          - type: 'null'
     delineate_resp:
       type: object
       properties:
@@ -517,9 +570,13 @@ components:
           default: nhdplus_m
           $ref: '#/components/schemas/nhdplus_version'
         return_snap_path:
-          type: ['boolean','null']
+          oneOf:
+          - type: boolean
+          - type: 'null'
         known_region:
-          type: ['string','null']
+          oneOf:
+          - $ref: '#/components/schemas/known_region'
+          - type: 'null'
     pointindexing_resp:
       type: object
       properties:
@@ -560,105 +617,197 @@ components:
         search_type:
           $ref: '#/components/schemas/search_type'
         start_nhdplusid:
-          $ref: '#/components/schemas/start_nhdplusid'
+          oneOf:
+          - $ref: '#/components/schemas/start_nhdplusid'
+          - type: 'null'
         start_permanent_identifier:
-          $ref: '#/components/schemas/start_permanent_identifier'
+          oneOf:
+          - $ref: '#/components/schemas/start_permanent_identifier'
+          - type: 'null'
         start_reachcode:
-          $ref: '#/components/schemas/start_reachcode'
+          oneOf:
+          - $ref: '#/components/schemas/start_reachcode'
+          - type: 'null'
         start_hydroseq:
-          $ref: '#/components/schemas/start_hydroseq'
+          oneOf:
+          - $ref: '#/components/schemas/start_hydroseq'
+          - type: 'null'
         start_measure:
-          $ref: '#/components/schemas/start_measure'
+          oneOf:
+          - $ref: '#/components/schemas/start_measure'
+          - type: 'null'
         start_source_featureid:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_source_featureid2:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_source_originator:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_source_series:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_start_date:
-          type: string
-          format: date
+          oneOf:
+          - type: string
+            format: date
+          - type: 'null'
         start_end_date:
-          type: string
-          format: date
+          oneOf:
+          - type: string
+            format: date
+          - type: 'null'
         start_permid_joinkey:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_source_joinkey:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_cat_joinkey:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_linked_data_program:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_search_precision:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         start_search_logic:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_nhdplusid:
-          $ref: '#/components/schemas/stop_nhdplusid'
+          oneOf:
+          - $ref: '#/components/schemas/stop_nhdplusid'
+          - type: 'null'
         stop_permanent_identifier:
-          $ref: '#/components/schemas/stop_permanent_identifier'
+          oneOf:
+          - $ref: '#/components/schemas/stop_permanent_identifier'
+          - type: 'null'
         stop_reachcode:
-          $ref: '#/components/schemas/stop_reachcode'
+          oneOf:
+          - $ref: '#/components/schemas/stop_reachcode'
+          - type: 'null'
         stop_hydroseq:
-          $ref: '#/components/schemas/stop_hydroseq'
+          oneOf:
+          - $ref: '#/components/schemas/stop_hydroseq'
+          - type: 'null'
         stop_measure:
-          $ref: '#/components/schemas/stop_measure'
+          oneOf:
+          - $ref: '#/components/schemas/stop_measure'
+          - type: 'null'
         stop_source_featureid:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_source_featureid2:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_source_originator:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_source_series:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_start_date:
-          type: string
-          format: date
+          oneOf:
+          - type: string
+            format: date
+          - type: 'null'
         stop_end_date:
-          type: string
-          format: date
+          oneOf:
+          - type: string
+            format: date
+          - type: 'null'
         stop_permid_joinkey:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_source_joinkey:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_cat_joinkey:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_linked_data_program:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_search_precision:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         stop_search_logic:
-          type: string
+          oneOf:
+          - type: string
+          - type: 'null'
         max_distancekm:
-          $ref: '#/components/schemas/max_distancekm'
+          oneOf:
+          - $ref: '#/components/schemas/max_distancekm'
+          - type: 'null'
         max_flowtimeday:
-          $ref: '#/components/schemas/max_flowtimeday'
+          oneOf:
+          - $ref: '#/components/schemas/max_flowtimeday'
+          - type: 'null'
         linked_data_search_list:
           type: array
           items:
             type: string
         return_flowline_details:
-          $ref: '#/components/schemas/return_flowline_details'
+          oneOf:
+          - $ref: '#/components/schemas/return_flowline_details'
+          - type: 'null'
         return_flowline_geometry:
-          $ref: '#/components/schemas/return_flowline_geometry'
+          oneOf:
+          - $ref: '#/components/schemas/return_flowline_geometry'
+          - type: 'null'
         return_catchments:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         return_linked_data_cip:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         return_linked_data_huc12:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         return_linked_data_source:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         return_linked_data_rad:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         return_linked_data_attributes:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         remove_stop_start_sfids:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
         push_source_geometry_as_rad:
-          type: boolean
+          oneOf:
+          - type: boolean
+          - type: 'null'
     upstreamdownstream_resp:
       type: object
       properties:
@@ -834,7 +983,7 @@ components:
         return_code:
           $ref: '#/components/schemas/return_code'
         status_message:
-          type: ['string','null']    
+          $ref: '#/components/schemas/status_message'   
     linked_data_wqp:
       type: object
       properties:
@@ -1331,87 +1480,85 @@ components:
       - UT
     start_nhdplusid:
       description: NHDPlus flowline NHDPlusID bigint value from which to begin the navigation.
-      type: ['integer','null']
+      type: integer
       format: int64
       examples:
       - 5000100000184
     start_permanent_identifier:
       description: NHD flowline permanent identifier string value from which to begin the navigation.  Permanent Identifiers may manifest as text forms of the NHDPlusID or as 40-byte guid values.
-      type: ['string','null']
+      type: string
       maxLength: 40
       examples:
-      - null
+      - '{5DC9D377-46F7-41FB-A258-7A9AF8307610}'
     start_reachcode:
       description: NHD flowline 14-byte reach code value from which to begin the navigation.  Provide a start measure to indicate a specific position on the reach.
-      type: ['string','null']
+      type: string
       minLength: 14
       maxLength: 14
       examples:
-      - null
+      - '01010007002110'
     start_hydroseq:
       description: NHDPlus flowline hydro sequence bigint value from which to begin the navigation.
-      type: ['integer','null']
+      type: integer
       format: int64
       examples:
-      - null
+      - 5000100019676
     start_measure:
       description: NHD flowline measure from which to begin the navigation.
-      type: ['number','null']
+      type: number
       minimum: 0
       maximum: 100
       examples:
       - 50.0
     stop_nhdplusid:
       description: NHDPlus flowline NHDPlusID bigint value at which navigation will cease.  Only used in point-to-point navigation.
-      type: ['integer','null']
+      type: integer
       format: int64
       examples:
-      - null
+      - 5000100000184
     stop_permanent_identifier:
       description: NHD flowline permanent identifier string value from which navigation will cease.  Only used in point-to-point navigation.
-      type: ['string','null']
+      type: string
       maxLength: 40
       examples:
-      - null
+      - '{46D7557F-A83A-4414-AE56-105167EE3502}'
     stop_reachcode:
       description: NHD flowline 14-byte reach code value from which navigation will cease.  Only used in point-to-point navigation.
-      type: ['string','null']
+      type: string
       minLength: 14
       maxLength: 14
       examples:
-      - null
+      - 188744699622
     stop_hydroseq:
       description: NHDPlus flowline hydro sequence bigint value at which navigation will cease.  Only used in point-to-point navigation.
-      type: ['integer','null']
+      type: integer
       format: int64
-      minimum: 0
-      maximum: 100
       examples:
-      - null
+      - 5000100000184
     stop_measure:
       description: NHD flowline measure at which navigation will cease.  Only used in point-to-point navigation.
-      type: ['number','null']
+      type: number
       examples:
-      - null
+      - 45.23
     max_distancekm:
       description: Maximum distance traversed in kilometers for selecting features.
-      type: ['number','null']
+      type: number
       examples:
       - 15
     max_flowtimeday:
       description: Maximum flow time traversed in hours for selecting features.  May not apply with all NHDPlus versions.
-      type: ['number','null']
+      type: number
       examples:
-      - null
+      - 1.2567
     return_flowline_details:
       description: Switch whether to return flowline details with results.
-      type: ['boolean','null']
+      type: boolean
       default: true
       examples:
       - true
     return_flowline_geometry:
       description: Switch whether to return flowline geometry information with results.
-      type: ['boolean','null']
+      type: boolean
       default: true
       examples:
       - true
@@ -1447,3 +1594,10 @@ components:
       type: string
       examples:
       - '{E374E06D-3A16-662D-E053-42DE4386FFB0}'
+    known_region:
+      description: >
+          Provided value to use to determine the proper spatial reference system to use in geometric analysis.
+          Providing an SRID value such as 5070 or a US state code such as MN will skip the sometimes expensive determination of the correct SRID for the feature.
+          However, if the feature does not actually apply to the provide known_region hint, then indexing may fail or return incorrect results.
+          If in doubt, leave this parameter blank.
+      type: string
