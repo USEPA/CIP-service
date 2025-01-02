@@ -135,6 +135,7 @@ def main(
       ,dumpfile
       ,dumpfile_copyin
       ,dumpfile_parm
+      ,multi_flag = False
    ):
       cmd = [
           "docker","compose","exec","cip_jp","jupyter"
@@ -144,10 +145,28 @@ def main(
       dzproc(cmd);
 
       if dumpfile_copyin is not None:
-         mdf = os.path.basename(dumpfile_copyin);
-         print("Loading local " + ipnyb + " dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
+         
+         if multi_flag:
+            
+            mdf = "";
+            for item in dumpfile_copyin.split(','):
+               (pref,file) = item.split(':');
+               
+               mdf2 = os.path.basename(file);
+               print("Loading local " + item + " dumpfile " + file + " into container.");
+               cmd = ["docker","compose","cp",file,"cip_jp:/home/jovyan/loading_dock/" + mdf2];
+               dzproc(cmd);
+            
+               mdf += pref + ":" + mdf2 + ",";
+
+            mdf = mdf.rstrip(',');               
+            
+         else:
+            mdf = os.path.basename(dumpfile_copyin);
+            print("Loading local " + ipnyb + " dumpfile " + mdf + " into container.");
+            cmd = ["docker","compose","cp",dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+            dzproc(cmd);
+            
          cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py","--use_existing",dumpfile_parm,mdf];
          dzproc(cmd);
          
@@ -161,7 +180,7 @@ def main(
             print("Downloading and importing " + dumpfile + " of " + ipnyb + " data.");
             cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py",dumpfile_parm,dumpfile];
             dzproc(cmd);
-        
+
    ################################################################################## 
    def cipgt(
        ipnyb
@@ -182,7 +201,7 @@ def main(
          
       else:
          if override_git_branch is not None:
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--override_git_branch",override_git_branch];
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--override_branch",override_git_branch];
          else:
             cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py"];
       
@@ -244,6 +263,8 @@ def main(
             raise Exception("owld_dumpfiles_copyin for " + pref + " not found - " + str(file));
    
    ###############################################################################
+   # set context to project directory
+   ###############################################################################
    os.chdir(os.path.dirname(os.path.realpath(__file__)));   
    
    ###############################################################################
@@ -285,8 +306,11 @@ def main(
       
       dzproc(cmd);
       
+   ###############################################################################
+   # set context to config directory
+   ###############################################################################
    os.chdir('../config');
-
+   
    ###############################################################################
    if recipe is None:
       recipe = 'MRONLY'; 
@@ -336,8 +360,11 @@ def main(
    );
 
    ###############################################################################
+   # set context to engine container
+   ###############################################################################
    os.chdir('../engine');
-
+   ###############################################################################
+   
    if override_postgresql_port is not None:
       shutil.move('docker-compose.yml','docker-compose.yml.bak');
       
@@ -361,7 +388,10 @@ def main(
    dzproc(cmd);
 
    ###############################################################################
+   # set context to demo container
+   ###############################################################################
    os.chdir('../demo');
+   ###############################################################################
 
    if override_demo_pgrst_host is not None:
       shutil.move('.env','.env.bak');
@@ -399,7 +429,12 @@ def main(
    dzproc(cmd);
 
    ###############################################################################
+   # set context to admin container
+   ###############################################################################
    os.chdir('../admin');
+   ###############################################################################
+   
+   ###############################################################################
    print("Running compose build for admin containers.");
    cmd = ["docker","compose","build"];
    if build_nocache:
@@ -571,6 +606,7 @@ def main(
          ,dumpfile        = owld_dumpfiles
          ,dumpfile_copyin = owld_dumpfiles_copyin
          ,dumpfile_parm   = '--owld_dumpfiles'
+         ,multi_flag      = True
       );
       
       cipgt(
