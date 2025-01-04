@@ -13,7 +13,8 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
-    IN  p_search_type                   VARCHAR
+    IN  p_nhdplus_version               VARCHAR
+   ,IN  p_search_type                   VARCHAR
    
    ,IN  p_start_nhdplusid               BIGINT
    ,IN  p_start_permanent_identifier    VARCHAR
@@ -100,6 +101,7 @@ LANGUAGE plpgsql;
 
 ALTER FUNCTION cipsrv_owld.upstreamdownstream(
     VARCHAR
+   ,VARCHAR
    ,BIGINT
    ,VARCHAR
    ,VARCHAR
@@ -153,6 +155,7 @@ ALTER FUNCTION cipsrv_owld.upstreamdownstream(
 
 GRANT EXECUTE ON FUNCTION cipsrv_owld.upstreamdownstream(
     VARCHAR
+   ,VARCHAR
    ,BIGINT
    ,VARCHAR
    ,VARCHAR

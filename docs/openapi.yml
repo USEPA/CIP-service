@@ -1,7 +1,15 @@
 openapi: 3.1.0
 info:
   title: CIP-service Indexing API
-  description: The Catchment Index Processing Service provides the ability to associate hydrologic features with NHDPlus catchments.
+  description: CIP-service is a project of the US Environmental Protection Agency Office of Water providing containers, logic and data for the task of associating or _indexing_ hydrologic 
+    features with NHDPlus features at multiple resolutions.  CIP-service supports a variety of purposes indexing to catchments, reaches or navigating the NHDPlus network for discovery or flow analysis.  
+    The majority of logic occurs within a containerized PostgreSQL database with additional containers providing support products such as an API, Jupyter Notebooks and sample demo applications.  
+    All components of the provided container stack are open source.
+  termsOfService: https://www.epa.gov/web-policies-and-procedures/epa-disclaimers#geospatial
+  contact:
+    name: US EPA Office of Water
+    url: https://www.epa.gov/aboutepa/about-office-water
+    email: WATERS_SUPPORT@epa.gov
   license:
     name: Creative Commons Zero Public Domain Dedication
     url: https://edg.epa.gov/EPA_Data_License.html
