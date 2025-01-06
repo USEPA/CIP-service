@@ -32,16 +32,6 @@ def ogr2ogr(cmdstring):
    p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
     
    return p.communicate();
-
-def ogr2ogr(cmdstring):
-    
-   command = 'ogr2ogr {0}'.format(cmdstring);
-
-   command = shlex.split(command);
-
-   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
-    
-   return p.communicate();
    
 def load_sqlfile(conn,sqlfile,echo=False):
     

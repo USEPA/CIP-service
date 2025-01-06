@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en" >
+   <head>
+      <meta charset="UTF-8">
+      <title>CIP Service Upstream/Downstream</title>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <style>
+         #busy {
+           position: absolute;
+           top: 15%;
+           left: 820px;
+           z-index: 100;
+         }
+      </style>
+      <script src="./config.js" onerror="return null;"></script>
+   </head>
+   <body>
+      <div id="busy">
+         <svg width="57" height="57" viewBox="0 0 57 57" xmlns="http://www.w3.org/2000/svg" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+               <g transform="translate(1 1)" stroke-width="2">
+                  <circle cx="5" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;5;50;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" values="5;27;49;5" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="27" cy="5" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" from="5" to="5" values="5;50;50;5" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" from="27" to="27" values="27;49;5;27" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="49" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;50;5;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" from="49" to="49" begin="0s" dur="2.2s" values="49;5;27;49" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+               </g>
+            </g>
+         </svg>
+      </div>
+      <div id="container" style="width: 1400px;">
+         <div id="map" class="map" style="height: 700px; width: 800px; float: left;"></div>
+         <div id="righty" style="width: 600px; float: left;">
+            <div id="top" style="text-align: center;">
+               <br/>
+               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
+               <span style="font-family: Arial; font-size: 11px;">Add points to the map or enter GeoJSON text:</span>
+               <br/>
+               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
+               <br/>
+               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="blank_nhdplusids();">
+                  <option value="nhdplus_m" SELECTED>Medium Resolution</option>
+                  <option value="nhdplus_h">High Resolution</option>
+               </select>
+               <br/>
+               <table border="0" align="center">
+                 <tr>
+                   <td colspan="2" style="font-family: Arial; font-size: 11px;padding-top: 5px;">Or enter NHDPlus identifiers and optional Measures</td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start NHDPlusID:
+                     <input name="pStartNHDPlusID" type="text" class="text" id="pStartNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop NHDPlusID:
+                     <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Perm Id: 
+                     <input name="pStartPermanentIdentifier" type="text" class="text" id="pStartPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Perm Id: 
+                     <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Reach Code: 
+                     <input name="pStartReachCode" type="text" class="text" id="pStartReachCode" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Reach Code: 
+                     <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Hydro Seq: 
+                     <input name="pStartHydroSeq" type="text" class="text" id="pStartHydroSeq" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Hydro Seq: 
+                     <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Measure:
+                     <input name="pStartMeasure" type="text" class="text" id="pStartMeasure" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Measure:
+                     <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceFeatureID: 
+                     <input name="pStartSourceFeatureID" type="text" class="text" id="pStartSourceFeatureID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceFeatureID: 
+                     <input name="pStopSourceFeatureID" type="text" class="text" id="pStopSourceFeatureID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceFeatureID2: 
+                     <input name="pStartSourceFeatureID2" type="text" class="text" id="pStartSourceFeatureID2" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceFeatureID2: 
+                     <input name="pStopSourceFeatureID2" type="text" class="text" id="pStopSourceFeatureID2" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceOriginator: 
+                     <input name="pStartSourceOriginator" type="text" class="text" id="pStartSourceOriginator" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceOriginator: 
+                     <input name="pStopSourceOriginator" type="text" class="text" id="pStopSourceOriginator" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceSeries: 
+                     <input name="pStartSourceSeries" type="text" class="text" id="pStartSourceSeries" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceSeries: 
+                     <input name="pStopSourceSeries" type="text" class="text" id="pStopSourceSeries" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start StartDate: 
+                     <input name="pStartStartDate" type="text" class="text" id="pStartStartDate" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop StartDate: 
+                     <input name="pStopStartDate" type="text" class="text" id="pStopStartDate" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start EndDate: 
+                     <input name="pStartEndDate" type="text" class="text" id="pStartEndDate" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop EndDate: 
+                     <input name="pStopEndDate" type="text" class="text" id="pStopEndDate" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start PermID JoinKey: 
+                     <input name="pStartPermIDJoinKey" type="text" class="text" id="pStartPermIDJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop PermID JoinKey: 
+                     <input name="pStopPermIDJoinKey" type="text" class="text" id="pStopPermIDJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Source JoinKey: 
+                     <input name="pStartSourceJoinKey" type="text" class="text" id="pStartSourceJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Source JoinKey: 
+                     <input name="pStopSourceJoinKey" type="text" class="text" id="pStopSourceJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Cat JoinKey: 
+                     <input name="pStartCatJoinKey" type="text" class="text" id="pStartCatJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Cat JoinKey: 
+                     <input name="pStopCatJoinKey" type="text" class="text" id="pStopCatJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+                 <tr>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start LinkedData Program: 
+                     <input name="p_start_linked_data_program" type="text" class="text" id="p_start_linked_data_program" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   </td>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop LinkedData Program: 
+                     <input name="p_stop_linked_data_program" type="text" class="text" id="p_stop_linked_data_program" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   </td>
+                 </tr>
+               </table>
+               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px;">
+                 <option value="UT" SELECTED>Upstream with Tributaries</option>
+                 <option value="UM">Upstream Main Path Only</option>
+                 <option value="DD">Downstream with Divergences</option>
+                 <option value="DM">Downstream Main Path Only</option>
+                 <option value="PP">Point to Point</option>
+                 <option value="PPALL">Point to Point, All Streams Between</option>
+               </select>
+               <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px" value="15" />&nbsp;km
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: </span>
+               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px;" size="2" multiple>
+                 <option value="WQP" SELECTED>Water Quality Portal Stations</option>
+               </select>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Return Flowlines:</span>
+               <input name="p_return_flowlines" id="p_return_flowlines" type="checkbox">
+               &nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Return Catchments:</span>
+               <input name="p_return_catchments" id="p_return_catchments" type="checkbox">
+               &nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Return Linked Data CIP:</span>
+               <input name="p_return_linked_data_cip" id="p_return_linked_data_cip" type="checkbox">
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Return Linked Data HUC12:</span>
+               <input name="p_return_linked_data_huc12" id="p_return_linked_data_huc12" type="checkbox">
+               &nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Return Linked Data SRC:</span>
+               <input name="p_return_linked_data_src" id="p_return_linked_data_source" type="checkbox">
+               &nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Return Linked Data RAD:</span>
+               <input name="p_return_linked_data_rad" id="p_return_linked_data_rad" type="checkbox">
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Return Linked Data Attr:</span>
+               <input name="p_return_linked_data_attributes" id="p_return_linked_data_attributes" type="checkbox">
+               &nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Remove Stop/Start SFIDs:</span>
+               <input name="p_remove_stop_start_sfids" id="p_remove_stop_start_sfids" type="checkbox">
+               &nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">Push SRC as RAD:</span>
+               <input name="p_push_source_geometry_as_rad" id="p_push_source_geometry_as_rad" type="checkbox">
+               <br/>
+               <br/>
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
+            </div>
+         </div>
+      </div>
+      <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
+      </div>
+      <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script>
+   document.getElementById("dz_run_service").disabled = true;
+   document.getElementById("busy").style.visibility = "hidden";
+   update_form();
+   
+   var map = L.map("map").setView([46.874626,-96.782341],12);
+   mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+   basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; " + mapLink,
+      maxZoom: 18
+   });
+   basemap.addTo(map);
+   
+   var drawnItems = new L.FeatureGroup().addTo(map);
+   var drawControl = new L.Control.Draw({
+      draw: {
+          polygon: false
+         ,polyline: false
+         ,rectangle: false
+         ,circle: false
+         ,marker: true
+         ,circlemarker: false
+      },
+      edit: {
+         featureGroup: drawnItems,
+         edit: false,
+         remove: true
+      }
+   });
+   map.addControl(drawControl);
+   
+   map.on(L.Draw.Event.CREATED, function(e) {
+      var type = e.layerType;
+      var layer = e.layer;
+
+      var search_menu = document.getElementById("p_search_type");
+      var search_type = search_menu.options[search_menu.selectedIndex].value;
+      var layer_count = drawnItems.getLayers().length;
+
+      if (search_type == "PP" || search_type == "PPALL") {
+         if (layer_count == 2) {
+            drawnItems.clearLayers();
+            blank_pts();
+            blank_nhdplusids();
+            document.getElementById("dz_run_service").disabled = true;
+         } 
+      } else {
+         if (layer_count == 1) {
+            drawnItems.clearLayers();
+            blank_pts();
+            blank_nhdplusids();
+            document.getElementById("dz_run_service").disabled = true;
+         }
+      }
+
+      if (type === "marker") {
+         if (search_type == "PP" || search_type == "PPALL") {
+            if (layer_count != 1) {
+               var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+
+               document.getElementById("pPoint").value = start_geojsonval;
+               layer.bindPopup(start_geojsonval);
+               blank_start_nhdplusids();
+               
+            } else if (layer_count == 1) {
+               var stop_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+               
+               document.getElementById("pPoint2").value = stop_geojsonval;
+               layer.bindPopup(stop_geojsonval);
+               blank_stop_nhdplusids();
+
+               document.getElementById("dz_run_service").disabled = false;
+            }
+            
+         } else {
+            var start_geojsonval = JSON.stringify(layer.toGeoJSON().geometry);
+
+            document.getElementById("pPoint").value = start_geojsonval;
+            layer.bindPopup(start_geojsonval);
+            blank_start_nhdplusids();
+
+            document.getElementById("dz_run_service").disabled = false;
+         }
+      }
+
+      drawnItems.addLayer(layer);
+      check_start();
+   });
+
+   map.on(L.Draw.Event.DELETED, function(e) {
+      var layer_count = drawnItems.getLayers().length;
+
+      if (layer_count == 1) {
+         document.getElementById("pPoint2").value = "";
+      } else {
+         document.getElementById("pPoint").value = "";
+      }
+
+      document.getElementById("dz_run_service").disabled = true;
+   });
+   
+   var snap_path = L.geoJson(null, {
+      onEachFeature: onEachFeature_snap_path
+   }).addTo(map);
+   
+   var catchments = new L.GeoJSON(null, {
+      onEachFeature: onEachFeature_catchments
+   }).addTo(map);
+   
+   var flowlines = new L.GeoJSON(null, {
+      onEachFeature: onEachFeature_flowlines
+   }).addTo(map);
+   
+   var layer_items = {
+       "Snap path"      : snap_path
+      ,"Catchments"     : catchments
+      ,"Streams"        : flowlines
+   };
+   L.control.layers(null, layer_items).addTo(map);
+   
+   function onEachFeature_snap_path(feature,layer) {
+      if (feature.properties && feature.properties.snap_distancekm) {
+         layer.bindPopup(
+            "Length (Km): " +
+            feature.properties.snap_distancekm.toString()
+         );
+      }
+   }
+   
+   function onEachFeature_catchments(feature,layer) {
+      if (feature.properties && feature.properties.nhdplusid) {
+         layer.bindPopup(
+            "NHDPlusID: " +
+            feature.properties.nhdplusid.toString() +
+            "<BR/>" +
+            "Area (SqKm): " +
+            feature.properties.areasqkm +
+            "<BR/>" 
+         );
+      }
+   }
+   
+   function onEachFeature_flowlines(feature,layer) {
+      if (feature.properties && feature.properties.nhdplusid) {
+         layer.bindPopup(
+            "NHDPlusID: " +
+            feature.properties.nhdplusid.toString() +
+            "<BR/>" +
+            "Perm ID: " +
+            feature.properties.permanent_identifier +
+            "<BR/>" +
+            "Reach Code: " +
+            feature.properties.reachcode +
+            "<BR/>" +
+            "Hydro Seq: " +
+            feature.properties.hydroseq.toString() +
+            "<BR/>" +
+            "FMeasure: " +
+            feature.properties.fmeasure.toString() +
+            "<BR/>" +
+            "TMeasure: " +
+            feature.properties.tmeasure.toString() +
+            "<BR/>" +
+            "GNIS Name: " +
+            feature.properties.gnis_name +
+            "<BR/>" +
+            "Length (Km): " +
+            feature.properties.lengthkm +
+            "<BR/>" +
+            "Network Distance (Km): " +
+            feature.properties.network_distancekm +
+            "<BR/>" 
+         );
+      }
+   }
+
+   function run_service() {
+      dz_clear_old();
+      busy_on();
+
+      var start_geojsonval = document.getElementById("pPoint").value;
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      if (start_geojsonval == "" ) {
+         
+         var search_type      = get_select_values(document.getElementById("p_search_type"));
+         
+         var data = {
+             "search_type"                 : search_type
+            ,"nhdplus_version"             : nhdplus_version
+             
+            ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
+            ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
+            ,"start_reachcode"             : document.getElementById("pStartReachCode").value
+            ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
+            ,"start_measure"               : document.getElementById("pStartMeasure").value
+            
+            ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
+            ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
+            ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
+            ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
+            ,"start_start_date"            : document.getElementById("pStartStartDate").value
+            ,"start_end_date"              : document.getElementById("pStartEndDate").value
+            ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
+            ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
+            ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
+            ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+            
+            ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"                : document.getElementById("pStopMeasure").value
+            
+            ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
+            ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
+            ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
+            ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
+            ,"stop_start_date"             : document.getElementById("pStopStartDate").value
+            ,"stop_end_date"               : document.getElementById("pStopEndDate").value
+            ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
+            ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
+            ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
+            ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+            
+            ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
+            ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
+            ,"return_catchments"           : document.getElementById("p_return_catchments").checked
+            ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
+            ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
+            ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
+            ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+            ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
+            ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
+            ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
+         }
+      
+         httpPost(
+            build_api() + "upstreamdownstream",
+            data,
+            updn_response
+         );
+      
+      } else {
+         if (start_geojsonval !== "") {
+
+            var data = {
+                "point"           : JSON.parse(start_geojsonval)
+               ,"nhdplus_version" : nhdplus_version
+               ,"limit_navigable" : true
+               ,"return_link_path": true
+            }
+      
+            httpPost(
+               build_api() + "pointindexing",
+               data,
+               pt1_response
+            );
+         
+         } 
+      
+      }
+      
+   }
+   
+   function httpPost(url,data,callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("POST",url,true);
+      xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
+      xmlHttp.responseType = 'json';
+      xmlHttp.onreadystatechange = function() {
+         if(xmlHttp.readyState === 4) {
+            if(xmlHttp.status === 200) {
+               response = xmlHttp.response;
+               callback(null,response);
+            } else {
+               callback(xmlHttp.statusText,null);
+            }
+         }
+      };
+      xmlHttp.send(JSON.stringify(data));
+   }
+
+   function get_select_values(select){
+      var result = null;
+      
+      if ( select == null ) {
+         return result;
+      }
+      
+      if ( select.options == null ) {
+         return result;
+      }
+      
+      if ( select.selectedIndex == null ) {
+         return result;
+      }
+      
+      return select.options[select.selectedIndex].value;
+   
+   }
+   
+   function get_mselect_values(select){
+      var result = [];
+      var options = select && select.options;
+      var opt;
+      
+      if ( options == null ) {
+         return result;
+      }
+
+      for (var i=0, iLen=options.length; i<iLen; i++) {
+         opt = options[i];
+
+         if (opt.selected) {
+            result.push(opt.value || opt.text);
+         }
+      }
+      return result;
+   }
+   
+   function updn_response(error,response) {
+      busy_off();
+
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
+         catchments.addData(response.catchments).setStyle({
+             "color": "#E38A1E"
+            ,"fillColor": "#F0A851"
+            ,"weight": 2
+         });
+         
+         map.fitBounds(catchments.getBounds(), {
+            maxZoom: 16
+         });
+         
+      } 
+      
+      if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
+         flowlines.addData(response.flowlines).setStyle({
+             "color": "#0000FF"
+            ,"fillColor": "#0000FF"
+            ,"weight": 4
+         });
+         
+         document.getElementById("output").innerHTML = "<P>&nbsp;</P><P align='center'>Flowline Count: " + response.flowline_count + "</P>";
+         
+      }            
+   }
+   
+   function pt1_response(error,response) {
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.indexing_line !== null && response.indexing_line.type !== null) {
+         snap_path.addData(response.indexing_line).setStyle({
+             "color": "#FFA500"
+            ,"fillColor": "#FFA500"
+         });
+         
+         document.getElementById("pStartNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
+         document.getElementById("pStartPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
+         document.getElementById("pStartReachCode").value           = response.flowlines.features[0].properties.reachcode;
+         document.getElementById("pStartHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
+         document.getElementById("pStartMeasure").value             = response.flowlines.features[0].properties.snap_measure;
+         
+      }
+
+      var stop_geojsonval  = document.getElementById("pPoint2").value;
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      if (stop_geojsonval !== "") {
+         
+         var data = {
+             "point"           : JSON.parse(stop_geojsonval)
+            ,"nhdplus_version" : nhdplus_version
+            ,"limit_navigable" : true
+            ,"return_link_path": true
+         }
+      
+         httpPost(
+            build_api() + "pointindexing",
+            data,
+            pt2_response
+         );
+      
+      } else {
+         var search_type      = get_select_values(document.getElementById("p_search_type"));
+      
+         var data = {
+             "search_type"                 : search_type
+            ,"nhdplus_version"             : nhdplus_version
+             
+            ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
+            ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
+            ,"start_reachcode"             : document.getElementById("pStartReachCode").value
+            ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
+            ,"start_measure"               : document.getElementById("pStartMeasure").value
+            
+            ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
+            ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
+            ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
+            ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
+            ,"start_start_date"            : document.getElementById("pStartStartDate").value
+            ,"start_end_date"              : document.getElementById("pStartEndDate").value
+            ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
+            ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
+            ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
+            ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+            
+            ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"                : document.getElementById("pStopMeasure").value
+            
+            ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
+            ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
+            ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
+            ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
+            ,"stop_start_date"             : document.getElementById("pStopStartDate").value
+            ,"stop_end_date"               : document.getElementById("pStopEndDate").value
+            ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
+            ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
+            ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
+            ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+            
+            ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
+            ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
+            ,"return_catchments"           : document.getElementById("p_return_catchments").checked
+            ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
+            ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
+            ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
+            ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+            ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
+            ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
+            ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
+         }
+      
+         httpPost(
+            build_api() + "upstreamdownstream",
+            data,
+            updn_response
+         );
+      }
+      
+   }
+   
+   function pt2_response(error,response) {
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from service.</P>";
+         return false;
+      } else if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.catchment_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      }
+      
+      if (response.indexing_line !== null && response.indexing_line.type !== null) {
+         snap_path.addData(response.indexing_line).setStyle({
+             "color": "#FFA500"
+            ,"fillColor": "#FFA500"
+         });
+         
+         document.getElementById("pStopNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
+         document.getElementById("pStopPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
+         document.getElementById("pStopReachCode").value           = response.flowlines.features[0].properties.reachcode;
+         document.getElementById("pStopHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
+         document.getElementById("pStopMeasure").value             = response.flowlines.features[0].properties.snap_measure;
+         
+      }
+      
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      var search_type      = get_select_values(document.getElementById("p_search_type"));
+      
+      var data = {
+          "search_type"                 : search_type
+         ,"nhdplus_version"             : nhdplus_version
+          
+         ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
+         ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
+         ,"start_reachcode"             : document.getElementById("pStartReachCode").value
+         ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
+         ,"start_measure"               : document.getElementById("pStartMeasure").value
+         
+         ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
+         ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
+         ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
+         ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
+         ,"start_start_date"            : document.getElementById("pStartStartDate").value
+         ,"start_end_date"              : document.getElementById("pStartEndDate").value
+         ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
+         ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
+         ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
+         ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+         
+         ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
+         ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
+         ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
+         ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
+         ,"stop_measure"                : document.getElementById("pStopMeasure").value
+         
+         ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
+         ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
+         ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
+         ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
+         ,"stop_start_date"             : document.getElementById("pStopStartDate").value
+         ,"stop_end_date"               : document.getElementById("pStopEndDate").value
+         ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
+         ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
+         ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
+         ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+         
+         ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
+         ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+         ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
+         ,"return_catchments"           : document.getElementById("p_return_catchments").checked
+         ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
+         ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
+         ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
+         ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+         ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
+         ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
+         ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
+      }
+      
+      httpPost(
+         build_api() + "upstreamdownstream",
+         data,
+         updn_response
+      );
+      
+   }
+   
+   function dz_reset() {
+      document.getElementById("output").innerHTML = "";
+      snap_path.clearLayers();
+      flowlines.clearLayers();
+      catchments.clearLayers();
+      blank_pts();
+      blank_nhdplusids()
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+   }
+   
+   function dz_clear_old() {
+      document.getElementById("output").innerHTML = "";
+      snap_path.clearLayers();
+      flowlines.clearLayers();
+      catchments.clearLayers();
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   function busy_on() {
+      document.getElementById("busy").style.visibility = "visible";
+      document.body.style.cursor = "wait";
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   function busy_off() {
+      document.getElementById("busy").style.visibility = "hidden";
+      document.body.style.cursor = "auto";
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   function blank_pts() {
+      drawnItems.clearLayers();
+      document.getElementById("pPoint").value = "";
+      document.getElementById("pPoint2").value = "";
+   }
+
+   function blank_pt1() {
+      document.getElementById("pPoint").value = "";
+   }
+
+   function blank_pt2() {
+      document.getElementById("pPoint2").value = "";
+   }
+    
+   function blank_nhdplusids() {
+      blank_start_nhdplusids();
+      blank_stop_nhdplusids();
+   }
+
+   function blank_start_nhdplusids() {
+      document.getElementById("pStartNHDPlusID").value = "";
+      document.getElementById("pStartPermanentIdentifier").value = "";
+      document.getElementById("pStartReachCode").value = "";
+      document.getElementById("pStartHydroSeq").value = "";
+      document.getElementById("pStartMeasure").value = "";
+      
+      document.getElementById("pStartSourceFeatureID").value = "";
+      document.getElementById("pStartSourceFeatureID2").value = "";
+      document.getElementById("pStartSourceOriginator").value = "";
+      document.getElementById("pStartSourceSeries").value = "";
+      document.getElementById("pStartStartDate").value = "";
+      document.getElementById("pStartEndDate").value = "";
+      document.getElementById("pStartPermIDJoinKey").value = "";
+      document.getElementById("pStartSourceJoinKey").value = "";
+      document.getElementById("pStartCatJoinKey").value = "";
+      document.getElementById("p_start_linked_data_program").value = "";
+         
+   }
+
+   function blank_stop_nhdplusids() {
+      document.getElementById("pStopNHDPlusID").value = "";
+      document.getElementById("pStopPermanentIdentifier").value = "";
+      document.getElementById("pStopReachCode").value = "";
+      document.getElementById("pStopHydroSeq").value = "";
+      document.getElementById("pStopMeasure").value = "";
+      
+      document.getElementById("pStopSourceFeatureID").value = "";
+      document.getElementById("pStopSourceFeatureID2").value = "";
+      document.getElementById("pStopSourceOriginator").value = "";
+      document.getElementById("pStopSourceSeries").value = "";
+      document.getElementById("pStopStartDate").value = "";
+      document.getElementById("pStopEndDate").value = "";
+      document.getElementById("pStopPermIDJoinKey").value = "";
+      document.getElementById("pStopSourceJoinKey").value = "";
+      document.getElementById("pStopCatJoinKey").value = "";
+      document.getElementById("p_stop_linked_data_program").value = "";
+   }
+
+   function check_start() {
+      var search_type = get_select_values(document.getElementById("p_search_type"));
+
+      var pt1 = document.getElementById("pPoint").value;
+      var pt2 = document.getElementById("pPoint2").value;
+
+      var com1 = document.getElementById("pStartNHDPlusID").value;
+      var per1 = document.getElementById("pStartPermanentIdentifier").value;
+      var rch1 = document.getElementById("pStartReachCode").value;
+      var hyd1 = document.getElementById("pStartHydroSeq").value;
+      
+      var sfi1 = document.getElementById("pStartSourceFeatureID").value;
+      var sf21 = document.getElementById("pStartSourceFeatureID2").value;
+      var sor1 = document.getElementById("pStartSourceOriginator").value;
+      var ssr1 = document.getElementById("pStartSourceSeries").value;
+      var ssd1 = document.getElementById("pStartStartDate").value;
+      var sed1 = document.getElementById("pStartEndDate").value;
+      var spj1 = document.getElementById("pStartPermIDJoinKey").value;
+      var ssj1 = document.getElementById("pStartSourceJoinKey").value;
+      var scj1 = document.getElementById("pStartCatJoinKey").value;
+      var sld1 = document.getElementById("p_start_linked_data_program").value;
+
+      var com2 = document.getElementById("pStopNHDPlusID").value;
+      var per2 = document.getElementById("pStopPermanentIdentifier").value;
+      var rch2 = document.getElementById("pStopReachCode").value;
+      var hyd2 = document.getElementById("pStopHydroSeq").value;
+      
+      var sfi2 = document.getElementById("pStopSourceFeatureID").value;
+      var sf22 = document.getElementById("pStopSourceFeatureID2").value;
+      var sor2 = document.getElementById("pStopSourceOriginator").value;
+      var ssr2 = document.getElementById("pStopSourceSeries").value;
+      var ssd2 = document.getElementById("pStopStartDate").value;
+      var sed2 = document.getElementById("pStopEndDate").value;
+      var spj2 = document.getElementById("pStopPermIDJoinKey").value;
+      var ssj2 = document.getElementById("pStopSourceJoinKey").value;
+      var scj2 = document.getElementById("pStopCatJoinKey").value;
+      var sld2 = document.getElementById("p_stop_linked_data_program").value;
+
+      if (search_type != "PP" && search_type != "PPALL" && pt1 !== null && pt1 !== "") {
+         document.getElementById("dz_run_service").disabled = false;
+      } else if (
+         ( search_type == "PP" || search_type == "PPALL" ) &&
+         pt1 !== null &&
+         pt1 !== "" &&
+         pt2 !== null &&
+         pt2 !== ""
+      ) {
+         document.getElementById("dz_run_service").disabled = false;
+      } else {
+         if (search_type == "PP" || search_type == "PPALL") {
+            if (
+               (com1 !== null && com1 !== "") ||
+               (per1 !== null && per1 !== "") ||
+               (rch1 !== null && rch1 !== "") ||
+               (hyd1 !== null && hyd1 !== "") 
+            ) {
+               if (
+                 (com1 !== null && com1 !== "") ||
+                 (per1 !== null && per1 !== "") ||
+                 (rch1 !== null && rch1 !== "") ||
+                 (hyd1 !== null && hyd1 !== "")
+               ) {
+                  document.getElementById("dz_run_service").disabled = false;
+               } else {
+                  document.getElementById("dz_run_service").disabled = true;
+               }
+            }
+         } else {
+         if (
+           (com1 !== null && com1 !== "") ||
+           (per1 !== null && per1 !== "") ||
+           (rch1 !== null && rch1 !== "") ||
+           (hyd1 !== null && hyd1 !== "") 
+         ) {
+           document.getElementById("dz_run_service").disabled = false;
+         } else {
+           document.getElementById("dz_run_service").disabled = true;
+         }
+       }
+     }
+   }
+   
+   function update_form() {
+      var search_type = get_select_values(document.getElementById("p_search_type"));
+
+      if (search_type == "PP" || search_type == "PPALL") {
+         document.getElementById("pStopNHDPlusID").disabled = false;
+         document.getElementById("pStopPermanentIdentifier").disabled = false;
+         document.getElementById("pStopReachCode").disabled = false;
+         document.getElementById("pStopHydroSeq").disabled = false;
+         document.getElementById("pStopMeasure").disabled = false;
+         document.getElementById("pStopSourceFeatureID").disabled = false;
+         document.getElementById("pStopSourceFeatureID2").disabled = false;
+         document.getElementById("pStopSourceOriginator").disabled = false;
+         document.getElementById("pStopSourceSeries").disabled = false;
+         document.getElementById("pStopStartDate").disabled = false;
+         document.getElementById("pStopEndDate").disabled = false;
+         document.getElementById("pStopPermIDJoinKey").disabled = false;
+         document.getElementById("pStopSourceJoinKey").disabled = false;
+         document.getElementById("pStopCatJoinKey").disabled = false;
+         document.getElementById("p_stop_linked_data_program").disabled = false;
+         
+         document.getElementById("pPoint2").disabled = false;
+         document.getElementById("p_search_max_distancekm").disabled = true;
+      } else {
+         document.getElementById("pStopNHDPlusID").disabled = true;
+         document.getElementById("pStopPermanentIdentifier").disabled = true;
+         document.getElementById("pStopReachCode").disabled = true;
+         document.getElementById("pStopHydroSeq").disabled = true;
+         document.getElementById("pStopMeasure").disabled = true;
+         document.getElementById("pStopSourceFeatureID").disabled = true;
+         document.getElementById("pStopSourceFeatureID2").disabled = true;
+         document.getElementById("pStopSourceOriginator").disabled = true;
+         document.getElementById("pStopSourceSeries").disabled = true;
+         document.getElementById("pStopStartDate").disabled = true;
+         document.getElementById("pStopEndDate").disabled = true;
+         document.getElementById("pStopPermIDJoinKey").disabled = true;
+         document.getElementById("pStopSourceJoinKey").disabled = true;
+         document.getElementById("pStopCatJoinKey").disabled = true;
+         document.getElementById("p_stop_linked_data_program").disabled = true;
+         
+         document.getElementById("pPoint2").disabled = true;
+         document.getElementById("p_search_max_distancekm").disabled = false;
+      }
+   }
+
+   function get_url_parameter(param_key) {
+      var page_url = window.location.search.substring(1);
+      
+      var url_variables = page_url.split('&');
+      for (var i = 0; i < url_variables.length; i++) {
+         var parameter_name = url_variables[i].split('=');
+         if (parameter_name[0] == param_key) {
+            return parameter_name[1];
+         }
+      }
+      return null;
+   }
+   
+   function updatept(geojson) {
+      if (geojson == null || geojson == undefined || geojson == "") {
+         document.getElementById("dz_run_service").disabled = true;
+      } else {
+         var search_menu = document.getElementById("p_search_type");
+         var search_type = search_menu.options[search_menu.selectedIndex].value;
+         var drawnl      = drawnItems.getLayers();
+         var drawn_count = layers.length;
+
+         blank_nhdplusids();
+         if (drawn_count == 2) {
+            null;
+         } else if (drawn_count == 1) {
+            null;
+         } else {
+            null;
+         }               
+      }
+   }
+   
+   function updatept2(geojson) {
+      if (geojson == null || geojson == undefined || geojson == "") {
+         document.getElementById("dz_run_service").disabled = true;
+      } else {
+         var search_menu = document.getElementById("p_search_type");
+         var search_type = search_menu.options[search_menu.selectedIndex].value;
+         var drawnl      = drawnItems.getLayers();
+         var drawn_count = layers.length;
+
+         blank_nhdplusids();
+         if (drawn_count == 2) {
+            null;
+         } else if (drawn_count == 1) {
+            null;
+         } else {
+            null;
+         } 
+      }
+   }
+   
+   function build_api() {
+      
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (
+         typeof postgrest_pref === "undefined" ||
+         postgrest_pref === null ||
+         postgrest_pref == "NONE"
+      ) {
+         zpostgrest_pref = get_url_parameter("postgrest_pref");
+      } else {
+         zpostgrest_pref = postgrest_pref;
+      }
+      
+      if (zpostgrest_pref === null ) {
+         zpostgrest_pref = "";
+      } else {
+         zpostgrest_pref = zpostgrest_pref + "/";
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      
+      return http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port + "/" + 
+         zpostgrest_pref + "rpc/";
+         
+   }
+          
+      </script>
+   </body>
+</html>

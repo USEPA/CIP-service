@@ -33,8 +33,15 @@ services:
    cip_ng:
       build:
          context: .
+         additional_contexts:
+            docs: ../docs
          dockerfile: Dockerfile.ng
          args:
+{%-      if cip_pr_prot == "env.POSTGREST_PROT" %}
+            ARG_POSTGREST_PROT: ${POSTGREST_PROT:-http}
+{%-      else %}
+            ARG_POSTGREST_PROT: {{ cip_pr_prot }}
+{%-      endif %}
 {%-      if cip_pr_host == "env.POSTGREST_HOST" %}
             ARG_POSTGREST_HOST: ${POSTGREST_HOST:-localhost}
 {%-      else %}

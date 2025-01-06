@@ -42,6 +42,9 @@ parser.add_argument("--mrws_dumpfile_copyin"    ,required=False,default=None);
 parser.add_argument("--hrws_dumpfile"           ,required=False,default=None);
 parser.add_argument("--hrws_dumpfile_copyin"    ,required=False,default=None);
 
+parser.add_argument("--owld_dumpfiles"          ,required=False,default=None);
+parser.add_argument("--owld_dumpfiles_copyin"   ,required=False,default=None);
+
 parser.add_argument("--support_dumpfile"        ,required=False,default=None);
 parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
 
@@ -49,6 +52,7 @@ parser.add_argument("--override_postgresql_port",required=False,default=None);
 parser.add_argument("--override_demo_pgrst_host",required=False,default=None);
 parser.add_argument("--override_engine_profile" ,required=False,default=None);
 parser.add_argument("--override_git_branch"     ,required=False,default=None);
+parser.add_argument("--force_nogit_uselocal"    ,required=False,default=False,action=argparse.BooleanOptionalAction);
 parser.add_argument("--down_volumes"            ,required=False,default=False,action=argparse.BooleanOptionalAction);
 parser.add_argument("--build_nocache"           ,required=False,default=False,action=argparse.BooleanOptionalAction);
 
@@ -85,6 +89,9 @@ def main(
    ,hrws_dumpfile
    ,hrws_dumpfile_copyin
    
+   ,owld_dumpfiles
+   ,owld_dumpfiles_copyin
+   
    ,support_dumpfile
    ,support_dumpfile_copyin
    
@@ -92,6 +99,7 @@ def main(
    ,override_demo_pgrst_host
    ,override_engine_profile
    ,override_git_branch
+   ,force_nogit_uselocal
    ,down_volumes
    ,build_nocache
 ):
@@ -127,6 +135,7 @@ def main(
       ,dumpfile
       ,dumpfile_copyin
       ,dumpfile_parm
+      ,multi_flag = False
    ):
       cmd = [
           "docker","compose","exec","cip_jp","jupyter"
@@ -136,10 +145,28 @@ def main(
       dzproc(cmd);
 
       if dumpfile_copyin is not None:
-         mdf = os.path.basename(dumpfile_copyin);
-         print("Loading local " + ipnyb + " dumpfile " + mdf + " into container.");
-         cmd = ["docker","compose","cp",dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
-         dzproc(cmd);
+         
+         if multi_flag:
+            
+            mdf = "";
+            for item in dumpfile_copyin.split(','):
+               (pref,file) = item.split(':');
+               
+               mdf2 = os.path.basename(file);
+               print("Loading local " + item + " dumpfile " + file + " into container.");
+               cmd = ["docker","compose","cp",file,"cip_jp:/home/jovyan/loading_dock/" + mdf2];
+               dzproc(cmd);
+            
+               mdf += pref + ":" + mdf2 + ",";
+
+            mdf = mdf.rstrip(',');               
+            
+         else:
+            mdf = os.path.basename(dumpfile_copyin);
+            print("Loading local " + ipnyb + " dumpfile " + mdf + " into container.");
+            cmd = ["docker","compose","cp",dumpfile_copyin,"cip_jp:/home/jovyan/loading_dock/" + mdf];
+            dzproc(cmd);
+            
          cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py","--use_existing",dumpfile_parm,mdf];
          dzproc(cmd);
          
@@ -153,21 +180,32 @@ def main(
             print("Downloading and importing " + dumpfile + " of " + ipnyb + " data.");
             cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py",dumpfile_parm,dumpfile];
             dzproc(cmd);
-        
+
    ################################################################################## 
    def cipgt(
        ipnyb
-      ,override_git_branch = None
+      ,override_git_branch  = None
+      ,force_nogit_uselocal = False
    ):
       print("Fetching and loading " + ipnyb + " logic.");
       cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_" + ipnyb + ".ipynb","--to","python","--output","/tmp/git_checkout_" + ipnyb + ".py"];
       dzproc(cmd);
-      if override_git_branch is not None:
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--override_git_branch",override_git_branch];
+      
+      if force_nogit_uselocal:
+         print("Loading " + ipnyb + "_deploy.sql into container.");
+         cmd = ["docker","compose","cp","../src/database/" + ipnyb + "/" + ipnyb + "_deploy.sql","cip_jp:/tmp/" + ipnyb + "_deploy.sql"];
+         dzproc(cmd);
+         
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--use_existing_sql","/tmp/" + ipnyb + "_deploy.sql"];
+         dzproc(cmd);
+         
       else:
-         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py"];
-      dzproc(cmd);
-   
+         if override_git_branch is not None:
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--override_branch",override_git_branch];
+         else:
+            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py"];
+      
+         dzproc(cmd);
    
    ###############################################################################
    if mr_dumpfile_copyin is not None:
@@ -217,7 +255,15 @@ def main(
    if hrws_dumpfile_copyin is not None:
       if not os.path.exists(hrws_dumpfile_copyin):
          raise Exception("hrws_dumpfile_copyin not found - " + str(hrws_dumpfile_copyin));
+         
+   if owld_dumpfiles_copyin is not None:
+      for item in owld_dumpfiles_copyin.split(','):
+         (pref,file) = item.split(':');
+         if not os.path.exists(file):
+            raise Exception("owld_dumpfiles_copyin for " + pref + " not found - " + str(file));
    
+   ###############################################################################
+   # set context to project directory
    ###############################################################################
    os.chdir(os.path.dirname(os.path.realpath(__file__)));   
    
@@ -260,8 +306,11 @@ def main(
       
       dzproc(cmd);
       
+   ###############################################################################
+   # set context to config directory
+   ###############################################################################
    os.chdir('../config');
-
+   
    ###############################################################################
    if recipe is None:
       recipe = 'MRONLY'; 
@@ -311,8 +360,11 @@ def main(
    );
 
    ###############################################################################
+   # set context to engine container
+   ###############################################################################
    os.chdir('../engine');
-
+   ###############################################################################
+   
    if override_postgresql_port is not None:
       shutil.move('docker-compose.yml','docker-compose.yml.bak');
       
@@ -336,7 +388,10 @@ def main(
    dzproc(cmd);
 
    ###############################################################################
+   # set context to demo container
+   ###############################################################################
    os.chdir('../demo');
+   ###############################################################################
 
    if override_demo_pgrst_host is not None:
       shutil.move('.env','.env.bak');
@@ -374,7 +429,12 @@ def main(
    dzproc(cmd);
 
    ###############################################################################
+   # set context to admin container
+   ###############################################################################
    os.chdir('../admin');
+   ###############################################################################
+   
+   ###############################################################################
    print("Running compose build for admin containers.");
    cmd = ["docker","compose","build"];
    if build_nocache:
@@ -397,8 +457,9 @@ def main(
    
    # Support Logic
    cipgt(
-       ipnyb               = 'cipsrv_support'
-      ,override_git_branch = override_git_branch
+       ipnyb                = 'cipsrv_support'
+      ,override_git_branch  = override_git_branch
+      ,force_nogit_uselocal = force_nogit_uselocal
    );
 
    z = 0;
@@ -421,8 +482,9 @@ def main(
             
       # NHDPlus MR Logic
       cipgt(
-          ipnyb               = 'cipsrv_nhdplus_m'
-         ,override_git_branch = override_git_branch
+          ipnyb                = 'cipsrv_nhdplus_m'
+         ,override_git_branch  = override_git_branch
+         ,force_nogit_uselocal = force_nogit_uselocal
       );
       z += 1;
       
@@ -445,8 +507,9 @@ def main(
       
       # HR Logic      
       cipgt(
-          ipnyb               = 'cipsrv_nhdplus_h'
-         ,override_git_branch = override_git_branch
+          ipnyb                = 'cipsrv_nhdplus_h'
+         ,override_git_branch  = override_git_branch
+         ,force_nogit_uselocal = force_nogit_uselocal
       );
       z += 1;
 
@@ -532,17 +595,53 @@ def main(
          ,dumpfile_copyin = mrws_dumpfile_copyin
          ,dumpfile_parm   = '--mrws_dumpfile'
       );
-
+      
+   ###############################################################################
+   # OWLD
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      # OWLD datasets
+      cipld(
+          ipnyb           = 'cipsrv_owld'
+         ,dumpfile        = owld_dumpfiles
+         ,dumpfile_copyin = owld_dumpfiles_copyin
+         ,dumpfile_parm   = '--owld_dumpfiles'
+         ,multi_flag      = True
+      );
+      
+      cipgt(
+          ipnyb                = 'cipsrv_owld'
+         ,override_git_branch  = override_git_branch
+         ,force_nogit_uselocal = force_nogit_uselocal
+      );
+      
+   ###############################################################################
+   # GIS
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      
+      cipgt(
+          ipnyb                = 'cipsrv_gis'
+         ,override_git_branch  = override_git_branch
+         ,force_nogit_uselocal = force_nogit_uselocal
+      );
+      
+   ###############################################################################
+   # Engine
    ###############################################################################
    cipgt(
-       ipnyb               = 'cipsrv_engine'
-      ,override_git_branch = override_git_branch
+       ipnyb                = 'cipsrv_engine'
+      ,override_git_branch  = override_git_branch
+      ,force_nogit_uselocal = force_nogit_uselocal
    );
 
    ###############################################################################
+   # PGRest
+   ###############################################################################
    cipgt(
-       ipnyb               = 'cipsrv_pgrest'
-      ,override_git_branch = override_git_branch
+       ipnyb                = 'cipsrv_pgrest'
+      ,override_git_branch  = override_git_branch
+      ,force_nogit_uselocal = force_nogit_uselocal
    );
 
    ###############################################################################
@@ -585,6 +684,9 @@ if __name__ == '__main__':
       ,hrws_dumpfile            = args.hrws_dumpfile
       ,hrws_dumpfile_copyin     = args.hrws_dumpfile_copyin
       
+      ,owld_dumpfiles           = args.owld_dumpfiles
+      ,owld_dumpfiles_copyin    = args.owld_dumpfiles_copyin
+      
       ,support_dumpfile         = args.support_dumpfile
       ,support_dumpfile_copyin  = args.support_dumpfile_copyin
       
@@ -592,6 +694,7 @@ if __name__ == '__main__':
       ,override_demo_pgrst_host = args.override_demo_pgrst_host
       ,override_engine_profile  = args.override_engine_profile
       ,override_git_branch      = args.override_git_branch
+      ,force_nogit_uselocal     = args.force_nogit_uselocal
       ,down_volumes             = args.down_volumes
       ,build_nocache            = args.build_nocache
    );
