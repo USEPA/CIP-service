@@ -8,7 +8,6 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
