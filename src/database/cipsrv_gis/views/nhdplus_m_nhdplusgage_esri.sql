@@ -5,7 +5,7 @@ SELECT
 ,a.hydroaddressid
 ,a.addressdate
 ,a.featuretype
-,a.onnetwork
+,CAST(a.onnetwork AS SMALLINT) AS onnetwork
 ,a.sourceid
 ,a.sourceagency
 ,a.sourcedataset
@@ -23,7 +23,7 @@ SELECT
 ,a.latsite
 ,a.lonsite
 ,a.dasqmi
-,a.referencegage
+,CAST(a.referencegage AS SMALLINT) AS referencegage
 ,a.class
 ,a.classmod
 ,a.globalid

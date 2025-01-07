@@ -54,7 +54,7 @@ def tbexporter(source,outname,work_path,container_name):
    print(" DONE.");
     
 ###############################################################################   
-def fcexporter(source,outname,work_path,container_name):
+def fcexporter(source,outname,work_path,container_name,geometry_type=None):
 
    print("counting " + source + "....",end="",flush=True);
    bef = int(arcpy.GetCount_management(source)[0]);
@@ -91,4 +91,19 @@ def fcexporter(source,outname,work_path,container_name):
    
    arcpy.management.AddGlobalIDs(work_path + os.sep + container_name + os.sep + outname);
    print(" DONE.");
+   
+############################################################################### 
+def get_env_data(
+   path: str
+) -> dict:
+
+   rez = {};
+   with open(path, 'r') as f:
+      for line in f.readlines():
+         line = line.replace('\n','');
+         if '=' in line and not line.startswith('#'):
+            a,b = line.split('=');
+            rez[a] = b;
+            
+   return rez;
    

@@ -1,15 +1,17 @@
 import os,sys,arcpy;
 
-aliashash = [
+aliashash = {
     'addressdate'                   :'AddressDate'
    ,'address'                       :'Address'
    ,'addresstype'                   :'AddressType'
+   ,'angle_direction'               :'Angle Direction'
+   ,'angle_rounded'                 :'Angle Rounded'
    ,'aquifername'                   :'AquiferName'
    ,'aquifertypename'               :'AquiferTypeName'
    ,'arbolatesu'                    :'UpstreamCumulativeStreamKm'
    ,'areaacres'                     :'AreaAcres'
    ,'areasqkm'                      :'AreaSqKm'
-   ,'areasqkm_geodetic'             :'AreaSqKm (Geodetic)'
+   ,'areasqkm_geo'                  :'AreaSqKm (Geodetic)'
    ,'arqnavma'                      :'AddRemoveFlowNotAvailableMA'
    ,'attributeaccuracyreport'       :'AttributeAccuracyReport'
    ,'avgqadjma'                     :'GageFlowFlowlineBottomMA'
@@ -279,7 +281,7 @@ aliashash = [
    ,'xwalk_huc12_mr_count'          :'XWalk HUC12 MR Count'
    ,'xwalk_huc12_version'           :'XWalk HUC12 Version'
    ,'xwalk_method'                  :'XWalk Method'
-];
+};
 
 def update_aliases(
     target_ws

@@ -15,9 +15,9 @@ SELECT
 ,a.visibilityfilter
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,a.onoffnet
+,CAST(a.onoffnet AS SMALLINT) AS onoffnet 
 ,a.purpcode
-,a.burn
+,CAST(a.burn     AS SMALLINT) AS burn
 ,a.globalid
 ,ST_Transform(a.shape,3857) AS shape
 FROM
