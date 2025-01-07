@@ -1,36 +1,6 @@
-import arcpy;
-from arcpy import env;
-import os,sys;
-
-spref = arcpy.SpatialReference(3857);
-
-###############################################################################
-def auto_fm(source):
-
-   sdeflds = ['objectid','shape','se_anno_cad_data','shape_length','shape_area','len','area','globalid'];
-   source_desc = arcpy.da.Describe(source);
-
-   flds = []
-   for item in source_desc["fields"]:
-      if item.name.lower() not in sdeflds:
-         flds.append(item);
-
-   fms = arcpy.FieldMappings();
-
-   for i in range(len(flds)):
-      fm = arcpy.FieldMap();
-      fm.addInputField(source,flds[i].name);
-      fd             = fm.outputField;
-      fd.name        = flds[i].name.lower()
-      #print(fd.name + ' ' + fd.type)
-      fd.type        = flds[i].type
-      fd.length      = flds[i].length;
-      fd.precision   = flds[i].precision;
-      fd.scale       = flds[i].scale;
-      fm.outputField = fd;
-      fms.addFieldMap(fm);
-
-   return fms;
+import os,sys,arcpy;
+from exporter import autofm,tbexporter,fcexporter;
+import domains,aliases;
 
 ###############################################################################
 work_path = r"D:\Public\Data\pdziemie\gis";
@@ -100,67 +70,13 @@ if arcpy.Exists(item):
 print(" DONE.");
 print(" ");
 
-###############################################################################   
-def tbexporter(source,outname,work_path,container_name):
+############################################################################### 
+# Load domains into file geodatabase
+###############################################################################
 
-   print("counting " + source + "....",end="",flush=True);
-   bef = arcpy.GetCount_management(source)[0];
-   print(" " + str(bef) + ".");
-   print("exporting " + outname + "...",end="",flush=True);
-   target_nm = work_path + os.sep + container_name + os.sep + outname;
-   arcpy.conversion.ExportTable(
-       in_table      = source
-      ,out_table     = work_path + os.sep + container_name + os.sep + outname
-      ,field_mapping = auto_fm(source)
-   );
-   print(" DONE.");
-   print("counting " + outname + "....",end="",flush=True);
-   aft = arcpy.GetCount_management(work_path + os.sep + container_name + os.sep + outname)[0];
-   print(" " + str(aft) + ".");
-   if bef != aft:
-      raise Exception("export counts for " + outname + " do not match!");
-   
-   arcpy.management.AddGlobalIDs(work_path + os.sep + container_name + os.sep + outname);   
-   print(" DONE.");
-    
-###############################################################################   
-def fcexporter(source,outname,work_path,container_name):
-
-   print("counting " + source + "....",end="",flush=True);
-   bef = int(arcpy.GetCount_management(source)[0]);
-   print(" " + str(bef) + ".");
-   
-   arcpy.env.outputCoordinateSystem = spref;
-   
-   if bef == 0:
-      print("creating empty fc " + outname + "...",end="",flush=True);
-      arcpy.management.CreateFeatureclass(
-          out_path      = work_path + os.sep + container_name
-         ,out_name      = outname
-         ,geometry_type = geometry_type
-         ,template      = source
-         ,has_m         = 'DISABLED'
-         ,has_z         = 'DISABLED'
-         ,spatial_reference = spref
-      );
-   
-   else:
-      print("exporting " + outname + "...",end="",flush=True);
-      arcpy.conversion.ExportFeatures(
-           in_features   = source
-          ,out_features  = work_path + os.sep + container_name + os.sep + outname
-          ,field_mapping = auto_fm(source)
-      );
-      
-   print(" DONE.");
-   print("counting " + outname  + "....",end="",flush=True);
-   aft = int(arcpy.GetCount_management(work_path + os.sep + container_name + os.sep + outname)[0]);
-   print(" " + str(aft) + ".");
-   if bef != aft:
-      raise Exception("export counts for " + outname + " do not match!");
-   
-   arcpy.management.AddGlobalIDs(work_path + os.sep + container_name + os.sep + outname);
-   print(" DONE.");
+############################################################################### 
+# Export feature classes and tables
+###############################################################################
 
 ###############################################################################
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_flow_direction_esri";
@@ -184,6 +100,16 @@ outname   = "nhdarea";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
 
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"onoffnet");
+domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
+print(" DONE.");
+
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
 arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
@@ -201,6 +127,13 @@ source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdline_esri";
 outname   = "nhdline";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+print(" DONE.");
 
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
@@ -220,6 +153,12 @@ outname   = "nhdpoint";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
 
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+print(" DONE.");
+
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
 arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
@@ -236,6 +175,16 @@ source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdwaterbody_esri";
 outname   = "nhdwaterbody";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"onoffnet");
+domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
+print(" DONE.");
 
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
@@ -255,6 +204,26 @@ source    = source_conn + r"/cipsrv_gis.nhdplus_m_networknhdflowline_esri";
 outname   = "networknhdflowline";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FlowDir(work_path + os.sep + container_name         ,outname,"flowdir");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.MainPath(work_path + os.sep + container_name        ,outname,"mainpath");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"innetwork");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+domains.Divergence(work_path + os.sep + container_name      ,outname,"divergence");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"startflag");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"terminalfl");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"rtndiv");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"vpuin");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"vpuout");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"elevfixed");
+domains.HWType(work_path + os.sep + container_name          ,outname,"hwtype");
+domains.StatusFlag(work_path + os.sep + container_name      ,outname,"statusflag");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"gageadjma");
+print(" DONE.");
 
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
@@ -283,6 +252,16 @@ outname   = "nonnetworknhdflowline";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
 
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FlowDir(work_path + os.sep + container_name         ,outname,"flowdir");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.MainPath(work_path + os.sep + container_name        ,outname,"mainpath");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"innetwork");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+print(" DONE.");
+
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
 arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
@@ -302,6 +281,10 @@ source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdplusflow_esri";
 outname   = "nhdplusflow";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = tbexporter(source,outname,work_path,container_name);
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.NoYes(work_path + os.sep + container_name           ,outname,"hasgeo");
+print(" DONE.");
 
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"fromnhdpid"                    ,"idx01");
@@ -336,6 +319,13 @@ outname   = "nhdplussink";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name,'POINT');
 
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
+domains.StatusFlag(work_path + os.sep + container_name      ,outname,"statusflag");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"catchment");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
+print(" DONE.");
+
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
 arcpy.management.AddIndex(target_nm,"featureid"                     ,"idx02");
@@ -350,6 +340,11 @@ outname   = "nhdplusgage";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name,'POINT');
 
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.NoYes(work_path + os.sep + container_name           ,outname,"onnetwork");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"referencegage");
+print(" DONE.");
+
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"hydroaddressid"                ,"idx01");
 print(" DONE.");
@@ -361,6 +356,10 @@ source    = source_conn + r"/cipsrv_gis.nhdplus_m_wbdhu12_esri";
 outname   = "wbdhu12";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.HuType(work_path + os.sep + container_name          ,outname,"hutype");
+print(" DONE.");
 
 print("indexing " + outname + "...",end="",flush=True);
 arcpy.management.AddIndex(target_nm,"huc12"                         ,"idx01");
