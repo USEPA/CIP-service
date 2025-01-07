@@ -64,11 +64,18 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None):
    
    if bef == 0:
       print("creating empty fc " + outname + "...",end="",flush=True);
+      if arcpy.Exists(arcpy.env.scratchGDB + os.sep + 'temp'):
+         arcpy.Delete_management(arcpy.env.scratchGDB + os.sep + 'temp');
+      arcpy.conversion.ExportTable(
+          in_table      = source
+         ,out_table     = arcpy.env.scratchGDB + os.sep + 'temp'
+         ,field_mapping = auto_fm(source)
+      );
       arcpy.management.CreateFeatureclass(
           out_path      = work_path + os.sep + container_name
          ,out_name      = outname
          ,geometry_type = geometry_type
-         ,template      = source
+         ,template      = arcpy.env.scratchGDB + os.sep + 'temp'
          ,has_m         = 'DISABLED'
          ,has_z         = 'DISABLED'
          ,spatial_reference = spref
