@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdline;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdline
 AS
 SELECT
@@ -18,7 +20,7 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdarea a;
 

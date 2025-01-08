@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_a;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_a
 AS
 SELECT
@@ -14,7 +16,7 @@ SELECT
 ,a.featuredetailurl
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_a a;
 

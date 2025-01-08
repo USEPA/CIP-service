@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplussink;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplussink
 AS
 SELECT
@@ -13,7 +15,7 @@ SELECT
 ,a.burn
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdplussink a;
 

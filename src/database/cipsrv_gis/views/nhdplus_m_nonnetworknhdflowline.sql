@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nonnetworknhdflowline;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nonnetworknhdflowline
 AS
 SELECT
@@ -19,7 +21,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_m.nonnetworknhdflowline a;
 

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusflow_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplusflow_esri
 AS
 SELECT

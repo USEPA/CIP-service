@@ -1,0 +1,17 @@
+<layer>
+  <name>nhdplus_h_nhdline</name>
+  <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a32</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7ce8039c:194431f70d0:-7fff</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--7ce8039c:19445fc0d4c:-5a33</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-01-08 14:00:38.61 UTC</dateCreated>
+  <dateModified>2025-01-08 15:08:15.324 UTC</dateModified>
+</layer>

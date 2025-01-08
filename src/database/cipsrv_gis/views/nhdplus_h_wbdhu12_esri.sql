@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_wbdhu12_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_wbdhu12_esri
 AS
 SELECT
@@ -21,7 +23,7 @@ SELECT
 ,a.noncontributingareasqkm
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.wbdhu12 a;
 
