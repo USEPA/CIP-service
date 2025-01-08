@@ -70,13 +70,38 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None):
    
    if bef == 0:
       print("creating empty fc " + outname + "...",end="",flush=True);
+      
       if arcpy.Exists(arcpy.env.scratchGDB + os.sep + 'temp'):
          arcpy.Delete_management(arcpy.env.scratchGDB + os.sep + 'temp');
-      arcpy.conversion.ExportTable(
-          in_table      = source
-         ,out_table     = arcpy.env.scratchGDB + os.sep + 'temp'
-         ,field_mapping = auto_fm(source)
+      arcpy.management.CreateFeatureclass(
+          out_path      = arcpy.env.scratchGDB
+         ,out_name      = 'temp'
+         ,geometry_type = geometry_type
+         ,template      = source
+         ,has_m         = 'DISABLED'
+         ,has_z         = 'DISABLED'
+         ,spatial_reference = spref
       );
+      
+      fields = arcpy.ListFields(arcpy.env.scratchGDB + os.sep + 'temp');
+      for fld in fields:
+         if fld.name.lower() in ['objectid','globalid','shape','shape_length','shape_area']:
+            try:
+               arcpy.management.DeleteField(
+                   in_table   = arcpy.env.scratchGDB + os.sep + 'temp'
+                  ,drop_field = fld.name
+               );
+            except:
+               print(".  bouncing on existing " + fld.name);
+               None;
+            
+         if fld.aliasName == 'OBJECTID_1':
+            arcpy.AlterField_management(
+                in_table        = arcpy.env.scratchGDB + os.sep + 'temp'
+               ,field           = fld.name
+               ,new_field_alias = 'OBJECTID'
+            );
+            
       arcpy.management.CreateFeatureclass(
           out_path      = work_path + os.sep + container_name
          ,out_name      = outname
