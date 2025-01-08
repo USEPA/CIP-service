@@ -17,7 +17,13 @@ def auto_fm(source):
 
    for i in range(len(flds)):
       fm = arcpy.FieldMap();
-      fm.addInputField(source,flds[i].name);
+      
+      try:
+         fm.addInputField(source,flds[i].name);
+      except:
+         print(source,flds[i].name);
+         raise;
+      
       fd             = fm.outputField;
       fd.name        = flds[i].name.lower()
       #print(fd.name + ' ' + fd.type)
