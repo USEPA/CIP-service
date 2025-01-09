@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_flow_direction;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_flow_direction
 AS
 SELECT
@@ -19,7 +21,7 @@ SELECT
 ,a.fcode
 ,a.visibilityfilter
 ,a.nhdplusid
-,ST_Transform(a.final_point,3857) AS shape
+,a.final_point AS shape
 FROM (
    SELECT  
     aa.objectid

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_sfid;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_sfid
 AS
 SELECT

@@ -1,0 +1,13 @@
+<layer>
+  <name>nhdplus_h_nhdplusflow</name>
+  <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a1a</id>
+  <type>VECTOR</type>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--7ce8039c:19445fc0d4c:-5a1b</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-01-08 14:07:23.104 UTC</dateCreated>
+</layer>

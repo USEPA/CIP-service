@@ -1,0 +1,68 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--7ce8039c:194464c949d:1020</id>
+  <name>nhdplus_h</name>
+  <mode>SINGLE</mode>
+  <title>NHDPlus HR</title>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a22</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a2e</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a28</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a36</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a32</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a24</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a38</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a2c</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a34</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a30</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a3a</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-2.0037508342789244E7</minx>
+    <maxx>2.0037508342789244E7</maxx>
+    <miny>-2.00489661040146E7</miny>
+    <maxy>2.0048966104014594E7</maxy>
+    <crs class="projected">EPSG:3857</crs>
+  </bounds>
+  <dateCreated>2025-01-08 15:19:46.677 UTC</dateCreated>
+  <dateModified>2025-01-08 15:19:54.242 UTC</dateModified>
+</layerGroup>

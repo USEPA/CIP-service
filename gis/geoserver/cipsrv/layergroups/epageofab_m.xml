@@ -1,0 +1,39 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--7ce8039c:19446491ff4:7899</id>
+  <name>epageofab_m</name>
+  <mode>SINGLE</mode>
+  <title>EPA Geofabric MR</title>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a3e</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a3c</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-2.0037508342789244E7</minx>
+    <maxx>2.0037508342789244E7</maxx>
+    <miny>-2.00489661040146E7</miny>
+    <maxy>2.0048966104014594E7</maxy>
+    <crs class="projected">EPSG:3857</crs>
+  </bounds>
+  <metadata>
+    <entry key="cachingEnabled">false</entry>
+  </metadata>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-01-08 14:22:29.954 UTC</dateCreated>
+  <dateModified>2025-01-08 15:13:18.344 UTC</dateModified>
+</layerGroup>

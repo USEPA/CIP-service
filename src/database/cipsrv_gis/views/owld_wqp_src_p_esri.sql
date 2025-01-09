@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_p_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_p_esri
 AS
 SELECT
@@ -13,7 +15,7 @@ SELECT
 ,a.end_date
 ,a.featuredetailurl
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_p a;
 

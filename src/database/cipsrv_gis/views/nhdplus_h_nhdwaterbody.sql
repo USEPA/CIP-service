@@ -1,4 +1,6 @@
-CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdwaterbody
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdwaterbody;
+
+CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdwaterbody
 AS
 SELECT
  a.objectid
@@ -19,9 +21,9 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
-cipsrv_nhdplus_m.nhdwaterbody a;
+cipsrv_nhdplus_h.nhdwaterbody a;
 
-ALTER TABLE cipsrv_gis.nhdplus_m_nhdwaterbody OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdwaterbody TO public;
+ALTER TABLE cipsrv_gis.nhdplus_h_nhdwaterbody OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdwaterbody TO public;

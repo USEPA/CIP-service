@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_l
 AS
 SELECT
@@ -38,7 +40,7 @@ SELECT
 ,a.isalaskan
 ,a.h3hexagonaddr
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_l a;
 

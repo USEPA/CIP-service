@@ -1,0 +1,17 @@
+<layer>
+  <name>nhdplus_m_nhdwaterbody</name>
+  <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a0e</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7ce8039c:194464c949d:fff</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--7ce8039c:19445fc0d4c:-5a0f</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-01-08 14:10:14.305 UTC</dateCreated>
+  <dateModified>2025-01-08 15:11:37.716 UTC</dateModified>
+</layer>

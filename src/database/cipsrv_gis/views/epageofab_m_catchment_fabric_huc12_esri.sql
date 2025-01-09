@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri
 AS
 SELECT
@@ -6,7 +8,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_m.catchment_fabric_huc12 a;
 

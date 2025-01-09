@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_geo
 AS
 SELECT
@@ -7,7 +9,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.xwalk_huc12_areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_huc12_geo a;
 

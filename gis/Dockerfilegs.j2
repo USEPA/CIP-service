@@ -7,5 +7,13 @@ ENV SKIP_DEMO_DATA=true
 
 COPY ./geoserver /opt/geoserver_data/workspaces
 
+RUN echo "if [ ! -d \"\$ADDITIONAL_LIBS_DIR\" ]; then"                                                              >> /opt/install-extensions.sh &&\
+    echo "mkdir -p \$ADDITIONAL_LIBS_DIR"                                                                           >> /opt/install-extensions.sh &&\
+    echo "fi"                                                                                                       >> /opt/install-extensions.sh &&\
+    echo "gmajor=\$(echo \$GEOSERVER_VERSION | ( IFS=\".\$IFS\" ; read a b c && echo \$a))"                         >> /opt/install-extensions.sh &&\
+    echo "gminor=\$(echo \$GEOSERVER_VERSION | ( IFS=\".\$IFS\" ; read a b c && echo \$b))"                         >> /opt/install-extensions.sh &&\
+    echo "wget --progress=bar:force:noscroll -c --no-check-certificate \"https://build.geoserver.org/geoserver/\${gmajor}.\${gminor}.x/community-latest/geoserver-\${gmajor}.\${gminor}-SNAPSHOT-ogcapi-features-plugin.zip\" -O \${ADDITIONAL_LIBS_DIR}geoserver-\${gmajor}.\${gminor}-SNAPSHOT-ogcapi-features-plugin.zip" >> /opt/install-extensions.sh &&\
+    echo "unzip -q -o -d \${GEOSERVER_LIB_DIR} \${ADDITIONAL_LIBS_DIR}geoserver-\${gmajor}.\${gminor}-SNAPSHOT-ogcapi-features-plugin.zip \"*.jar\"" >> /opt/install-extensions.sh
+
 EXPOSE 8080
 ENTRYPOINT ["bash", "/opt/startup.sh"]
