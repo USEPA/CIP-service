@@ -1,0 +1,37 @@
+<featureType>
+  <id>FeatureTypeInfoImpl--7ce8039c:19445fc0d4c:-5a05</id>
+  <name>owld_wqp_cip</name>
+  <nativeName>owld_wqp_cip</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl-42032311:192d83c2670:-7ff6</id>
+  </namespace>
+  <title>owld_wqp_cip</title>
+  <keywords>
+    <string>features</string>
+    <string>owld_wqp_cip</string>
+  </keywords>
+  <srs>EPSG:4269</srs>
+  <latLonBoundingBox>
+    <minx>-172.54</minx>
+    <maxx>23.81</maxx>
+    <miny>-47.74</miny>
+    <maxy>86.46</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>FORCE_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <store class="dataStore">
+    <id>DataStoreInfoImpl-42032311:192d83c2670:-7ff5</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <simpleConversionEnabled>false</simpleConversionEnabled>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <maxFeatures>0</maxFeatures>
+  <numDecimals>0</numDecimals>
+  <padWithZeros>false</padWithZeros>
+  <forcedDecimal>false</forcedDecimal>
+  <overridingServiceSRS>false</overridingServiceSRS>
+  <skipNumberMatched>false</skipNumberMatched>
+  <circularArcPresent>false</circularArcPresent>
+</featureType>

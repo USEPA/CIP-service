@@ -1,0 +1,21 @@
+profile_name: geoserver 
+#
+# Profile recipe to quickly demonstrate CIP usage
+#
+last updated: 20250120
+#
+# Provide credentials for geoserver
+cip_pg_host:       cip_pg
+cip_pg_port:       5432
+cip_pg_db:         cipsrv
+cip_pg_is_rds:     false
+cip_pg_gis_pass:   env.POSTGRESQL_GIS_PASS
+cip_gs_admin_user: cipsrv_geoserver
+cip_gs_admin_pass: env.GEOSERVER_ADMIN_PASSWORD
+#
+components:
+   cip_gs:
+      type:             container
+      external_port:    env.GEOSERVER_PORT
+      add_host_gateway: false
+#

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdarea_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdarea_esri
 AS
 SELECT
@@ -14,11 +16,11 @@ SELECT
 ,a.visibilityfilter
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,a.onoffnet
+,CAST(a.onoffnet AS SMALLINT) AS onoffnet 
 ,a.purpcode
-,a.burn
+,CAST(a.burn     AS SMALLINT) AS burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdarea a;
 

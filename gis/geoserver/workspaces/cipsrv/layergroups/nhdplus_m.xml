@@ -1,0 +1,68 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--7ce8039c:194464c949d:101f</id>
+  <name>nhdplus_m</name>
+  <mode>SINGLE</mode>
+  <title>NHDPlus MR</title>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a0a</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a14</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a0e</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a1e</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a18</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a0c</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a20</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a1c</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a34</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a10</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a26</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-2.0037508342789244E7</minx>
+    <maxx>2.0037508342789244E7</maxx>
+    <miny>-2.00489661040146E7</miny>
+    <maxy>2.0048966104014594E7</maxy>
+    <crs class="projected">EPSG:3857</crs>
+  </bounds>
+  <dateCreated>2025-01-08 15:18:00.66 UTC</dateCreated>
+  <dateModified>2025-01-08 15:19:59.459 UTC</dateModified>
+</layerGroup>

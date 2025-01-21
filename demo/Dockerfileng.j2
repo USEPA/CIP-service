@@ -20,7 +20,30 @@ ARG ARG_POSTGREST_PORT
 {%- else %}
 {%-    set postgrest_port = cip_pr_port %}
 {%- endif %}
-
+{%- if cip_gis_type == 'env.GIS_TYPE' %}
+{%-    set gis_type = '${ARG_GIS_TYPE}' %}
+ARG ARG_GIS_TYPE
+{%- else %}
+{%-    set gis_type = cip_gis_type %}
+{%- endif %}
+{%- if cip_gis_prot == 'env.GIS_PROT' %}
+{%-    set gis_prot = '${ARG_GIS_PROT}' %}
+ARG ARG_GIS_PROT
+{%- else %}
+{%-    set gis_prot = cip_gis_prot %}
+{%- endif %}
+{%- if cip_gis_host == 'env.GIS_HOST' %}
+{%-    set gis_host = '${ARG_GIS_HOST}' %}
+ARG ARG_GIS_HOST
+{%- else %}
+{%-    set gis_host = cip_gis_host %}
+{%- endif %}
+{%- if cip_gis_port == 'env.GIS_PORT' %}
+{%-    set gis_port = '${ARG_GIS_PORT}' %}
+ARG ARG_GIS_PORT
+{%- else %}
+{%-    set gis_port = cip_gis_prot %}
+{%- endif %}
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update                                       &&\
@@ -32,10 +55,15 @@ COPY ./nginx/html       /usr/share/nginx/html
 COPY ./nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=docs ./openapi.yml /usr/share/nginx/html/openapi.yml
 
-RUN printf "\                              
+RUN printf "\
    const postgrest_prot = '{{ postgrest_prot }}';\n\
    const postgrest_host = '{{ postgrest_host }}';\n\
    const postgrest_port = '{{ postgrest_port }}';\n\
+  
+   const gis_type = '{{ gis_type }}';\n\  
+   const gis_prot = '{{ gis_prot }}';\n\
+   const gis_host = '{{ gis_host }}';\n\
+   const gis_port = '{{ gis_port }}';\n\
 " > /usr/share/nginx/html/config.js 
 
 EXPOSE 80

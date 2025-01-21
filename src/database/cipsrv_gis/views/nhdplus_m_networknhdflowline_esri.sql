@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_networknhdflowline_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_networknhdflowline_esri
 AS
 SELECT
@@ -86,7 +88,7 @@ SELECT
 ,a.gageidma
 ,a.gageqma
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_m.networknhdflowline a;
 

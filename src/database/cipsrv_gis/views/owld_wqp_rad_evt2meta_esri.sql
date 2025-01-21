@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_evt2meta_esri
 AS
 SELECT

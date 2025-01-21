@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric;
+
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric
 AS
 SELECT
@@ -25,7 +27,7 @@ SELECT
 ,a.vpuid
 ,a.sourcedataset
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_m.catchment_fabric a;
 

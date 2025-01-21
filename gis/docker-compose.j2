@@ -61,7 +61,7 @@ services:
 {%-   else %}
          POSTGRES_PORT:         {{ cip_pg_port }}
 {%-   endif %}
-         POSTGRES_USERNAME:     cipsrv_geoserver
+         POSTGRES_USERNAME:     cipsrv_gis
 {%-   if cip_pg_gis_pass == "env.POSTGRESQL_GIS_PASS"  %}
          POSTGRES_PASSWORD:     $POSTGRESQL_GIS_PASS
 {%-   else %}

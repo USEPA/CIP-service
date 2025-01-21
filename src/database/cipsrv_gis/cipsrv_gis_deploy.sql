@@ -1,6 +1,8 @@
 --******************************--
 ----- views/epageofab_h_catchment_fabric.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric;
+
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_h_catchment_fabric
 AS
 SELECT
@@ -28,7 +30,7 @@ SELECT
 ,a.vpuid
 ,a.sourcedataset
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_h.catchment_fabric a;
 
@@ -36,6 +38,8 @@ ALTER TABLE cipsrv_gis.epageofab_h_catchment_fabric OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.epageofab_h_catchment_fabric TO public;
 --******************************--
 ----- views/epageofab_h_catchment_fabric_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_h_catchment_fabric_esri
 AS
@@ -64,7 +68,7 @@ SELECT
 ,a.vpuid
 ,a.sourcedataset
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_h.catchment_fabric a;
 
@@ -73,7 +77,9 @@ GRANT SELECT ON cipsrv_gis.epageofab_h_catchment_fabric_esri TO public;
 --******************************--
 ----- views/epageofab_h_catchment_fabric_huc12.sql 
 
-CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_huc12
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric_huc12;
+
+CREATE OR REPLACE VIEW cipsrv_gis.epageofab_h_catchment_fabric_huc12
 AS
 SELECT
  a.objectid
@@ -81,14 +87,16 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
-cipsrv_epageofab_m.catchment_fabric_huc12 a;
+cipsrv_epageofab_h.catchment_fabric_huc12 a;
 
-ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric_huc12 OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric_huc12 TO public;
+ALTER TABLE cipsrv_gis.epageofab_h_catchment_fabric_huc12 OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.epageofab_h_catchment_fabric_huc12 TO public;
 --******************************--
 ----- views/epageofab_h_catchment_fabric_huc12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric_huc12_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_h_catchment_fabric_huc12_esri
 AS
@@ -98,7 +106,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_h.catchment_fabric_huc12 a;
 
@@ -106,6 +114,8 @@ ALTER TABLE cipsrv_gis.epageofab_h_catchment_fabric_huc12_esri OWNER TO cipsrv_g
 GRANT SELECT ON cipsrv_gis.epageofab_h_catchment_fabric_huc12_esri TO public;
 --******************************--
 ----- views/epageofab_m_catchment_fabric.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric;
 
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric
 AS
@@ -134,7 +144,7 @@ SELECT
 ,a.vpuid
 ,a.sourcedataset
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_m.catchment_fabric a;
 
@@ -142,6 +152,8 @@ ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric TO public;
 --******************************--
 ----- views/epageofab_m_catchment_fabric_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_esri
 AS
@@ -170,7 +182,7 @@ SELECT
 ,a.vpuid
 ,a.sourcedataset
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_m.catchment_fabric a;
 
@@ -178,6 +190,8 @@ ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric_esri TO public;
 --******************************--
 ----- views/epageofab_m_catchment_fabric_huc12.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12;
 
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_huc12
 AS
@@ -187,7 +201,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_m.catchment_fabric_huc12 a;
 
@@ -195,6 +209,8 @@ ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric_huc12 OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric_huc12 TO public;
 --******************************--
 ----- views/epageofab_m_catchment_fabric_huc12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri
 AS
@@ -204,7 +220,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_epageofab_m.catchment_fabric_huc12 a;
 
@@ -212,6 +228,8 @@ ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri OWNER TO cipsrv_g
 GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri TO public;
 --******************************--
 ----- views/nhdplus_h_flow_direction.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_flow_direction;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_flow_direction
 AS
@@ -234,7 +252,7 @@ SELECT
 ,a.fcode
 ,a.visibilityfilter
 ,a.nhdplusid
-,ST_Transform(a.final_point,3857) AS shape
+,a.final_point AS shape
 FROM (
    SELECT  
     aa.objectid
@@ -264,6 +282,8 @@ GRANT SELECT ON cipsrv_gis.nhdplus_h_flow_direction TO public;
 --******************************--
 ----- views/nhdplus_h_flow_direction_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_flow_direction_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_flow_direction_esri
 AS
 SELECT
@@ -285,7 +305,7 @@ SELECT
 ,CAST(a.fcode      AS INTEGER)  AS fcode
 ,a.visibilityfilter
 ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
-,ST_Transform(a.final_point,3857) AS shape
+,a.final_point AS shape
 FROM (
    SELECT  
     aa.objectid
@@ -314,6 +334,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_flow_direction_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_flow_direction_esri TO public;
 --******************************--
 ----- views/nhdplus_h_networknhdflowline.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_networknhdflowline;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_networknhdflowline
 AS
@@ -403,7 +425,7 @@ SELECT
 ,a.gageidma
 ,a.gageqma
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_h.networknhdflowline a;
 
@@ -411,6 +433,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_networknhdflowline OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_networknhdflowline TO public;
 --******************************--
 ----- views/nhdplus_h_networknhdflowline_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_networknhdflowline_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_networknhdflowline_esri
 AS
@@ -500,7 +524,7 @@ SELECT
 ,a.gageidma
 ,a.gageqma
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_h.networknhdflowline a;
 
@@ -508,6 +532,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_networknhdflowline_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_networknhdflowline_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdarea.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdarea;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdarea
 AS
@@ -529,7 +555,7 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdarea a;
 
@@ -537,6 +563,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdarea OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdarea TO public;
 --******************************--
 ----- views/nhdplus_h_nhdarea_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdarea_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdarea_esri
 AS
@@ -554,11 +582,11 @@ SELECT
 ,a.visibilityfilter
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,a.onoffnet
+,CAST(a.onoffnet AS SMALLINT) AS onoffnet 
 ,a.purpcode
-,a.burn
+,CAST(a.burn     AS SMALLINT) AS burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdarea a;
 
@@ -566,6 +594,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdarea_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdarea_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdline.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdline;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdline
 AS
@@ -583,7 +613,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdline a;
 
@@ -591,6 +621,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdline OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdline TO public;
 --******************************--
 ----- views/nhdplus_h_nhdline_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdline_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdline_esri
 AS
@@ -608,7 +640,7 @@ SELECT
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdline a;
 
@@ -616,6 +648,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdline_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdline_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdpluscatchment.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpluscatchment;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdpluscatchment
 AS
@@ -627,7 +661,7 @@ SELECT
 ,a.areasqkm
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdpluscatchment a;
 
@@ -635,6 +669,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdpluscatchment OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdpluscatchment TO public;
 --******************************--
 ----- views/nhdplus_h_nhdpluscatchment_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpluscatchment_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdpluscatchment_esri
 AS
@@ -646,7 +682,7 @@ SELECT
 ,a.areasqkm
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdpluscatchment a;
 
@@ -654,6 +690,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdpluscatchment_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdpluscatchment_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdplusflow.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusflow;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplusflow
 AS
@@ -681,6 +719,8 @@ GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdplusflow TO public;
 --******************************--
 ----- views/nhdplus_h_nhdplusflow_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusflow_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplusflow_esri
 AS
 SELECT
@@ -706,6 +746,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdplusflow_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdplusflow_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdplusgage.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusgage;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplusgage
 AS
@@ -736,7 +778,7 @@ SELECT
 ,a.class
 ,a.classmod
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdplusgage a;
 
@@ -745,6 +787,8 @@ GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdplusgage TO public;
 --******************************--
 ----- views/nhdplus_h_nhdplusgage_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusgage_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplusgage_esri
 AS
 SELECT
@@ -752,7 +796,7 @@ SELECT
 ,a.hydroaddressid
 ,a.addressdate
 ,a.featuretype
-,a.onnetwork
+,CAST(a.onnetwork AS SMALLINT) AS onnetwork
 ,a.sourceid
 ,a.sourceagency
 ,a.sourcedataset
@@ -770,11 +814,11 @@ SELECT
 ,a.latsite
 ,a.lonsite
 ,a.dasqmi
-,a.referencegage
+,CAST(a.referencegage AS SMALLINT) AS referencegage
 ,a.class
 ,a.classmod
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdplusgage a;
 
@@ -782,6 +826,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdplusgage_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdplusgage_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdplussink.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplussink;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplussink
 AS
@@ -798,7 +844,7 @@ SELECT
 ,a.burn
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdplussink a;
 
@@ -806,6 +852,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdplussink OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdplussink TO public;
 --******************************--
 ----- views/nhdplus_h_nhdplussink_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplussink_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplussink_esri
 AS
@@ -822,7 +870,7 @@ SELECT
 ,CAST(a.burn      AS SMALLINT) AS burn
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdplussink a;
 
@@ -830,6 +878,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdplussink_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdplussink_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdpoint.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpoint;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdpoint
 AS
@@ -846,7 +896,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdpoint a;
 
@@ -854,6 +904,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdpoint OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdpoint TO public;
 --******************************--
 ----- views/nhdplus_h_nhdpoint_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpoint_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdpoint_esri
 AS
@@ -870,7 +922,7 @@ SELECT
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdpoint a;
 
@@ -879,7 +931,9 @@ GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdpoint_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nhdwaterbody.sql 
 
-CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdwaterbody
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdwaterbody;
+
+CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdwaterbody
 AS
 SELECT
  a.objectid
@@ -900,14 +954,16 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
-cipsrv_nhdplus_m.nhdwaterbody a;
+cipsrv_nhdplus_h.nhdwaterbody a;
 
-ALTER TABLE cipsrv_gis.nhdplus_m_nhdwaterbody OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdwaterbody TO public;
+ALTER TABLE cipsrv_gis.nhdplus_h_nhdwaterbody OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdwaterbody TO public;
 --******************************--
 ----- views/nhdplus_h_nhdwaterbody_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdwaterbody_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdwaterbody_esri
 AS
@@ -926,11 +982,11 @@ SELECT
 ,a.visibilityfilter
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,a.onoffnet
+,CAST(a.onoffnet AS SMALLINT) AS onoffnet 
 ,a.purpcode
-,a.burn
+,CAST(a.burn     AS SMALLINT) AS burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdwaterbody a;
 
@@ -938,6 +994,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nhdwaterbody_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nhdwaterbody_esri TO public;
 --******************************--
 ----- views/nhdplus_h_nonnetworknhdflowline.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nonnetworknhdflowline;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nonnetworknhdflowline
 AS
@@ -960,7 +1018,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_h.nonnetworknhdflowline a;
 
@@ -968,6 +1026,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nonnetworknhdflowline OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nonnetworknhdflowline TO public;
 --******************************--
 ----- views/nhdplus_h_nonnetworknhdflowline_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri
 AS
@@ -990,7 +1050,7 @@ SELECT
 ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_h.nonnetworknhdflowline a;
 
@@ -998,6 +1058,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri TO public;
 --******************************--
 ----- views/nhdplus_h_wbdhu12.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_wbdhu12;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_wbdhu12
 AS
@@ -1022,7 +1084,7 @@ SELECT
 ,a.noncontributingareasqkm
 ,a.nhdplusid
 ,a.vpuid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.wbdhu12 a;
 
@@ -1030,6 +1092,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_wbdhu12 OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_wbdhu12 TO public;
 --******************************--
 ----- views/nhdplus_h_wbdhu12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_wbdhu12_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_wbdhu12_esri
 AS
@@ -1054,7 +1118,7 @@ SELECT
 ,a.noncontributingareasqkm
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.wbdhu12 a;
 
@@ -1062,6 +1126,8 @@ ALTER TABLE cipsrv_gis.nhdplus_h_wbdhu12_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_h_wbdhu12_esri TO public;
 --******************************--
 ----- views/nhdplus_m_flow_direction.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_flow_direction;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_flow_direction
 AS
@@ -1084,7 +1150,7 @@ SELECT
 ,a.fcode
 ,a.visibilityfilter
 ,a.nhdplusid
-,ST_Transform(a.final_point,3857) AS shape
+,a.final_point AS shape
 FROM (
    SELECT  
     aa.objectid
@@ -1114,6 +1180,8 @@ GRANT SELECT ON cipsrv_gis.nhdplus_m_flow_direction TO public;
 --******************************--
 ----- views/nhdplus_m_flow_direction_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_flow_direction_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_flow_direction_esri
 AS
 SELECT
@@ -1135,7 +1203,7 @@ SELECT
 ,CAST(a.fcode      AS INTEGER)  AS fcode
 ,a.visibilityfilter
 ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
-,ST_Transform(a.final_point,3857) AS shape
+,a.final_point AS shape
 FROM (
    SELECT  
     aa.objectid
@@ -1164,6 +1232,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_flow_direction_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_flow_direction_esri TO public;
 --******************************--
 ----- views/nhdplus_m_networknhdflowline.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_networknhdflowline;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_networknhdflowline
 AS
@@ -1253,7 +1323,7 @@ SELECT
 ,a.gageidma
 ,a.gageqma
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_m.networknhdflowline a;
 
@@ -1261,6 +1331,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_networknhdflowline OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_networknhdflowline TO public;
 --******************************--
 ----- views/nhdplus_m_networknhdflowline_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_networknhdflowline_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_networknhdflowline_esri
 AS
@@ -1350,7 +1422,7 @@ SELECT
 ,a.gageidma
 ,a.gageqma
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_m.networknhdflowline a;
 
@@ -1358,6 +1430,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_networknhdflowline_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_networknhdflowline_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdarea.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdarea;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdarea
 AS
@@ -1379,7 +1453,7 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdarea a;
 
@@ -1387,6 +1461,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdarea OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdarea TO public;
 --******************************--
 ----- views/nhdplus_m_nhdarea_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdarea_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdarea_esri
 AS
@@ -1404,11 +1480,11 @@ SELECT
 ,a.visibilityfilter
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,a.onoffnet
+,CAST(a.onoffnet AS SMALLINT) AS onoffnet 
 ,a.purpcode
-,a.burn
+,CAST(a.burn     AS SMALLINT) AS burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdarea a;
 
@@ -1416,6 +1492,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdarea_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdarea_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdline.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdline;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdline
 AS
@@ -1437,7 +1515,7 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdarea a;
 
@@ -1445,6 +1523,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdarea OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdarea TO public;
 --******************************--
 ----- views/nhdplus_m_nhdline_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdline_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdline_esri
 AS
@@ -1462,7 +1542,7 @@ SELECT
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdline a;
 
@@ -1470,6 +1550,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdline_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdline_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdpluscatchment.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpluscatchment;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdpluscatchment
 AS
@@ -1481,7 +1563,7 @@ SELECT
 ,a.areasqkm
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdpluscatchment a;
 
@@ -1489,6 +1571,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdpluscatchment OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdpluscatchment TO public;
 --******************************--
 ----- views/nhdplus_m_nhdpluscatchment_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpluscatchment_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdpluscatchment_esri
 AS
@@ -1500,7 +1584,7 @@ SELECT
 ,a.areasqkm
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdpluscatchment a;
 
@@ -1508,6 +1592,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdpluscatchment_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdpluscatchment_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdplusflow.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusflow;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdplusflow
 AS
@@ -1535,6 +1621,8 @@ GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdplusflow TO public;
 --******************************--
 ----- views/nhdplus_m_nhdplusflow_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusflow_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdplusflow_esri
 AS
 SELECT
@@ -1560,6 +1648,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdplusflow_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdplusflow_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdplusgage.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusgage;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdplusgage
 AS
@@ -1590,7 +1680,7 @@ SELECT
 ,a.class
 ,a.classmod
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdplusgage a;
 
@@ -1599,6 +1689,8 @@ GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdplusgage TO public;
 --******************************--
 ----- views/nhdplus_m_nhdplusgage_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusgage_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdplusgage_esri
 AS
 SELECT
@@ -1606,7 +1698,7 @@ SELECT
 ,a.hydroaddressid
 ,a.addressdate
 ,a.featuretype
-,a.onnetwork
+,CAST(a.onnetwork AS SMALLINT) AS onnetwork
 ,a.sourceid
 ,a.sourceagency
 ,a.sourcedataset
@@ -1624,11 +1716,11 @@ SELECT
 ,a.latsite
 ,a.lonsite
 ,a.dasqmi
-,a.referencegage
+,CAST(a.referencegage AS SMALLINT) AS referencegage
 ,a.class
 ,a.classmod
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdplusgage a;
 
@@ -1636,6 +1728,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdplusgage_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdplusgage_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdplussink.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplussink;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdplussink
 AS
@@ -1652,7 +1746,7 @@ SELECT
 ,a.burn
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdplussink a;
 
@@ -1660,6 +1754,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdplussink OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdplussink TO public;
 --******************************--
 ----- views/nhdplus_m_nhdplussink_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplussink_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdplussink_esri
 AS
@@ -1676,7 +1772,7 @@ SELECT
 ,CAST(a.burn      AS SMALLINT) AS burn
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdplussink a;
 
@@ -1684,6 +1780,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdplussink_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdplussink_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdpoint.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpoint;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdpoint
 AS
@@ -1700,7 +1798,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdpoint a;
 
@@ -1708,6 +1806,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdpoint OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdpoint TO public;
 --******************************--
 ----- views/nhdplus_m_nhdpoint_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpoint_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdpoint_esri
 AS
@@ -1724,7 +1824,7 @@ SELECT
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdpoint a;
 
@@ -1732,6 +1832,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdpoint_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdpoint_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nhdwaterbody.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdwaterbody;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdwaterbody
 AS
@@ -1754,7 +1856,7 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdwaterbody a;
 
@@ -1762,6 +1864,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdwaterbody OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdwaterbody TO public;
 --******************************--
 ----- views/nhdplus_m_nhdwaterbody_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdwaterbody_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdwaterbody_esri
 AS
@@ -1780,11 +1884,11 @@ SELECT
 ,a.visibilityfilter
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,a.onoffnet
+,CAST(a.onoffnet AS SMALLINT) AS onoffnet 
 ,a.purpcode
-,a.burn
+,CAST(a.burn     AS SMALLINT) AS burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdwaterbody a;
 
@@ -1792,6 +1896,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nhdwaterbody_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nhdwaterbody_esri TO public;
 --******************************--
 ----- views/nhdplus_m_nonnetworknhdflowline.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nonnetworknhdflowline;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nonnetworknhdflowline
 AS
@@ -1814,7 +1920,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_m.nonnetworknhdflowline a;
 
@@ -1822,6 +1928,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nonnetworknhdflowline OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nonnetworknhdflowline TO public;
 --******************************--
 ----- views/nhdplus_m_nonnetworknhdflowline_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri
 AS
@@ -1844,7 +1952,7 @@ SELECT
 ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(ST_Force2D(a.shape),3857) AS shape
+,ST_Force2D(a.shape) AS shape
 FROM
 cipsrv_nhdplus_m.nonnetworknhdflowline a;
 
@@ -1852,6 +1960,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri TO public;
 --******************************--
 ----- views/nhdplus_m_wbdhu12.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_wbdhu12;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_wbdhu12
 AS
@@ -1876,7 +1986,7 @@ SELECT
 ,a.noncontributingareasqkm
 ,a.nhdplusid
 ,a.vpuid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.wbdhu12 a;
 
@@ -1884,6 +1994,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_wbdhu12 OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_wbdhu12 TO public;
 --******************************--
 ----- views/nhdplus_m_wbdhu12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_wbdhu12_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_wbdhu12_esri
 AS
@@ -1908,7 +2020,7 @@ SELECT
 ,a.noncontributingareasqkm
 ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
 ,a.vpuid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.wbdhu12 a;
 
@@ -1916,6 +2028,8 @@ ALTER TABLE cipsrv_gis.nhdplus_m_wbdhu12_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.nhdplus_m_wbdhu12_esri TO public;
 --******************************--
 ----- views/owld_wqp_attr.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_attr;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_attr
 AS
@@ -1968,6 +2082,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_attr TO public;
 --******************************--
 ----- views/owld_wqp_attr_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_attr_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_attr_esri
 AS
 SELECT
@@ -2019,6 +2135,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_attr_esri TO public;
 --******************************--
 ----- views/owld_wqp_cip.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip
 AS
 SELECT
@@ -2059,6 +2177,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_cip OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_cip TO public;
 --******************************--
 ----- views/owld_wqp_cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_esri
 AS
@@ -2101,6 +2221,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_cip_esri TO public;
 --******************************--
 ----- views/owld_wqp_cip_geo.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_geo
 AS
 SELECT
@@ -2114,7 +2236,7 @@ SELECT
 ,a.xwalk_method
 ,a.xwalk_huc12_version
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_cip_geo a;
 
@@ -2122,6 +2244,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_cip_geo OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_cip_geo TO public;
 --******************************--
 ----- views/owld_wqp_cip_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_geo_esri
 AS
@@ -2136,7 +2260,7 @@ SELECT
 ,a.xwalk_method
 ,a.xwalk_huc12_version
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_cip_geo a;
 
@@ -2144,6 +2268,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_cip_geo_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_cip_geo_esri TO public;
 --******************************--
 ----- views/owld_wqp_huc12.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12
 AS
@@ -2171,6 +2297,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_huc12 TO public;
 --******************************--
 ----- views/owld_wqp_huc12_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_esri
 AS
 SELECT
@@ -2197,6 +2325,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_esri TO public;
 --******************************--
 ----- views/owld_wqp_huc12_geo.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_geo
 AS
 SELECT
@@ -2206,7 +2336,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.xwalk_huc12_areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_huc12_geo a;
 
@@ -2214,6 +2344,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_huc12_geo OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_geo TO public;
 --******************************--
 ----- views/owld_wqp_huc12_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_geo_esri
 AS
@@ -2224,7 +2356,7 @@ SELECT
 ,a.xwalk_huc12_version
 ,a.xwalk_huc12_areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_huc12_geo a;
 
@@ -2232,6 +2364,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_huc12_geo_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_geo_esri TO public;
 --******************************--
 ----- views/owld_wqp_rad_a.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_a
 AS
@@ -2262,7 +2396,7 @@ SELECT
 ,a.xwalk_method
 ,a.xwalk_huc12_version
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_a a;
 
@@ -2270,6 +2404,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_a OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_a TO public;
 --******************************--
 ----- views/owld_wqp_rad_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_a_esri
 AS
@@ -2300,7 +2436,7 @@ SELECT
 ,a.xwalk_method
 ,a.xwalk_huc12_version
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_a a;
 
@@ -2308,6 +2444,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_a_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_a_esri TO public;
 --******************************--
 ----- views/owld_wqp_rad_evt2meta.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_evt2meta
 AS
@@ -2324,6 +2462,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_rad_evt2meta TO public;
 --******************************--
 ----- views/owld_wqp_rad_evt2meta_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_evt2meta_esri
 AS
 SELECT
@@ -2338,6 +2478,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_evt2meta_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_evt2meta_esri TO public;
 --******************************--
 ----- views/owld_wqp_rad_l.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_l
 AS
@@ -2379,7 +2521,7 @@ SELECT
 ,a.isalaskan
 ,a.h3hexagonaddr
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_l a;
 
@@ -2387,6 +2529,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_l OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_l TO public;
 --******************************--
 ----- views/owld_wqp_rad_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_l_esri
 AS
@@ -2428,7 +2572,7 @@ SELECT
 ,a.isalaskan
 ,a.h3hexagonaddr
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_l a;
 
@@ -2436,6 +2580,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_l_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_l_esri TO public;
 --******************************--
 ----- views/owld_wqp_rad_metadata.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_metadata;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_metadata
 AS
@@ -2471,6 +2617,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_rad_metadata TO public;
 --******************************--
 ----- views/owld_wqp_rad_metadata_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_metadata_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_metadata_esri
 AS
 SELECT
@@ -2504,6 +2652,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_metadata_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_metadata_esri TO public;
 --******************************--
 ----- views/owld_wqp_rad_p.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_p
 AS
@@ -2543,7 +2693,7 @@ SELECT
 ,a.isalaskan
 ,a.h3hexagonaddr
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_p a;
 
@@ -2551,6 +2701,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_p OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_p TO public;
 --******************************--
 ----- views/owld_wqp_rad_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_p_esri
 AS
@@ -2590,7 +2742,7 @@ SELECT
 ,a.isalaskan
 ,a.h3hexagonaddr
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_p a;
 
@@ -2598,6 +2750,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_p_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_p_esri TO public;
 --******************************--
 ----- views/owld_wqp_rad_srccit.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_srccit;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_srccit
 AS
@@ -2625,6 +2779,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_rad_srccit TO public;
 --******************************--
 ----- views/owld_wqp_rad_srccit_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_srccit_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_srccit_esri
 AS
 SELECT
@@ -2650,6 +2806,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_rad_srccit_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_srccit_esri TO public;
 --******************************--
 ----- views/owld_wqp_sfid.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_sfid;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_sfid
 AS
@@ -2690,6 +2848,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_sfid TO public;
 --******************************--
 ----- views/owld_wqp_sfid_esri.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_sfid_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_sfid_esri
 AS
 SELECT
@@ -2729,6 +2889,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_sfid_esri TO public;
 --******************************--
 ----- views/owld_wqp_src2cip.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src2cip;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src2cip
 AS
 SELECT
@@ -2755,6 +2917,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_src2cip OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_src2cip TO public;
 --******************************--
 ----- views/owld_wqp_src2cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src2cip_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src2cip_esri
 AS
@@ -2783,6 +2947,8 @@ GRANT SELECT ON cipsrv_gis.owld_wqp_src2cip_esri TO public;
 --******************************--
 ----- views/owld_wqp_src_a.sql 
 
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_a;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_a
 AS
 SELECT
@@ -2799,7 +2965,7 @@ SELECT
 ,a.featuredetailurl
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_a a;
 
@@ -2807,6 +2973,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_src_a OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_src_a TO public;
 --******************************--
 ----- views/owld_wqp_src_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_a_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_a_esri
 AS
@@ -2824,7 +2992,7 @@ SELECT
 ,a.featuredetailurl
 ,a.areasqkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_a a;
 
@@ -2832,6 +3000,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_src_a_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_src_a_esri TO public;
 --******************************--
 ----- views/owld_wqp_src_l.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_l;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_l
 AS
@@ -2849,7 +3019,7 @@ SELECT
 ,a.featuredetailurl
 ,a.lengthkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_l a;
 
@@ -2857,6 +3027,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_src_l OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_src_l TO public;
 --******************************--
 ----- views/owld_wqp_src_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_l_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_l_esri
 AS
@@ -2874,7 +3046,7 @@ SELECT
 ,a.featuredetailurl
 ,a.lengthkm
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_l a;
 
@@ -2882,6 +3054,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_src_l_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_src_l_esri TO public;
 --******************************--
 ----- views/owld_wqp_src_p.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_p;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_p
 AS
@@ -2898,7 +3072,7 @@ SELECT
 ,a.end_date
 ,a.featuredetailurl
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_p a;
 
@@ -2906,6 +3080,8 @@ ALTER TABLE cipsrv_gis.owld_wqp_src_p OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_src_p TO public;
 --******************************--
 ----- views/owld_wqp_src_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_p_esri;
 
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src_p_esri
 AS
@@ -2922,7 +3098,7 @@ SELECT
 ,a.end_date
 ,a.featuredetailurl
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_src_p a;
 

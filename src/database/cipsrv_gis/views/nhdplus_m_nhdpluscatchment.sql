@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpluscatchment;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdpluscatchment
 AS
 SELECT
@@ -8,7 +10,7 @@ SELECT
 ,a.areasqkm
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdpluscatchment a;
 

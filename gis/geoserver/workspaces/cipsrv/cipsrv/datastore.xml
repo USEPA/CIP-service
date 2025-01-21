@@ -7,7 +7,7 @@
     <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
   </workspace>
   <connectionParameters>
-    <entry key="schema">cipsrv_geoserver</entry>
+    <entry key="schema">cipsrv_gis</entry>
     <entry key="Estimated extends">true</entry>
     <entry key="fetch size">1000</entry>
     <entry key="encode functions">true</entry>

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdwaterbody;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nhdwaterbody
 AS
 SELECT
@@ -19,7 +21,7 @@ SELECT
 ,a.purpcode
 ,a.burn
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_m.nhdwaterbody a;
 

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src2cip_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_src2cip_esri
 AS
 SELECT

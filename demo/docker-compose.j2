@@ -52,6 +52,26 @@ services:
 {%-      else %}
             ARG_POSTGREST_PORT: {{ cip_pr_port }}
 {%-      endif %}
+{%-     if cip_gis_type == "env.GIS_TYPE" %}
+            ARG_GIS_TYPE: ${GIS_TYPE:-geoserver}
+{%-      else %}
+            ARG_GIS_TYPE: {{ cip_gis_type }}
+{%-      endif %}
+{%-     if cip_gis_prot == "env.GIS_PROT" %}
+            ARG_GIS_PROT: ${GIS_PROT:-http}
+{%-      else %}
+            ARG_GIS_PROT: {{ cip_gis_prot }}
+{%-      endif %}
+{%-     if cip_gis_host == "env.GIS_HOST" %}
+            ARG_GIS_HOST: ${GIS_HOST:-localhost}
+{%-      else %}
+            ARG_GIS_HOST: {{ cip_gis_host }}
+{%-      endif %}
+{%-     if cip_gis_port == "env.GIS_PORT" %}
+            ARG_GIS_PORT: ${GIS_PORT:-8081}
+{%-      else %}
+            ARG_GIS_PORT: {{ cip_gis_port }}
+{%-      endif %}
       image: cip-service-demo-cip_ng
       hostname: cip_ng
       container_name: cip-service-demo-cip_ng

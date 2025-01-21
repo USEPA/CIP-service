@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_a_esri
 AS
 SELECT
@@ -27,7 +29,7 @@ SELECT
 ,a.xwalk_method
 ,a.xwalk_huc12_version
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_owld.wqp_rad_a a;
 

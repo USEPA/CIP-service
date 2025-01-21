@@ -1,0 +1,88 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--7ce8039c:194464c949d:1021</id>
+  <name>owld_wqp</name>
+  <mode>SINGLE</mode>
+  <title>OWLD Water Quality Portal Stations</title>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59f0</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59f4</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59f8</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a06</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a00</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a04</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a08</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59f2</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59fe</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a02</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59fc</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59fa</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59f6</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59ee</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59ec</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59ea</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-2.0037508342789244E7</minx>
+    <maxx>2.0037508342789244E7</maxx>
+    <miny>-2.00489661040146E7</miny>
+    <maxy>2.0048966104014594E7</maxy>
+    <crs class="projected">EPSG:3857</crs>
+  </bounds>
+  <dateCreated>2025-01-08 17:17:29.507 UTC</dateCreated>
+  <dateModified>2025-01-08 17:17:36.847 UTC</dateModified>
+</layerGroup>

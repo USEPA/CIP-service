@@ -2,7 +2,7 @@ profile_name: geoserver
 #
 # Profile recipe to quickly demonstrate CIP usage
 #
-last updated: 20241110
+last updated: 20250120
 #
 # Provide credentials for geoserver
 cip_pg_host:       cip_pg
@@ -18,4 +18,5 @@ components:
       type:             container
       external_port:    env.GEOSERVER_PORT
       add_host_gateway: false
+      extra_java_opts:  "-Xms2048m -Xmx4096m"
 #

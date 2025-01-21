@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdline;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdline
 AS
 SELECT
@@ -14,7 +16,7 @@ SELECT
 ,a.nhdplusid
 ,a.vpuid
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdline a;
 

@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusgage_esri;
+
 CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdplusgage_esri
 AS
 SELECT
@@ -5,7 +7,7 @@ SELECT
 ,a.hydroaddressid
 ,a.addressdate
 ,a.featuretype
-,a.onnetwork
+,CAST(a.onnetwork AS SMALLINT) AS onnetwork
 ,a.sourceid
 ,a.sourceagency
 ,a.sourcedataset
@@ -23,11 +25,11 @@ SELECT
 ,a.latsite
 ,a.lonsite
 ,a.dasqmi
-,a.referencegage
+,CAST(a.referencegage AS SMALLINT) AS referencegage
 ,a.class
 ,a.classmod
 ,a.globalid
-,ST_Transform(a.shape,3857) AS shape
+,a.shape
 FROM
 cipsrv_nhdplus_h.nhdplusgage a;
 
