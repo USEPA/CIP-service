@@ -13,13 +13,9 @@
         <Rule>
           <MaxScaleDenominator>500000</MaxScaleDenominator>
           <PolygonSymbolizer>
-            <Fill>
-              <CssParameter name="fill">#fa9c0f</CssParameter>
-              <CssParameter name="fill-opacity">0.75</CssParameter>
-            </Fill>
             <Stroke>
               <CssParameter name="stroke">#fa9c0f</CssParameter>
-              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-width">0.5</CssParameter>
             </Stroke>
           </PolygonSymbolizer>
         </Rule>

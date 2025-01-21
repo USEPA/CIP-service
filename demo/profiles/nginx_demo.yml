@@ -2,12 +2,17 @@ profile_name: nginx_demo
 #
 # Profile recipe to quickly demonstrate CIP usage
 #
-last updated: 20221212
+last updated: 20250120
 #
 # Provide location of the CIP engine API
 cip_pr_prot:       env.POSTGREST_PROT 
 cip_pr_host:       env.POSTGREST_HOST
 cip_pr_port:       env.POSTGREST_PORT
+# Provide location of the GIS Server
+cip_gis_type:      env.GIS_TYPE
+cip_gis_prot:      env.GIS_PROT 
+cip_gis_host:      env.GIS_HOST
+cip_gis_port:      env.GIS_PORT
 #
 components:
    cip_ng:

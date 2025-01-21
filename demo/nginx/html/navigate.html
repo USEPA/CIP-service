@@ -49,7 +49,7 @@
                <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
-               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="blank_nhdplusids();">
+               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
                   <option value="nhdplus_m" SELECTED>Medium Resolution</option>
                   <option value="nhdplus_h">High Resolution</option>
                </select>
@@ -120,7 +120,7 @@
       <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
       </div>
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
-      <script src='https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
    document.getElementById("dz_run_service").disabled = true;
@@ -135,6 +135,9 @@
       maxZoom: 18
    });
    basemap.addTo(map);
+   
+   var lyr_nhdplus_m_flowlines = null;
+   var lyr_nhdplus_h_flowlines = null;
    
    var drawnItems = new L.FeatureGroup().addTo(map);
    var drawControl = new L.Control.Draw({
@@ -236,7 +239,73 @@
      "Snap path": snap_path,
      "Returned Streams": flowlines
    };
-   L.control.layers(null, layer_items).addTo(map);
+   
+   if (
+      typeof gis_host === "undefined" ||
+      gis_host === null ||
+      gis_host == "NONE"
+   ) {
+      null;
+   } else {
+      zgis_host = gis_host;
+      
+      if (
+         typeof gis_type === "undefined" ||
+         gis_type === null ||
+         gis_type == "NONE"
+      ) {
+         zgis_type = "geoserver";
+      } else {
+         zgis_type = gis_type;
+      }
+   
+      if (
+         typeof gis_prot === "undefined" ||
+         gis_prot === null ||
+         gis_prot == "NONE"
+      ) {
+         zgis_prot = "http";
+      } else {
+         zgis_prot = gis_prot;
+      }
+      
+      if (
+         typeof gis_port === "undefined" ||
+         gis_port === null ||
+         gis_port == "NONE"
+      ) {
+         zgis_port = "";
+      } else {
+         zgis_port = ":" + gis_port;
+      }
+      
+      if ( zgis_type == "geoserver" ) {
+         gis_server = zgis_prot + "://" + zgis_host + zgis_port;
+         
+         lyr_nhdplus_m_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+             layers: 'cipsrv:nhdplus_m_flowlines'
+            ,format: 'image/png'
+            ,transparent: true
+            ,version: '1.3.0'
+            ,attribution: "US EPA"
+         });
+         lyr_nhdplus_m_flowlines.addTo(map);
+         layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
+         
+         lyr_nhdplus_h_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+             layers: 'cipsrv:nhdplus_h_flowlines'
+            ,format: 'image/png'
+            ,transparent: true
+            ,version: '1.3.0'
+            ,attribution: "US EPA"
+         });
+         //lyr_nhdplus_h_flowlines.addTo(map);
+         layer_items["HR Flowlines"] = lyr_nhdplus_h_flowlines;
+         
+      }
+      
+   }
+   L.control.layers(null, layer_items).addTo(map);   
    
    function onEachFeature_snap_path(feature,layer) {
       if (feature.properties && feature.properties.snap_distancekm) {
@@ -608,6 +677,29 @@
 
    function blank_pt2() {
       document.getElementById("pPoint2").value = "";
+   }
+   
+   function change_resolution() {
+      var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
+      blank_nhdplusids();
+
+      if (lyr_nhdplus_m_flowlines !== null && resolution == "nhdplus_m" ) {
+         if (map.hasLayer(lyr_nhdplus_h_flowlines) ) {
+            map.removeLayer(lyr_nhdplus_h_flowlines);
+         }
+         if (! map.hasLayer(lyr_nhdplus_m_flowlines) ) {
+            map.addLayer(lyr_nhdplus_m_flowlines);
+         }
+
+      } else if (lyr_nhdplus_h_flowlines !== null && resolution == "nhdplus_h" ) {
+         if (map.hasLayer(lyr_nhdplus_m_flowlines) ) {
+            map.removeLayer(lyr_nhdplus_m_flowlines);
+         }
+         if (! map.hasLayer(lyr_nhdplus_h_flowlines) ) {
+            map.addLayer(lyr_nhdplus_h_flowlines);
+         }
+
+      }
    }
     
    function blank_nhdplusids() {

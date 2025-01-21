@@ -1,2 +1,2 @@
 #
-default: geoserver
+default: geoserver_desktop

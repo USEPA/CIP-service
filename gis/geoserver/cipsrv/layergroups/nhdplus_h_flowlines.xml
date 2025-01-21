@@ -1,0 +1,31 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--77814b79:194855eb8ac:-6985</id>
+  <name>nhdplus_h_flowlines</name>
+  <mode>SINGLE</mode>
+  <title>NHDPlus HR Flowlines</title>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a38</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-5a3a</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-2.0037508342789244E7</minx>
+    <maxx>2.0037508342789244E7</maxx>
+    <miny>-2.00489661040146E7</miny>
+    <maxy>2.0048966104014594E7</maxy>
+    <crs class="projected">EPSG:3857</crs>
+  </bounds>
+  <dateCreated>2025-01-20 22:17:28.373 UTC</dateCreated>
+</layerGroup>
