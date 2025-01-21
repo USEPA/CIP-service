@@ -2,6 +2,9 @@
   <name>owld_wqp_sfid</name>
   <id>LayerInfoImpl--7ce8039c:19445fc0d4c:-59f2</id>
   <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl-f92e61c:19488f9a58d:-7ffc</id>
+  </defaultStyle>
   <resource class="featureType">
     <id>FeatureTypeInfoImpl--7ce8039c:19445fc0d4c:-59f3</id>
   </resource>

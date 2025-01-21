@@ -10,7 +10,7 @@
     <string>features</string>
     <string>owld_wqp_src_a</string>
   </keywords>
-  <srs>EPSG:3857</srs>
+  <srs>EPSG:4269</srs>
   <latLonBoundingBox>
     <minx>-180.00000000000003</minx>
     <maxx>180.00000000000003</maxx>

@@ -10,12 +10,12 @@
     <string>features</string>
     <string>nhdplus_m_nhdplusflow</string>
   </keywords>
-  <srs>EPSG:3857</srs>
+  <srs>EPSG:4269</srs>
   <latLonBoundingBox>
-    <minx>-180.00000000000003</minx>
-    <maxx>180.00000000000003</maxx>
-    <miny>-85.06</miny>
-    <maxy>85.06</maxy>
+    <minx>-172.54</minx>
+    <maxx>23.81</maxx>
+    <miny>-47.74</miny>
+    <maxy>86.46</maxy>
     <crs>EPSG:4326</crs>
   </latLonBoundingBox>
   <projectionPolicy>FORCE_DECLARED</projectionPolicy>
