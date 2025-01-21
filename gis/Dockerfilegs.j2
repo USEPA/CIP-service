@@ -7,7 +7,7 @@ ENV SKIP_DEMO_DATA=true
 {%- if 'cip_gs' in components and 'extra_java_opts' in components.cip_gs %}
 ENV EXTRA_JAVA_OPTS="{{ components.cip_gs.extra_java_opts }}"
 {%- endif %}
-COPY ./geoserver /opt/geoserver_data/workspaces
+COPY ./geoserver /opt/geoserver_data
 
 RUN echo "if [ ! -d \"\$ADDITIONAL_LIBS_DIR\" ]; then"                                                              >> /opt/install-extensions.sh &&\
     echo "mkdir -p \$ADDITIONAL_LIBS_DIR"                                                                           >> /opt/install-extensions.sh &&\
