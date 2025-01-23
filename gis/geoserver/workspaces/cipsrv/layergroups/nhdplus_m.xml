@@ -63,6 +63,13 @@
     <maxy>2.0048966104014594E7</maxy>
     <crs class="projected">EPSG:3857</crs>
   </bounds>
+  <metadata>
+    <entry key="cachingEnabled">false</entry>
+  </metadata>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
   <dateCreated>2025-01-08 15:18:00.66 UTC</dateCreated>
-  <dateModified>2025-01-08 15:19:59.459 UTC</dateModified>
+  <dateModified>2025-01-23 20:49:35.918 UTC</dateModified>
 </layerGroup>

@@ -1,0 +1,16 @@
+<layer>
+  <name>owld_wqp_huc12_geo_m</name>
+  <id>LayerInfoImpl--4a49e71b:1948943599e:-5c42</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7ce8039c:194464c949d:ff5</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--4a49e71b:1948943599e:-5c43</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-01-23 17:20:38.247 UTC</dateCreated>
+</layer>

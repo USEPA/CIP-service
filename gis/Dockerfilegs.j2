@@ -4,6 +4,7 @@ LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
 ENV WEBAPP_CONTEXT=""
 ENV SKIP_DEMO_DATA=true
+ENV CORS_ENABLED=true
 {%- if 'cip_gs' in components and 'extra_java_opts' in components.cip_gs %}
 ENV EXTRA_JAVA_OPTS="{{ components.cip_gs.extra_java_opts }}"
 {%- endif %}

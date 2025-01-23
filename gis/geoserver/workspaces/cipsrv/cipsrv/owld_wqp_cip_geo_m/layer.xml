@@ -1,0 +1,16 @@
+<layer>
+  <name>owld_wqp_cip_geo_m</name>
+  <id>LayerInfoImpl--4a49e71b:1948943599e:-5c48</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--7ce8039c:194464c949d:ff4</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--4a49e71b:1948943599e:-5c49</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-01-23 17:18:59.347 UTC</dateCreated>
+</layer>

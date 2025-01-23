@@ -190,7 +190,7 @@
                <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px" value="15" />&nbsp;km
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: </span>
-               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px;" size="2" multiple>
+               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px;" size="2" multiple onchange="change_linked_data();">
                  <option value="WQP" SELECTED>Water Quality Portal Stations</option>
                </select>
                <br/>
@@ -246,8 +246,103 @@
    });
    basemap.addTo(map);
    
+   L.TileLayer.BetterWMS = L.TileLayer.WMS.extend({
+  
+      onAdd: function (map) {
+         L.TileLayer.WMS.prototype.onAdd.call(this,map);
+         map.on('click',this.getFeatureInfo,this);
+      },
+     
+      onRemove: function (map) {
+         L.TileLayer.WMS.prototype.onRemove.call(this,map);
+         map.off('click',this.getFeatureInfo,this);
+      },
+     
+      getFeatureInfo: function (evt) {
+         var url = this.getFeatureInfoUrl(evt.latlng);
+         var showResults = L.Util.bind(this.showGetFeatureInfo,this);
+       
+         request = new XMLHttpRequest();
+         request.onreadystatechange = change;
+         request.open('GET',url);
+         request.send();
+         
+         function change() {
+            if (request.readyState === 4) {
+               if (request.status === 200) {
+                  var err = typeof request.responseText === 'string' ? null : request.responseText;
+                  showResults(err,evt.latlng,request.responseText);
+               } else {
+                  showResults("error"); 
+               }
+            }
+         
+         }
+       
+       $.ajax({
+         url: url,
+         success: function (data, status, xhr) {
+           var err = typeof data === 'string' ? null : data;
+           showResults(err, evt.latlng, data);
+         },
+         error: function (xhr, status, error) {
+           showResults(error);  
+         }
+       });
+       
+       
+      },
+     
+      getFeatureInfoUrl: function (latlng) {
+         var point = this._map.latLngToContainerPoint(latlng, this._map.getZoom());
+         var size = this._map.getSize();
+         var params = {
+             request: 'GetFeatureInfo',
+             service: 'WMS',
+             srs: 'EPSG:4326',
+             styles: this.wmsParams.styles,
+             transparent: this.wmsParams.transparent,
+             version: this.wmsParams.version,      
+             format: this.wmsParams.format,
+             bbox: this._map.getBounds().toBBoxString(),
+             height: size.y,
+             width: size.x,
+             layers: this.wmsParams.layers,
+             query_layers: this.wmsParams.layers,
+             info_format: 'text/html'
+         };
+       
+         params[params.version === '1.3.0' ? 'i' : 'x'] = point.x;
+         params[params.version === '1.3.0' ? 'j' : 'y'] = point.y;
+       
+         var url = this._url + L.Util.getParamString(params, this._url, true);
+        
+         return url;
+       
+      },
+     
+      showGetFeatureInfo: function (err, latlng, content) {
+         if (err) { 
+            console.log(err); 
+            return; 
+         }
+       
+         L.popup({ maxWidth: 800})
+            .setLatLng(latlng)
+            .setContent(content)
+            .openOn(this._map);
+      
+      }
+      
+   });
+
+   L.tileLayer.betterWms = function (url,options) {
+      return new L.TileLayer.BetterWMS(url,options);  
+   };
+   
    var lyr_nhdplus_m_flowlines = null;
    var lyr_nhdplus_h_flowlines = null;
+   var lyr_wqp = null;
    
    var drawnItems = new L.FeatureGroup().addTo(map);
    var drawControl = new L.Control.Draw({
@@ -397,7 +492,7 @@
       if ( zgis_type == "geoserver" ) {
          gis_server = zgis_prot + "://" + zgis_host + zgis_port;
          
-         lyr_nhdplus_m_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+         lyr_nhdplus_m_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
              layers: 'cipsrv:nhdplus_m_flowlines'
             ,format: 'image/png'
             ,transparent: true
@@ -407,7 +502,7 @@
          lyr_nhdplus_m_flowlines.addTo(map);
          layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
          
-         lyr_nhdplus_h_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+         lyr_nhdplus_h_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
              layers: 'cipsrv:nhdplus_h_flowlines'
             ,format: 'image/png'
             ,transparent: true
@@ -416,6 +511,16 @@
          });
          //lyr_nhdplus_h_flowlines.addTo(map);
          layer_items["HR Flowlines"] = lyr_nhdplus_h_flowlines;
+         
+         lyr_wqp = L.tileLayer.betterWms(gis_server + "/wms",{
+             layers: 'cipsrv:owld_wqp_src'
+            ,format: 'image/png'
+            ,transparent: true
+            ,version: '1.3.0'
+            ,attribution: "US EPA"
+         });
+         lyr_wqp.addTo(map);
+         layer_items["OWLD WQP Source"] = lyr_wqp;
          
       }
       
@@ -567,6 +672,24 @@
       
       }
       
+   }
+   
+   function httpGet(url,callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("GET",url,true);
+      xmlHttp.setRequestHeader('Content-Type','application/json; charset=utf-8');
+      xmlHttp.responseType = 'json';
+      xmlHttp.onreadystatechange = function() {
+         if(xmlHttp.readyState === 4) {
+            if(xmlHttp.status === 200) {
+               response = xmlHttp.response;
+               callback(null,response);
+            } else {
+               callback(xmlHttp.statusText,null);
+            }
+         }
+      };
+      xmlHttp.send(JSON.stringify(data));
    }
    
    function httpPost(url,data,callback) {
@@ -915,9 +1038,14 @@
    }
    
    function change_resolution() {
-      var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
       blank_nhdplusids();
-
+      reset_nhdplus_flowlines();
+      reset_linked_data();
+   }
+   
+   function reset_nhdplus_flowlines() {
+      var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
+      
       if (lyr_nhdplus_m_flowlines !== null && resolution == "nhdplus_m" ) {
          if (map.hasLayer(lyr_nhdplus_h_flowlines) ) {
             map.removeLayer(lyr_nhdplus_h_flowlines);
@@ -935,6 +1063,24 @@
          }
 
       }
+   }
+   
+   function change_linked_data() {
+      reset_linked_data();
+   }
+   
+   function reset_linked_data() {
+      var ary_programs = get_mselect_values(document.getElementById("p_linked_data_search_list"));
+      var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
+      
+      if ( ary_programs.includes("WQP") ) {
+      
+         if (! map.hasLayer(lyr_wqp) ) {
+            map.addLayer(lyr_wqp);
+         }
+         
+      }
+      
    }
    
    function change_resolution() {
