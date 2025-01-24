@@ -2133,11 +2133,11 @@ cipsrv_owld.wqp_attr a;
 ALTER TABLE cipsrv_gis.owld_wqp_attr_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_attr_esri TO public;
 --******************************--
------ views/owld_wqp_cip.sql 
+----- views/owld_wqp_cip_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_h
 AS
 SELECT
  a.objectid
@@ -2171,10 +2171,57 @@ SELECT
 ,a.h3hexagonaddr
 ,a.globalid
 FROM
-cipsrv_owld.wqp_cip a;
+cipsrv_owld.wqp_cip a
+WHERE
+a.catchmentresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_cip OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_cip TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_cip_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_cip_h TO public;
+--******************************--
+----- views/owld_wqp_cip_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_m
+AS
+SELECT
+ a.objectid
+,a.cip_joinkey
+,a.permid_joinkey
+,a.source_originator
+,a.source_featureid
+,a.source_featureid2
+,a.source_series
+,a.source_subdivision
+,a.source_joinkey
+,a.start_date
+,a.end_date
+,a.cat_joinkey
+,a.catchmentstatecode
+,a.nhdplusid
+,a.istribal
+,a.istribal_areasqkm
+,a.catchmentresolution
+,a.catchmentareasqkm
+,a.xwalk_huc12
+,a.xwalk_method
+,a.xwalk_huc12_version
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
+,a.globalid
+FROM
+cipsrv_owld.wqp_cip a
+WHERE
+a.catchmentresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_cip_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_cip_m TO public;
 --******************************--
 ----- views/owld_wqp_cip_esri.sql 
 
@@ -2219,11 +2266,11 @@ cipsrv_owld.wqp_cip a;
 ALTER TABLE cipsrv_gis.owld_wqp_cip_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_cip_esri TO public;
 --******************************--
------ views/owld_wqp_cip_geo.sql 
+----- views/owld_wqp_cip_geo_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_geo
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_geo_h
 AS
 SELECT
  a.objectid
@@ -2238,10 +2285,38 @@ SELECT
 ,a.globalid
 ,a.shape
 FROM
-cipsrv_owld.wqp_cip_geo a;
+cipsrv_owld.wqp_cip_geo a
+WHERE
+a.catchmentresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_cip_geo OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_cip_geo TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_cip_geo_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_cip_geo_h TO public;
+--******************************--
+----- views/owld_wqp_cip_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_cip_geo_m
+AS
+SELECT
+ a.objectid
+,a.cat_joinkey
+,a.catchmentstatecode
+,a.nhdplusid
+,a.catchmentresolution
+,a.catchmentareasqkm
+,a.xwalk_huc12
+,a.xwalk_method
+,a.xwalk_huc12_version
+,a.globalid
+,a.shape
+FROM
+cipsrv_owld.wqp_cip_geo a
+WHERE
+a.catchmentresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_cip_geo_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_cip_geo_m TO public;
 --******************************--
 ----- views/owld_wqp_cip_geo_esri.sql 
 
@@ -2267,11 +2342,11 @@ cipsrv_owld.wqp_cip_geo a;
 ALTER TABLE cipsrv_gis.owld_wqp_cip_geo_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_cip_geo_esri TO public;
 --******************************--
------ views/owld_wqp_huc12.sql 
+----- views/owld_wqp_huc12_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_h
 AS
 SELECT
  a.objectid
@@ -2290,10 +2365,42 @@ SELECT
 ,a.xwalk_huc12_areasqkm
 ,a.globalid
 FROM
-cipsrv_owld.wqp_huc12 a;
+cipsrv_owld.wqp_huc12 a
+WHERE
+a.xwalk_catresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_huc12 OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_huc12 TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_huc12_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_h TO public;
+--******************************--
+----- views/owld_wqp_huc12_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_m
+AS
+SELECT
+ a.objectid
+,a.source_originator
+,a.source_featureid
+,a.source_featureid2
+,a.source_series
+,a.source_subdivision
+,a.source_joinkey
+,a.permid_joinkey
+,a.start_date
+,a.end_date
+,a.xwalk_huc12
+,a.xwalk_catresolution
+,a.xwalk_huc12_version
+,a.xwalk_huc12_areasqkm
+,a.globalid
+FROM
+cipsrv_owld.wqp_huc12 a
+WHERE
+a.xwalk_catresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_huc12_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_m TO public;
 --******************************--
 ----- views/owld_wqp_huc12_esri.sql 
 
@@ -2323,7 +2430,29 @@ cipsrv_owld.wqp_huc12 a;
 ALTER TABLE cipsrv_gis.owld_wqp_huc12_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_esri TO public;
 --******************************--
------ views/owld_wqp_huc12_geo.sql 
+----- views/owld_wqp_huc12_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo_h;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_geo_h
+AS
+SELECT
+ a.objectid
+,a.xwalk_huc12
+,a.xwalk_catresolution
+,a.xwalk_huc12_version
+,a.xwalk_huc12_areasqkm
+,a.globalid
+,a.shape
+FROM
+cipsrv_owld.wqp_huc12_geo a
+WHERE
+a.xwalk_catresolution = 'HR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_huc12_geo_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_geo_h TO public;
+--******************************--
+----- views/owld_wqp_huc12_geo_m.sql 
 
 DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo;
 
@@ -2363,11 +2492,11 @@ cipsrv_owld.wqp_huc12_geo a;
 ALTER TABLE cipsrv_gis.owld_wqp_huc12_geo_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_geo_esri TO public;
 --******************************--
------ views/owld_wqp_rad_a.sql 
+----- views/owld_wqp_rad_a_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_a
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_a_h
 AS
 SELECT
  a.objectid
@@ -2398,10 +2527,54 @@ SELECT
 ,a.globalid
 ,a.shape
 FROM
-cipsrv_owld.wqp_rad_a a;
+cipsrv_owld.wqp_rad_a a
+WHERE
+a.reachresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_rad_a OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_rad_a TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_rad_a_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_a_h TO public;
+--******************************--
+----- views/owld_wqp_rad_a_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_a_m
+AS
+SELECT
+ a.objectid
+,a.permanent_identifier
+,a.eventdate
+,a.reachcode
+,a.reachsmdate
+,a.reachresolution
+,a.feature_permanent_identifier
+,a.featureclassref
+,a.source_originator
+,a.source_featureid
+,a.source_featureid2
+,a.source_datadesc
+,a.source_series
+,a.source_subdivision
+,a.source_joinkey
+,a.permid_joinkey
+,a.start_date
+,a.end_date
+,a.featuredetailurl
+,a.eventtype
+,a.event_areasqkm
+,a.geogstate
+,a.xwalk_huc12
+,a.xwalk_method
+,a.xwalk_huc12_version
+,a.globalid
+,a.shape
+FROM
+cipsrv_owld.wqp_rad_a a
+WHERE
+a.reachresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_rad_a_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_a_m TO public;
 --******************************--
 ----- views/owld_wqp_rad_a_esri.sql 
 
@@ -2443,11 +2616,11 @@ cipsrv_owld.wqp_rad_a a;
 ALTER TABLE cipsrv_gis.owld_wqp_rad_a_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_a_esri TO public;
 --******************************--
------ views/owld_wqp_rad_evt2meta.sql 
+----- views/owld_wqp_rad_evt2meta_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_evt2meta
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_evt2meta_h
 AS
 SELECT
  a.objectid
@@ -2455,10 +2628,31 @@ SELECT
 ,a.meta_processid
 ,a.globalid
 FROM
-cipsrv_owld.wqp_rad_evt2meta a;
+cipsrv_owld.wqp_rad_evt2meta a
+WHERE
+a.reachresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_rad_evt2meta OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_rad_evt2meta TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_rad_evt2meta_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_evt2meta_h TO public;
+--******************************--
+----- views/owld_wqp_rad_evt2meta_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_evt2meta_m
+AS
+SELECT
+ a.objectid
+,a.permanent_identifier
+,a.meta_processid
+,a.globalid
+FROM
+cipsrv_owld.wqp_rad_evt2meta a
+WHERE
+a.reachresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_rad_evt2meta_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_evt2meta_m TO public;
 --******************************--
 ----- views/owld_wqp_rad_evt2meta_esri.sql 
 
@@ -2477,11 +2671,11 @@ cipsrv_owld.wqp_rad_evt2meta a;
 ALTER TABLE cipsrv_gis.owld_wqp_rad_evt2meta_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_evt2meta_esri TO public;
 --******************************--
------ views/owld_wqp_rad_l.sql 
+----- views/owld_wqp_rad_l_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_l
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_l_h
 AS
 SELECT
  a.objectid
@@ -2523,10 +2717,65 @@ SELECT
 ,a.globalid
 ,a.shape
 FROM
-cipsrv_owld.wqp_rad_l a;
+cipsrv_owld.wqp_rad_l a
+WHERE
+a.reachresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_rad_l OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_rad_l TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_rad_l_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_l_h TO public;
+--******************************--
+----- views/owld_wqp_rad_l_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_l_m
+AS
+SELECT
+ a.objectid
+,a.permanent_identifier
+,a.eventdate
+,a.reachcode
+,a.reachsmdate
+,a.reachresolution
+,a.feature_permanent_identifier
+,a.featureclassref
+,a.source_originator
+,a.source_featureid
+,a.source_featureid2
+,a.source_datadesc
+,a.source_series
+,a.source_subdivision
+,a.source_joinkey
+,a.permid_joinkey
+,a.start_date
+,a.end_date
+,a.featuredetailurl
+,a.fmeasure
+,a.tmeasure
+,a.eventtype
+,a.eventoffset
+,a.event_lengthkm
+,a.geogstate
+,a.xwalk_huc12
+,a.xwalk_method
+,a.xwalk_huc12_version
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
+,a.globalid
+,a.shape
+FROM
+cipsrv_owld.wqp_rad_l a
+WHERE
+a.reachresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_rad_l_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_l_m TO public;
 --******************************--
 ----- views/owld_wqp_rad_l_esri.sql 
 
@@ -2651,11 +2900,11 @@ cipsrv_owld.wqp_rad_metadata a;
 ALTER TABLE cipsrv_gis.owld_wqp_rad_metadata_esri OWNER TO cipsrv_gis;
 GRANT SELECT ON cipsrv_gis.owld_wqp_rad_metadata_esri TO public;
 --******************************--
------ views/owld_wqp_rad_p.sql 
+----- views/owld_wqp_rad_p_h.sql 
 
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p_h;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_p
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_p_h
 AS
 SELECT
  a.objectid
@@ -2695,10 +2944,63 @@ SELECT
 ,a.globalid
 ,a.shape
 FROM
-cipsrv_owld.wqp_rad_p a;
+cipsrv_owld.wqp_rad_p a
+WHERE
+a.reachresolution = 'HR';
 
-ALTER TABLE cipsrv_gis.owld_wqp_rad_p OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_rad_p TO public;
+ALTER TABLE cipsrv_gis.owld_wqp_rad_p_h OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_p_h TO public;
+--******************************--
+----- views/owld_wqp_rad_p_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p_m;
+
+CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_rad_p_m
+AS
+SELECT
+ a.objectid
+,a.permanent_identifier
+,a.eventdate
+,a.reachcode
+,a.reachsmdate
+,a.reachresolution
+,a.feature_permanent_identifier
+,a.featureclassref
+,a.source_originator
+,a.source_featureid
+,a.source_featureid2
+,a.source_datadesc
+,a.source_series
+,a.source_subdivision
+,a.source_joinkey
+,a.permid_joinkey
+,a.start_date
+,a.end_date
+,a.featuredetailurl
+,a.measure
+,a.eventtype
+,a.eventoffset
+,a.geogstate
+,a.xwalk_huc12
+,a.xwalk_method
+,a.xwalk_huc12_version
+,a.isnavigable
+,a.hasvaa
+,a.issink
+,a.isheadwater
+,a.iscoastal
+,a.isocean
+,a.isalaskan
+,a.h3hexagonaddr
+,a.globalid
+,a.shape
+FROM
+cipsrv_owld.wqp_rad_p a
+WHERE
+a.reachresolution = 'MR';
+
+ALTER TABLE cipsrv_gis.owld_wqp_rad_p_m OWNER TO cipsrv_gis;
+GRANT SELECT ON cipsrv_gis.owld_wqp_rad_p_m TO public;
 --******************************--
 ----- views/owld_wqp_rad_p_esri.sql 
 
