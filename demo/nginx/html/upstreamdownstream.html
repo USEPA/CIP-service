@@ -278,45 +278,50 @@
             }
          
          }
-       
-       $.ajax({
-         url: url,
-         success: function (data, status, xhr) {
-           var err = typeof data === 'string' ? null : data;
-           showResults(err, evt.latlng, data);
-         },
-         error: function (xhr, status, error) {
-           showResults(error);  
-         }
-       });
-       
-       
+
       },
      
       getFeatureInfoUrl: function (latlng) {
-         var point = this._map.latLngToContainerPoint(latlng, this._map.getZoom());
-         var size = this._map.getSize();
+         var point  = map.latLngToContainerPoint(latlng,map.getZoom());
+         var size   = map.getSize();
+         var bounds = map.getBounds();
+         var sw     = bounds.getSouthWest();
+         var ne     = bounds.getNorthEast();
+         
          var params = {
-             request: 'GetFeatureInfo',
-             service: 'WMS',
-             srs: 'EPSG:4326',
-             styles: this.wmsParams.styles,
-             transparent: this.wmsParams.transparent,
-             version: this.wmsParams.version,      
-             format: this.wmsParams.format,
-             bbox: this._map.getBounds().toBBoxString(),
-             height: size.y,
-             width: size.x,
-             layers: this.wmsParams.layers,
-             query_layers: this.wmsParams.layers,
-             info_format: 'text/html'
+             request: 'GetFeatureInfo'
+            ,service: 'WMS'
+            ,srs: 'EPSG:4326'
+            ,styles: this.wmsParams.styles
+            ,version: "1.1.0"
+            ,bbox: map.getBounds().toBBoxString()
+            ,height: size.y
+            ,width: size.x
+            ,layers: this.wmsParams.layers
+            ,query_layers: this.wmsParams.layers
+            ,info_format: 'application/json'
+            ,x: point.x
+            ,y: point.y
          };
        
-         params[params.version === '1.3.0' ? 'i' : 'x'] = point.x;
-         params[params.version === '1.3.0' ? 'j' : 'y'] = point.y;
+         //params[params.version === '1.3.0' ? 'i' : 'x'] = point.x;
+         //params[params.version === '1.3.0' ? 'j' : 'y'] = point.y;
        
-         var url = this._url + L.Util.getParamString(params, this._url, true);
-        
+         var url = this._url + L.Util.getParamString(params,this._url,true);
+
+         // This replacement is unideal but such is geoserver
+         if ( url.includes("cipsrv%3Aowld_wqp_src") ) {
+            url = url.replace(/cipsrv\%3Aowld_wqp_src/g,"cipsrv\%3Aowld_wqp_src_p");
+         }
+         
+         if ( url.includes("cipsrv%3Anhdplus_h_flowlines") ) {
+            url = url.replace(/cipsrv\%3Anhdplus_h_flowlines/g,"cipsrv\%3Anhdplus_h_networknhdflowline");
+         }
+         
+         if ( url.includes("cipsrv%3Anhdplus_m_flowlines") ) {
+            url = url.replace(/cipsrv\%3Anhdplus_m_flowlines/g,"cipsrv\%3Anhdplus_m_networknhdflowline");
+         }
+         console.log(url);
          return url;
        
       },
