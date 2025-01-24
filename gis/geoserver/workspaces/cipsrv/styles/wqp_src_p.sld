@@ -6,18 +6,23 @@
     xmlns:xlink="http://www.w3.org/1999/xlink" 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <NamedLayer>
-    <Name>catchment</Name>
+    <Name>wqp_src_p</Name>
     <UserStyle>
-      <Title>catchment</Title>
+      <Title>wqp_src_p</Title>
       <FeatureTypeStyle>
         <Rule>
           <MaxScaleDenominator>500000</MaxScaleDenominator>
-          <PolygonSymbolizer>
-            <Stroke>
-              <CssParameter name="stroke">#A900E6</CssParameter>
-              <CssParameter name="stroke-width">0.7</CssParameter>
-            </Stroke>
-          </PolygonSymbolizer>
+          <PointSymbolizer>
+            <Graphic>
+              <Mark>
+                <WellKnownName>triangle</WellKnownName>
+                <Fill>
+                  <CssParameter name="fill">#55FF00</CssParameter>
+                </Fill>
+              </Mark>
+              <Size>10</Size>
+            </Graphic>
+          </PointSymbolizer>
         </Rule>
       </FeatureTypeStyle>
     </UserStyle>

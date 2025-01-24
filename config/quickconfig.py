@@ -49,7 +49,13 @@ parser.add_argument("--support_dumpfile"        ,required=False,default=None);
 parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
 
 parser.add_argument("--override_postgresql_port",required=False,default=None);
+
+parser.add_argument("--override_demo_pgrst_port",required=False,default=None);
 parser.add_argument("--override_demo_pgrst_host",required=False,default=None);
+parser.add_argument("--override_demo_gis_prot"  ,required=False,default=None);
+parser.add_argument("--override_demo_gis_port"  ,required=False,default=None);
+parser.add_argument("--override_demo_gis_host"  ,required=False,default=None);
+
 parser.add_argument("--override_engine_profile" ,required=False,default=None);
 parser.add_argument("--override_git_branch"     ,required=False,default=None);
 parser.add_argument("--force_nogit_uselocal"    ,required=False,default=False,action=argparse.BooleanOptionalAction);
@@ -96,7 +102,13 @@ def main(
    ,support_dumpfile_copyin
    
    ,override_postgresql_port
+   
+   ,override_demo_pgrst_port
    ,override_demo_pgrst_host
+   ,override_demo_gis_prot
+   ,override_demo_gis_port
+   ,override_demo_gis_host
+   
    ,override_engine_profile
    ,override_git_branch
    ,force_nogit_uselocal
@@ -393,6 +405,17 @@ def main(
    os.chdir('../demo');
    ###############################################################################
 
+   if override_demo_pgrst_port is not None:
+      shutil.move('.env','.env.bak');
+      
+      with open('.env.bak',"r") as s:
+         with open('.env',"w") as d:
+            for line in s:
+               if line.strip() == "#POSTGREST_PORT=3000" or line[15:] == "POSTGREST_PORT=":
+                  d.write("POSTGREST_PORT=" + str(override_demo_pgrst_port) + "\n");
+               else:
+                  d.write(line);
+   
    if override_demo_pgrst_host is not None:
       shutil.move('.env','.env.bak');
       
@@ -401,6 +424,39 @@ def main(
             for line in s:
                if line.strip() == "#POSTGREST_HOST=localhost" or line[15:] == "POSTGREST_HOST=":
                   d.write("POSTGREST_HOST=" + str(override_demo_pgrst_host) + "\n");
+               else:
+                  d.write(line);
+                  
+   if override_demo_gis_prot is not None:
+      shutil.move('.env','.env.bak');
+      
+      with open('.env.bak',"r") as s:
+         with open('.env',"w") as d:
+            for line in s:
+               if line.strip() == "#GIS_PROT=http" or line[9:] == "GIS_PROT=":
+                  d.write("GIS_PROT=" + str(override_demo_gis_prot) + "\n");
+               else:
+                  d.write(line);
+                  
+   if override_demo_gis_port is not None:
+      shutil.move('.env','.env.bak');
+      
+      with open('.env.bak',"r") as s:
+         with open('.env',"w") as d:
+            for line in s:
+               if line.strip() == "#GIS_PORT=3000" or line[9:] == "GIS_PORT=":
+                  d.write("GIS_PORT=" + str(override_demo_gis_port) + "\n");
+               else:
+                  d.write(line);
+   
+   if override_demo_gis_host is not None:
+      shutil.move('.env','.env.bak');
+      
+      with open('.env.bak',"r") as s:
+         with open('.env',"w") as d:
+            for line in s:
+               if line.strip() == "#GIS_HOST=localhost" or line[9:] == "GIS_HOST=":
+                  d.write("GIS_HOST=" + str(override_demo_gis_host) + "\n");
                else:
                   d.write(line);
 
@@ -691,7 +747,13 @@ if __name__ == '__main__':
       ,support_dumpfile_copyin  = args.support_dumpfile_copyin
       
       ,override_postgresql_port = args.override_postgresql_port
+      
+      ,override_demo_pgrst_port = args.override_demo_pgrst_port
       ,override_demo_pgrst_host = args.override_demo_pgrst_host
+      ,override_demo_gis_prot   = args.override_demo_gis_prot
+      ,override_demo_gis_port   = args.override_demo_gis_port
+      ,override_demo_gis_host   = args.override_demo_gis_host
+      
       ,override_engine_profile  = args.override_engine_profile
       ,override_git_branch      = args.override_git_branch
       ,force_nogit_uselocal     = args.force_nogit_uselocal

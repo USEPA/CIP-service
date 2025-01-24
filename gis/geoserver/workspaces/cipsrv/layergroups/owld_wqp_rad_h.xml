@@ -1,0 +1,36 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl--4a49e71b:1948943599e:-5c5a</id>
+  <name>owld_wqp_rad_h</name>
+  <mode>SINGLE</mode>
+  <title>owld_wqp_h</title>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl--4a49e71b:1948943599e:-5c70</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--4a49e71b:1948943599e:-5c64</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl--4a49e71b:1948943599e:-5c5e</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-180.00000000000003</minx>
+    <maxx>180.00000000000003</maxx>
+    <miny>-85.06</miny>
+    <maxy>86.46</maxy>
+    <crs>EPSG:4269</crs>
+  </bounds>
+  <dateCreated>2025-01-23 16:31:34.174 UTC</dateCreated>
+  <dateModified>2025-01-23 21:23:08.865 UTC</dateModified>
+</layerGroup>
