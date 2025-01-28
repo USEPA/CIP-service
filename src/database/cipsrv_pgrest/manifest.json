@@ -24,6 +24,8 @@
          ,"includes": [
              "functions/cipsrv_domains.sql"
             ,"functions/cipsrv_index.sql"
+            ,"functions/cipsrv_registry.sql"
+            ,"functions/cipsrv_owld_programs.sql"
             ,"functions/delineate.sql"
             ,"functions/healthcheck.sql"
             ,"functions/navigate.sql"
