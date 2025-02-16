@@ -25,15 +25,15 @@ BEGIN
       ,a.intptlon
       ,a.shape
       FROM
-      cipsrv_support.tiger_fedstatewaters a
+      cipsrv_support.tiger_fedstatewaters a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.tiger_fedstatewaters_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.tiger_fedstatewaters OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.tiger_fedstatewaters TO public
+      GRANT SELECT ON cipsrv_gis.tiger_fedstatewaters TO public;
       $q$;
       
    ELSE

@@ -5768,15 +5768,15 @@ BEGIN
       ,a.intptlon
       ,a.shape
       FROM
-      cipsrv_support.tiger_aiannha a
+      cipsrv_support.tiger_aiannha a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.tiger_aiannha OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.tiger_aiannha OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.tiger_aiannha TO public
+      GRANT SELECT ON cipsrv_gis.tiger_aiannha TO public;
       $q$;
       
    ELSE
@@ -5819,15 +5819,15 @@ BEGIN
       ,a.intptlon
       ,a.shape
       FROM
-      cipsrv_support.tiger_aiannha a
+      cipsrv_support.tiger_aiannha a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.tiger_aiannha_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.tiger_aiannha_esri OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.tiger_aiannha_esri TO public
+      GRANT SELECT ON cipsrv_gis.tiger_aiannha_esri TO public;
       $q$;
       
    ELSE
@@ -5866,15 +5866,15 @@ BEGIN
       ,a.intptlon
       ,a.shape
       FROM
-      cipsrv_support.tiger_fedstatewaters a
+      cipsrv_support.tiger_fedstatewaters a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.tiger_fedstatewaters_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.tiger_fedstatewaters OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.tiger_fedstatewaters TO public
+      GRANT SELECT ON cipsrv_gis.tiger_fedstatewaters TO public;
       $q$;
       
    ELSE
@@ -5913,15 +5913,15 @@ BEGIN
       ,a.intptlon
       ,a.shape
       FROM
-      cipsrv_support.tiger_fedstatewaters a
+      cipsrv_support.tiger_fedstatewaters a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.tiger_fedstatewaters_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.tiger_fedstatewaters_esri OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.tiger_fedstatewaters_esri TO public
+      GRANT SELECT ON cipsrv_gis.tiger_fedstatewaters_esri TO public;
       $q$;
       
    ELSE
@@ -5968,15 +5968,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_f3 a
+      cipsrv_support.wbd_hu12_f3 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_f3 OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_f3 OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_f3 TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_f3 TO public;
       $q$;
       
    ELSE
@@ -6023,15 +6023,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_f3 a
+      cipsrv_support.wbd_hu12_f3 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_f3_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_f3_esri OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_f3_esri TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_f3_esri TO public;
       $q$;
       
    ELSE
@@ -6078,15 +6078,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_np21 a
+      cipsrv_support.wbd_hu12_np21 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_np21 OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_np21 OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_np21 TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_np21 TO public;
       $q$;
       
    ELSE
@@ -6133,15 +6133,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_np21 a
+      cipsrv_support.wbd_hu12_np21 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_np21_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_np21_esri OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_np21_esri TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_np21_esri TO public;
       $q$;
       
    ELSE
@@ -6188,15 +6188,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_nphr a
+      cipsrv_support.wbd_hu12_nphr a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_nphr OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_nphr OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_nphr TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_nphr TO public;
       $q$;
       
    ELSE
@@ -6243,15 +6243,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_nphr a
+      cipsrv_support.wbd_hu12_nphr a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_nphr_esri OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_nphr_esri OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_nphr_esri TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_nphr_esri TO public;
       $q$;
       
    ELSE

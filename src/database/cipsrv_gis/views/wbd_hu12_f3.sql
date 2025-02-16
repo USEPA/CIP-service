@@ -33,15 +33,15 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_f3 a
+      cipsrv_support.wbd_hu12_f3 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.wbd_hu12_f3 OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.wbd_hu12_f3 OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.wbd_hu12_f3 TO public
+      GRANT SELECT ON cipsrv_gis.wbd_hu12_f3 TO public;
       $q$;
       
    ELSE

@@ -29,15 +29,15 @@ BEGIN
       ,a.intptlon
       ,a.shape
       FROM
-      cipsrv_support.tiger_aiannha a
+      cipsrv_support.tiger_aiannha a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.tiger_aiannha OWNER TO cipsrv_gis
+      ALTER TABLE cipsrv_gis.tiger_aiannha OWNER TO cipsrv_gis;
       $q$;
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.tiger_aiannha TO public
+      GRANT SELECT ON cipsrv_gis.tiger_aiannha TO public;
       $q$;
       
    ELSE
