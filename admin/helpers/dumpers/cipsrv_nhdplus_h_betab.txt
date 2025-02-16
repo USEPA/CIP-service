@@ -1,0 +1,15 @@
+pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
+-d $env:POSTGRSQL_DB -U cipsrv -Fc -v `
+-t cipsrv_nhdplus_h.nhdarea `
+-t cipsrv_nhdplus_h.nhdline `
+-t cipsrv_nhdplus_h.nhdpluscatchment `
+-t cipsrv_nhdplus_h.nhdpluscatchmentfpp `
+-t cipsrv_nhdplus_h.nhdpluscatchmenttpp `
+-t cipsrv_nhdplus_h.nhdpluscatchmentvpp `
+-t cipsrv_nhdplus_h.nhdpluscatchmentxwalk `
+-t cipsrv_nhdplus_h.nhdplusgage `
+-t cipsrv_nhdplus_h.nhdplussink `
+-t cipsrv_nhdplus_h.nhdpoint `
+-t cipsrv_nhdplus_h.nhdwaterbody `
+-t cipsrv_nhdplus_h.wbdhu12 `
+-f cipsrv_nhdplus_h_betab_1.dmp

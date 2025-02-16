@@ -1,17 +1,43 @@
-DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo;
+DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo_m;
 
-CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_geo
-AS
-SELECT
- a.objectid
-,a.xwalk_huc12
-,a.xwalk_catresolution
-,a.xwalk_huc12_version
-,a.xwalk_huc12_areasqkm
-,a.globalid
-,a.shape
-FROM
-cipsrv_owld.wqp_huc12_geo a;
+DO $$DECLARE 
+BEGIN
 
-ALTER TABLE cipsrv_gis.owld_wqp_huc12_geo OWNER TO cipsrv_gis;
-GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_geo TO public;
+   IF EXISTS(
+      SELECT 1 FROM information_schema.tables a
+      WHERE a.table_schema = 'cipsrv_owld'
+      AND   a.table_name   = 'wqp_huc12_geo'
+   ) 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_wqp_huc12_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.wqp_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_wqp_huc12_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_wqp_huc12_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.wqp_huc12_geo_m';
+   
+   END IF;
+
+END$$;

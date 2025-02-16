@@ -7,7 +7,7 @@ BEGIN
       SELECT 1 FROM information_schema.tables a
       WHERE a.table_schema = 'cipsrv_owld'
       AND   a.table_name   = 'wqp_attr'
-   ) 
+   )
    THEN 
 
       EXECUTE $q$
