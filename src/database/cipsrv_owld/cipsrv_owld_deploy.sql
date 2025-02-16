@@ -608,7 +608,16 @@ BEGIN
    
       FOR i IN 1 .. array_length(p_linked_data_search_list,1)
       LOOP
-         NULL;
+         
+         IF str_search_precision = 'CATCHMENT'
+         THEN
+            NULL;
+            
+         ELSIF str_search_precision = 'REACHED MEASURES'
+         THEN
+            NULL;
+            
+         END IF;
    
       END LOOP;
       
