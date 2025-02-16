@@ -19,6 +19,7 @@ CREATE SCHEMA cipsrv_pgrest        AUTHORIZATION cipsrv_pgrest;
 CREATE SCHEMA cipsrv_upload        AUTHORIZATION cipsrv_upload;
 CREATE SCHEMA cipsrv_gis           AUTHORIZATION cipsrv_gis;
 
+GRANT  USAGE ON SCHEMA cipsrv               TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_engine        TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m     TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_epageofab_m   TO cipsrv_pgrest;
@@ -34,7 +35,8 @@ GRANT  USAGE ON SCHEMA cipsrv_support       TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_owld          TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_pgrest        TO cipsrv;
 GRANT  ALL   ON SCHEMA cipsrv_gis           TO cipsrv;
-GRANT  USAGE ON SCHEMA cipsrv_upload        TO cipsrv_upload;
+
+GRANT  USAGE ON SCHEMA cipsrv               TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_engine        TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m     TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_epageofab_m   TO cipsrv_upload;
@@ -48,7 +50,11 @@ GRANT  USAGE ON SCHEMA cipsrv_nhdplustopo_h TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_nhdpluswshd_h TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_support       TO cipsrv_upload;
 GRANT  USAGE ON SCHEMA cipsrv_owld          TO cipsrv_upload;
+GRANT  USAGE ON SCHEMA cipsrv_upload        TO cipsrv_upload;
+
 GRANT  USAGE ON SCHEMA cipsrv_tap           TO public;
+
+GRANT  USAGE ON SCHEMA cipsrv               TO cipsrv_gis;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m     TO cipsrv_gis;
 GRANT  USAGE ON SCHEMA cipsrv_epageofab_m   TO cipsrv_gis;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplusgrid_m TO cipsrv_gis;
@@ -64,6 +70,23 @@ GRANT  USAGE ON SCHEMA cipsrv_owld          TO cipsrv_gis;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck() RETURNS JSONB IMMUTABLE AS 'BEGIN RETURN JSONB_BUILD_OBJECT(''status'',''ok''); END;' LANGUAGE 'plpgsql';
 ALTER  FUNCTION cipsrv_pgrest.healthcheck() OWNER TO cipsrv_pgrest;
+
+CREATE TABLE cipsrv.version(
+    version           VARCHAR
+   ,installation_date DATE
+   ,notes             VARCHAR
+);
+ALTER TABLE cipsrv.version OWNER TO cipsrv;
+GRANT SELECT ON cipsrv.version TO PUBLIC;
+
+CREATE TABLE cipsrv.registry(
+    component         VARCHAR
+   ,component_vintage DATE
+   ,installation_date DATE
+   ,notes             VARCHAR
+);
+ALTER TABLE cipsrv.registry OWNER TO cipsrv;
+GRANT SELECT ON cipsrv.registry TO PUBLIC;
 
 CREATE TABLE cipsrv_upload.batch_control(
     dataset_prefix     VARCHAR(255)

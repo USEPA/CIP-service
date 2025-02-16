@@ -202,7 +202,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 20
-   -- Call the indexing engine
+   -- Call the navigation engine
    ----------------------------------------------------------------------------
    IF str_nhdplus_version = 'nhdplus_m'
    THEN

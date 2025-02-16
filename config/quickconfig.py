@@ -673,8 +673,10 @@ def main(
       
    ###############################################################################
    # GIS
+   # The views deployed are crafted to bounce if the underlying data is absent
+   # If this causes issues in the deployment, just alter the if to avoid
    ###############################################################################
-   if recipe in ['EXTENDED']:
+   if 1==1:
       
       cipgt(
           ipnyb                = 'cipsrv_gis'

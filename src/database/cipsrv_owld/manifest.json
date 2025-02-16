@@ -22,7 +22,9 @@
           "id": "concatenate"
          ,"output": "cipsrv_owld_deploy.sql"
          ,"includes": [
-             "functions/upstreamdownstream.sql"
+             "functions/owld_programs.sql"
+            ,"functions/owld_locator.sql"
+            ,"functions/upstreamdownstream.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [

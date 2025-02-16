@@ -37,7 +37,6 @@ DECLARE
    str_start_cat_joinkey             VARCHAR;
    str_start_linked_data_program     VARCHAR;
    str_start_search_precision        VARCHAR;
-   str_start_search_logic            VARCHAR;
    
    int_stop_nhdplusid                BIGINT;
    str_stop_permanent_identifier     VARCHAR(40);
@@ -55,11 +54,11 @@ DECLARE
    str_stop_cat_joinkey              VARCHAR;
    str_stop_linked_data_program      VARCHAR;
    str_stop_search_precision         VARCHAR;
-   str_stop_search_logic             VARCHAR;
    
    num_max_distancekm                NUMERIC;
    num_max_flowtimeday               NUMERIC;
    ary_linked_data_search_list       VARCHAR[];
+   str_search_precision              VARCHAR;
    
    boo_return_flowlines              BOOLEAN;
    boo_return_flowline_details       BOOLEAN;
@@ -119,8 +118,7 @@ BEGIN
    IF JSONB_PATH_EXISTS(json_input,'$.search_type')
    AND json_input->>'search_type' IS NOT NULL
    AND json_input->>'search_type' != ''
-   THEN
-      
+   THEN     
       str_search_type := json_input->>'search_type';
 
    END IF;
@@ -164,6 +162,94 @@ BEGIN
       num_start_measure := cipsrv_engine.json2numeric(json_input->'start_measure');
       
    END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_source_featureid')
+   AND json_input->>'start_source_featureid' IS NOT NULL
+   AND json_input->>'start_source_featureid' != ''
+   THEN
+      str_start_source_featureid := json_input->>'start_source_featureid';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_source_featureid2')
+   AND json_input->>'start_source_featureid2' IS NOT NULL
+   AND json_input->>'start_source_featureid2' != ''
+   THEN
+      str_start_source_featureid2 := json_input->>'start_source_featureid2';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_source_originator')
+   AND json_input->>'start_source_originator' IS NOT NULL
+   AND json_input->>'start_source_originator' != ''
+   THEN
+      str_start_source_originator := json_input->>'start_source_originator';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_source_series')
+   AND json_input->>'start_source_series' IS NOT NULL
+   AND json_input->>'start_source_series' != ''
+   THEN
+      str_start_source_series := json_input->>'start_source_series';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_start_date')
+   AND json_input->>'start_start_date' IS NOT NULL
+   AND json_input->>'start_start_date' != ''
+   THEN
+      dat_start_start_date := cipsrv_engine.json2date(json_input->>'start_start_date');
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_end_date')
+   AND json_input->>'start_end_date' IS NOT NULL
+   AND json_input->>'start_end_date' != ''
+   THEN
+      dat_start_end_date := cipsrv_engine.json2date(json_input->>'start_end_date');
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_permid_joinkey')
+   AND json_input->>'start_permid_joinkey' IS NOT NULL
+   AND json_input->>'start_permid_joinkey' != ''
+   THEN
+      str_start_permid_joinkey := json_input->>'start_permid_joinkey';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_source_joinkey')
+   AND json_input->>'start_source_joinkey' IS NOT NULL
+   AND json_input->>'start_source_joinkey' != ''
+   THEN
+      str_start_source_joinkey := json_input->>'start_source_joinkey';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_cat_joinkey')
+   AND json_input->>'start_cat_joinkey' IS NOT NULL
+   AND json_input->>'start_cat_joinkey' != ''
+   THEN
+      str_start_cat_joinkey := json_input->>'start_cat_joinkey';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_linked_data_program')
+   AND json_input->>'start_linked_data_program' IS NOT NULL
+   AND json_input->>'start_linked_data_program' != ''
+   THEN
+      str_start_linked_data_program := json_input->>'start_linked_data_program';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_search_precision')
+   AND json_input->>'start_search_precision' IS NOT NULL
+   AND json_input->>'start_search_precision' != ''
+   THEN
+      str_start_search_precision := json_input->>'start_search_precision';
+      
+   END IF;
 
    IF JSONB_PATH_EXISTS(json_input,'$.stop_nhdplusid')
    AND json_input->'stop_nhdplusid' IS NOT NULL
@@ -205,6 +291,94 @@ BEGIN
       
    END IF;
    
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_source_featureid')
+   AND json_input->>'stop_source_featureid' IS NOT NULL
+   AND json_input->>'stop_source_featureid' != ''
+   THEN
+      str_stop_source_featureid := json_input->>'stop_source_featureid';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_source_featureid2')
+   AND json_input->>'stop_source_featureid2' IS NOT NULL
+   AND json_input->>'stop_source_featureid2' != ''
+   THEN
+      str_stop_source_featureid2 := json_input->>'stop_source_featureid2';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_source_originator')
+   AND json_input->>'stop_source_originator' IS NOT NULL
+   AND json_input->>'stop_source_originator' != ''
+   THEN
+      str_stop_source_originator := json_input->>'stop_source_originator';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_source_series')
+   AND json_input->>'stop_source_series' IS NOT NULL
+   AND json_input->>'stop_source_series' != ''
+   THEN
+      str_stop_source_series := json_input->>'stop_source_series';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_start_date')
+   AND json_input->>'stop_start_date' IS NOT NULL
+   AND json_input->>'stop_start_date' != ''
+   THEN
+      dat_stop_start_date := cipsrv_engine.json2date(json_input->>'stop_start_date');
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_end_date')
+   AND json_input->>'stop_end_date' IS NOT NULL
+   AND json_input->>'stop_end_date' != ''
+   THEN
+      dat_stop_end_date := cipsrv_engine.json2date(json_input->>'stop_end_date');
+   
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_permid_joinkey')
+   AND json_input->>'stop_permid_joinkey' IS NOT NULL
+   AND json_input->>'stop_permid_joinkey' != ''
+   THEN
+      str_stop_permid_joinkey := json_input->>'stop_permid_joinkey';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_source_joinkey')
+   AND json_input->>'stop_source_joinkey' IS NOT NULL
+   AND json_input->>'stop_source_joinkey' != ''
+   THEN
+      str_stop_source_joinkey := json_input->>'stop_source_joinkey';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_cat_joinkey')
+   AND json_input->>'stop_cat_joinkey' IS NOT NULL
+   AND json_input->>'stop_cat_joinkey' != ''
+   THEN
+      str_stop_cat_joinkey := json_input->>'stop_cat_joinkey';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_linked_data_program')
+   AND json_input->>'stop_linked_data_program' IS NOT NULL
+   AND json_input->>'stop_linked_data_program' != ''
+   THEN
+      str_stop_linked_data_program := json_input->>'stop_linked_data_program';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_search_precision')
+   AND json_input->>'stop_search_precision' IS NOT NULL
+   AND json_input->>'stop_search_precision' != ''
+   THEN
+      str_stop_search_precision := json_input->>'stop_search_precision';
+      
+   END IF;
+   
    IF JSONB_PATH_EXISTS(json_input,'$.max_distancekm')
    AND json_input->'max_distancekm' IS NOT NULL 
    AND json_input->>'max_distancekm' != ''
@@ -218,6 +392,30 @@ BEGIN
    AND json_input->>'max_flowtimeday' != ''
    THEN
       num_max_flowtimeday := cipsrv_engine.json2numeric(json_input->'max_flowtimeday');
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.linked_data_search_list')
+   AND json_input->>'linked_data_search_list' IS NOT NULL
+   AND json_input->>'linked_data_search_list' != ''
+   THEN
+      ary_linked_data_search_list := cipsrv_engine.json2strary(json_input->'linked_data_search_list');
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.search_precision')
+   AND json_input->>'search_precision' IS NOT NULL
+   AND json_input->>'search_precision' != ''
+   THEN
+      str_search_precision := json_input->>'search_precision';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.return_flowlines')
+   AND json_input->'return_flowlines' IS NOT NULL
+   AND json_input->>'return_flowlines' != ''
+   THEN
+      boo_return_flowlines        := (json_input->'return_flowlines')::BOOLEAN;
       
    END IF;
    
@@ -242,6 +440,14 @@ BEGIN
    AND json_input->>'known_region' != ''
    THEN
       str_known_region := json_input->>'known_region';
+      
+   END IF;
+ 
+   IF JSONB_PATH_EXISTS(json_input,'$.return_catchments')
+   AND json_input->'return_catchments' IS NOT NULL
+   AND json_input->>'return_catchments' != ''
+   THEN
+      boo_return_catchments       := (json_input->'return_catchments')::BOOLEAN;
       
    END IF;
    
@@ -269,7 +475,6 @@ BEGIN
       ,p_start_cat_joinkey             := str_start_cat_joinkey
       ,p_start_linked_data_program     := str_start_linked_data_program
       ,p_start_search_precision        := str_start_search_precision
-      ,p_start_search_logic            := str_start_search_logic
       
       ,p_stop_nhdplusid                := int_stop_nhdplusid
       ,p_stop_permanent_identifier     := str_stop_permanent_identifier
@@ -287,11 +492,11 @@ BEGIN
       ,p_stop_cat_joinkey              := str_stop_cat_joinkey
       ,p_stop_linked_data_program      := str_stop_linked_data_program
       ,p_stop_search_precision         := str_stop_search_precision
-      ,p_stop_search_logic             := str_stop_search_logic
       
       ,p_max_distancekm                := num_max_distancekm
       ,p_max_flowtimeday               := num_max_flowtimeday
       ,p_linked_data_search_list       := ary_linked_data_search_list
+      ,p_search_precision              := str_search_precision
       
       ,p_return_flowlines              := boo_return_flowlines
       ,p_return_flowline_details       := boo_return_flowline_details

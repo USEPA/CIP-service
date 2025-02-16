@@ -1,0 +1,21 @@
+pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
+-d $env:POSTGRSQL_DB -U cipsrv -Fc -v `
+-t cipsrv_support.tiger_aiannha `
+-t cipsrv_support.tiger_aiannha_3338 `
+-t cipsrv_support.tiger_aiannha_5070 `
+-t cipsrv_support.tiger_aiannha_26904 `
+-t cipsrv_support.tiger_aiannha_32161 `
+-t cipsrv_support.tiger_aiannha_32655 `
+-t cipsrv_support.tiger_aiannha_32702 `
+-t cipsrv_support.tiger_fedstatewaters `
+-t cipsrv_support.tiger_fedstatewaters_3338 `
+-t cipsrv_support.tiger_fedstatewaters_5070 `
+-t cipsrv_support.tiger_fedstatewaters_26904 `
+-t cipsrv_support.tiger_fedstatewaters_32161 `
+-t cipsrv_support.tiger_fedstatewaters_32655 `
+-t cipsrv_support.tiger_fedstatewaters_32702 `
+-t cipsrv_support.tribal_crosswalk `
+-t cipsrv_support.wbd_hu12_f3 `
+-t cipsrv_support.wbd_hu12_nphr `
+-t cipsrv_support.wbd_hu12_np21 `
+-f cipsrv_support_1.dmp

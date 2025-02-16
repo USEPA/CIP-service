@@ -118,6 +118,16 @@
             ,"views/owld_wqp_src_l_esri.sql"
             ,"views/owld_wqp_src_p.sql"
             ,"views/owld_wqp_src_p_esri.sql"
+            ,"views/tiger_aiannha.sql"
+            ,"views/tiger_aiannha_esri.sql"
+            ,"views/tiger_fedstatewaters.sql"
+            ,"views/tiger_fedstatewaters_esri.sql"
+            ,"views/wbd_hu12_f3.sql"
+            ,"views/wbd_hu12_f3_esri.sql"
+            ,"views/wbd_hu12_np21.sql"
+            ,"views/wbd_hu12_np21_esri.sql"
+            ,"views/wbd_hu12_nphr.sql"
+            ,"views/wbd_hu12_nphr_esri.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
