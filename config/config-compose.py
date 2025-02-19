@@ -80,6 +80,7 @@ def main(
             print(".  processing " + file + " into " + output + ".");     
             template = environment.get_template(file);
             template.globals['now'] = time_now;
+            template.globals['cip_installer'] = getpass.getuser();
             
             outrender = template.render(stream);  
             with open(os.path.join(outdir,output),"w") as file:
