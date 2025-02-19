@@ -118,7 +118,7 @@ def main(
    ,build_nocache
 ):
 
-   def dzproc(cmd):
+   def dzproc(cmd,nofail=False):
       proc = Popen(
           cmd
          ,stdin              = PIPE
@@ -134,7 +134,7 @@ def main(
          if line.strip() != "":
             print(".  " + ' '.join(line.split()));
       rc = proc.wait();
-      if rc != 0:
+      if rc != 0 and not nofail:
          while True:
             line = proc.stderr.readline();
             if not line:
@@ -314,6 +314,8 @@ def main(
       cmd = ["docker","compose","down"];
       if down_volumes:
          cmd.append("-v");
+         dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
+         dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
          
       dzproc(cmd);
       
@@ -323,6 +325,8 @@ def main(
       cmd = ["docker","compose","down"];
       if down_volumes:
          cmd.append("-v");
+         dzproc(["docker","volume","rm","cip-service-admin_home-jovyan"],nofail=True);
+         dzproc(["docker","volume","rm","cip-service-admin_jupyter"],nofail=True);
          
       dzproc(cmd);
       
@@ -340,7 +344,8 @@ def main(
       print(".  gis");
       cmd = ["docker","compose","down"];
       if down_volumes:
-         cmd.append("-v");      
+         cmd.append("-v");
+         dzproc(["docker","volume","rm","cip-service-gis_geoserver-data"],nofail=True);     
       
       dzproc(cmd);
       
