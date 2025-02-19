@@ -88,7 +88,7 @@ INSERT INTO cipsrv.version(
    ,installer_username
    ,installation_date
 ) VALUES (
-    CASE WHEN SUBSTR('\$Format:%h$',1,8) = '$' || 'Format' || ':' THEN 'Unknown' ELSE '\$Format:%h$' END
+    CASE WHEN SUBSTR('\$Format:%h$',1,8) = '$' || 'Format' || ':' THEN 'Unknown' ELSE REPLACE('\$Format:%h$','\\','') END
    ,'${CIP_INSTALLER}'
    ,CURRENT_TIMESTAMP
 );
