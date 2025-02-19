@@ -80,9 +80,12 @@ CREATE TABLE cipsrv.version(
 ALTER TABLE cipsrv.version OWNER TO cipsrv;
 GRANT SELECT,INSERT,UPDATE,DELETE ON cipsrv.version TO PUBLIC;
 
-INSERT INTO cipsrv.version(version,installation_date) 
-VALUES(
-    CASE WHEN '$Id$' = '$' || 'Id' || ':' || '$' THEN 'Unknown' ELSE REPLACE(REPLACE('$Id$',':',''),'$','') END
+INSERT INTO cipsrv.version(
+    cipsrv_version
+   ,installer_username
+   ,installation_date
+) VALUES (
+    CASE WHEN '$Id$' = '$' || 'Id' || ':' || '$' THEN 'Unknown' ELSE SUBSTR(REPLACE(REPLACE('$Id$',': ',''),' $',''),1,7) END
    ,'${CIP_INSTALLER}'
    ,CURRENT_TIMESTAMP
 );

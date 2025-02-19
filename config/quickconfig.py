@@ -310,7 +310,6 @@ def main(
 
    os.chdir('../engine');
    if os.path.exists("docker-compose.yml"):
-      print(".  engine");
       cmd = ["docker","compose","down"];
       if down_volumes:
          cmd.append("-v");
@@ -319,7 +318,6 @@ def main(
       
    os.chdir('../admin');
    if os.path.exists("docker-compose.yml"):
-      print(".  admin");
       cmd = ["docker","compose","down"];
       if down_volumes:
          cmd.append("-v");
@@ -328,7 +326,6 @@ def main(
       
    os.chdir('../demo');
    if os.path.exists("docker-compose.yml"):
-      print(".  demo");
       cmd = ["docker","compose","down"];
       if down_volumes:
          cmd.append("-v");      
@@ -337,7 +334,6 @@ def main(
       
    os.chdir('../gis');
    if os.path.exists("docker-compose.yml"):
-      print(".  gis");
       cmd = ["docker","compose","down"];
       if down_volumes:
          cmd.append("-v"); 
