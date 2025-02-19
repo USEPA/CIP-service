@@ -89,7 +89,7 @@ VALUES(
 CREATE TABLE cipsrv.registry(
     component          VARCHAR
    ,component_type     VARCHAR
-   ,component_vintage  DATE
+   ,component_vintage  VARCHAR
    ,installer_username VARCHAR
    ,installation_date  DATE
    ,notes              VARCHAR

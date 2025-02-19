@@ -309,49 +309,59 @@ def main(
    print("Downing any existing compose services");
 
    os.chdir('../engine');
-   if os.path.exists("docker-compose.yml"):
+   if os.path.exists("docker-compose.yml") \
+   or os.path.exists("docker-compose.j2"):
       print(".  engine");
       cmd = ["docker","compose","down"];
       if down_volumes:
          print(".   forcing engine volumes down");
          cmd.append("-v");
-         dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
-         dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
          
       dzproc(cmd);
       
+      if down_volumes:
+         dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
+         dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
+      
    os.chdir('../admin');
-   if os.path.exists("docker-compose.yml"):
+   if os.path.exists("docker-compose.yml") \
+   or os.path.exists("docker-compose.j2"):
       print(".  admin");
       cmd = ["docker","compose","down"];
       if down_volumes:
          print(".   forcing admin volumes down");
          cmd.append("-v");
-         dzproc(["docker","volume","rm","cip-service-admin_home-jovyan"],nofail=True);
-         dzproc(["docker","volume","rm","cip-service-admin_jupyter"],nofail=True);
          
       dzproc(cmd);
       
+      if down_volumes:
+         dzproc(["docker","volume","rm","cip-service-admin_home-jovyan"],nofail=True);
+         dzproc(["docker","volume","rm","cip-service-admin_jupyter"],nofail=True);
+      
    os.chdir('../demo');
-   if os.path.exists("docker-compose.yml"):
-      print(".   demo");
+   if os.path.exists("docker-compose.yml") \
+   or os.path.exists("docker-compose.j2"):
+      print(".  demo");
       cmd = ["docker","compose","down"];
       if down_volumes:
-         print(".  forcing demo volumes down");
+         print(".   forcing demo volumes down");
          cmd.append("-v");      
       
       dzproc(cmd);
       
    os.chdir('../gis');
-   if os.path.exists("docker-compose.yml"):
+   if os.path.exists("docker-compose.yml") \
+   or os.path.exists("docker-compose.j2"):
       print(".  gis");
       cmd = ["docker","compose","down"];
       if down_volumes:
          print(".   forcing gis volumes down");
-         cmd.append("-v");
-         dzproc(["docker","volume","rm","cip-service-gis_geoserver-data"],nofail=True);     
+         cmd.append("-v"); 
       
       dzproc(cmd);
+      
+      if down_volumes:
+         dzproc(["docker","volume","rm","cip-service-gis_geoserver-data"],nofail=True);    
       
    ###############################################################################
    # set context to config directory
