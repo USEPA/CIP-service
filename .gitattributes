@@ -7,4 +7,4 @@
 *.sql   text eol=lf
 *.xml   text eol=lf
 
-engine/postgresql/schema_config.sql ident
+engine/postgresql/schema_config.sql export-subst
