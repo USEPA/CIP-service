@@ -52,6 +52,7 @@ services:
       hostname: cip_pg
       container_name: cip-service-engine-cip_pg
       environment:
+         CIP_INSTALLER: {{ getpass.getuser() }}
 {%-   if 'db' in components.cip_pg %}
 {%-      if components.cip_pg.db == "env.POSTGRESQL_DB" %}
          POSTGRESQL_DB:           ${POSTGRESQL_DB}

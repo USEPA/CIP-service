@@ -78,12 +78,13 @@ CREATE TABLE cipsrv.version(
    ,notes              VARCHAR
 );
 ALTER TABLE cipsrv.version OWNER TO cipsrv;
-GRANT SELECT ON cipsrv.version TO PUBLIC;
+GRANT SELECT,INSERT,UPDATE,DELETE ON cipsrv.version TO PUBLIC;
 
 INSERT INTO cipsrv.version(version,installation_date) 
 VALUES(
     CASE WHEN '$Id$' = '$' || 'Id' || ':' || '$' THEN 'Unknown' ELSE REPLACE(REPLACE('$Id$',':',''),'$','') END
-   ,TO_DATE('','MM/DD/YYYY')
+   ,'${CIP_INSTALLER}'
+   ,CURRENT_TIMESTAMP
 );
 
 CREATE TABLE cipsrv.registry(
@@ -95,7 +96,7 @@ CREATE TABLE cipsrv.registry(
    ,notes              VARCHAR
 );
 ALTER TABLE cipsrv.registry OWNER TO cipsrv;
-GRANT SELECT ON cipsrv.registry TO PUBLIC;
+GRANT SELECT,INSERT,UPDATE,DELETE ON cipsrv.registry TO PUBLIC;
 
 CREATE TABLE cipsrv_upload.batch_control(
     dataset_prefix     VARCHAR(255)

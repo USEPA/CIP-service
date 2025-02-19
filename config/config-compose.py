@@ -1,4 +1,4 @@
-import os,sys,jinja2,yaml,argparse,datetime,shutil;
+import os,sys,jinja2,yaml,argparse,datetime,shutil,getpass;
 
 script_root = os.path.realpath(os.path.dirname(__file__));
 parser = argparse.ArgumentParser(description='configuration script for cipsrv');
