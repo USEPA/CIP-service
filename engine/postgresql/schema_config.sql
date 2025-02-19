@@ -72,18 +72,27 @@ CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck() RETURNS JSONB IMMUTABLE A
 ALTER  FUNCTION cipsrv_pgrest.healthcheck() OWNER TO cipsrv_pgrest;
 
 CREATE TABLE cipsrv.version(
-    version           VARCHAR
-   ,installation_date DATE
-   ,notes             VARCHAR
+    cipsrv_version     VARCHAR
+   ,installer_username VARCHAR
+   ,installation_date  DATE
+   ,notes              VARCHAR
 );
 ALTER TABLE cipsrv.version OWNER TO cipsrv;
 GRANT SELECT ON cipsrv.version TO PUBLIC;
 
+INSERT INTO cipsrv.version(version,installation_date) 
+VALUES(
+    CASE WHEN '$Id$' = '$' || 'Id' || ':' || '$' THEN 'Unknown' ELSE REPLACE(REPLACE('$Id$',':',''),'$','') END
+   ,TO_DATE('','MM/DD/YYYY')
+);
+
 CREATE TABLE cipsrv.registry(
-    component         VARCHAR
-   ,component_vintage DATE
-   ,installation_date DATE
-   ,notes             VARCHAR
+    component          VARCHAR
+   ,component_type     VARCHAR
+   ,component_vintage  DATE
+   ,installer_username VARCHAR
+   ,installation_date  DATE
+   ,notes              VARCHAR
 );
 ALTER TABLE cipsrv.registry OWNER TO cipsrv;
 GRANT SELECT ON cipsrv.registry TO PUBLIC;

@@ -4,7 +4,7 @@
 # Your host Python will require the jinja2 package which can be installed via
 # >pip install Jinja2
 #
-import os,sys,importlib,argparse,shutil,yaml;
+import os,sys,importlib,argparse,shutil,yaml,getpass;
 from subprocess import Popen, PIPE;
 cc = importlib.import_module("config-compose");
 
@@ -58,6 +58,7 @@ parser.add_argument("--override_demo_gis_host"  ,required=False,default=None);
 
 parser.add_argument("--override_engine_profile" ,required=False,default=None);
 parser.add_argument("--override_git_branch"     ,required=False,default=None);
+parser.add_argument("--override_username"       ,required=False,default=None);
 parser.add_argument("--force_nogit_uselocal"    ,required=False,default=False,action=argparse.BooleanOptionalAction);
 parser.add_argument("--down_volumes"            ,required=False,default=False,action=argparse.BooleanOptionalAction);
 parser.add_argument("--build_nocache"           ,required=False,default=False,action=argparse.BooleanOptionalAction);
@@ -111,6 +112,7 @@ def main(
    
    ,override_engine_profile
    ,override_git_branch
+   ,override_username
    ,force_nogit_uselocal
    ,down_volumes
    ,build_nocache
@@ -147,7 +149,8 @@ def main(
       ,dumpfile
       ,dumpfile_copyin
       ,dumpfile_parm
-      ,multi_flag = False
+      ,multi_flag           = False
+      ,override_username    = None
    ):
       cmd = [
           "docker","compose","exec","cip_jp","jupyter"
@@ -180,24 +183,34 @@ def main(
             dzproc(cmd);
             
          cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py","--use_existing",dumpfile_parm,mdf];
+         
+         if override_username is not None:
+            cmd.append("--override_username");
+            cmd.append(override_username);
+            
          dzproc(cmd);
          
       else:
          if dumpfile is None:
             print("Downloading and importing default " + ipnyb + " data.");
             cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py"];
-            dzproc(cmd);
             
          else:
             print("Downloading and importing " + dumpfile + " of " + ipnyb + " data.");
             cmd = ["docker","compose","exec","cip_jp","python3","/tmp/pg_restore_" + ipnyb + ".py",dumpfile_parm,dumpfile];
-            dzproc(cmd);
+         
+         if override_username is not None:
+            cmd.append("--override_username");
+            cmd.append(override_username);
+
+         dzproc(cmd);
 
    ################################################################################## 
    def cipgt(
        ipnyb
       ,override_git_branch  = None
       ,force_nogit_uselocal = False
+      ,override_username    = None
    ):
       print("Fetching and loading " + ipnyb + " logic.");
       cmd = ["docker","compose","exec","cip_jp","jupyter","nbconvert","/home/jovyan/notebooks/setup/git_checkout_" + ipnyb + ".ipynb","--to","python","--output","/tmp/git_checkout_" + ipnyb + ".py"];
@@ -209,13 +222,23 @@ def main(
          dzproc(cmd);
          
          cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--use_existing_sql","/tmp/" + ipnyb + "_deploy.sql"];
+         
+         if override_username is not None:
+            cmd.append("--override_username");
+            cmd.append(override_username);
+            
          dzproc(cmd);
          
       else:
+         cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py"];
+         
          if override_git_branch is not None:
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py","--override_branch",override_git_branch];
-         else:
-            cmd = ["docker","compose","exec","cip_jp","python3","/tmp/git_checkout_" + ipnyb + ".py"];
+            cmd.append("--override_branch");
+            cmd.append(override_git_branch);
+         
+         if override_username is not None:
+            cmd.append("--override_username");
+            cmd.append(override_username);
       
          dzproc(cmd);
    
@@ -273,6 +296,9 @@ def main(
          (pref,file) = item.split(':');
          if not os.path.exists(file):
             raise Exception("owld_dumpfiles_copyin for " + pref + " not found - " + str(file));
+            
+   if override_username is None:
+      override_username = getpass.getuser();
    
    ###############################################################################
    # set context to project directory
@@ -505,10 +531,11 @@ def main(
    ###############################################################################
    # Support
    cipld(
-       ipnyb               = 'cipsrv_support'
-      ,dumpfile            = support_dumpfile
-      ,dumpfile_copyin     = support_dumpfile_copyin
-      ,dumpfile_parm       = '--support_dumpfile'
+       ipnyb                = 'cipsrv_support'
+      ,dumpfile             = support_dumpfile
+      ,dumpfile_copyin      = support_dumpfile_copyin
+      ,dumpfile_parm        = '--support_dumpfile'
+      ,override_username    = override_username
    );
    
    # Support Logic
@@ -516,6 +543,7 @@ def main(
        ipnyb                = 'cipsrv_support'
       ,override_git_branch  = override_git_branch
       ,force_nogit_uselocal = force_nogit_uselocal
+      ,override_username    = override_username
    );
 
    z = 0;
@@ -523,17 +551,19 @@ def main(
    if recipe in ['MRONLY','ALL','VPU09','EXTENDED']:
       # NHDPlus MR
       cipld(
-          ipnyb               = 'cipsrv_nhdplus_m'
-         ,dumpfile            = mr_dumpfile
-         ,dumpfile_copyin     = mr_dumpfile_copyin
-         ,dumpfile_parm       = '--mr_dumpfile'
+          ipnyb                = 'cipsrv_nhdplus_m'
+         ,dumpfile             = mr_dumpfile
+         ,dumpfile_copyin      = mr_dumpfile_copyin
+         ,dumpfile_parm        = '--mr_dumpfile'
+         ,override_username    = override_username
       );
       # EPAGeoFab MR
       cipld(
-          ipnyb               = 'cipsrv_epageofab_m'
-         ,dumpfile            = mrgf_dumpfile
-         ,dumpfile_copyin     = mrgf_dumpfile_copyin
-         ,dumpfile_parm       = '--mrgf_dumpfile'
+          ipnyb                = 'cipsrv_epageofab_m'
+         ,dumpfile             = mrgf_dumpfile
+         ,dumpfile_copyin      = mrgf_dumpfile_copyin
+         ,dumpfile_parm        = '--mrgf_dumpfile'
+         ,override_username    = override_username
       );
             
       # NHDPlus MR Logic
@@ -541,6 +571,7 @@ def main(
           ipnyb                = 'cipsrv_nhdplus_m'
          ,override_git_branch  = override_git_branch
          ,force_nogit_uselocal = force_nogit_uselocal
+         ,override_username    = override_username
       );
       z += 1;
       
@@ -548,17 +579,19 @@ def main(
    if recipe in ['HRONLY','ALL','VPU09','EXTENDED']:
       # NHDPlus HR
       cipld(
-          ipnyb               = 'cipsrv_nhdplus_h'
-         ,dumpfile            = hr_dumpfile
-         ,dumpfile_copyin     = hr_dumpfile_copyin
-         ,dumpfile_parm       = '--hr_dumpfile'
+          ipnyb                = 'cipsrv_nhdplus_h'
+         ,dumpfile             = hr_dumpfile
+         ,dumpfile_copyin      = hr_dumpfile_copyin
+         ,dumpfile_parm        = '--hr_dumpfile'
+         ,override_username    = override_username
       );
       # EPAGeoFab HR
       cipld(
-          ipnyb               = 'cipsrv_epageofab_h'
-         ,dumpfile            = hrgf_dumpfile
-         ,dumpfile_copyin     = hrgf_dumpfile_copyin
-         ,dumpfile_parm       = '--hrgf_dumpfile'
+          ipnyb                = 'cipsrv_epageofab_h'
+         ,dumpfile             = hrgf_dumpfile
+         ,dumpfile_copyin      = hrgf_dumpfile_copyin
+         ,dumpfile_parm        = '--hrgf_dumpfile'
+         ,override_username    = override_username
       );
       
       # HR Logic      
@@ -566,6 +599,7 @@ def main(
           ipnyb                = 'cipsrv_nhdplus_h'
          ,override_git_branch  = override_git_branch
          ,force_nogit_uselocal = force_nogit_uselocal
+         ,override_username    = override_username
       );
       z += 1;
 
@@ -580,20 +614,22 @@ def main(
    if recipe in ['EXTENDED']:
       # NHDPlus MR 2
       cipld(
-          ipnyb           = 'cipsrv_nhdplus2_m'
-         ,dumpfile        = mr2_dumpfile
-         ,dumpfile_copyin = mr2_dumpfile_copyin
-         ,dumpfile_parm   = '--mr2_dumpfile'
+          ipnyb                = 'cipsrv_nhdplus2_m'
+         ,dumpfile             = mr2_dumpfile
+         ,dumpfile_copyin      = mr2_dumpfile_copyin
+         ,dumpfile_parm        = '--mr2_dumpfile'
+         ,override_username    = override_username
       );
            
    ###############################################################################
    if recipe in ['EXTENDED']:
       # NHDPlus HR 2
       cipld(
-          ipnyb           = 'cipsrv_nhdplus2_h'
-         ,dumpfile        = hr2_dumpfile
-         ,dumpfile_copyin = hr2_dumpfile_copyin
-         ,dumpfile_parm   = '--hr2_dumpfile'
+          ipnyb                = 'cipsrv_nhdplus2_h'
+         ,dumpfile             = hr2_dumpfile
+         ,dumpfile_copyin      = hr2_dumpfile_copyin
+         ,dumpfile_parm        = '--hr2_dumpfile'
+         ,override_username    = override_username
       );
    
    ###############################################################################
@@ -602,20 +638,22 @@ def main(
    if recipe in ['EXTENDED']:
       # NHDPlus MR Grid
       cipld(
-          ipnyb           = 'cipsrv_nhdplusgrid_m'
-         ,dumpfile        = mrgrid_dumpfile
-         ,dumpfile_copyin = mrgrid_dumpfile_copyin
-         ,dumpfile_parm   = '--mrgrid_dumpfile'
+          ipnyb                = 'cipsrv_nhdplusgrid_m'
+         ,dumpfile             = mrgrid_dumpfile
+         ,dumpfile_copyin      = mrgrid_dumpfile_copyin
+         ,dumpfile_parm        = '--mrgrid_dumpfile'
+         ,override_username    = override_username
       );
 
    ###############################################################################
    if recipe in ['EXTENDED']:
       # NHDPlus HR Grid
       cipld(
-          ipnyb           = 'cipsrv_nhdplusgrid_h'
-         ,dumpfile        = hrgrid_dumpfile
-         ,dumpfile_copyin = hrgrid_dumpfile_copyin
-         ,dumpfile_parm   = '--hrgrid_dumpfile'
+          ipnyb                = 'cipsrv_nhdplusgrid_h'
+         ,dumpfile             = hrgrid_dumpfile
+         ,dumpfile_copyin      = hrgrid_dumpfile_copyin
+         ,dumpfile_parm        = '--hrgrid_dumpfile'
+         ,override_username    = override_username
       );
             
    ###############################################################################
@@ -624,20 +662,22 @@ def main(
    if recipe in ['EXTENDED']:
       # NHDPlus MR TOPO
       cipld(
-          ipnyb           = 'cipsrv_nhdplustopo_m'
-         ,dumpfile        = mrtp_dumpfile
-         ,dumpfile_copyin = mrtp_dumpfile_copyin
-         ,dumpfile_parm   = '--mrtp_dumpfile'
+          ipnyb                = 'cipsrv_nhdplustopo_m'
+         ,dumpfile             = mrtp_dumpfile
+         ,dumpfile_copyin      = mrtp_dumpfile_copyin
+         ,dumpfile_parm        = '--mrtp_dumpfile'
+         ,override_username    = override_username
       );
 
    ###############################################################################
    if recipe in ['EXTENDED']:
       # NHDPlus HR Topo
       cipld(
-          ipnyb           = 'cipsrv_nhdplustopo_h'
-         ,dumpfile        = hrtp_dumpfile
-         ,dumpfile_copyin = hrtp_dumpfile_copyin
-         ,dumpfile_parm   = '--hrtp_dumpfile'
+          ipnyb                = 'cipsrv_nhdplustopo_h'
+         ,dumpfile             = hrtp_dumpfile
+         ,dumpfile_copyin      = hrtp_dumpfile_copyin
+         ,dumpfile_parm        = '--hrtp_dumpfile'
+         ,override_username    = override_username
       );
       
    ###############################################################################
@@ -646,10 +686,11 @@ def main(
    if recipe in ['EXTENDED']:
       # NHDPlus MR Watersheds
       cipld(
-          ipnyb           = 'cipsrv_nhdpluswshd_m'
-         ,dumpfile        = mrws_dumpfile
-         ,dumpfile_copyin = mrws_dumpfile_copyin
-         ,dumpfile_parm   = '--mrws_dumpfile'
+          ipnyb                = 'cipsrv_nhdpluswshd_m'
+         ,dumpfile             = mrws_dumpfile
+         ,dumpfile_copyin      = mrws_dumpfile_copyin
+         ,dumpfile_parm        = '--mrws_dumpfile'
+         ,override_username    = override_username
       );
       
    ###############################################################################
@@ -658,17 +699,19 @@ def main(
    if recipe in ['EXTENDED']:
       # OWLD datasets
       cipld(
-          ipnyb           = 'cipsrv_owld'
-         ,dumpfile        = owld_dumpfiles
-         ,dumpfile_copyin = owld_dumpfiles_copyin
-         ,dumpfile_parm   = '--owld_dumpfiles'
-         ,multi_flag      = True
+          ipnyb                = 'cipsrv_owld'
+         ,dumpfile             = owld_dumpfiles
+         ,dumpfile_copyin      = owld_dumpfiles_copyin
+         ,dumpfile_parm        = '--owld_dumpfiles'
+         ,multi_flag           = True
+         ,override_username    = override_username
       );
       
       cipgt(
           ipnyb                = 'cipsrv_owld'
          ,override_git_branch  = override_git_branch
          ,force_nogit_uselocal = force_nogit_uselocal
+         ,override_username    = override_username
       );
       
    ###############################################################################
@@ -682,6 +725,7 @@ def main(
           ipnyb                = 'cipsrv_gis'
          ,override_git_branch  = override_git_branch
          ,force_nogit_uselocal = force_nogit_uselocal
+         ,override_username    = override_username
       );
       
    ###############################################################################
@@ -691,6 +735,7 @@ def main(
        ipnyb                = 'cipsrv_engine'
       ,override_git_branch  = override_git_branch
       ,force_nogit_uselocal = force_nogit_uselocal
+      ,override_username    = override_username
    );
 
    ###############################################################################
@@ -700,6 +745,7 @@ def main(
        ipnyb                = 'cipsrv_pgrest'
       ,override_git_branch  = override_git_branch
       ,force_nogit_uselocal = force_nogit_uselocal
+      ,override_username    = override_username
    );
 
    ###############################################################################
@@ -758,6 +804,7 @@ if __name__ == '__main__':
       
       ,override_engine_profile  = args.override_engine_profile
       ,override_git_branch      = args.override_git_branch
+      ,override_username        = args.override_username
       ,force_nogit_uselocal     = args.force_nogit_uselocal
       ,down_volumes             = args.down_volumes
       ,build_nocache            = args.build_nocache

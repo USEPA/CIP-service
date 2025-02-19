@@ -1,4 +1,4 @@
-import os,sys,wget,re;
+import os,sys,wget,re,getpass;
 import psycopg2,base64,shlex;
 from subprocess import PIPE,Popen;
 from contextlib import closing;
@@ -93,3 +93,36 @@ def load_sqlfile(conn,sqlfile,echo=False):
             conn.commit();
     
    return resp;
+
+def upsert_registry(conn,component_name,component_type,src,override_username,notes=None,echo=False):
+   
+   if override_username is None:
+      username = getpass.getuser();
+   else:
+      username = override_username;
+      
+   sqltxt = """
+      INSERT INTO cipsrv.registry(
+          component
+         ,component_type
+         ,component_vintage
+         ,installer_username
+         ,installation_date
+         ,notes
+      ) VALUES (
+          %s,%s,%s,%s,CURRENT_TIMESTAMP,%s
+      );
+   """;
+   
+   with closing(conn.cursor()) as cursor:
+      cursor.execute(sqltxt,(component_name,component_type,src,username,notes));
+      sm = cursor.statusmessage;
+      tx = sqltxt[:80].strip() + ' => ' + sm;
+   
+   if echo:
+      print(tx);
+               
+   conn.commit();
+   
+   return 0;
+   
