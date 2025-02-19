@@ -80,12 +80,15 @@ CREATE TABLE cipsrv.version(
 ALTER TABLE cipsrv.version OWNER TO cipsrv;
 GRANT SELECT,INSERT,UPDATE,DELETE ON cipsrv.version TO PUBLIC;
 
+-- The automatic injection of the last commit hash as cipsrv_version only works when the
+-- repository is extracted via git archive, such as when the zip is downloaded from github.
+-- Clones and checkouts will not populate this item, such is git.
 INSERT INTO cipsrv.version(
     cipsrv_version
    ,installer_username
    ,installation_date
 ) VALUES (
-    CASE WHEN SUBSTR('$Format:%h$',1,8) = '$' || 'Format' || ':' THEN 'Unknown' ELSE '$Format:%h$' END
+    CASE WHEN SUBSTR('\$Format:%h$',1,8) = '$' || 'Format' || ':' THEN 'Unknown' ELSE '\$Format:%h$' END
    ,'${CIP_INSTALLER}'
    ,CURRENT_TIMESTAMP
 );
