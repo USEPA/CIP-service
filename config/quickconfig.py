@@ -313,6 +313,7 @@ def main(
       print(".  engine");
       cmd = ["docker","compose","down"];
       if down_volumes:
+         print(".   forcing engine volumes down");
          cmd.append("-v");
          dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
          dzproc(["docker","volume","rm","cip-service-engine_pgdata"],nofail=True);
@@ -324,6 +325,7 @@ def main(
       print(".  admin");
       cmd = ["docker","compose","down"];
       if down_volumes:
+         print(".   forcing admin volumes down");
          cmd.append("-v");
          dzproc(["docker","volume","rm","cip-service-admin_home-jovyan"],nofail=True);
          dzproc(["docker","volume","rm","cip-service-admin_jupyter"],nofail=True);
@@ -332,9 +334,10 @@ def main(
       
    os.chdir('../demo');
    if os.path.exists("docker-compose.yml"):
-      print(".  demo");
+      print(".   demo");
       cmd = ["docker","compose","down"];
       if down_volumes:
+         print(".  forcing demo volumes down");
          cmd.append("-v");      
       
       dzproc(cmd);
@@ -344,6 +347,7 @@ def main(
       print(".  gis");
       cmd = ["docker","compose","down"];
       if down_volumes:
+         print(".   forcing gis volumes down");
          cmd.append("-v");
          dzproc(["docker","volume","rm","cip-service-gis_geoserver-data"],nofail=True);     
       
