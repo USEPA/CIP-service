@@ -60,7 +60,7 @@ def tbexporter(source,outname,work_path,container_name):
    print(" DONE.");
     
 ###############################################################################   
-def fcexporter(source,outname,work_path,container_name,geometry_type=None):
+def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_null_geom=False):
 
    print("counting " + source + "....",end="",flush=True);
    bef = int(arcpy.GetCount_management(source)[0]);
@@ -68,7 +68,24 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None):
    
    arcpy.env.outputCoordinateSystem = spref;
    
-   if bef == 0:
+   if add_null_geom:
+      arcpy.management.CreateFeatureclass(
+          out_path      = work_path + os.sep + container_name
+         ,out_name      = outname
+         ,geometry_type = geometry_type
+         ,template      = source
+         ,has_m         = 'DISABLED'
+         ,has_z         = 'DISABLED'
+         ,spatial_reference = spref
+      );
+      
+      arcpy.management.Append(
+          inputs        = source
+         ,target        = work_path + os.sep + container_name + os.sep + outname
+         ,schema_type   = 'NO_TEST'
+      );         
+   
+   elif bef == 0:
       print("creating empty fc " + outname + "...",end="",flush=True);
       
       if arcpy.Exists(arcpy.env.scratchGDB + os.sep + 'temp'):

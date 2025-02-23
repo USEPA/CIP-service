@@ -21,6 +21,10 @@ print("purging existing data...",end="",flush=True);
 
 arcpy.env.preserveGlobalIds = True;
 
+item = work_path + os.sep + container_name + os.sep + "wqp_control"
+if arcpy.Exists(item):
+   arcpy.Delete_management(item);
+   
 item = work_path + os.sep + container_name + os.sep + "wqp_attr"
 if arcpy.Exists(item):
    arcpy.Delete_management(item);
@@ -95,6 +99,22 @@ print(" ");
 ############################################################################### 
 # Export feature classes and tables
 ###############################################################################
+
+###############################################################################
+source    = source_conn + r"/cipsrv_gis.owld_wqp_control_esri";
+outname   = "wqp_control";
+target_nm = work_path + os.sep + container_name + os.sep + outname;
+ret       = tbexporter(source,outname,work_path,container_name);
+
+print("adding aliases to " + outname + "...",end="",flush=True);
+update_aliases(work_path + os.sep + container_name,outname);
+print(" DONE.");
+
+print("indexing " + outname + "...",end="",flush=True);
+arcpy.management.AddIndex(target_nm,"keyword"                       ,"idx01");
+print(" DONE.");
+print(outname + " export complete.");
+print(" ");
 
 ###############################################################################
 source    = source_conn + r"/cipsrv_gis.owld_wqp_attr_esri";
@@ -360,7 +380,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.owld_wqp_sfid_esri";
 outname   = "wqp_sfid";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = tbexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,'POLYGON',True);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
