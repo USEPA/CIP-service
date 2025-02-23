@@ -20,6 +20,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_index(
    ,OUT out_indexing_line           GEOMETRY
    ,OUT out_region                  VARCHAR
    ,OUT out_nhdplusid               BIGINT
+   ,OUT out_reachcode               VARCHAR
+   ,OUT out_snap_measure            NUMERIC
    ,OUT out_return_code             INTEGER
    ,OUT out_status_message          VARCHAR
 )
@@ -867,6 +869,8 @@ BEGIN
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
    out_nhdplusid        := out_flowlines[1].nhdplusid;
+   out_reachcode        := out_flowlines[1].reachcode;
+   out_snap_measure     := out_flowlines[1].snap_measure;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005

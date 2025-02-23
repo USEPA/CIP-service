@@ -78,6 +78,8 @@
             ,"views/nhdplus_m_nonnetworknhdflowline_esri.sql"
             ,"views/nhdplus_m_wbdhu12.sql"
             ,"views/nhdplus_m_wbdhu12_esri.sql"
+            ,"views/owld_wqp_control.sql"
+            ,"views/owld_wqp_control_esri.sql"
             ,"views/owld_wqp_attr.sql"
             ,"views/owld_wqp_attr_esri.sql"
             ,"views/owld_wqp_cip_h.sql"

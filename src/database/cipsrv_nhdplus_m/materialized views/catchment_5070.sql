@@ -32,6 +32,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -64,6 +65,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -81,6 +83,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,5070) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -108,6 +111,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -125,6 +129,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,5070)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_m.catchment_fabric bbb

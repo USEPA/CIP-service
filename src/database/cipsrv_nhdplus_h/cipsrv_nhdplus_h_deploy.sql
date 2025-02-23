@@ -201,6 +201,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_3338(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -233,6 +234,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -250,6 +252,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,3338) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -277,6 +280,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -294,6 +298,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,3338)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_h.catchment_fabric bbb
@@ -398,6 +403,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_5070(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -430,6 +436,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -447,6 +454,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,5070) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -474,6 +482,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -491,6 +500,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,5070)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_h.catchment_fabric bbb
@@ -498,7 +508,7 @@ FROM (
           bbb.catchmentstatecode NOT IN ('AK','HI','PR','VI','GU','MP','AS')
       AND bbb.state_count > 1
       GROUP BY
-      bbb.nhdplusid
+      bbb.nhdplusid::BIGINT
    ) bb
 ) a
 LEFT JOIN
@@ -595,6 +605,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_26904(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -627,6 +638,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -644,6 +656,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,26904) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -671,6 +684,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -688,6 +702,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,26904)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_h.catchment_fabric bbb
@@ -792,6 +807,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32161(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -824,6 +840,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -841,6 +858,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,32161) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -868,6 +886,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -885,6 +904,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,32161)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_h.catchment_fabric bbb
@@ -989,6 +1009,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32655(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -1021,6 +1042,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -1038,6 +1060,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,32655) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -1065,6 +1088,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -1082,6 +1106,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,32655)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_h.catchment_fabric bbb
@@ -1186,6 +1211,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_32702(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -1218,6 +1244,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -1235,6 +1262,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,32702) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -1262,6 +1290,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -1279,6 +1308,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,32702)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_h.catchment_fabric bbb
@@ -2580,6 +2610,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.catconstrained_index(
    ,OUT out_indexing_line           GEOMETRY
    ,OUT out_region                  VARCHAR
    ,OUT out_nhdplusid               BIGINT
+   ,OUT out_reachcode               VARCHAR
+   ,OUT out_snap_measure            NUMERIC
    ,OUT out_return_code             INTEGER
    ,OUT out_status_message          VARCHAR
 )
@@ -3427,6 +3459,8 @@ BEGIN
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
    out_nhdplusid        := out_flowlines[1].nhdplusid;
+   out_reachcode        := out_flowlines[1].reachcode;
+   out_snap_measure     := out_flowlines[1].snap_measure;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005
