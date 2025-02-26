@@ -20,6 +20,7 @@ print(" ");
 print("purging existing data...",end="",flush=True);
 
 arcpy.env.preserveGlobalIds = True;
+arcpy.env.useCompatibleFieldTypes = True;
 
 item = work_path + os.sep + container_name + os.sep + "wqp_control"
 if arcpy.Exists(item):
