@@ -1,5 +1,10 @@
 pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -d $env:POSTGRSQL_DB -U cipsrv -Fc -v `
+-t cipsrv_support.ecoregions_i `
+-t cipsrv_support.ecoregions_ii `
+-t cipsrv_support.ecoregions_iii `
+-t cipsrv_support.ecoregions_iv `
+-t cipsrv_support.epa_regions_2023 `
 -t cipsrv_support.tiger_aiannha `
 -t cipsrv_support.tiger_aiannha_3338 `
 -t cipsrv_support.tiger_aiannha_5070 `

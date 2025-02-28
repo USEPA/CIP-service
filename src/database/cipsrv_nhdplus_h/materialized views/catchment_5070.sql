@@ -184,6 +184,12 @@ ON cipsrv_nhdplus_h.catchment_5070(isocean);
 CREATE INDEX catchment_5070_09i
 ON cipsrv_nhdplus_h.catchment_5070(statesplit);
 
+CREATE INDEX catchment_5070_10i
+ON cipsrv_nhdplus_h.catchment_5070(vpuid);
+
+CREATE INDEX catchment_5070_01f
+ON cipsrv_nhdplus_h.catchment_5070(SUBSTR(vpuid,1,2));
+
 CREATE INDEX catchment_5070_spx
 ON cipsrv_nhdplus_h.catchment_5070 USING GIST(shape);
 
