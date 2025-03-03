@@ -1,0 +1,6 @@
+pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
+-d $env:POSTGRSQL_DB -U cipsrv -Fc -v `
+-t cipsrv_epageofab_m.catchment_fabric `
+-t cipsrv_epageofab_m.catchment_fabric_huc12_np21 `
+-t cipsrv_epageofab_m.catchment_fabric_xwalk `
+-f cipsrv_epageofab_m_v21_1.dmp
