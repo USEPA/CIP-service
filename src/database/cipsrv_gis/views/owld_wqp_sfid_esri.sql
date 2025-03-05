@@ -32,7 +32,7 @@ BEGIN
       ,a.src_area_count
       ,a.cat_mr_count
       ,a.cat_hr_count
-      ,a.xwalk_huc12_mr_count
+      ,a.xwalk_huc12_np21_count
       ,a.rad_mr_event_count
       ,a.rad_hr_event_count
       ,a.rad_mr_point_count
