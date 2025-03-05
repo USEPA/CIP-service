@@ -1,14 +1,14 @@
 <featureType>
   <id>FeatureTypeInfoImpl--7ce8039c:19445fc0d4c:-5a3d</id>
-  <name>epageofab_m_catchment_fabric_huc12</name>
-  <nativeName>epageofab_m_catchment_fabric_huc12</nativeName>
+  <name>epageofab_m_catchment_fabric_huc12_np21</name>
+  <nativeName>epageofab_m_catchment_fabric_huc12_np21</nativeName>
   <namespace>
     <id>NamespaceInfoImpl-42032311:192d83c2670:-7ff6</id>
   </namespace>
-  <title>epageofab_m_catchment_fabric_huc12</title>
+  <title>epageofab_m_catchment_fabric_huc12_np21</title>
   <keywords>
     <string>features</string>
-    <string>epageofab_m_catchment_fabric_huc12</string>
+    <string>epageofab_m_catchment_fabric_huc12_np21</string>
   </keywords>
   <nativeCRS>GEOGCS[&quot;NAD83&quot;, 
   DATUM[&quot;North American Datum 1983&quot;, 

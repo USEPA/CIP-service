@@ -144,7 +144,7 @@ BEGIN
          )
          LIMIT 1;
          
-      ELSIF int_raster_srid = 22904
+      ELSIF int_raster_srid = 26904
       THEN
          SELECT
           a.nhdplusid
@@ -157,7 +157,7 @@ BEGIN
          ,boo_isocean
          ,boo_isalaskan
          FROM
-         cipsrv_nhdplus_m.catchment_22904 a
+         cipsrv_nhdplus_m.catchment_26904 a
          WHERE
          ST_Intersects(
              a.shape
@@ -226,7 +226,7 @@ BEGIN
          LIMIT 1;
          
       ELSE
-         RAISE EXCEPTION 'err';
+         RAISE EXCEPTION 'err %',int_raster_srid;
       
       END IF;
    

@@ -192,10 +192,11 @@ BEGIN
          THEN
             IF str_point_indexing_method = 'CATCONSTRAINED'
             THEN
-               rec2 := cipsrv_nhdplus_m.catconstrained_reach_index(
-                   p_geometry               := rec.shape
-                  ,p_catchment_nhdplusid    := NULL
-                  ,p_known_region           := p_known_region
+               rec2 := cipsrv_nhdplus_m.catconstrained_index(
+                   p_point                     := rec.shape
+                  ,p_return_link_path          := FALSE
+                  ,p_known_catchment_nhdplusid := NULL
+                  ,p_known_region              := p_known_region
                );
                num_nhdplusid       := rec2.out_nhdplusid;
                str_reachcode       := rec2.out_reachcode;
@@ -207,13 +208,14 @@ BEGIN
             
             ELSIF str_point_indexing_method = 'DISTANCE'
             THEN
-               rec2 := cipsrv_nhdplus_m.distance_reach_index(
-                   p_geometry               := rec.shape
+               rec2 := cipsrv_nhdplus_m.distance_index(
+                   p_point                  := rec.shape
                   ,p_fcode_allow            := p_fcode_allow
                   ,p_fcode_deny             := p_fcode_deny
                   ,p_distance_max_dist_km   := p_distance_max_dist_km
                   ,p_limit_innetwork        := p_limit_innetwork
                   ,p_limit_navigable        := p_limit_navigable
+                  ,p_return_link_path       := FALSE
                   ,p_known_region           := p_known_region
                );
                num_nhdplusid       := rec2.out_nhdplusid;

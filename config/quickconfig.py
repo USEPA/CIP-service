@@ -342,6 +342,11 @@ def main(
       
    ###############################################################################
    # set context to config directory
+   #
+   # Known recipes:
+   # - MRONLY
+   # - MROWLDINDX
+   #
    ###############################################################################
    os.chdir('../config');
    
@@ -352,10 +357,10 @@ def main(
    elif recipe == 'VPU09':
       print("using recipe VPU09");
       mr_dumpfile      = 'cipsrv_nhdplus_m_v21_vpu09_1.dmp';
-      mrgf_dumpfile    = 'cipsrv_epageofab_m_v21_vpu09_1.dmp';
+      mrgf_dumpfile    = 'cipsrv_epageofab_m_v21_vpu09_2.dmp';
       hr_dumpfile      = 'cipsrv_nhdplus_h_beta_vpu09_1.dmp';
-      hrgf_dumpfile    = 'cipsrv_epageofab_h_beta_hr1_vpu09_1.dmp';
-      support_dumpfile = 'cipsrv_support_1_vpu09.dmp';
+      hrgf_dumpfile    = 'cipsrv_epageofab_h_beta_hr1_vpu09_2.dmp';
+      support_dumpfile = 'cipsrv_support_vpu09_1.dmp';
 
    ###############################################################################
    if override_engine_profile is not None:
@@ -576,6 +581,8 @@ def main(
 
    ###############################################################################
    # Support
+   # Note all recipes load the support data
+   #
    cipld(
        ipnyb                = 'cipsrv_support'
       ,dumpfile             = support_dumpfile
@@ -594,7 +601,7 @@ def main(
 
    z = 0;
    ###############################################################################
-   if recipe in ['MRONLY','ALL','VPU09','EXTENDED']:
+   if recipe in ['MRONLY','ALL','VPU09','EXTENDED','MROWLDINDX']:
       # NHDPlus MR
       cipld(
           ipnyb                = 'cipsrv_nhdplus_m'
@@ -742,7 +749,7 @@ def main(
    ###############################################################################
    # OWLD
    ###############################################################################
-   if recipe in ['EXTENDED']:
+   if recipe in ['EXTENDED','MROWLDINDX']:
       # OWLD datasets
       cipld(
           ipnyb                = 'cipsrv_owld'
