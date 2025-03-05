@@ -57,8 +57,8 @@ BEGIN
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
    out_return_code    := 0;
-   obj_start_flowline := NULL::cipsrv_nhdplus_h.flowline;
-   obj_stop_flowline  := NULL::cipsrv_nhdplus_h.flowline;
+   obj_start_flowline := NULL::cipsrv_nhdplus_m.flowline;
+   obj_stop_flowline  := NULL::cipsrv_nhdplus_m.flowline;
    
    IF str_search_type IN ('PP','POINT TO POINT','POINT-TO-POINT')
    THEN
@@ -685,8 +685,8 @@ BEGIN
    
    IF out_flowline_count = 0
    THEN
-      out_return_code    := -1;
-      out_status_message := 'No results found.';
+      out_return_code    := -11;
+      out_status_message := 'navigation returns no results';
    
    END IF;
 
