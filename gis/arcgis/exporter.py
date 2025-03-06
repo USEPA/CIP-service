@@ -42,6 +42,10 @@ def tbexporter(source,outname,work_path,container_name):
    print("counting " + source + "....",end="",flush=True);
    bef = arcpy.GetCount_management(source)[0];
    print(" " + str(bef) + ".");
+   
+   arcpy.env.preserveGlobalIds = True;
+   arcpy.env.useCompatibleFieldTypes = True;
+
    print("exporting " + outname + "...",end="",flush=True);
    target_nm = work_path + os.sep + container_name + os.sep + outname;
    arcpy.conversion.ExportTable(
@@ -60,15 +64,34 @@ def tbexporter(source,outname,work_path,container_name):
    print(" DONE.");
     
 ###############################################################################   
-def fcexporter(source,outname,work_path,container_name,geometry_type=None):
+def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_null_geom=False):
 
    print("counting " + source + "....",end="",flush=True);
    bef = int(arcpy.GetCount_management(source)[0]);
    print(" " + str(bef) + ".");
    
    arcpy.env.outputCoordinateSystem = spref;
+   arcpy.env.preserveGlobalIds = True;
+   arcpy.env.useCompatibleFieldTypes = True;
    
-   if bef == 0:
+   if add_null_geom:
+      arcpy.management.CreateFeatureclass(
+          out_path      = work_path + os.sep + container_name
+         ,out_name      = outname
+         ,geometry_type = geometry_type
+         ,template      = source
+         ,has_m         = 'DISABLED'
+         ,has_z         = 'DISABLED'
+         ,spatial_reference = spref
+      );
+      
+      arcpy.management.Append(
+          inputs        = source
+         ,target        = work_path + os.sep + container_name + os.sep + outname
+         ,schema_type   = 'NO_TEST'
+      );         
+   
+   elif bef == 0:
       print("creating empty fc " + outname + "...",end="",flush=True);
       
       if arcpy.Exists(arcpy.env.scratchGDB + os.sep + 'temp'):
@@ -144,4 +167,41 @@ def get_env_data(
             rez[a] = b;
             
    return rez;
+   
+###############################################################################   
+def appender(source,src_name,target,trg_name,proj,expression=None,count=True):
+
+   if count:
+      print("counting " + source + os.sep + src_name + "....",end="",flush=True);
+      bef = arcpy.GetCount_management(source + os.sep + src_name)[0];
+      print(" " + str(bef) + ".");
+   
+   arcpy.env.outputCoordinateSystem = proj;
+   arcpy.env.preserveGlobalIds = True;
+   arcpy.env.useCompatibleFieldTypes = True;
+   arcpy.env.autoCommit = 10000;
+
+   print("appending " + src_name + "...",end="",flush=True);
+   
+   rez = arcpy.management.Append(
+       inputs        = source + os.sep + src_name
+      ,target        = target + os.sep + trg_name 
+      ,schema_type   = 'NO_TEST'
+      ,expression    = expression
+   );
+   del rez;
+   print(" DONE.");
+   
+   if count:
+      print("counting " + trg_name + "....",end="",flush=True);
+      aft = arcpy.GetCount_management(target + os.sep + trg_name)[0];
+      print(" " + str(aft) + ".");
+      if bef != aft:
+         raise Exception("export counts for " + outname + " do not match!");
+      del bef;
+      del aft;
+   
+   print(" DONE.");
+   return 0;
+   
    

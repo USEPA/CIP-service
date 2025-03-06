@@ -20,6 +20,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_index(
    ,OUT out_indexing_line           GEOMETRY
    ,OUT out_region                  VARCHAR
    ,OUT out_nhdplusid               BIGINT
+   ,OUT out_reachcode               VARCHAR
+   ,OUT out_snap_measure            NUMERIC
    ,OUT out_return_code             INTEGER
    ,OUT out_status_message          VARCHAR
 )
@@ -142,7 +144,7 @@ BEGIN
          )
          LIMIT 1;
          
-      ELSIF int_raster_srid = 22904
+      ELSIF int_raster_srid = 26904
       THEN
          SELECT
           a.nhdplusid
@@ -155,7 +157,7 @@ BEGIN
          ,boo_isocean
          ,boo_isalaskan
          FROM
-         cipsrv_nhdplus_m.catchment_22904 a
+         cipsrv_nhdplus_m.catchment_26904 a
          WHERE
          ST_Intersects(
              a.shape
@@ -224,7 +226,7 @@ BEGIN
          LIMIT 1;
          
       ELSE
-         RAISE EXCEPTION 'err';
+         RAISE EXCEPTION 'err %',int_raster_srid;
       
       END IF;
    
@@ -867,6 +869,8 @@ BEGIN
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
    out_nhdplusid        := out_flowlines[1].nhdplusid;
+   out_reachcode        := out_flowlines[1].reachcode;
+   out_snap_measure     := out_flowlines[1].snap_measure;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005

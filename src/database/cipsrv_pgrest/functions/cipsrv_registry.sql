@@ -17,6 +17,7 @@ $BODY$
 DECLARE
    json_components JSONB;
    str_version     VARCHAR;
+   str_username    VARCHAR;
    dat_installed   DATE;
    str_notes       VARCHAR;
    
@@ -38,7 +39,9 @@ BEGIN
    FROM (
       SELECT
        aa.component
+      ,aa.component_type
       ,aa.component_vintage
+      ,aa.installer_username
       ,aa.installation_date
       ,aa.notes
       FROM
@@ -59,11 +62,13 @@ BEGIN
    ----------------------------------------------------------------------------
    BEGIN
       SELECT
-       a.version
+       a.cipsrv_version
+      ,a.installer_username
       ,a.installation_date
       ,a.notes
       INTO
        str_version
+      ,str_username
       ,dat_installed
       ,str_notes
       FROM

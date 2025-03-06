@@ -73,6 +73,8 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,OUT out_stop_nhdplusid              BIGINT
    ,OUT out_stop_measure                NUMERIC
    ,OUT out_flowline_count              INTEGER
+   ,OUT out_rad_found_count             INTEGER
+   ,OUT out_sfid_found_count            INTEGER 
    ,OUT out_return_flowlines            BOOLEAN
    ,OUT out_return_code                 NUMERIC
    ,OUT out_status_message              VARCHAR
@@ -127,13 +129,16 @@ DECLARE
    str_stop_cat_joinkey           VARCHAR;
    str_stop_search_precision      VARCHAR := p_stop_search_precision;
    
-   str_search_precision           VARCHAR := p_search_precision;
-   str_remove_start_permid        VARCHAR;
-   str_remove_stop_permid         VARCHAR;
+   str_search_precision           VARCHAR := p_search_precision;   
+   int_wqp_eventtype              INTEGER := 10032;
+   boo_remove_stop_start_sfids    BOOLEAN;
+   str_remove_start_permid        VARCHAR(40);
+   str_remove_stop_permid         VARCHAR(40);
       
 BEGIN
 
    out_return_code := cipsrv_engine.create_navigation_temp_tables();
+   out_return_code := cipsrv_owld.create_updn_temp_tables();
 
    ----------------------------------------------------------------------------
    -- Step 10
@@ -156,6 +161,15 @@ BEGIN
    IF str_search_precision IS NULL
    THEN
       str_search_precision := 'CATCHMENT';
+      
+   END IF;
+   
+   IF p_remove_stop_start_sfids IS NULL
+   THEN
+      boo_remove_stop_start_sfids := TRUE;
+      
+   ELSE
+      boo_remove_stop_start_sfids := p_remove_stop_start_sfids;
       
    END IF;
    
@@ -214,7 +228,7 @@ BEGIN
          
       END IF;
       
-      IF p_remove_stop_start_sfids
+      IF boo_remove_stop_start_sfids
       THEN
          str_remove_start_permid := str_start_permid_joinkey;
       
@@ -273,7 +287,7 @@ BEGIN
          
       END IF;
       
-      IF p_remove_stop_start_sfids
+      IF boo_remove_stop_start_sfids
       THEN
          str_remove_stop_permid := str_stop_permid_joinkey;
       
@@ -366,14 +380,191 @@ BEGIN
    
       FOR i IN 1 .. array_length(p_linked_data_search_list,1)
       LOOP
-         
-         IF str_search_precision = 'CATCHMENT'
+         IF p_linked_data_search_list[i] = int_wqp_eventtype::VARCHAR
          THEN
-            NULL;
+            out_sfid_found_count := NULL;
             
-         ELSIF str_search_precision = 'REACHED MEASURES'
-         THEN
-            NULL;
+            IF str_search_precision = 'CATCHMENT'
+            THEN
+               NULL;
+               
+            ELSIF str_search_precision IN ('REACH','REACHED MEASURES','ALL')
+            THEN
+               IF str_nhdplus_version = 'nhdplus_m'
+               THEN            
+                  INSERT INTO tmp_rad_points(
+                      eventtype
+                     ,permanent_identifier
+                     ,eventdate
+                     ,reachcode
+                     ,reachsmdate
+                     ,reachresolution
+                     ,feature_permanent_identifier
+                     ,featureclassref
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_datadesc
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,permid_joinkey
+                     ,start_date
+                     ,end_date
+                     ,featuredetailurl
+                     ,measure
+                     ,eventoffset
+                     ,geogstate
+                     ,xwalk_huc12
+                     ,navigable
+                     ,network_distancekm
+                     ,network_flowtimeday
+                     ,shape
+                  )
+                  SELECT
+                   int_wqp_eventtype
+                  ,b.permanent_identifier
+                  ,b.eventdate
+                  ,b.reachcode
+                  ,b.reachsmdate
+                  ,'MR' AS reachresolution
+                  ,b.feature_permanent_identifier
+                  ,b.featureclassref
+                  ,b.source_originator
+                  ,b.source_featureid
+                  ,b.source_featureid2
+                  ,b.source_datadesc
+                  ,b.source_series
+                  ,b.source_subdivision
+                  ,b.source_joinkey
+                  ,b.permid_joinkey
+                  ,b.start_date
+                  ,b.end_date
+                  ,b.featuredetailurl
+                  ,b.measure
+                  ,b.eventoffset
+                  ,b.geogstate
+                  ,b.xwalk_huc12
+                  ,b.isnavigable AS navigable
+                  ,cipsrv_owld.adjust_point_extent(
+                      p_extent_value      => a.network_distancekm
+                     ,p_direction         => p_search_type
+                     ,p_flowline_amount   => a.lengthkm
+                     ,p_flowline_fmeasure => a.fmeasure
+                     ,p_flowline_tmeasure => a.tmeasure
+                     ,p_event_measure     => b.measure::NUMERIC
+                   ) AS network_distancekm
+                  ,cipsrv_owld.adjust_point_extent(
+                      p_extent_value      => a.network_flowtimeday
+                     ,p_direction         => p_search_type
+                     ,p_flowline_amount   => a.flowtimeday
+                     ,p_flowline_fmeasure => a.fmeasure
+                     ,p_flowline_tmeasure => a.tmeasure
+                     ,p_event_measure     => b.measure::NUMERIC
+                   ) AS network_flowtimeday
+                  ,CASE
+                   WHEN NOT p_return_linked_data_rad
+                   THEN
+                     NULL::GEOMETRY
+                   ELSE
+                     b.shape
+                   END AS shape
+                  FROM
+                  tmp_navigation_results a
+                  JOIN
+                  cipsrv_owld.wqp_rad_p b
+                  ON
+                      b.reachcode  = a.reachcode
+                  AND b.measure   >= a.fmeasure
+                  AND b.measure   <= a.tmeasure
+                  WHERE
+                      b.reachresolution = 'MR'
+                  AND (str_remove_start_permid IS NULL OR b.permid_joinkey != str_remove_start_permid)
+                  AND (str_remove_stop_permid  IS NULL OR b.permid_joinkey != str_remove_stop_permid);
+                  
+                  GET DIAGNOSTICS out_rad_found_count = ROW_COUNT;
+                  
+                  IF p_push_source_geometry_as_rad
+                  THEN
+                     UPDATE tmp_rad_points a
+                     SET shape = (
+                        SELECT
+                        b.shape
+                        FROM
+                        cipsrv_owld.wqp_src_p b
+                        WHERE
+                        b.permid_joinkey = a.permid_joinkey
+                     )
+                     WHERE
+                     a.eventtype = int_wqp_eventtype;
+                  
+                  END IF;
+                  
+                  INSERT INTO tmp_sfid_found(
+                      eventtype
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,start_date
+                     ,end_date
+                     ,sfiddetailurl
+                     ,rad_event_count
+                     ,nearest_rad_distancekm_permid
+                     ,nearest_rad_network_distancekm
+                     ,nearest_rad_flowtimeday_permid
+                     ,nearest_rad_network_flowtimeday
+                  )
+                  SELECT
+                   int_wqp_eventtype
+                  ,a.source_originator
+                  ,a.source_featureid
+                  ,a.source_featureid2
+                  ,a.source_series
+                  ,a.source_subdivision
+                  ,a.source_joinkey
+                  ,a.start_date
+                  ,a.end_date
+                  ,a.sfiddetailurl
+                  ,b.rad_event_count
+                  ,b.nearest_rad_distancekm_permid
+                  ,b.nearest_rad_network_distancekm
+                  ,b.nearest_rad_flowtimeday_permid
+                  ,b.nearest_rad_network_flowtimeda
+                  FROM
+                  cipsrv_owld.wqp_sfid a
+                  JOIN (
+                     /* needs better conversion from oracle */
+                     SELECT
+                      bb.source_joinkey
+                     ,COUNT(*) AS rad_event_count
+                     ,MIN(bb.permid_joinkey)      AS nearest_rad_distancekm_permid
+                     ,MIN(bb.network_distancekm)  AS nearest_rad_network_distancekm
+                     ,CASE
+                      WHEN MIN(bb.network_flowtimeday) IS NULL
+                      THEN
+                        NULL
+                      ELSE
+                        MIN(bb.permid_joinkey)
+                      END AS nearest_rad_flowtimeday_permid
+                     ,MIN(bb.network_flowtimeday) AS nearest_rad_network_flowtimeda
+                     FROM
+                     tmp_rad_points bb
+                     WHERE
+                     bb.eventtype  = int_wqp_eventtype
+                     GROUP BY
+                     bb.source_joinkey
+                  ) b
+                  ON
+                  a.source_joinkey = b.source_joinkey;
+             
+                  GET DIAGNOSTICS out_sfid_found_count = ROW_COUNT;
+                  
+               END IF;
+               
+            END IF;
             
          END IF;
    
@@ -390,7 +581,7 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_owld.owld_locator';
+   WHERE p.oid::regproc::text = 'cipsrv_owld.upstreamdownstream';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
    EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);

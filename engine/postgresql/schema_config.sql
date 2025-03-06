@@ -72,21 +72,37 @@ CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck() RETURNS JSONB IMMUTABLE A
 ALTER  FUNCTION cipsrv_pgrest.healthcheck() OWNER TO cipsrv_pgrest;
 
 CREATE TABLE cipsrv.version(
-    version           VARCHAR
-   ,installation_date DATE
-   ,notes             VARCHAR
+    cipsrv_version     VARCHAR
+   ,installer_username VARCHAR
+   ,installation_date  DATE
+   ,notes              VARCHAR
 );
 ALTER TABLE cipsrv.version OWNER TO cipsrv;
-GRANT SELECT ON cipsrv.version TO PUBLIC;
+GRANT SELECT,INSERT,UPDATE,DELETE ON cipsrv.version TO PUBLIC;
+
+-- The automatic injection of the last commit hash as cipsrv_version only works when the
+-- repository is extracted via git archive, such as when the zip is downloaded from github.
+-- Clones and checkouts will not populate this item, such is git.
+INSERT INTO cipsrv.version(
+    cipsrv_version
+   ,installer_username
+   ,installation_date
+) VALUES (
+    CASE WHEN SUBSTR(REPLACE('\$Format:%h$',$$\$$,''),1,8) IN ('$' || 'Format:',':%h' || '$ ') THEN 'Unknown' ELSE REPLACE('\$Format:%h$',$$\$$,'') END
+   ,'${CIP_INSTALLER}'
+   ,CURRENT_TIMESTAMP
+);
 
 CREATE TABLE cipsrv.registry(
-    component         VARCHAR
-   ,component_vintage DATE
-   ,installation_date DATE
-   ,notes             VARCHAR
+    component          VARCHAR
+   ,component_type     VARCHAR
+   ,component_vintage  VARCHAR
+   ,installer_username VARCHAR
+   ,installation_date  DATE
+   ,notes              VARCHAR
 );
 ALTER TABLE cipsrv.registry OWNER TO cipsrv;
-GRANT SELECT ON cipsrv.registry TO PUBLIC;
+GRANT SELECT,INSERT,UPDATE,DELETE ON cipsrv.registry TO PUBLIC;
 
 CREATE TABLE cipsrv_upload.batch_control(
     dataset_prefix     VARCHAR(255)

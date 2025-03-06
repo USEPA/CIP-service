@@ -32,6 +32,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
    ,shape
    ,shape_centroid
    ,catchmentstatecodes
+   ,vpuid
    ,statesplit
 )
 AS
@@ -64,6 +65,7 @@ SELECT
 ,a.shape
 ,ST_PointOnSurface(a.shape) AS shape_centroid
 ,a.catchmentstatecodes
+,a.vpuid
 ,a.statesplit
 FROM (
    SELECT
@@ -81,6 +83,7 @@ FROM (
    ,aa.areasqkm
    ,ST_Transform(aa.shape,32161) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
+   ,aa.vpuid
    ,CASE
     WHEN aa.state_count = 1
     THEN
@@ -108,6 +111,7 @@ FROM (
    ,bb.areasqkm
    ,bb.shape
    ,bb.catchmentstatecodes
+   ,bb.vpuid
    ,bb.statesplit
    FROM (
       SELECT
@@ -125,6 +129,7 @@ FROM (
       ,SUM(bbb.areasqkm) AS areasqkm
       ,ST_UNION(ST_Transform(bbb.shape,32161)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
+      ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
       cipsrv_epageofab_m.catchment_fabric bbb
@@ -178,6 +183,12 @@ ON cipsrv_nhdplus_m.catchment_32161(isocean);
 
 CREATE INDEX catchment_32161_09i
 ON cipsrv_nhdplus_m.catchment_32161(statesplit);
+
+CREATE INDEX catchment_32161_10i
+ON cipsrv_nhdplus_m.catchment_32161(vpuid);
+
+CREATE INDEX catchment_32161_01f
+ON cipsrv_nhdplus_m.catchment_32161(SUBSTR(vpuid,1,2));
 
 CREATE INDEX catchment_32161_spx
 ON cipsrv_nhdplus_m.catchment_32161 USING GIST(shape);

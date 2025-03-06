@@ -25,7 +25,7 @@ item = work_path + os.sep + container_name + os.sep + "catchment_fabric"
 if arcpy.Exists(item):
    arcpy.Delete_management(item);
 
-item = work_path + os.sep + container_name + os.sep + "catchment_fabric_huc12"
+item = work_path + os.sep + container_name + os.sep + "catchment_fabric_huc12_np21"
 if arcpy.Exists(item):
    arcpy.Delete_management(item);
 
@@ -67,8 +67,8 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.epageofab_h_catchment_fabric_huc12_esri";
-outname   = "catchment_fabric_huc12";
+source    = source_conn + r"/cipsrv_gis.epageofab_h_catchment_fabric_huc12_np21_esri";
+outname   = "catchment_fabric_huc12_np21";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
 

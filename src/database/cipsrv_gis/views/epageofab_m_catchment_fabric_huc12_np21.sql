@@ -1,4 +1,4 @@
-DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri;
+DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21;
 
 DO $$DECLARE 
 BEGIN
@@ -6,12 +6,12 @@ BEGIN
    IF EXISTS(
       SELECT 1 FROM information_schema.tables a
       WHERE a.table_schema = 'cipsrv_epageofab_m'
-      AND   a.table_name   = 'catchment_fabric_huc12'
+      AND   a.table_name   = 'catchment_fabric_huc12_np21'
    ) 
    THEN 
 
       EXECUTE $q$
-      CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri
+      CREATE OR REPLACE VIEW cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21
       AS
       SELECT
        a.objectid
@@ -21,19 +21,19 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_huc12 a;
+      cipsrv_epageofab_m.catchment_fabric_huc12_np21 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri OWNER TO cipsrv_gis;
+      ALTER TABLE cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21 OWNER TO cipsrv_gis;
       $q$;                                                                                                                          
 
       EXECUTE $q$
-      GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri TO public;
+      GRANT SELECT ON cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21 TO public;
       $q$;
       
    ELSE
-      RAISE WARNING 'skipping cipsrv_gis.epageofab_m_catchment_fabric_huc12_esri';
+      RAISE WARNING 'skipping cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21';
    
    END IF;
 
