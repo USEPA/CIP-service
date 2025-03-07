@@ -578,6 +578,14 @@ def main(
    print("Running compose up for admin containers.");
    cmd = ["docker","compose","up","-d"];
    dzproc(cmd);
+   
+   ###############################################################################
+   cmd = [
+       "docker","compose","exec","cip_jp","cp"
+      ,"/home/jovyan/notebooks/setup/common.py"
+      ,"/tmp/common.py"
+   ];
+   dzproc(cmd);
 
    ###############################################################################
    # Support
