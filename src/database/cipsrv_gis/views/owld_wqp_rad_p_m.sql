@@ -6,7 +6,7 @@ BEGIN
    IF EXISTS(
       SELECT 1 FROM information_schema.tables a
       WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_p_m'
+      AND   a.table_name   = 'wqp_rad_p'
    ) 
    THEN 
 
