@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN DEFAULT TRUE
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -25,6 +25,7 @@ DECLARE
    geom_input             GEOMETRY;
    permid_geometry        GEOMETRY;
    int_splitselector      INTEGER;
+   int_count              INTEGER;
 
 BEGIN
 
@@ -217,6 +218,8 @@ BEGIN
       out_status_message := 'err ' || str_known_region;
 
    END IF;
+   
+   GET DIAGNOSTICS int_count = ROW_COUNT;
 
    RETURN;
 
@@ -224,19 +227,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    GEOMETRY
-   ,VARCHAR
-   ,UUID
-   ,GEOMETRY
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    GEOMETRY
-   ,VARCHAR
-   ,UUID
-   ,GEOMETRY
-   ,BOOLEAN
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_point_simple';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 

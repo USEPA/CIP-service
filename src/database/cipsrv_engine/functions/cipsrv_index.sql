@@ -36,6 +36,8 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
    ,IN  p_return_indexed_collection      BOOLEAN
    ,IN  p_return_catchment_geometry      BOOLEAN
    ,IN  p_return_indexing_summary        BOOLEAN
+   ,IN  p_return_full_catchment          BOOLEAN
+   
    ,OUT out_indexed_points               JSONB
    ,OUT out_indexed_lines                JSONB
    ,OUT out_indexed_areas                JSONB
@@ -77,6 +79,7 @@ DECLARE
    boo_filter_by_notribal             BOOLEAN;
    
    str_nhdplus_version                VARCHAR;
+   str_wbd_version                    VARCHAR;
    
 BEGIN
 
@@ -136,6 +139,13 @@ BEGIN
    ELSE
       str_nhdplus_version := p_nhdplus_version;
    
+   END IF;
+   
+   str_wbd_version := UPPER(p_wbd_version);
+   IF str_wbd_version NOT IN ('NP21','NPHR','F3')
+   THEN
+      str_wbd_version := NULL;
+      
    END IF;
    
    --########################################################################--
@@ -346,6 +356,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -357,6 +368,7 @@ BEGIN
                   ,p_known_region           := str_known_region
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -377,6 +389,7 @@ BEGIN
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -390,6 +403,7 @@ BEGIN
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -412,6 +426,7 @@ BEGIN
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -425,6 +440,7 @@ BEGIN
                   ,p_line_threshold_perc    := (ary_features[i]).line_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -448,6 +464,7 @@ BEGIN
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -462,6 +479,7 @@ BEGIN
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -486,6 +504,7 @@ BEGIN
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -500,6 +519,7 @@ BEGIN
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -524,6 +544,7 @@ BEGIN
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -538,6 +559,7 @@ BEGIN
                   ,p_evt_threshold_perc     := (ary_features[i]).areaevt_threshold
                   ,p_permid_joinkey         := NULL
                   ,p_permid_geometry        := (ary_features[i]).geometry
+                  ,p_return_full_catchment  := p_return_full_catchment
                );
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
@@ -591,69 +613,163 @@ BEGIN
    ----------------------------------------------------------------------------
    IF str_nhdplus_version = 'nhdplus_m'
    THEN
-      INSERT INTO tmp_cip_out(
-          nhdplusid
-         ,catchmentstatecode
-         ,xwalk_huc12
-         ,areasqkm
-         ,istribal
-         ,istribal_areasqkm
-         ,shape
-      )
-      SELECT
-       a.nhdplusid
-      ,a.catchmentstatecode
-      ,a.xwalk_huc12
-      ,a.areasqkm
-      ,a.istribal
-      ,a.istribal_areasqkm
-      ,CASE
-       WHEN boo_return_geometry
-       THEN
-         a.shape
-       ELSE
-         CAST(NULL AS GEOMETRY)       
-       END AS shape
-      FROM
-      cipsrv_epageofab_m.catchment_fabric a
-      WHERE
-      EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-      AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
+      IF str_wbd_version IS NULL
+      THEN
+         INSERT INTO tmp_cip_out(
+             nhdplusid
+            ,catchmentstatecode
+            ,xwalk_huc12
+            ,areasqkm
+            ,istribal
+            ,istribal_areasqkm
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
+         ,a.areasqkm
+         ,a.istribal
+         ,a.istribal_areasqkm
+         ,CASE
+          WHEN boo_return_geometry
+          THEN
+            a.shape
+          ELSE
+            CAST(NULL AS GEOMETRY)       
+          END AS shape
+         FROM
+         cipsrv_epageofab_m.catchment_fabric a
+         WHERE
+         EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+         AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+         AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
+         AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
+         
+      ELSE
+         INSERT INTO tmp_cip_out(
+             nhdplusid
+            ,catchmentstatecode
+            ,xwalk_huc12
+            ,areasqkm
+            ,istribal
+            ,istribal_areasqkm
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         ,b.xwalk_huc12
+         ,a.areasqkm
+         ,a.istribal
+         ,a.istribal_areasqkm
+         ,CASE
+          WHEN boo_return_geometry
+          THEN
+            a.shape
+          ELSE
+            CAST(NULL AS GEOMETRY)       
+          END AS shape
+         FROM
+         cipsrv_epageofab_m.catchment_fabric a
+         LEFT JOIN (
+            SELECT
+             bb.nhdplusid
+            ,bb.xwalk_huc12
+            FROM
+            cipsrv_epageofab_m.catchment_fabric_xwalk bb
+            WHERE
+            bb.xwalk_huc12_version = str_wbd_version
+         ) b
+		   ON
+         a.nhdplusid = b.nhdplusid         
+         WHERE
+         EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+         AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+         AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
+         AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
+      
+      END IF;
    
    ELSIF str_nhdplus_version = 'nhdplus_h'
    THEN
-      INSERT INTO tmp_cip_out(
-          nhdplusid
-         ,catchmentstatecode
-         ,xwalk_huc12
-         ,areasqkm
-         ,istribal
-         ,istribal_areasqkm
-         ,shape
-      )
-      SELECT
-       a.nhdplusid
-      ,a.catchmentstatecode
-      ,a.xwalk_huc12
-      ,a.areasqkm
-      ,a.istribal
-      ,a.istribal_areasqkm
-      ,CASE
-       WHEN boo_return_geometry
-       THEN
-         a.shape
-       ELSE
-         CAST(NULL AS GEOMETRY)       
-       END AS shape
-      FROM
-      cipsrv_epageofab_h.catchment_fabric a
-      WHERE
-      EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
-      AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-      AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
+      IF str_wbd_version IS NULL
+      THEN
+         INSERT INTO tmp_cip_out(
+             nhdplusid
+            ,catchmentstatecode
+            ,xwalk_huc12
+            ,areasqkm
+            ,istribal
+            ,istribal_areasqkm
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
+         ,a.areasqkm
+         ,a.istribal
+         ,a.istribal_areasqkm
+         ,CASE
+          WHEN boo_return_geometry
+          THEN
+            a.shape
+          ELSE
+            CAST(NULL AS GEOMETRY)       
+          END AS shape
+         FROM
+         cipsrv_epageofab_h.catchment_fabric a
+         WHERE
+         EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+         AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+         AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
+         AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
+         
+      ELSE
+         INSERT INTO tmp_cip_out(
+             nhdplusid
+            ,catchmentstatecode
+            ,xwalk_huc12
+            ,areasqkm
+            ,istribal
+            ,istribal_areasqkm
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.catchmentstatecode
+         ,b.xwalk_huc12
+         ,a.areasqkm
+         ,a.istribal
+         ,a.istribal_areasqkm
+         ,CASE
+          WHEN boo_return_geometry
+          THEN
+            a.shape
+          ELSE
+            CAST(NULL AS GEOMETRY)       
+          END AS shape
+         FROM
+         cipsrv_epageofab_h.catchment_fabric a
+         LEFT JOIN (
+            SELECT
+             bb.nhdplusid
+            ,bb.xwalk_huc12
+            FROM
+            cipsrv_epageofab_h.catchment_fabric_xwalk bb
+            WHERE
+            bb.xwalk_huc12_version = str_wbd_version
+         ) b
+         ON
+         a.nhdplusid = b.nhdplusid 
+         WHERE
+         EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+         AND (NOT boo_filter_by_state    OR a.catchmentstatecode = ANY(ary_state_filters) )
+         AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
+         AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
+      
+      END IF;
    
    ELSE
       RAISE EXCEPTION 'err';
@@ -711,65 +827,19 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_engine.cipsrv_index(
-    JSONB
-   ,JSONB
-   ,JSONB
-   ,JSONB
-   ,VARCHAR[]
-   ,VARCHAR
-   ,VARCHAR[]
-   ,VARCHAR
-   ,VARCHAR
-   
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.cipsrv_index(
-    JSONB
-   ,JSONB
-   ,JSONB
-   ,JSONB
-   ,VARCHAR[]
-   ,VARCHAR
-   ,VARCHAR[]
-   ,VARCHAR
-   ,VARCHAR
-   
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-) TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;

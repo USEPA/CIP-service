@@ -48,10 +48,16 @@
                <textarea name="dzGeometry" id="dzGeometry" type="text" class="textbox" style="width: 500px;" rows="3"></textarea>
                <br/>
                <br/>
-               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:</span>
                <select name="dzNHDPlusVersion" id="dzNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px">
                   <option value="nhdplus_m" SELECTED>Medium Resolution</option>
                   <option value="nhdplus_h">High Resolution</option>
+               </select>&nbsp;
+               <span style="font-family: Arial; font-size: 12px;">WBD Version:</span>
+               <select name="dzWBDVersion" id="dzWBDVersion" style="font-family: Arial; font-size: 11px; width:170px">
+                  <option value="NP21">NHDPlus v2.1</option>
+                  <option value="NPHR">NHDPlus HR</option>
+                  <option value="F3" SELECTED>USGS Final(3)</option>
                </select>
                <br/>
                <br/>
@@ -304,6 +310,7 @@
       var catfl  = document.getElementById("dzCatchmentFilters");
       
       var pnhdv  = document.getElementById("dzNHDPlusVersion");
+      var pwbdv  = document.getElementById("dzWBDVersion");
       var pointm = document.getElementById("dzDefaultPointIndexingMethod");
       var linem  = document.getElementById("dzDefaultLineIndexingMethod");
       var ringm  = document.getElementById("dzDefaultRingIndexingMethod");
@@ -318,7 +325,7 @@
          ,"geometry_clip_stage":            get_select_values(geoms)
          ,"catchment_filter":               get_mselect_values(catfl)
          ,"nhdplus_version":                get_select_values(pnhdv)
-         ,"wbd_version":                    null
+         ,"wbd_version":                    get_select_values(pwbdv)
          
          ,"default_point_indexing_method":  get_select_values(pointm)
          
@@ -537,6 +544,7 @@
                  + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">XWalk HUC12</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">Area SqKm</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">Tribal SqKm</TH>'
                  + '</TR>';
@@ -557,6 +565,7 @@
             tbl_cnt += '</TD>'
                     +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.catchmentstatecode + '</TD>'
                     +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.nhdplusid + '</TD>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + response.catchments.features[i].properties.xwalk_huc12 + '</TD>'
                     +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.areasqkm,4) + '</TD>'
                     +  '<TD style="font-family: Arial; font-size: 14px;">' + roundNumber(response.catchments.features[i].properties.istribal_areasqkm,4) + '</TD>'
                     +  '</TR>';
