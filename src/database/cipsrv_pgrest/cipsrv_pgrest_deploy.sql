@@ -695,6 +695,7 @@ BEGIN
             ,a.areasqkm
             ,a.istribal
             ,a.istribal_areasqkm
+            ,a.isnavigable
             ,CASE WHEN boo_return_catchment_geometry
              THEN
                ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 
@@ -2322,11 +2323,11 @@ BEGIN
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_pgrest.pointindexing';
    IF b IS NOT NULL THEN 
-   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv_pgrest',a,b);
    EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
    ELSE
    IF a IS NOT NULL THEN 
-   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv_pgrest',a);
    EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
    ELSE RAISE EXCEPTION 'prob'; 
    END IF;END IF;

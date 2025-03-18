@@ -606,6 +606,7 @@ BEGIN
             ,a.areasqkm
             ,a.istribal
             ,a.istribal_areasqkm
+            ,a.isnavigable
             ,CASE WHEN boo_return_catchment_geometry
              THEN
                ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 

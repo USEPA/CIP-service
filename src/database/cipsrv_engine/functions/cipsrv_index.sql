@@ -622,6 +622,7 @@ BEGIN
             ,areasqkm
             ,istribal
             ,istribal_areasqkm
+            ,isnavigable
             ,shape
          )
          SELECT
@@ -631,6 +632,7 @@ BEGIN
          ,a.areasqkm
          ,a.istribal
          ,a.istribal_areasqkm
+         ,a.isnavigable
          ,CASE
           WHEN boo_return_geometry
           THEN
@@ -654,6 +656,7 @@ BEGIN
             ,areasqkm
             ,istribal
             ,istribal_areasqkm
+            ,isnavigable
             ,shape
          )
          SELECT
@@ -663,6 +666,7 @@ BEGIN
          ,a.areasqkm
          ,a.istribal
          ,a.istribal_areasqkm
+         ,a.isnavigable
          ,CASE
           WHEN boo_return_geometry
           THEN
@@ -702,6 +706,7 @@ BEGIN
             ,areasqkm
             ,istribal
             ,istribal_areasqkm
+            ,isnavigable
             ,shape
          )
          SELECT
@@ -711,6 +716,7 @@ BEGIN
          ,a.areasqkm
          ,a.istribal
          ,a.istribal_areasqkm
+         ,a.isnavigable
          ,CASE
           WHEN boo_return_geometry
           THEN
@@ -734,6 +740,7 @@ BEGIN
             ,areasqkm
             ,istribal
             ,istribal_areasqkm
+            ,isnavigable
             ,shape
          )
          SELECT
@@ -743,6 +750,7 @@ BEGIN
          ,a.areasqkm
          ,a.istribal
          ,a.istribal_areasqkm
+         ,a.isnavigable
          ,CASE
           WHEN boo_return_geometry
           THEN
