@@ -22,21 +22,7 @@
           "id": "concatenate"
          ,"output": "cipsrv_wbd_deploy.sql"
          ,"includes": [
-             "materialized views/wbd_hu12_f3_5070.sql"
-            ,"materialized views/wbd_hu12_f3_3338.sql"
-            ,"materialized views/wbd_hu12_f3_26904.sql"
-            ,"materialized views/wbd_hu12_f3_32161.sql"
-            ,"materialized views/wbd_hu12_f3_32655.sql"
-            ,"materialized views/wbd_hu12_f3_32702.sql"
-            
-            ,"materialized views/wbd_hu12sp_f3_5070.sql"
-            ,"materialized views/wbd_hu12sp_f3_3338.sql"
-            ,"materialized views/wbd_hu12sp_f3_26904.sql"
-            ,"materialized views/wbd_hu12sp_f3_32161.sql"
-            ,"materialized views/wbd_hu12sp_f3_32655.sql"
-            ,"materialized views/wbd_hu12sp_f3_32702.sql"
-            
-            ,"materialized views/wbd_hu12_np21_5070.sql"
+             "materialized views/wbd_hu12_np21_5070.sql"
             ,"materialized views/wbd_hu12_np21_3338.sql"
             ,"materialized views/wbd_hu12_np21_26904.sql"
             ,"materialized views/wbd_hu12_np21_32161.sql"
@@ -49,6 +35,88 @@
             ,"materialized views/wbd_hu12sp_np21_32161.sql"
             ,"materialized views/wbd_hu12sp_np21_32655.sql"
             ,"materialized views/wbd_hu12sp_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu10_np21_5070.sql"
+            ,"materialized views/wbd_hu10_np21_3338.sql"
+            ,"materialized views/wbd_hu10_np21_26904.sql"
+            ,"materialized views/wbd_hu10_np21_32161.sql"
+            ,"materialized views/wbd_hu10_np21_32655.sql"
+            ,"materialized views/wbd_hu10_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu10sp_np21_5070.sql"
+            ,"materialized views/wbd_hu10sp_np21_3338.sql"
+            ,"materialized views/wbd_hu10sp_np21_26904.sql"
+            ,"materialized views/wbd_hu10sp_np21_32161.sql"
+            ,"materialized views/wbd_hu10sp_np21_32655.sql"
+            ,"materialized views/wbd_hu10sp_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu8_np21_5070.sql"
+            ,"materialized views/wbd_hu8_np21_3338.sql"
+            ,"materialized views/wbd_hu8_np21_26904.sql"
+            ,"materialized views/wbd_hu8_np21_32161.sql"
+            ,"materialized views/wbd_hu8_np21_32655.sql"
+            ,"materialized views/wbd_hu8_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu8sp_np21_5070.sql"
+            ,"materialized views/wbd_hu8sp_np21_3338.sql"
+            ,"materialized views/wbd_hu8sp_np21_26904.sql"
+            ,"materialized views/wbd_hu8sp_np21_32161.sql"
+            ,"materialized views/wbd_hu8sp_np21_32655.sql"
+            ,"materialized views/wbd_hu8sp_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu6_np21_5070.sql"
+            ,"materialized views/wbd_hu6_np21_3338.sql"
+            ,"materialized views/wbd_hu6_np21_26904.sql"
+            ,"materialized views/wbd_hu6_np21_32161.sql"
+            ,"materialized views/wbd_hu6_np21_32655.sql"
+            ,"materialized views/wbd_hu6_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu6sp_np21_5070.sql"
+            ,"materialized views/wbd_hu6sp_np21_3338.sql"
+            ,"materialized views/wbd_hu6sp_np21_26904.sql"
+            ,"materialized views/wbd_hu6sp_np21_32161.sql"
+            ,"materialized views/wbd_hu6sp_np21_32655.sql"
+            ,"materialized views/wbd_hu6sp_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu4_np21_5070.sql"
+            ,"materialized views/wbd_hu4_np21_3338.sql"
+            ,"materialized views/wbd_hu4_np21_26904.sql"
+            ,"materialized views/wbd_hu4_np21_32161.sql"
+            ,"materialized views/wbd_hu4_np21_32655.sql"
+            ,"materialized views/wbd_hu4_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu4sp_np21_5070.sql"
+            ,"materialized views/wbd_hu4sp_np21_3338.sql"
+            ,"materialized views/wbd_hu4sp_np21_26904.sql"
+            ,"materialized views/wbd_hu4sp_np21_32161.sql"
+            ,"materialized views/wbd_hu4sp_np21_32655.sql"
+            ,"materialized views/wbd_hu4sp_np21_32702.sql"
+            
+            ,"materialized views/wbd_hu2_np21_5070.sql"
+            ,"materialized views/wbd_hu2_np21_3338.sql"
+            ,"materialized views/wbd_hu2_np21_26904.sql"
+            ,"materialized views/wbd_hu2_np21_32161.sql"
+            
+            ,"materialized views/wbd_hu2sp_np21_5070.sql"
+            ,"materialized views/wbd_hu2sp_np21_3338.sql"
+            ,"materialized views/wbd_hu2sp_np21_26904.sql"
+            ,"materialized views/wbd_hu2sp_np21_32161.sql"
+            
+            ,"materialized views/wbd_hu10_np21.sql"
+            ,"materialized views/wbd_hu10sp_np21.sql"
+            
+            ,"materialized views/wbd_hu8_np21.sql"
+            ,"materialized views/wbd_hu8sp_np21.sql"
+            
+            ,"materialized views/wbd_hu6_np21.sql"
+            ,"materialized views/wbd_hu6sp_np21.sql"
+            
+            ,"materialized views/wbd_hu4_np21.sql"
+            ,"materialized views/wbd_hu4sp_np21.sql"
+            
+            ,"materialized views/wbd_hu2_np21.sql"
+            ,"materialized views/wbd_hu2sp_np21.sql"    
+            
             
             ,"materialized views/wbd_hu12_nphr_5070.sql"
             ,"materialized views/wbd_hu12_nphr_3338.sql"
@@ -64,6 +132,101 @@
             ,"materialized views/wbd_hu12sp_nphr_32655.sql"
             ,"materialized views/wbd_hu12sp_nphr_32702.sql"
             
+            ,"materialized views/wbd_hu10_nphr_5070.sql"
+            ,"materialized views/wbd_hu10_nphr_3338.sql"
+            ,"materialized views/wbd_hu10_nphr_26904.sql"
+            ,"materialized views/wbd_hu10_nphr_32161.sql"
+            ,"materialized views/wbd_hu10_nphr_32655.sql"
+            ,"materialized views/wbd_hu10_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu10sp_nphr_5070.sql"
+            ,"materialized views/wbd_hu10sp_nphr_3338.sql"
+            ,"materialized views/wbd_hu10sp_nphr_26904.sql"
+            ,"materialized views/wbd_hu10sp_nphr_32161.sql"
+            ,"materialized views/wbd_hu10sp_nphr_32655.sql"
+            ,"materialized views/wbd_hu10sp_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu8_nphr_5070.sql"
+            ,"materialized views/wbd_hu8_nphr_3338.sql"
+            ,"materialized views/wbd_hu8_nphr_26904.sql"
+            ,"materialized views/wbd_hu8_nphr_32161.sql"
+            ,"materialized views/wbd_hu8_nphr_32655.sql"
+            ,"materialized views/wbd_hu8_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu8sp_nphr_5070.sql"
+            ,"materialized views/wbd_hu8sp_nphr_3338.sql"
+            ,"materialized views/wbd_hu8sp_nphr_26904.sql"
+            ,"materialized views/wbd_hu8sp_nphr_32161.sql"
+            ,"materialized views/wbd_hu8sp_nphr_32655.sql"
+            ,"materialized views/wbd_hu8sp_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu6_nphr_5070.sql"
+            ,"materialized views/wbd_hu6_nphr_3338.sql"
+            ,"materialized views/wbd_hu6_nphr_26904.sql"
+            ,"materialized views/wbd_hu6_nphr_32161.sql"
+            ,"materialized views/wbd_hu6_nphr_32655.sql"
+            ,"materialized views/wbd_hu6_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu6sp_nphr_5070.sql"
+            ,"materialized views/wbd_hu6sp_nphr_3338.sql"
+            ,"materialized views/wbd_hu6sp_nphr_26904.sql"
+            ,"materialized views/wbd_hu6sp_nphr_32161.sql"
+            ,"materialized views/wbd_hu6sp_nphr_32655.sql"
+            ,"materialized views/wbd_hu6sp_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu4_nphr_5070.sql"
+            ,"materialized views/wbd_hu4_nphr_3338.sql"
+            ,"materialized views/wbd_hu4_nphr_26904.sql"
+            ,"materialized views/wbd_hu4_nphr_32161.sql"
+            ,"materialized views/wbd_hu4_nphr_32655.sql"
+            ,"materialized views/wbd_hu4_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu4sp_nphr_5070.sql"
+            ,"materialized views/wbd_hu4sp_nphr_3338.sql"
+            ,"materialized views/wbd_hu4sp_nphr_26904.sql"
+            ,"materialized views/wbd_hu4sp_nphr_32161.sql"
+            ,"materialized views/wbd_hu4sp_nphr_32655.sql"
+            ,"materialized views/wbd_hu4sp_nphr_32702.sql"
+            
+            ,"materialized views/wbd_hu2_nphr_5070.sql"
+            ,"materialized views/wbd_hu2_nphr_3338.sql"
+            ,"materialized views/wbd_hu2_nphr_26904.sql"
+            ,"materialized views/wbd_hu2_nphr_32161.sql"
+            
+            ,"materialized views/wbd_hu2sp_nphr_5070.sql"
+            ,"materialized views/wbd_hu2sp_nphr_3338.sql"
+            ,"materialized views/wbd_hu2sp_nphr_26904.sql"
+            ,"materialized views/wbd_hu2sp_nphr_32161.sql"
+            
+            ,"materialized views/wbd_hu10_nphr.sql"
+            ,"materialized views/wbd_hu10sp_nphr.sql"
+            
+            ,"materialized views/wbd_hu8_nphr.sql"
+            ,"materialized views/wbd_hu8sp_nphr.sql"
+            
+            ,"materialized views/wbd_hu6_nphr.sql"
+            ,"materialized views/wbd_hu6sp_nphr.sql"
+            
+            ,"materialized views/wbd_hu4_nphr.sql"
+            ,"materialized views/wbd_hu4sp_nphr.sql"
+            
+            ,"materialized views/wbd_hu2_nphr.sql"
+            ,"materialized views/wbd_hu2sp_nphr.sql"
+            
+            
+            ,"materialized views/wbd_hu12_f3_5070.sql"
+            ,"materialized views/wbd_hu12_f3_3338.sql"
+            ,"materialized views/wbd_hu12_f3_26904.sql"
+            ,"materialized views/wbd_hu12_f3_32161.sql"
+            ,"materialized views/wbd_hu12_f3_32655.sql"
+            ,"materialized views/wbd_hu12_f3_32702.sql"
+            
+            ,"materialized views/wbd_hu12sp_f3_5070.sql"
+            ,"materialized views/wbd_hu12sp_f3_3338.sql"
+            ,"materialized views/wbd_hu12sp_f3_26904.sql"
+            ,"materialized views/wbd_hu12sp_f3_32161.sql"
+            ,"materialized views/wbd_hu12sp_f3_32655.sql"
+            ,"materialized views/wbd_hu12sp_f3_32702.sql"
             
             ,"materialized views/wbd_hu10_f3_5070.sql"
             ,"materialized views/wbd_hu10_f3_3338.sql"
