@@ -48,6 +48,9 @@ parser.add_argument("--owld_dumpfiles_copyin"   ,required=False,default=None);
 parser.add_argument("--support_dumpfile"        ,required=False,default=None);
 parser.add_argument("--support_dumpfile_copyin" ,required=False,default=None);
 
+parser.add_argument("--wbd_dumpfile"            ,required=False,default=None);
+parser.add_argument("--wbd_dumpfile_copyin"     ,required=False,default=None);
+
 parser.add_argument("--override_postgresql_port",required=False,default=None);
 
 parser.add_argument("--override_demo_pgrst_port",required=False,default=None);
@@ -101,6 +104,9 @@ def main(
    
    ,support_dumpfile
    ,support_dumpfile_copyin
+   
+   ,wbd_dumpfile
+   ,wbd_dumpfile_copyin
    
    ,override_postgresql_port
    
@@ -290,6 +296,14 @@ def main(
    if hrws_dumpfile_copyin is not None:
       if not os.path.exists(hrws_dumpfile_copyin):
          raise Exception("hrws_dumpfile_copyin not found - " + str(hrws_dumpfile_copyin));
+         
+   if support_dumpfile_copyin is not None:
+      if not os.path.exists(support_dumpfile_copyin):
+         raise Exception("support_dumpfile_copyin not found - " + str(support_dumpfile_copyin));
+                 
+   if wbd_dumpfile_copyin is not None:
+      if not os.path.exists(wbd_dumpfile_copyin):
+         raise Exception("wbd_dumpfile_copyin not found - " + str(wbd_dumpfile_copyin));
          
    if owld_dumpfiles_copyin is not None:
       for item in owld_dumpfiles_copyin.split(','):
@@ -755,6 +769,18 @@ def main(
       );
       
    ###############################################################################
+   # WBD
+   ###############################################################################
+   if recipe in ['EXTENDED']:
+      cipld(
+          ipnyb                = 'cipsrv_wbd'
+         ,dumpfile             = wbd_dumpfile
+         ,dumpfile_copyin      = wbd_dumpfile_copyin
+         ,dumpfile_parm        = '--wbd_dumpfile'
+         ,override_username    = override_username
+      );
+      
+   ###############################################################################
    # OWLD
    ###############################################################################
    if recipe in ['EXTENDED','MROWLDINDX']:
@@ -854,6 +880,9 @@ if __name__ == '__main__':
       
       ,support_dumpfile         = args.support_dumpfile
       ,support_dumpfile_copyin  = args.support_dumpfile_copyin
+      
+      ,wbd_dumpfile             = args.wbd_dumpfile
+      ,wbd_dumpfile_copyin      = args.wbd_dumpfile_copyin
       
       ,override_postgresql_port = args.override_postgresql_port
       
