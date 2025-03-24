@@ -10151,7 +10151,7 @@ FROM (
       ,'22' AS huc2
       ,ggg.centermass_x
       ,ggg.centermass_y
-      ,ggg.globalid
+      ,'{' || uuid_generate_v1() || '}' AS globalid
       ,(SELECT 
         ST_UNION(gggg.shape) 
         FROM (
@@ -10326,7 +10326,7 @@ FROM (
       ,'22' AS huc2
       ,ggg.centermass_x
       ,ggg.centermass_y
-      ,ggg.globalid
+      ,'{' || uuid_generate_v1() || '}' AS globalid
       ,(SELECT 
         ST_UNION(gggg.shape) 
         FROM (
