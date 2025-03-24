@@ -5,7 +5,7 @@ BEGIN
 
    IF EXISTS(
       SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
+      WHERE a.table_schema = 'cipsrv_wbd'
       AND   a.table_name   = 'wbd_hu12_nphr'
    )
    THEN 
@@ -33,7 +33,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_nphr a;
+      cipsrv_wbd.wbd_hu12_nphr a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
