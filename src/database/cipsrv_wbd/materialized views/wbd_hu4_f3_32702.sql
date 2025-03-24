@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cipsrv_wbd.wbd_hu6_f3_32702 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_wbd.wbd_hu4_f3_32702 CASCADE;
 
-CREATE MATERIALIZED VIEW cipsrv_wbd.wbd_hu6_f3_32702(
+CREATE MATERIALIZED VIEW cipsrv_wbd.wbd_hu4_f3_32702(
     objectid
    ,tnmid
    ,metasourceid
@@ -9,7 +9,7 @@ CREATE MATERIALIZED VIEW cipsrv_wbd.wbd_hu6_f3_32702(
    ,areaacres
    ,name
    ,states
-   ,huc6
+   ,huc4
    ,centermass_x
    ,centermass_y
    ,globalid
@@ -25,14 +25,14 @@ SELECT
 ,ROUND(a.areaacres::NUMERIC,4)        AS areaacres
 ,b.name
 ,ARRAY_TO_STRING(a.states_array,',')  AS states
-,a.huc6
+,a.huc4
 ,ROUND(ST_X(a.centermass)::NUMERIC,8) AS centermass_x
 ,ROUND(ST_Y(a.centermass)::NUMERIC,8) AS centermass_y
 ,'{' || uuid_generate_v1() || '}'     AS globalid
 ,a.shape
 FROM (
    SELECT
-    aa.huc6
+    aa.huc4
    ,ARRAY_REMOVE(aa.states_array,'XX')       AS states_array
    ,ST_AREA(aa.shape) * 0.000001             AS areasqkm
    ,ST_AREA(aa.shape) * 0.000247105          AS areaacres
@@ -40,53 +40,50 @@ FROM (
    ,ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
    FROM (
       SELECT
-       SUBSTR(aaa.huc8,1,6)      AS huc6
+       SUBSTR(aaa.huc6,1,4)      AS huc4
       ,ARRAY_AGG(DISTINCT u.val) AS states_array
       ,ST_UNION(aaa.shape)       AS shape 
       FROM (
          SELECT
-          aaaa.huc8
+          aaaa.huc6
          ,STRING_TO_ARRAY(
              CASE WHEN aaaa.states IS NULL THEN 'XX' ELSE aaaa.states END
             ,','
           ) AS states_array
          ,aaaa.shape
          FROM
-         cipsrv_wbd.wbd_hu8sp_f3_32702 aaaa
+         cipsrv_wbd.wbd_hu6_f3_32702 aaaa
       ) aaa
       CROSS JOIN
 	   LATERAL UNNEST(aaa.states_array) AS u(val)
       GROUP BY
-      SUBSTR(aaa.huc8,1,6)
+      SUBSTR(aaa.huc6,1,4)
    ) aa
 ) a
 LEFT JOIN
 cipsrv_wbd.wbd_names b
 ON
-b.huc = a.huc6;
+b.huc = a.huc4;
 
-ALTER TABLE cipsrv_wbd.wbd_hu6_f3_32702 OWNER TO cipsrv;
-GRANT SELECT ON cipsrv_wbd.wbd_hu6_f3_32702 TO public;
+ALTER TABLE cipsrv_wbd.wbd_hu4_f3_32702 OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_wbd.wbd_hu4_f3_32702 TO public;
 
-CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu6_f3_32702_pk
-ON cipsrv_wbd.wbd_hu6_f3_32702(huc6);
+CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu4_f3_32702_pk
+ON cipsrv_wbd.wbd_hu4_f3_32702(huc4);
 
-CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu6_f3_32702_u01
-ON cipsrv_wbd.wbd_hu6_f3_32702(objectid);
+CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu4_f3_32702_u01
+ON cipsrv_wbd.wbd_hu4_f3_32702(objectid);
 
-CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu6_f3_32702_u02
-ON cipsrv_wbd.wbd_hu6_f3_32702(globalid);
+CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu4_f3_32702_u02
+ON cipsrv_wbd.wbd_hu4_f3_32702(globalid);
 
-CREATE INDEX IF NOT EXISTS wbd_hu6_f3_32702_f01
-ON cipsrv_wbd.wbd_hu6_f3_32702(SUBSTR(huc6,1,2));
+CREATE INDEX IF NOT EXISTS wbd_hu4_f3_32702_f01
+ON cipsrv_wbd.wbd_hu4_f3_32702(SUBSTR(huc4,1,2));
 
-CREATE INDEX IF NOT EXISTS wbd_hu6_f3_32702_f02
-ON cipsrv_wbd.wbd_hu6_f3_32702(SUBSTR(huc6,1,4));
+CREATE INDEX IF NOT EXISTS wbd_hu4_f3_32702_spx
+ON cipsrv_wbd.wbd_hu4_f3_32702 USING gist(shape);
 
-CREATE INDEX IF NOT EXISTS wbd_hu6_f3_32702_spx
-ON cipsrv_wbd.wbd_hu6_f3_32702 USING gist(shape);
+ANALYZE cipsrv_wbd.wbd_hu4_f3_32702;
 
-ANALYZE cipsrv_wbd.wbd_hu6_f3_32702;
-
---VACUUM FREEZE ANALYZE cipsrv_wbd.wbd_hu6_f3_32702;
+--VACUUM FREEZE ANALYZE cipsrv_wbd.wbd_hu4_f3_32702;
 

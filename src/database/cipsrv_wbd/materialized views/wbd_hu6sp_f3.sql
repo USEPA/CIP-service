@@ -128,41 +128,38 @@ FROM (
    cipsrv_wbd.wbd_hu6sp_f3_32702 ff
    UNION ALL
    SELECT
-    gg.tnmid
+    nn.tnmid
    ,gg.metasourceid
    ,gg.loaddate
-   ,gg.areasqkm
-   ,gg.areaacres
-   ,gg.name
+   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001   ,4) AS areasqkm
+   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000247105,4) AS areaacres
+   ,nn.name
    ,gg.states
    ,gg.huc6
    ,gg.centermass_x
    ,gg.centermass_y
-   ,gg.globalid
+   ,'{' || uuid_generate_v1() || '}' AS globalid
    ,gg.shape
    FROM (
       SELECT
-       bbb.tnmid
-      ,ggg.metasourceid
+       ggg.metasourceid
       ,ggg.loaddate
-      ,ggg.areasqkm
-      ,ggg.areaacres
-      ,bbb.name
       ,ggg.states
-      ,SUBSTR(ggg.huc12,1,6) AS huc6
+      ,'220400' AS huc6
       ,ggg.centermass_x
       ,ggg.centermass_y
       ,ggg.globalid
-      ,ggg.shape
+      ,(SELECT ST_UNION(gggg.shape) FROM cipsrv_wbd.wbd_hu12_f3 gggg WHERE SUBSTR(gggg.huc12,1,6) = '220400') AS shape
       FROM
       cipsrv_wbd.wbd_hu12sp_f3 ggg
-      LEFT JOIN
-      cipsrv_wbd.wbd_names bbb
-      ON
-      bbb.huc = SUBSTR(ggg.huc12,1,6)
       WHERE
-      SUBSTR(ggg.huc12,1,4) = '2204'
+      SUBSTR(ggg.huc12,1,6) = '220400'
+      LIMIT 1
    ) gg
+   LEFT JOIN
+   cipsrv_wbd.wbd_names nn
+   ON
+   nn.huc = gg.huc6
 ) a;
 
 ALTER TABLE cipsrv_wbd.wbd_hu6sp_f3 OWNER TO cipsrv;

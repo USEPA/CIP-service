@@ -106,7 +106,7 @@ FROM (
    ,gg.huc2
    ,gg.centermass_x
    ,gg.centermass_y
-   ,gg.globalid
+   ,'{' || uuid_generate_v1() || '}' AS globalid
    ,gg.shape
    FROM (
       SELECT
