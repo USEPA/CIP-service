@@ -124,10 +124,30 @@
             ,"views/tiger_aiannha_esri.sql"
             ,"views/tiger_fedstatewaters.sql"
             ,"views/tiger_fedstatewaters_esri.sql"
+            
             ,"views/wbd_hu12_f3.sql"
             ,"views/wbd_hu12_f3_esri.sql"
+            ,"views/wbd_hu12sp_f3.sql"
+            ,"views/wbd_hu12sp_f3_esri.sql"
+            
+            ,"views/wbd_hu10_f3_esri.sql"
+            ,"views/wbd_hu10sp_f3_esri.sql"
+            
+            ,"views/wbd_hu8_f3_esri.sql"
+            ,"views/wbd_hu8sp_f3_esri.sql"
+            
+            ,"views/wbd_hu6_f3_esri.sql"
+            ,"views/wbd_hu6sp_f3_esri.sql"
+            
+            ,"views/wbd_hu4_f3_esri.sql"
+            ,"views/wbd_hu4sp_f3_esri.sql"
+            
+            ,"views/wbd_hu2_f3_esri.sql"
+            ,"views/wbd_hu2sp_f3_esri.sql"
+                      
             ,"views/wbd_hu12_np21.sql"
             ,"views/wbd_hu12_np21_esri.sql"
+            
             ,"views/wbd_hu12_nphr.sql"
             ,"views/wbd_hu12_nphr_esri.sql"
           ]
