@@ -73,7 +73,7 @@ CREATE INDEX IF NOT EXISTS wbd_hu12_f3_5070_f05
 ON cipsrv_wbd.wbd_hu12_f3_5070(SUBSTR(huc12,1,10));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_f3_5070_spx
-ON cipsrv_wbd.wbd_hu12_f3 USING gist(shape);
+ON cipsrv_wbd.wbd_hu12_f3_5070 USING gist(shape);
 
 ANALYZE cipsrv_wbd.wbd_hu12_f3_5070;
 
