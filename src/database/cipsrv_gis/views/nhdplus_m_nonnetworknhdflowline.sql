@@ -3,11 +3,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nonnetworknhdflowline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nonnetworknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nonnetworknhdflowline') 
    THEN
 
       EXECUTE $q$

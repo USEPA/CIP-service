@@ -22,7 +22,8 @@
           "id": "concatenate"
          ,"output": "cipsrv_gis_deploy.sql"
          ,"includes": [
-             "views/epageofab_h_catchment_fabric.sql"
+             "functions/resource_exists.sql"
+            ,"views/epageofab_h_catchment_fabric.sql"
             ,"views/epageofab_h_catchment_fabric_esri.sql"
             ,"views/epageofab_h_catchment_fabric_huc12_np21.sql"
             ,"views/epageofab_h_catchment_fabric_huc12_np21_esri.sql"

@@ -3,15 +3,11 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6_f3_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_wbd'
-      AND   a.table_name   = 'wbd_hu6_f3'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6_f3')
    THEN 
 
       EXECUTE $q$
-      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6_np21_f3
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6_f3_esri
       AS
       SELECT
        a.objectid

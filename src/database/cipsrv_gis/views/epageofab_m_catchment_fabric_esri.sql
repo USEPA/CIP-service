@@ -3,11 +3,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_m'
-      AND   a.table_name   = 'catchment_fabric'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_m','catchment_fabric') 
    THEN 
 
       EXECUTE $q$

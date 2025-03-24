@@ -3,11 +3,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src2cip;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src2cip'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src2cip') 
    THEN 
 
       EXECUTE $q$
