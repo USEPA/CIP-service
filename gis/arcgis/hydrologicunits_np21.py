@@ -5,8 +5,8 @@ from aliases import update_aliases;
 
 ###############################################################################
 env = get_env_data(os.path.dirname(os.path.realpath(__file__)) + os.sep + '.env');
-work_path = os.path.dirname(os.path.realpath(__file__)) + os.sep + "hydrologicunits_f3";
-container_name = "hydrologicunits_f3.gdb";
+work_path = os.path.dirname(os.path.realpath(__file__)) + os.sep + "hydrologicunits_np21";
+container_name = "hydrologicunits_np21.gdb";
 source_conn = env['sde_conn'];
 print("using " + source_conn + "...");
 ###############################################################################
@@ -21,13 +21,13 @@ print("purging existing data...",end="",flush=True);
 
 arcpy.env.preserveGlobalIds = True;
 
-#item = work_path + os.sep + container_name + os.sep + "hu12"
-#if arcpy.Exists(item):
-#   arcpy.Delete_management(item);
+item = work_path + os.sep + container_name + os.sep + "hu12"
+if arcpy.Exists(item):
+   arcpy.Delete_management(item);
 
-#item = work_path + os.sep + container_name + os.sep + "hu12sp"
-#if arcpy.Exists(item):
-#   arcpy.Delete_management(item);
+item = work_path + os.sep + container_name + os.sep + "hu12sp"
+if arcpy.Exists(item):
+   arcpy.Delete_management(item);
 
 item = work_path + os.sep + container_name + os.sep + "hu10"
 if arcpy.Exists(item):
@@ -75,9 +75,9 @@ print(" ");
 ############################################################################### 
 # Export feature classes and tables
 ###############################################################################
-z="""
+
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu12_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu12_np21_esri";
 outname   = "hu12";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -93,7 +93,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu12sp_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu12sp_np21_esri";
 outname   = "hu12sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -107,9 +107,9 @@ arcpy.management.AddIndex(target_nm,"huc12"                         ,"idx01");
 print(" DONE.");
 print(outname + " export complete.");
 print(" ");
-"""
+
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu10_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu10_np21_esri";
 outname   = "hu10";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -125,7 +125,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu10sp_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu10sp_np21_esri";
 outname   = "hu10sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -141,7 +141,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu8_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu8_np21_esri";
 outname   = "hu8";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -157,7 +157,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu8sp_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu8sp_np21_esri";
 outname   = "hu8sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -173,7 +173,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu6_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu6_np21_esri";
 outname   = "hu6";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -189,7 +189,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu6sp_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu6sp_np21_esri";
 outname   = "hu6sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -205,7 +205,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu4_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu4_np21_esri";
 outname   = "hu4";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -221,7 +221,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu4sp_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu4sp_np21_esri";
 outname   = "hu4sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -237,7 +237,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu2_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu2_np21_esri";
 outname   = "hu2";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);
@@ -253,7 +253,7 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu2sp_f3_esri";
+source    = source_conn + r"/cipsrv_gis.wbd_hu2sp_np21_esri";
 outname   = "hu2sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
 ret       = fcexporter(source,outname,work_path,container_name);

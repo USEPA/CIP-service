@@ -21,13 +21,13 @@ print("purging existing data...",end="",flush=True);
 
 arcpy.env.preserveGlobalIds = True;
 
-#item = work_path + os.sep + container_name + os.sep + "hu12"
-#if arcpy.Exists(item):
-#   arcpy.Delete_management(item);
+item = work_path + os.sep + container_name + os.sep + "hu12"
+if arcpy.Exists(item):
+   arcpy.Delete_management(item);
 
-#item = work_path + os.sep + container_name + os.sep + "hu12sp"
-#if arcpy.Exists(item):
-#   arcpy.Delete_management(item);
+item = work_path + os.sep + container_name + os.sep + "hu12sp"
+if arcpy.Exists(item):
+   arcpy.Delete_management(item);
 
 item = work_path + os.sep + container_name + os.sep + "hu10"
 if arcpy.Exists(item):
@@ -75,7 +75,7 @@ print(" ");
 ############################################################################### 
 # Export feature classes and tables
 ###############################################################################
-z="""
+
 ###############################################################################
 source    = source_conn + r"/cipsrv_gis.wbd_hu12_f3_esri";
 outname   = "hu12";
@@ -107,7 +107,7 @@ arcpy.management.AddIndex(target_nm,"huc12"                         ,"idx01");
 print(" DONE.");
 print(outname + " export complete.");
 print(" ");
-"""
+
 ###############################################################################
 source    = source_conn + r"/cipsrv_gis.wbd_hu10_f3_esri";
 outname   = "hu10";
