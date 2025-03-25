@@ -29,18 +29,6 @@ item = work_path + os.sep + container_name + os.sep + "tiger_aiannha"
 if arcpy.Exists(item):
    arcpy.Delete_management(item);
 
-item = work_path + os.sep + container_name + os.sep + "wbd_hu12_np21"
-if arcpy.Exists(item):
-   arcpy.Delete_management(item);
-
-item = work_path + os.sep + container_name + os.sep + "wbd_hu12_nphr"
-if arcpy.Exists(item):
-   arcpy.Delete_management(item);
-
-item = work_path + os.sep + container_name + os.sep + "wbd_hu12_f3"
-if arcpy.Exists(item):
-   arcpy.Delete_management(item);
-   
 print(" DONE.");
 print(" ");
 
@@ -85,52 +73,3 @@ arcpy.management.AddIndex(target_nm,"funcstat"                      ,"idx05");
 print(" DONE.");
 print(outname + " export complete.");
 print(" ");
-
-###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu12_np21_esri";
-outname   = "wbd_hu12_np21";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"huc12"                         ,"idx01");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
-###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu12_nphr_esri";
-outname   = "wbd_hu12_nphr";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"huc12"                         ,"idx01");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
-###############################################################################
-source    = source_conn + r"/cipsrv_gis.wbd_hu12_f3_esri";
-outname   = "wbd_hu12_f3";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"huc12"                         ,"idx01");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
