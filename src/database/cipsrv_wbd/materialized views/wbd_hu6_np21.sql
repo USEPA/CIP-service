@@ -126,40 +126,6 @@ FROM (
    ,ST_TRANSFORM(ff.shape,4269) AS shape
    FROM 
    cipsrv_wbd.wbd_hu6_np21_32702 ff
-   UNION ALL
-   SELECT
-    nn.tnmid
-   ,gg.metasourceid
-   ,gg.loaddate
-   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001   ,4) AS areasqkm
-   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000247105,4) AS areaacres
-   ,nn.name
-   ,gg.states
-   ,gg.huc6
-   ,gg.centermass_x
-   ,gg.centermass_y
-   ,'{' || uuid_generate_v1() || '}' AS globalid
-   ,gg.shape
-   FROM (
-      SELECT
-       ggg.metasourceid
-      ,ggg.loaddate
-      ,ggg.states
-      ,'220400' AS huc6
-      ,ggg.centermass_x
-      ,ggg.centermass_y
-      ,ggg.globalid
-      ,(SELECT ST_UNION(gggg.shape) FROM cipsrv_wbd.wbd_hu12_np21 gggg WHERE SUBSTR(gggg.huc12,1,6) = '220400') AS shape
-      FROM
-      cipsrv_wbd.wbd_hu12_np21 ggg
-      WHERE
-      SUBSTR(ggg.huc12,1,6) = '220400'
-      LIMIT 1
-   ) gg
-   LEFT JOIN
-   cipsrv_wbd.wbd_names nn
-   ON
-   nn.huc = gg.huc6
 ) a;
 
 ALTER TABLE cipsrv_wbd.wbd_hu6_np21 OWNER TO cipsrv;

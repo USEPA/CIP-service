@@ -52,7 +52,7 @@ FROM (
           ) AS states_array
          ,aaaa.shape
          FROM
-         cipsrv_wbd.wbd_hu10sp_f3_32161 aaaa
+         cipsrv_wbd.wbd_hu10_f3_32161 aaaa
       ) aaa
       CROSS JOIN
 	   LATERAL UNNEST(aaa.states_array) AS u(val)

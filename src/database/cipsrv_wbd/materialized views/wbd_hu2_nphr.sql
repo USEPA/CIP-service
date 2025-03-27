@@ -120,20 +120,13 @@ FROM (
       ,(SELECT 
         ST_UNION(gggg.shape) 
         FROM (
-           SELECT 
-           a1.shape 
-           FROM 
-           cipsrv_wbd.wbd_hu12_nphr a1 
-           WHERE 
-           SUBSTR(a1.huc12,1,4) = '2204'
-           UNION ALL
            SELECT
-           ST_TRANSFORM(a2.shape,4269)
+           ST_TRANSFORM(a2.shape,4269) AS shape
            FROM
            cipsrv_wbd.wbd_hu4_nphr_32655 a2
            UNION ALL
            SELECT
-           ST_TRANSFORM(a3.shape,4269)
+           ST_TRANSFORM(a3.shape,4269) AS shape
            FROM
            cipsrv_wbd.wbd_hu4_nphr_32702 a3
         ) gggg

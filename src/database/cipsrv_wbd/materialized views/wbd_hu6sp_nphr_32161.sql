@@ -21,45 +21,33 @@ SELECT
 ,b.tnmid
 ,CAST(NULL AS VARCHAR(40))            AS metasourceid
 ,CAST(NULL AS DATE)                   AS loaddate
-,ROUND(a.areasqkm::NUMERIC,4)         AS areasqkm
-,ROUND(a.areaacres::NUMERIC,4)        AS areaacres
+,c.areasqkm
+,c.areaacres
 ,b.name
-,ARRAY_TO_STRING(a.states_array,',')  AS states
+,c.states
 ,a.huc6
-,ROUND(ST_X(a.centermass)::NUMERIC,8) AS centermass_x
-,ROUND(ST_Y(a.centermass)::NUMERIC,8) AS centermass_y
+,c.centermass_x
+,c.centermass_y
 ,'{' || uuid_generate_v1() || '}'     AS globalid
 ,a.shape
 FROM (
    SELECT
     aa.huc6
-   ,ARRAY_REMOVE(aa.states_array,'XX')       AS states_array
-   ,ST_AREA(aa.shape) * 0.000001             AS areasqkm
-   ,ST_AREA(aa.shape) * 0.000247105          AS areaacres
-   ,ST_TRANSFORM(ST_CENTROID(aa.shape),4269) AS centermass
    ,ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
    FROM (
       SELECT
        SUBSTR(aaa.huc8,1,6)      AS huc6
-      ,ARRAY_AGG(DISTINCT u.val) AS states_array
       ,ST_UNION(aaa.shape)       AS shape 
-      FROM (
-         SELECT
-          aaaa.huc8
-         ,STRING_TO_ARRAY(
-             CASE WHEN aaaa.states IS NULL THEN 'XX' ELSE aaaa.states END
-            ,','
-          ) AS states_array
-         ,aaaa.shape
-         FROM
-         cipsrv_wbd.wbd_hu8sp_nphr_32161 aaaa
-      ) aaa
-      CROSS JOIN
-	   LATERAL UNNEST(aaa.states_array) AS u(val)
+      FROM 
+      cipsrv_wbd.wbd_hu8sp_nphr_32161 aaa
       GROUP BY
       SUBSTR(aaa.huc8,1,6)
    ) aa
 ) a
+JOIN
+cipsrv_wbd.wbd_hu6_nphr c
+ON
+c.huc6 = a.huc6
 LEFT JOIN
 cipsrv_wbd.wbd_names b
 ON

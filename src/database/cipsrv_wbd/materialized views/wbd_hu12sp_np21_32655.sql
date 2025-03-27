@@ -26,22 +26,26 @@ SELECT
 ,a.tnmid
 ,a.metasourceid
 ,a.loaddate
-,a.areasqkm
-,a.areaacres
+,b.areasqkm
+,b.areaacres
 ,a.name
-,a.states
+,b.states
 ,a.huc12
 ,a.hutype
 ,a.humod
 ,a.tohuc
 ,a.noncontributingareaacres
 ,a.noncontributingareasqkm
-,a.centermass_x
-,a.centermass_y
+,b.centermass_x
+,b.centermass_y
 ,'{' || uuid_generate_v1() || '}' AS globalid
 ,ST_TRANSFORM(a.shape,32655)      AS shape
 FROM
 cipsrv_wbd.wbd_hu12sp_np21 a
+JOIN
+cipsrv_wbd.wbd_hu12_np21 b
+ON
+a.huc12 = b.huc12
 WHERE
 SUBSTR(a.huc12,1,4) IN ('2201','2202');
 

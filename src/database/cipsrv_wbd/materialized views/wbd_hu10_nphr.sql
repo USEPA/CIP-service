@@ -142,47 +142,6 @@ FROM (
    ,ST_TRANSFORM(ff.shape,4269) AS shape
    FROM 
    cipsrv_wbd.wbd_hu10_nphr_32702 ff
-   UNION ALL
-   SELECT
-    gg.tnmid
-   ,gg.metasourceid
-   ,gg.loaddate
-   ,gg.areasqkm
-   ,gg.areaacres
-   ,gg.name
-   ,gg.states
-   ,gg.huc10
-   ,gg.hutype
-   ,gg.humod
-   ,gg.centermass_x
-   ,gg.centermass_y
-   ,'{' || uuid_generate_v1() || '}' AS globalid
-   ,gg.shape
-   FROM (
-      SELECT
-       bbb.tnmid
-      ,ggg.metasourceid
-      ,ggg.loaddate
-      ,ggg.areasqkm
-      ,ggg.areaacres
-      ,bbb.name
-      ,ggg.states
-      ,SUBSTR(ggg.huc12,1,10) AS huc10
-      ,ggg.hutype
-      ,ggg.humod
-      ,ggg.centermass_x
-      ,ggg.centermass_y
-      ,ggg.globalid
-      ,ggg.shape
-      FROM
-      cipsrv_wbd.wbd_hu12_nphr ggg
-      LEFT JOIN
-      cipsrv_wbd.wbd_names bbb
-      ON
-      bbb.huc = SUBSTR(ggg.huc12,1,10)
-      WHERE
-      SUBSTR(ggg.huc12,1,4) = '2204'
-   ) gg
 ) a;
 
 ALTER TABLE cipsrv_wbd.wbd_hu10_nphr OWNER TO cipsrv;

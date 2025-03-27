@@ -128,12 +128,12 @@ FROM (
            SUBSTR(a1.huc12,1,4) = '2204'
            UNION ALL
            SELECT
-           ST_TRANSFORM(a2.shape,4269)
+           ST_TRANSFORM(a2.shape,4269) AS shape
            FROM
            cipsrv_wbd.wbd_hu4_f3_32655 a2
            UNION ALL
            SELECT
-           ST_TRANSFORM(a3.shape,4269)
+           ST_TRANSFORM(a3.shape,4269) AS shape
            FROM
            cipsrv_wbd.wbd_hu4_f3_32702 a3
         ) gggg
