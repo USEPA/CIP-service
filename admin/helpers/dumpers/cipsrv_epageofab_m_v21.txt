@@ -3,4 +3,6 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_epageofab_m.catchment_fabric `
 -t cipsrv_epageofab_m.catchment_fabric_huc12_np21 `
 -t cipsrv_epageofab_m.catchment_fabric_xwalk `
+-t cipsrv_epageofab_h.alaskacatchment `
+-t cipsrv_epageofab_h.oceancatchment `
 -f cipsrv_epageofab_m_v21_2.dmp

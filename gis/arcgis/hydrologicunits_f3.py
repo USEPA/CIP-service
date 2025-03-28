@@ -75,12 +75,13 @@ print(" ");
 ############################################################################### 
 # Export feature classes and tables
 ###############################################################################
+force_date = True;
 
 ###############################################################################
 source    = source_conn + r"/cipsrv_gis.wbd_hu12_f3_esri";
 outname   = "hu12";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -96,7 +97,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu12sp_f3_esri";
 outname   = "hu12sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -112,7 +113,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu10_f3_esri";
 outname   = "hu10";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -128,7 +129,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu10sp_f3_esri";
 outname   = "hu10sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -144,7 +145,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu8_f3_esri";
 outname   = "hu8";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -160,7 +161,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu8sp_f3_esri";
 outname   = "hu8sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -176,7 +177,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu6_f3_esri";
 outname   = "hu6";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -192,7 +193,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu6sp_f3_esri";
 outname   = "hu6sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -208,7 +209,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu4_f3_esri";
 outname   = "hu4";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -224,7 +225,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu4sp_f3_esri";
 outname   = "hu4sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -240,7 +241,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu2_f3_esri";
 outname   = "hu2";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -256,7 +257,7 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.wbd_hu2sp_f3_esri";
 outname   = "hu2sp";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(source,outname,work_path,container_name,force_date=force_date);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
