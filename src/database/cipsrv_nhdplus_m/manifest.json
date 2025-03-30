@@ -55,6 +55,7 @@
             ,"functions/delineate.sql"
             ,"functions/delineation_preprocessing.sql"
             ,"functions/determine_grid_srid.sql"
+            ,"functions/determine_grid_srid_f.sql"
             ,"functions/distance_index.sql"
             ,"functions/distance_index_simple.sql"
             ,"functions/fetch_grids_by_geometry.sql"

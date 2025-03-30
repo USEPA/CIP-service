@@ -41,7 +41,7 @@ BEGIN
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := ARRAY['DC']
       ,p_nhdplus_version                := 'MR'
-      ,p_wbd_version                    := NULL
+      ,p_wbd_version                    := 'NP21'
       ,p_default_point_indexing_method  := 'point_simple'
       ,p_default_line_indexing_method   := NULL
       ,p_default_line_threshold         := NULL
@@ -56,6 +56,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
+      ,p_return_full_catchment          := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -104,7 +105,7 @@ BEGIN
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
       ,p_nhdplus_version                := 'MR'
-      ,p_wbd_version                    := NULL
+      ,p_wbd_version                    := 'NP21'
       ,p_default_point_indexing_method  := 'point_simple'
       ,p_default_line_indexing_method   := NULL
       ,p_default_line_threshold         := NULL
@@ -119,6 +120,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
+      ,p_return_full_catchment          := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -167,7 +169,7 @@ BEGIN
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := ARRAY['OR']
       ,p_nhdplus_version                := 'MR'
-      ,p_wbd_version                    := NULL
+      ,p_wbd_version                    := 'NP21'
       ,p_default_point_indexing_method  := 'point_simple'
       ,p_default_line_indexing_method   := NULL
       ,p_default_line_threshold         := NULL
@@ -182,6 +184,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
+      ,p_return_full_catchment          := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -230,7 +233,7 @@ BEGIN
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
       ,p_nhdplus_version                := 'MR'
-      ,p_wbd_version                    := NULL
+      ,p_wbd_version                    := 'NP21'
       ,p_default_point_indexing_method  := 'point_simple'
       ,p_default_line_indexing_method   := NULL
       ,p_default_line_threshold         := NULL
@@ -245,6 +248,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
+      ,p_return_full_catchment          := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -293,7 +297,7 @@ BEGIN
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
       ,p_nhdplus_version                := 'MR'
-      ,p_wbd_version                    := NULL
+      ,p_wbd_version                    := 'NP21'
       ,p_default_point_indexing_method  := 'point_simple'
       ,p_default_line_indexing_method   := NULL
       ,p_default_line_threshold         := NULL
@@ -308,6 +312,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
+      ,p_return_full_catchment          := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -356,7 +361,7 @@ BEGIN
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
       ,p_nhdplus_version                := 'MR'
-      ,p_wbd_version                    := NULL
+      ,p_wbd_version                    := 'NP21'
       ,p_default_point_indexing_method  := 'point_simple'
       ,p_default_line_indexing_method   := NULL
       ,p_default_line_threshold         := NULL
@@ -371,6 +376,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
+      ,p_return_full_catchment          := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
