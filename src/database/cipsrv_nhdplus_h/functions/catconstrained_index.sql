@@ -248,8 +248,21 @@ BEGIN
    OR boo_isocean
    OR boo_isalaskan
    THEN
+      IF boo_issink
+      THEN
+         out_status_message := 'sink catchment without flowline';
+      
+      ELSIF boo_isocean
+      THEN
+         out_status_message := 'ocean catchment without flowline';
+      
+      ELSIF boo_isalaskan
+      THEN
+         out_status_message := 'alaskan catchment without flowline';
+      
+      END IF;
+      
       out_return_code    := -3;
-      out_status_message := 'catchment without flowline for indexing';
       out_nhdplusid      := int_nhdplusid;
       RETURN;
    

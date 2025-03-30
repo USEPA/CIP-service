@@ -50,6 +50,8 @@ DECLARE
    boo_return_flowline_geometry       BOOLEAN;
    boo_return_huc12_geometry          BOOLEAN;
    boo_return_indexing_summary        BOOLEAN;
+   boo_return_full_catchment          BOOLEAN;
+   
    int_catchment_count                INTEGER;
    num_catchment_areasqkm             NUMERIC;
    
@@ -182,7 +184,7 @@ BEGIN
       str_default_point_indexing_method := json_input->>'default_point_indexing_method';
       
    ELSE
-      str_default_point_indexing_method := 'point';
+      str_default_point_indexing_method := 'point_simple';
       
    END IF;
    
@@ -193,7 +195,7 @@ BEGIN
       str_default_line_indexing_method := json_input->>'default_line_indexing_method';
       
    ELSE
-      str_default_line_indexing_method := 'line';
+      str_default_line_indexing_method := 'line_simple';
       
    END IF;
    
@@ -349,15 +351,25 @@ BEGIN
    END IF;
 
    IF JSONB_PATH_EXISTS(json_input,'$.return_huc12_geometry')
-   AND json_input->>'p_return_huc12_geometry' IS NOT NULL
+   AND json_input->>'return_huc12_geometry' IS NOT NULL
    THEN
-      boo_return_huc12_geometry := (json_input->>'p_return_huc12_geometry')::BOOLEAN;
+      boo_return_huc12_geometry := (json_input->>'return_huc12_geometry')::BOOLEAN;
       
    ELSE
       boo_return_huc12_geometry := FALSE;
       
    END IF;
-   
+ 
+   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchment')
+   AND json_input->>'return_full_catchment' IS NOT NULL
+   THEN
+      boo_return_full_catchment := (json_input->>'return_full_catchment')::BOOLEAN;
+      
+   ELSE
+      boo_return_full_catchment := FALSE;
+      
+   END IF;
+     
    ----------------------------------------------------------------------------
    -- Step 20
    -- Call the indexing engine
@@ -391,6 +403,7 @@ BEGIN
       ,p_return_indexed_collection      := boo_return_indexed_collection
       ,p_return_catchment_geometry      := boo_return_catchment_geometry
       ,p_return_indexing_summary        := boo_return_indexing_summary
+      ,p_return_full_catchment          := boo_return_full_catchment
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
@@ -593,6 +606,7 @@ BEGIN
             ,a.areasqkm
             ,a.istribal
             ,a.istribal_areasqkm
+            ,a.isnavigable
             ,CASE WHEN boo_return_catchment_geometry
              THEN
                ST_Transform(ST_ForcePolygonCCW(a.shape),4326) 

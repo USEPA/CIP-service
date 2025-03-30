@@ -56,6 +56,7 @@ BEGIN
          ,areasqkm             NUMERIC
          ,istribal             VARCHAR(1)  NOT NULL
          ,istribal_areasqkm    NUMERIC
+         ,isnavigable          VARCHAR(1)  NOT NULL
          ,shape                GEOMETRY
       );
 

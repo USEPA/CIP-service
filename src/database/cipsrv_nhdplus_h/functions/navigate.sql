@@ -685,8 +685,8 @@ BEGIN
    
    IF out_flowline_count = 0
    THEN
-      out_return_code    := -1;
-      out_status_message := 'No results found.';
+      out_return_code    := -11;
+      out_status_message := 'navigation returns no results';
    
    END IF;
 

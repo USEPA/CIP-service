@@ -2972,8 +2972,21 @@ BEGIN
    OR boo_isocean
    OR boo_isalaskan
    THEN
+      IF boo_issink
+      THEN
+         out_status_message := 'sink catchment without flowline';
+      
+      ELSIF boo_isocean
+      THEN
+         out_status_message := 'ocean catchment without flowline';
+      
+      ELSIF boo_isalaskan
+      THEN
+         out_status_message := 'alaskan catchment without flowline';
+      
+      END IF;
+      
       out_return_code    := -3;
-      out_status_message := 'catchment without flowline for indexing';
       out_nhdplusid      := int_nhdplusid;
       RETURN;
    
@@ -3623,19 +3636,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.catconstrained_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) TO PUBLIC;
 --******************************--
 ----- functions/delineate.sql 
 
@@ -5420,6 +5437,57 @@ GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.determine_grid_srid(
     GEOMETRY
    ,VARCHAR
 ) TO PUBLIC;
+
+--******************************--
+----- functions/determine_grid_srid_f.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.determine_grid_srid_f';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.determine_grid_srid_f(
+    IN  p_geometry          GEOMETRY
+   ,IN  p_known_region      VARCHAR DEFAULT NULL
+) RETURNS INTEGER
+STABLE
+AS $BODY$ 
+DECLARE
+   rec RECORD;
+   
+BEGIN
+
+   rec := cipsrv_nhdplus_m.determine_grid_srid(
+       p_geometry          := p_geometry
+      ,p_known_region      := p_known_region
+   );
+   
+   RETURN rec.out_srid;
+   
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.determine_grid_srid_f';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/distance_index.sql 
@@ -7892,6 +7960,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -8377,26 +8446,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_area_artpath(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_artpath(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_artpath';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 --******************************--
 ----- functions/index_area_centroid.sql 
 
@@ -8417,6 +8482,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_centroid(
    ,IN  p_evt_threshold_perc      NUMERIC   
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -8878,26 +8944,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_area_centroid(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_centroid(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_centroid';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 --******************************--
 ----- functions/index_area_simple.sql 
 
@@ -8918,6 +8980,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_simple(
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -9403,25 +9466,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_area_simple(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_area_simple(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_area_simple';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/index_line_levelpath.sql 
@@ -9442,6 +9502,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -10477,25 +10538,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) TO PUBLIC;
-
---******************************--
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_line_levelpath';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;--******************************--
 ----- functions/index_line_simple.sql 
 
 DO $$DECLARE 
@@ -10514,6 +10572,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -11028,23 +11087,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_line_simple(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_line_simple(
-    GEOMETRY
-   ,NUMERIC
-   ,VARCHAR
-   ,NUMERIC
-   ,UUID
-   ,GEOMETRY
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_line_simple';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/index_point_simple.sql 
@@ -11063,7 +11121,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN DEFAULT TRUE
+   ,IN  p_return_full_catchment   BOOLEAN
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -11076,6 +11134,7 @@ DECLARE
    geom_input             GEOMETRY;
    permid_geometry        GEOMETRY;
    int_splitselector      INTEGER;
+   int_count              INTEGER;
 
 BEGIN
 
@@ -11268,6 +11327,8 @@ BEGIN
       out_status_message := 'err ' || str_known_region;
 
    END IF;
+   
+   GET DIAGNOSTICS int_count = ROW_COUNT;
 
    RETURN;
 
@@ -11275,21 +11336,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    GEOMETRY
-   ,VARCHAR
-   ,UUID
-   ,GEOMETRY
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.index_point_simple(
-    GEOMETRY
-   ,VARCHAR
-   ,UUID
-   ,GEOMETRY
-   ,BOOLEAN
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.index_point_simple';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/load_aggregated_catchment.sql 
@@ -15188,8 +15250,8 @@ BEGIN
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
    out_return_code    := 0;
-   obj_start_flowline := NULL::cipsrv_nhdplus_h.flowline;
-   obj_stop_flowline  := NULL::cipsrv_nhdplus_h.flowline;
+   obj_start_flowline := NULL::cipsrv_nhdplus_m.flowline;
+   obj_stop_flowline  := NULL::cipsrv_nhdplus_m.flowline;
    
    IF str_search_type IN ('PP','POINT TO POINT','POINT-TO-POINT')
    THEN
@@ -15816,8 +15878,8 @@ BEGIN
    
    IF out_flowline_count = 0
    THEN
-      out_return_code    := -1;
-      out_status_message := 'No results found.';
+      out_return_code    := -11;
+      out_status_message := 'navigation returns no results';
    
    END IF;
 
@@ -15825,43 +15887,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.navigate(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.navigate(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.navigate';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/point_at_measure.sql 
@@ -16350,13 +16392,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
-   GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.query_generic_common_mbr(
-   GEOMETRY
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.query_generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/raindrop_coord_to_raster.sql 

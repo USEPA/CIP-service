@@ -3,11 +3,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_wbdhu12_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'wbdhu12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','wbdhu12') 
    THEN 
 
       EXECUTE $q$

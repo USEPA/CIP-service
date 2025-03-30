@@ -157,6 +157,11 @@ services:
          - type: volume
            source: tblspdata
            target: /tblspdata
+      healthcheck:
+         test: ["CMD-SHELL","pg_isready"]
+         interval: 5s
+         timeout: 5s
+         retries: 5
 {%- endif %}
 {%- if 'cip_pr' in components and 'type' in components.cip_pr and components.cip_pr.type == "container" %}
    cip_pr:

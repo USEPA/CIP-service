@@ -57,8 +57,8 @@ BEGIN
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
    out_return_code    := 0;
-   obj_start_flowline := NULL::cipsrv_nhdplus_h.flowline;
-   obj_stop_flowline  := NULL::cipsrv_nhdplus_h.flowline;
+   obj_start_flowline := NULL::cipsrv_nhdplus_m.flowline;
+   obj_stop_flowline  := NULL::cipsrv_nhdplus_m.flowline;
    
    IF str_search_type IN ('PP','POINT TO POINT','POINT-TO-POINT')
    THEN
@@ -685,8 +685,8 @@ BEGIN
    
    IF out_flowline_count = 0
    THEN
-      out_return_code    := -1;
-      out_status_message := 'No results found.';
+      out_return_code    := -11;
+      out_status_message := 'navigation returns no results';
    
    END IF;
 
@@ -694,41 +694,21 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.navigate(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.navigate(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.navigate';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 

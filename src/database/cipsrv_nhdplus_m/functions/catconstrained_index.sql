@@ -248,8 +248,21 @@ BEGIN
    OR boo_isocean
    OR boo_isalaskan
    THEN
+      IF boo_issink
+      THEN
+         out_status_message := 'sink catchment without flowline';
+      
+      ELSIF boo_isocean
+      THEN
+         out_status_message := 'ocean catchment without flowline';
+      
+      ELSIF boo_isalaskan
+      THEN
+         out_status_message := 'alaskan catchment without flowline';
+      
+      END IF;
+      
       out_return_code    := -3;
-      out_status_message := 'catchment without flowline for indexing';
       out_nhdplusid      := int_nhdplusid;
       RETURN;
    
@@ -899,16 +912,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.catconstrained_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) TO PUBLIC;

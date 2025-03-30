@@ -1,4 +1,80 @@
 --******************************--
+----- functions/resource_exists.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_gis.resource_exists';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_gis.resource_exists(
+    IN  p_schema_name VARCHAR
+   ,IN  p_table_name  VARCHAR
+) RETURNS BOOLEAN 
+STABLE
+AS $BODY$
+DECLARE
+   str_table_name VARCHAR(255);
+   
+BEGIN
+
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Query catalog for table
+   ----------------------------------------------------------------------------
+   SELECT 
+   c.relname
+   INTO str_table_name
+   FROM 
+   pg_catalog.pg_class c 
+   LEFT JOIN 
+   pg_catalog.pg_namespace n 
+   ON 
+   n.oid = c.relnamespace
+   WHERE  
+       n.nspname = p_schema_name
+   AND c.relname = p_table_name
+   AND c.relkind IN ('r','m','v','p');
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- See what we gots and exit accordingly
+   ----------------------------------------------------------------------------
+   IF str_table_name IS NULL 
+   THEN
+      RETURN FALSE;
+
+   ELSE
+      RETURN TRUE;
+
+   END IF;
+
+END;
+$BODY$ 
+LANGUAGE plpgsql;
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_gis.resource_exists';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv_gis',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv_gis',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
+
+
+--******************************--
 ----- views/epageofab_h_catchment_fabric.sql 
 
 DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric;
@@ -6,11 +82,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_h'
-      AND   a.table_name   = 'catchment_fabric'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_h','catchment_fabric') 
    THEN 
 
       EXECUTE $q$
@@ -68,11 +140,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_h'
-      AND   a.table_name   = 'catchment_fabric'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_h','catchment_fabric') 
    THEN 
 
       EXECUTE $q$
@@ -130,11 +198,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric_huc12_np21;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_h'
-      AND   a.table_name   = 'catchment_fabric_huc12_np21'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_h','catchment_fabric_huc12_np21') 
    THEN 
 
       EXECUTE $q$
@@ -173,11 +237,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_h_catchment_fabric_huc12_np21_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_h'
-      AND   a.table_name   = 'catchment_fabric_huc12_np21'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_h','catchment_fabric_huc12_np21') 
    THEN 
 
       EXECUTE $q$
@@ -216,11 +276,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_m'
-      AND   a.table_name   = 'catchment_fabric'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_m','catchment_fabric') 
    THEN 
 
       EXECUTE $q$
@@ -278,11 +334,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_m'
-      AND   a.table_name   = 'catchment_fabric'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_m','catchment_fabric') 
    THEN 
 
       EXECUTE $q$
@@ -340,11 +392,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_m'
-      AND   a.table_name   = 'catchment_fabric_huc12_np21'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_m','catchment_fabric_huc12_np21') 
    THEN 
 
       EXECUTE $q$
@@ -383,11 +431,7 @@ DROP VIEW IF EXISTS cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_epageofab_m'
-      AND   a.table_name   = 'catchment_fabric_huc12_np21'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_epageofab_m','catchment_fabric_huc12_np21') 
    THEN 
 
       EXECUTE $q$
@@ -426,11 +470,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_flow_direction;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','networknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -503,11 +543,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_flow_direction_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','networknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -580,11 +616,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_networknhdflowline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','networknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -703,11 +735,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_networknhdflowline_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','networknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -826,11 +854,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdarea;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdarea'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdarea') 
    THEN 
 
       EXECUTE $q$
@@ -881,11 +905,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdarea_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdarea'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdarea') 
    THEN 
 
       EXECUTE $q$
@@ -936,11 +956,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdline') 
    THEN 
 
       EXECUTE $q$
@@ -987,11 +1003,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdline_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdline') 
    THEN 
 
       EXECUTE $q$
@@ -1038,11 +1050,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpluscatchment;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdpluscatchment'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdpluscatchment') 
    THEN 
 
       EXECUTE $q$
@@ -1083,11 +1091,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpluscatchment_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdpluscatchment'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdpluscatchment') 
    THEN 
 
       EXECUTE $q$
@@ -1128,11 +1132,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusflow;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdplusflow'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdplusflow') 
    THEN 
 
       EXECUTE $q$
@@ -1181,11 +1181,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusflow_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdplusflow'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdplusflow') 
    THEN 
 
       EXECUTE $q$
@@ -1233,11 +1229,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusgage;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdplusgage'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdplusgage') 
    THEN 
 
       EXECUTE $q$
@@ -1298,11 +1290,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplusgage_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdplusgage'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdplusgage') 
    THEN 
 
       EXECUTE $q$
@@ -1363,11 +1351,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplussink;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdplussink'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdplussink') 
    THEN 
 
       EXECUTE $q$
@@ -1413,11 +1397,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdplussink_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdplussink'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdplussink') 
    THEN 
 
       EXECUTE $q$
@@ -1463,11 +1443,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpoint;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdpoint'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdpoint') 
    THEN 
 
       EXECUTE $q$
@@ -1514,11 +1490,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdpoint_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdpoint'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdpoint') 
    THEN 
 
       EXECUTE $q$
@@ -1564,11 +1536,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdwaterbody;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdwaterbody'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdwaterbody') 
    THEN 
 
       EXECUTE $q$
@@ -1621,11 +1589,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nhdwaterbody_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nhdwaterbody'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nhdwaterbody') 
    THEN 
 
       EXECUTE $q$
@@ -1677,11 +1641,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nonnetworknhdflowline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nonnetworknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nonnetworknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -1733,11 +1693,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'nonnetworknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','nonnetworknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -1789,11 +1745,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_wbdhu12;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'wbdhu12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','wbdhu12') 
    THEN 
 
       EXECUTE $q$
@@ -1847,11 +1799,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_h_wbdhu12_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_h'
-      AND   a.table_name   = 'wbdhu12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_h','wbdhu12') 
    THEN 
 
       EXECUTE $q$
@@ -1906,11 +1854,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_flow_direction;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','networknhdflowline') 
    THEN 
 
       EXECUTE $q$
@@ -1983,11 +1927,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_flow_direction_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','networknhdflowline') 
    THEN 
 
       EXECUTE $q$
@@ -2060,11 +2000,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_networknhdflowline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','networknhdflowline') 
    THEN 
 
       EXECUTE $q$
@@ -2183,11 +2119,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_networknhdflowline_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'networknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','networknhdflowline') 
    THEN 
 
       EXECUTE $q$
@@ -2306,11 +2238,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdarea;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdarea'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdarea') 
    THEN 
 
       EXECUTE $q$
@@ -2361,11 +2289,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdarea_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdarea'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdarea') 
    THEN 
 
       EXECUTE $q$
@@ -2416,11 +2340,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdline') 
    THEN 
 
       EXECUTE $q$
@@ -2467,11 +2387,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdline_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdline') 
    THEN 
 
       EXECUTE $q$
@@ -2518,11 +2434,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpluscatchment;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdpluscatchment'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdpluscatchment') 
    THEN 
 
       EXECUTE $q$
@@ -2563,11 +2475,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpluscatchment_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdpluscatchment'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdpluscatchment') 
    THEN
 
       EXECUTE $q$
@@ -2608,11 +2516,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusflow;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdplusflow'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdplusflow') 
    THEN 
 
       EXECUTE $q$
@@ -2660,11 +2564,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusflow_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdplusflow'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdplusflow') 
    THEN 
 
       EXECUTE $q$
@@ -2712,11 +2612,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusgage;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdplusgage'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdplusgage') 
    THEN 
 
       EXECUTE $q$
@@ -2776,11 +2672,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplusgage_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdplusgage'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdplusgage') 
    THEN 
 
       EXECUTE $q$
@@ -2840,11 +2732,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplussink;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdplussink'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdplussink') 
    THEN 
 
       EXECUTE $q$
@@ -2890,11 +2778,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdplussink_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdplussink'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdplussink') 
    THEN 
 
       EXECUTE $q$
@@ -2940,11 +2824,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpoint;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdpoint'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdpoint') 
    THEN 
 
       EXECUTE $q$
@@ -2990,11 +2870,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdpoint_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdpoint'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdpoint') 
    THEN 
 
       EXECUTE $q$
@@ -3040,11 +2916,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdwaterbody;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdwaterbody'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdwaterbody') 
    THEN 
 
       EXECUTE $q$
@@ -3096,11 +2968,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nhdwaterbody_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nhdwaterbody'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nhdwaterbody') 
    THEN 
 
       EXECUTE $q$
@@ -3152,11 +3020,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nonnetworknhdflowline;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nonnetworknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nonnetworknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -3208,11 +3072,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'nonnetworknhdflowline'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','nonnetworknhdflowline') 
    THEN
 
       EXECUTE $q$
@@ -3264,11 +3124,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_wbdhu12;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'wbdhu12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','wbdhu12') 
    THEN 
 
       EXECUTE $q$
@@ -3322,11 +3178,7 @@ DROP VIEW IF EXISTS cipsrv_gis.nhdplus_m_wbdhu12_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_nhdplus_m'
-      AND   a.table_name   = 'wbdhu12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_nhdplus_m','wbdhu12') 
    THEN 
 
       EXECUTE $q$
@@ -3380,11 +3232,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_control;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_control'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_control') 
    THEN 
 
       EXECUTE $q$
@@ -3423,11 +3271,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_control_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_control'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_control') 
    THEN 
 
       EXECUTE $q$
@@ -3466,11 +3310,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_attr;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_attr'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_attr') 
    THEN 
 
       EXECUTE $q$
@@ -3544,11 +3384,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_attr_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_attr'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_attr')
    THEN 
 
       EXECUTE $q$
@@ -3621,11 +3457,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_cip'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_cip') 
    THEN 
 
       EXECUTE $q$
@@ -3690,11 +3522,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_cip'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_cip') 
    THEN 
 
       EXECUTE $q$
@@ -3759,11 +3587,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_cip'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_cip') 
    THEN 
 
       EXECUTE $q$
@@ -3827,11 +3651,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_cip_geo'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_cip_geo') 
    THEN 
 
       EXECUTE $q$
@@ -3877,11 +3697,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_cip_geo'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_cip_geo') 
    THEN 
 
       EXECUTE $q$
@@ -3928,11 +3744,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_cip_geo_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_cip_geo'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_cip_geo') 
    THEN 
 
       EXECUTE $q$
@@ -3977,11 +3789,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_huc12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_huc12') 
    THEN 
 
       EXECUTE $q$
@@ -4032,11 +3840,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_huc12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_huc12') 
    THEN 
 
       EXECUTE $q$
@@ -4087,11 +3891,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_huc12'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_huc12') 
    THEN 
 
       EXECUTE $q$
@@ -4140,11 +3940,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_huc12_geo'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_huc12_geo') 
    THEN 
 
       EXECUTE $q$
@@ -4186,11 +3982,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_huc12_geo'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_huc12_geo') 
    THEN 
 
       EXECUTE $q$
@@ -4232,11 +4024,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_huc12_geo_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_huc12_geo'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_huc12_geo') 
    THEN 
 
       EXECUTE $q$
@@ -4277,11 +4065,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_a'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_a') 
    THEN 
 
       EXECUTE $q$
@@ -4344,11 +4128,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_a'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_a') 
    THEN 
 
       EXECUTE $q$
@@ -4410,11 +4190,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_a_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_a'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_a') 
    THEN 
 
       EXECUTE $q$
@@ -4475,11 +4251,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_evt2meta'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_evt2meta') 
    THEN 
 
       EXECUTE $q$
@@ -4518,11 +4290,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_evt2meta'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_evt2meta') 
    THEN 
 
       EXECUTE $q$
@@ -4561,11 +4329,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_evt2meta_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_evt2meta'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_evt2meta') 
    THEN 
 
       EXECUTE $q$
@@ -4602,11 +4366,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_l'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_l') 
    THEN 
 
       EXECUTE $q$
@@ -4679,11 +4439,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_l'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_l') 
    THEN 
 
       EXECUTE $q$
@@ -4756,11 +4512,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_l_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_l'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_l') 
    THEN 
 
       EXECUTE $q$
@@ -4831,11 +4583,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_metadata;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_metadata'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_metadata') 
    THEN 
 
       EXECUTE $q$
@@ -4891,11 +4639,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_metadata_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_metadata'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_metadata') 
    THEN 
 
       EXECUTE $q$
@@ -4951,11 +4695,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p_h;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_p_h'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_p') 
    THEN 
 
       EXECUTE $q$
@@ -5027,11 +4767,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p_m;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_p_m'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_p') 
    THEN 
 
       EXECUTE $q$
@@ -5102,11 +4838,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_p_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_p'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_p') 
    THEN 
 
       EXECUTE $q$
@@ -5175,11 +4907,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_srccit;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_srccit'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_srccit') 
    THEN 
 
       EXECUTE $q$
@@ -5227,11 +4955,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_rad_srccit_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_rad_srccit'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_rad_srccit') 
    THEN 
 
       EXECUTE $q$
@@ -5279,11 +5003,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_sfid;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_sfid'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_sfid') 
    THEN 
 
       EXECUTE $q$
@@ -5344,11 +5064,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_sfid_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_sfid'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_sfid') 
    THEN 
 
       EXECUTE $q$
@@ -5409,11 +5125,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src2cip;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src2cip'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src2cip') 
    THEN 
 
       EXECUTE $q$
@@ -5463,11 +5175,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src2cip_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src2cip'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src2cip') 
    THEN 
 
       EXECUTE $q$
@@ -5517,11 +5225,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_a;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src_a'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src_a') 
    THEN 
 
       EXECUTE $q$
@@ -5569,11 +5273,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_a_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src_a'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src_a') 
    THEN 
 
       EXECUTE $q$
@@ -5622,11 +5322,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_l;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src_l'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src_l') 
    THEN 
 
       EXECUTE $q$
@@ -5674,11 +5370,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_l_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src_l'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src_l') 
    THEN 
 
       EXECUTE $q$
@@ -5726,11 +5418,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_p;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src_p'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src_p') 
    THEN 
 
       EXECUTE $q$
@@ -5777,11 +5465,7 @@ DROP VIEW IF EXISTS cipsrv_gis.owld_wqp_src_p_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_owld'
-      AND   a.table_name   = 'wqp_src_p'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_owld','wqp_src_p') 
    THEN 
 
       EXECUTE $q$
@@ -5828,11 +5512,7 @@ DROP VIEW IF EXISTS cipsrv_gis.tiger_aiannha;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'tiger_aiannha'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_support','tiger_aiannha') 
    THEN 
 
       EXECUTE $q$
@@ -5879,11 +5559,7 @@ DROP VIEW IF EXISTS cipsrv_gis.tiger_aiannha_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'tiger_aiannha'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_support','tiger_aiannha')
    THEN 
 
       EXECUTE $q$
@@ -5930,11 +5606,7 @@ DROP VIEW IF EXISTS cipsrv_gis.tiger_fedstatewaters;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'tiger_fedstatewaters'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_support','tiger_fedstatewaters') 
    THEN 
 
       EXECUTE $q$
@@ -5977,11 +5649,7 @@ DROP VIEW IF EXISTS cipsrv_gis.tiger_fedstatewaters_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'tiger_fedstatewaters'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_support','tiger_fedstatewaters')
    THEN 
 
       EXECUTE $q$
@@ -6024,11 +5692,7 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_f3;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'wbd_hu12_f3'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12_f3') 
    THEN 
 
       EXECUTE $q$
@@ -6054,7 +5718,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_f3 a;
+      cipsrv_wbd.wbd_hu12_f3 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
@@ -6072,6 +5736,57 @@ BEGIN
 
 END$$;
 --******************************--
+----- views/wbd_hu12sp_f3.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12sp_f3;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12sp_f3') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu12sp_f3
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc12
+      ,a.hutype
+      ,a.humod
+      ,a.tohuc
+      ,a.noncontributingareaacres
+      ,a.noncontributingareasqkm
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu12sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu12sp_f3 OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu12sp_f3 TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu12sp_f3';
+   
+   END IF;
+
+END$$;
+--******************************--
 ----- views/wbd_hu12_f3_esri.sql 
 
 DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_f3_esri;
@@ -6079,11 +5794,7 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_f3_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'wbd_hu12_f3'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12_f3')
    THEN 
 
       EXECUTE $q$
@@ -6109,7 +5820,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_f3 a;
+      cipsrv_wbd.wbd_hu12_f3 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
@@ -6127,6 +5838,521 @@ BEGIN
 
 END$$;
 --******************************--
+----- views/wbd_hu12sp_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12sp_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12sp_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu12sp_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc12
+      ,a.hutype
+      ,a.humod
+      ,a.tohuc
+      ,a.noncontributingareaacres
+      ,a.noncontributingareasqkm
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu12sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu12sp_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu12sp_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu12sp_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu10_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu10_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu10_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu10_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc10
+      ,a.hutype
+      ,a.humod
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu10_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu10_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu10_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu10_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu10sp_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu10sp_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu10sp_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu10sp_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc10
+      ,a.hutype
+      ,a.humod
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu10sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu10sp_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu10sp_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu10sp_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu8_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu8_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu8_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu8_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc8
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu8_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu8_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu8_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu8_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu8sp_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu8sp_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu8sp_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu8sp_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc8
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu8sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu8sp_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu8sp_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu8sp_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu6_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc6
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu6_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu6_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu6_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu6_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu6sp_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6sp_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6sp_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6sp_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc6
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu6sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu6sp_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu6sp_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu6sp_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu4_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu4_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu4_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu4_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc4
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu4_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu4_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu4_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu4_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu4sp_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu4sp_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu4sp_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu4sp_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc4
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu4sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu4sp_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu4sp_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu4sp_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu2_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu2_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu2_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu2_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc2
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu2_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu2_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu2_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu2_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu2sp_f3_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu2sp_f3_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu2sp_f3')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu2sp_f3_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc2
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu2sp_f3 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu2sp_f3_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu2sp_f3_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu2sp_f3_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
 ----- views/wbd_hu12_np21.sql 
 
 DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_np21;
@@ -6134,11 +6360,7 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_np21;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'wbd_hu12_np21'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12_np21') 
    THEN 
 
       EXECUTE $q$
@@ -6164,7 +6386,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_np21 a;
+      cipsrv_wbd.wbd_hu12_np21 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
@@ -6189,11 +6411,7 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_np21_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'wbd_hu12_np21'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12_np21')
    THEN 
 
       EXECUTE $q$
@@ -6219,7 +6437,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_np21 a;
+      cipsrv_wbd.wbd_hu12_np21 a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
@@ -6237,6 +6455,521 @@ BEGIN
 
 END$$;
 --******************************--
+----- views/wbd_hu12sp_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12sp_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12sp_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu12sp_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc12
+      ,a.hutype
+      ,a.humod
+      ,a.tohuc
+      ,a.noncontributingareaacres
+      ,a.noncontributingareasqkm
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu12sp_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu12sp_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu12sp_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu12sp_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu10_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu10_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu10_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu10_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc10
+      ,a.hutype
+      ,a.humod
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu10_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu10_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu10_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu10_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu10sp_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu10sp_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu10sp_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu10sp_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc10
+      ,a.hutype
+      ,a.humod
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu10sp_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu10sp_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu10sp_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu10sp_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu8_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu8_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu8_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu8_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc8
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu8_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu8_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu8_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu8_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu8sp_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu8sp_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu8sp_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu8sp_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc8
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu8sp_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu8sp_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu8sp_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu8sp_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu6_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc6
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu6_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu6_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu6_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu6_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu6sp_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6sp_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6sp_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6sp_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc6
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu6sp_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu6sp_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu6sp_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu6sp_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu4_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu4_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu4_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu4_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc4
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu4_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu4_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu4_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu4_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu4sp_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu4sp_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu4sp_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu4sp_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc4
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu4sp_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu4sp_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu4sp_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu4sp_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu2_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu2_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu2_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu2_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc2
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu2_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu2_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu2_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu2_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu2sp_np21_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu2sp_np21_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu2sp_np21')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu2sp_np21_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc2
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu2sp_np21 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu2sp_np21_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu2sp_np21_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu2sp_np21_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
 ----- views/wbd_hu12_nphr.sql 
 
 DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_nphr;
@@ -6244,11 +6977,7 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_nphr;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'wbd_hu12_nphr'
-   ) 
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12_nphr') 
    THEN 
 
       EXECUTE $q$
@@ -6274,7 +7003,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_nphr a;
+      cipsrv_wbd.wbd_hu12_nphr a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
@@ -6299,11 +7028,7 @@ DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12_nphr_esri;
 DO $$DECLARE 
 BEGIN
 
-   IF EXISTS(
-      SELECT 1 FROM information_schema.tables a
-      WHERE a.table_schema = 'cipsrv_support'
-      AND   a.table_name   = 'wbd_hu12_nphr'
-   )
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12_nphr')
    THEN 
 
       EXECUTE $q$
@@ -6329,7 +7054,7 @@ BEGIN
       ,a.globalid
       ,a.shape
       FROM
-      cipsrv_support.wbd_hu12_nphr a;
+      cipsrv_wbd.wbd_hu12_nphr a;
       $q$;                                                                                                                          
 
       EXECUTE $q$
@@ -6342,6 +7067,521 @@ BEGIN
       
    ELSE
       RAISE WARNING 'skipping wbd_hu12_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu12sp_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu12sp_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu12sp_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu12sp_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc12
+      ,a.hutype
+      ,a.humod
+      ,a.tohuc
+      ,a.noncontributingareaacres
+      ,a.noncontributingareasqkm
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu12sp_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu12sp_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu12sp_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu12sp_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu10_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu10_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu10_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu10_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc10
+      ,a.hutype
+      ,a.humod
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu10_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu10_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu10_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu10_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu10sp_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu10sp_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu10sp_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu10sp_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc10
+      ,a.hutype
+      ,a.humod
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu10sp_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu10sp_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu10sp_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu10sp_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu8_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu8_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu8_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu8_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc8
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu8_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu8_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu8_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu8_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu8sp_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu8sp_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu8sp_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu8sp_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc8
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu8sp_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu8sp_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu8sp_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu8sp_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu6_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc6
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu6_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu6_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu6_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu6_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu6sp_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu6sp_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu6sp_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu6sp_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc6
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu6sp_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu6sp_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu6sp_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu6sp_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu4_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu4_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu4_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu4_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc4
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu4_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu4_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu4_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu4_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu4sp_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu4sp_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu4sp_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu4sp_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc4
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu4sp_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu4sp_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu4sp_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu4sp_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu2_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu2_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu2_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu2_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc2
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu2_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu2_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu2_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu2_nphr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/wbd_hu2sp_nphr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.wbd_hu2sp_nphr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_wbd','wbd_hu2sp_nphr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.wbd_hu2sp_nphr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.tnmid
+      ,a.metasourceid
+      ,a.loaddate
+      ,a.areasqkm
+      ,a.areaacres
+      ,a.name
+      ,a.states
+      ,a.huc2
+      ,a.centermass_x
+      ,a.centermass_y
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_wbd.wbd_hu2sp_nphr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.wbd_hu2sp_nphr_esri OWNER TO cipsrv_gis;
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.wbd_hu2sp_nphr_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping wbd_hu2sp_nphr_esri';
    
    END IF;
 

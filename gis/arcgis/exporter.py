@@ -3,7 +3,7 @@ import os,sys,arcpy;
 spref = arcpy.SpatialReference(3857);
 
 ###############################################################################
-def auto_fm(source):
+def auto_fm(source,force_date=False):
 
    sdeflds = ['objectid','shape','se_anno_cad_data','shape_length','shape_area','len','area','globalid'];
    source_desc = arcpy.da.Describe(source);
@@ -26,8 +26,17 @@ def auto_fm(source):
       
       fd             = fm.outputField;
       fd.name        = flds[i].name.lower()
-      #print(fd.name + ' ' + fd.type)
-      fd.type        = flds[i].type
+      
+      if force_date:
+         if flds[i].type == 'DateOnly':
+            fd.type = 'Date';
+         else:
+            fd.type = flds[i].type;
+      else:
+         fd.type = flds[i].type;
+      
+      #print(fd.name + ' ' + flds[i].type)
+      
       fd.length      = flds[i].length;
       fd.precision   = flds[i].precision;
       fd.scale       = flds[i].scale;
@@ -37,7 +46,7 @@ def auto_fm(source):
    return fms;
    
 ###############################################################################   
-def tbexporter(source,outname,work_path,container_name):
+def tbexporter(source,outname,work_path,container_name,force_date=False):
 
    print("counting " + source + "....",end="",flush=True);
    bef = arcpy.GetCount_management(source)[0];
@@ -51,7 +60,7 @@ def tbexporter(source,outname,work_path,container_name):
    arcpy.conversion.ExportTable(
        in_table      = source
       ,out_table     = work_path + os.sep + container_name + os.sep + outname
-      ,field_mapping = auto_fm(source)
+      ,field_mapping = auto_fm(source,force_date=force_date)
    );
    print(" DONE.");
    print("counting " + outname + "....",end="",flush=True);
@@ -64,7 +73,7 @@ def tbexporter(source,outname,work_path,container_name):
    print(" DONE.");
     
 ###############################################################################   
-def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_null_geom=False):
+def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_null_geom=False,force_date=False):
 
    print("counting " + source + "....",end="",flush=True);
    bef = int(arcpy.GetCount_management(source)[0]);
@@ -140,7 +149,7 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_nu
       arcpy.conversion.ExportFeatures(
            in_features   = source
           ,out_features  = work_path + os.sep + container_name + os.sep + outname
-          ,field_mapping = auto_fm(source)
+          ,field_mapping = auto_fm(source,force_date=force_date)
       );
       
    print(" DONE.");
