@@ -596,7 +596,7 @@ def main(
    ###############################################################################
    cmd = [
        "docker","compose","exec","cip_jp","cp"
-      ,"/home/jovyan/notebooks/setup/common.py"
+      ,"/home/jovyan/notebooks/common.py"
       ,"/tmp/common.py"
    ];
    dzproc(cmd);
