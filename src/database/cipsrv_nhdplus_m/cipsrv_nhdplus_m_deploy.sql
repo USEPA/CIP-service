@@ -1428,6 +1428,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_3338(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1454,6 +1455,7 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1489,6 +1491,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,b.totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1554,6 +1557,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_5070(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1580,6 +1584,7 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1615,6 +1620,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,b.totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1680,6 +1686,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_26904(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1706,6 +1713,7 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1741,6 +1749,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,b.totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1806,6 +1815,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32161(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1832,6 +1842,7 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1867,6 +1878,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,b.totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1932,6 +1944,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32655(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1958,6 +1971,7 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1993,6 +2007,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,b.totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2058,6 +2073,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32702(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -2084,6 +2100,7 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,a.totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -2119,6 +2136,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,b.totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2694,6 +2712,7 @@ AS(
    ,gnis_id                     VARCHAR(10)
    ,gnis_name                   VARCHAR(65)
    ,lengthkm                    NUMERIC
+   ,totma                       NUMERIC
    ,reachcode                   VARCHAR(14)
    ,flowdir                     INTEGER
    ,wbarea_permanent_identifier VARCHAR(40)
@@ -5643,6 +5662,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5667,6 +5687,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5727,6 +5748,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5751,6 +5773,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5811,6 +5834,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5835,6 +5859,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5895,6 +5920,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5919,6 +5945,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5979,6 +6006,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -6003,6 +6031,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -6063,6 +6092,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -6087,6 +6117,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -6157,6 +6188,7 @@ BEGIN
       rec_candidate.gnis_id                     := rec_flowline.gnis_id;
       rec_candidate.gnis_name                   := rec_flowline.gnis_name;
       rec_candidate.lengthkm                    := rec_flowline.lengthkm;
+      rec_candidate.totma                       := rec_flowline.totma
       rec_candidate.reachcode                   := rec_flowline.reachcode;
       rec_candidate.flowdir                     := rec_flowline.flowdir;
       rec_candidate.wbarea_permanent_identifier := rec_flowline.wbarea_permanent_identifier;
