@@ -1491,7 +1491,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1620,7 +1620,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1749,7 +1749,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1878,7 +1878,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2007,7 +2007,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2136,7 +2136,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2926,6 +2926,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -2962,6 +2963,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -2988,6 +2990,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3026,6 +3029,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3062,6 +3066,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3088,6 +3093,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3126,6 +3132,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3162,6 +3169,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3188,6 +3196,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3226,6 +3235,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3262,6 +3272,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3288,6 +3299,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3326,6 +3338,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3362,6 +3375,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3388,6 +3402,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3426,6 +3441,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3462,6 +3478,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3488,6 +3505,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5527,6 +5545,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5551,6 +5570,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5611,6 +5631,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5635,6 +5656,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5695,6 +5717,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5719,6 +5742,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5779,6 +5803,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5803,6 +5828,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5863,6 +5889,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5887,6 +5914,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5947,6 +5975,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5971,6 +6000,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -6041,6 +6071,7 @@ BEGIN
       rec_candidate.gnis_id                     := rec_flowline.gnis_id;
       rec_candidate.gnis_name                   := rec_flowline.gnis_name;
       rec_candidate.lengthkm                    := rec_flowline.lengthkm;
+      rec_candidate.totma                       := rec_flowline.totma
       rec_candidate.reachcode                   := rec_flowline.reachcode;
       rec_candidate.flowdir                     := rec_flowline.flowdir;
       rec_candidate.wbarea_permanent_identifier := rec_flowline.wbarea_permanent_identifier;

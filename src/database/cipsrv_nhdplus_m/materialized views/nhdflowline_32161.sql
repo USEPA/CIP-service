@@ -74,7 +74,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
-,b.totma
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
