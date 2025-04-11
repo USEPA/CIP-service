@@ -10,20 +10,20 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,IN  p_known_catchment_nhdplusid BIGINT DEFAULT NULL
-   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_reachcode               VARCHAR
-   ,OUT out_snap_measure            NUMERIC
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,IN  p_known_catchment_nhdplusid    BIGINT DEFAULT NULL
+   ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_reachcode                  VARCHAR
+   ,OUT out_snap_measure               NUMERIC
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 

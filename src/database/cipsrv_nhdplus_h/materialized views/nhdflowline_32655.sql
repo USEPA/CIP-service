@@ -38,7 +38,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier

@@ -1455,7 +1455,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1584,7 +1590,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1713,7 +1725,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1842,7 +1860,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1971,7 +1995,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -2100,7 +2130,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
-,a.totma
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -2655,20 +2691,20 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.catconstrained_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,IN  p_known_catchment_nhdplusid BIGINT DEFAULT NULL
-   ,OUT out_flowlines               cipsrv_nhdplus_h.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_reachcode               VARCHAR
-   ,OUT out_snap_measure            NUMERIC
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,IN  p_known_catchment_nhdplusid    BIGINT DEFAULT NULL
+   ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_reachcode                  VARCHAR
+   ,OUT out_snap_measure               NUMERIC
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -3575,19 +3611,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.catconstrained_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.catconstrained_index(
-    GEOMETRY
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) TO PUBLIC;
 --******************************--
 ----- functions/delineate.sql 
 
@@ -5330,15 +5370,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.determine_grid_srid(
-    GEOMETRY
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.determine_grid_srid(
-    GEOMETRY
-   ,VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.determine_grid_srid';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/determine_grid_srid_f.sql 
@@ -5406,22 +5453,22 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.distance_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_distance_max_distkm       NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_flowlines               cipsrv_nhdplus_h.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_fcode_allow                  INTEGER[]
+   ,IN  p_fcode_deny                   INTEGER[]
+   ,IN  p_distance_max_distkm          NUMERIC
+   ,IN  p_limit_innetwork              BOOLEAN
+   ,IN  p_limit_navigable              BOOLEAN
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -6167,27 +6214,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.distance_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.distance_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.distance_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;
 --******************************--
 ----- functions/distance_index_simple.sql 
 
@@ -7047,13 +7090,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.generic_common_mbr(
-   VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.generic_common_mbr(
-   VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/get_flowline.sql 
@@ -16198,45 +16250,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.pointindexing(
-    GEOMETRY
-   ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.pointindexing';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.pointindexing(
-    GEOMETRY
-   ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) TO PUBLIC;
 --******************************--
 ----- functions/query_generic_common_mbr.sql 
 
@@ -16321,13 +16351,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.query_generic_common_mbr(
-   GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.query_generic_common_mbr(
-   GEOMETRY
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.query_generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/raindrop_coord_to_raster.sql 
@@ -16565,23 +16604,23 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.raindrop_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_raindrop_snap_max_distkm  NUMERIC
-   ,IN  p_raindrop_path_max_distkm  NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_flowlines               cipsrv_nhdplus_h.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_fcode_allow                  INTEGER[]
+   ,IN  p_fcode_deny                   INTEGER[]
+   ,IN  p_raindrop_snap_max_distkm     NUMERIC
+   ,IN  p_raindrop_path_max_distkm     NUMERIC
+   ,IN  p_limit_innetwork              BOOLEAN
+   ,IN  p_limit_navigable              BOOLEAN
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -17124,29 +17163,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.raindrop_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.raindrop_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.raindrop_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;
 --******************************--
 ----- functions/raindrop_next_coordinate.sql 
 
@@ -18652,6 +18685,7 @@ BEGIN
          ,'gnis_id'                    ,p_input.gnis_id
          ,'gnis_name'                  ,p_input.gnis_name
          ,'lengthkm'                   ,p_input.lengthkm
+         ,'totma'                      ,p_input.totma
          ,'reachcode'                  ,p_input.reachcode
          ,'flowdir'                    ,p_input.flowdir
          ,'wbarea_permanent_identifier',p_input.wbarea_permanent_identifier
