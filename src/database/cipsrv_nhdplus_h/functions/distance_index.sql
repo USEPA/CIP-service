@@ -675,7 +675,7 @@ BEGIN
       rec_candidate.gnis_id                     := rec_flowline.gnis_id;
       rec_candidate.gnis_name                   := rec_flowline.gnis_name;
       rec_candidate.lengthkm                    := rec_flowline.lengthkm;
-      rec_candidate.totma                       := rec_flowline.totma
+      rec_candidate.totma                       := rec_flowline.totma;
       rec_candidate.reachcode                   := rec_flowline.reachcode;
       rec_candidate.flowdir                     := rec_flowline.flowdir;
       rec_candidate.wbarea_permanent_identifier := rec_flowline.wbarea_permanent_identifier;
