@@ -107,7 +107,11 @@
                  <option value="PP">Point to Point</option>
                  <option value="PPALL">Point to Point, All Streams Between</option>
                </select>
-               <input name="pSearchMaxDistanceKm" type="text" class="text" id="pSearchMaxDistanceKm" style="display:inline; width:30px" value="15" />&nbsp;km
+               &nbsp;<input name="pSearchMax" type="text" class="text" id="pSearchMax" style="display:inline; width:30px" value="15" />&nbsp;
+               <select name="selMaxType" id="selMaxType">
+                  <option value="distkm" SELECTED>km (distance)</option>
+                  <option value="flowday"> day (flowtime)</option>
+               </select>
                <br/>
                <br/>
                
@@ -360,6 +364,17 @@
          
          var search_type      = get_select_values(document.getElementById("pSearchType"));
          
+         var maxtype          = get_select_values(document.getElementById("selMaxType"));
+         var maxdistkm,maxtimeday;
+         if (maxtype == "distkm" ) {
+            maxdistkm  = document.getElementById("pSearchMax").value;
+            maxtimeday = null;
+         }
+         if (maxtype == "flowday" ) {
+            maxdistkm  = null;
+            maxtimeday = document.getElementById("pSearchMax").value;
+         }
+         
          var data = {
              "search_type"               : search_type
             ,"nhdplus_version"           : nhdplus_version
@@ -376,7 +391,8 @@
             ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
             ,"stop_measure"              : document.getElementById("pStopMeasure").value
             
-            ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+            ,"max_distancekm"            : maxdistkm
+            ,"max_flowtimeday"           : maxtimeday
             ,"return_flowline_details"   : true
             ,"return_flowline_geometry"  : true
          }
@@ -544,6 +560,17 @@
       
       } else {
          var search_type      = get_select_values(document.getElementById("pSearchType"));
+         
+         var maxtype          = get_select_values(document.getElementById("selMaxType"));
+         var maxdistkm,maxtimeday;
+         if (maxtype == "distkm" ) {
+            maxdistkm  = document.getElementById("pSearchMax").value;
+            maxtimeday = null;
+         }
+         if (maxtype == "flowday" ) {
+            maxdistkm  = null;
+            maxtimeday = document.getElementById("pSearchMax").value;
+         }
       
          var data = {
              "search_type"               : search_type
@@ -561,7 +588,8 @@
             ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
             ,"stop_measure"              : document.getElementById("pStopMeasure").value
             
-            ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+            ,"max_distancekm"            : maxdistkm
+            ,"max_flowtimeday"           : maxtimeday
             ,"return_flowline_details"   : true
             ,"return_flowline_geometry"  : true
          }
@@ -606,6 +634,17 @@
       var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
       var search_type      = get_select_values(document.getElementById("pSearchType"));
       
+      var maxtype          = get_select_values(document.getElementById("selMaxType"));
+      var maxdistkm,maxtimeday;
+      if (maxtype == "distkm" ) {
+         maxdistkm  = document.getElementById("pSearchMax").value;
+         maxtimeday = null;
+      }
+      if (maxtype == "flowday" ) {
+         maxdistkm  = null;
+         maxtimeday = document.getElementById("pSearchMax").value;
+      }
+   
       var data = {
           "search_type"               : search_type
          ,"nhdplus_version"           : nhdplus_version
@@ -622,7 +661,8 @@
          ,"stop_hydroseq"             : document.getElementById("pStopHydroSeq").value
          ,"stop_measure"              : document.getElementById("pStopMeasure").value
          
-         ,"max_distancekm"            : document.getElementById("pSearchMaxDistanceKm").value
+         ,"max_distancekm"            : maxdistkm
+         ,"max_flowtimeday"           : maxtimeday
          ,"return_flowline_details"   : true
          ,"return_flowline_geometry"  : true
       }
@@ -793,7 +833,7 @@
          document.getElementById("pStopHydroSeq").disabled = false;
          document.getElementById("pStopMeasure").disabled = false;
          document.getElementById("pPoint2").disabled = false;
-         document.getElementById("pSearchMaxDistanceKm").disabled = true;
+         document.getElementById("pSearchMax").disabled = true;
       } else {
          document.getElementById("pStopNHDPlusID").disabled = true;
          document.getElementById("pStopPermanentIdentifier").disabled = true;
@@ -801,7 +841,7 @@
          document.getElementById("pStopHydroSeq").disabled = true;
          document.getElementById("pStopMeasure").disabled = true;
          document.getElementById("pPoint2").disabled = true;
-         document.getElementById("pSearchMaxDistanceKm").disabled = false;
+         document.getElementById("pSearchMax").disabled = false;
       }
    }
 

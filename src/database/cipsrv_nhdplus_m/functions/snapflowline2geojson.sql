@@ -27,6 +27,7 @@ BEGIN
          ,'gnis_id'                    ,p_input.gnis_id
          ,'gnis_name'                  ,p_input.gnis_name
          ,'lengthkm'                   ,p_input.lengthkm
+         ,'totma'                      ,p_input.totma
          ,'reachcode'                  ,p_input.reachcode
          ,'flowdir'                    ,p_input.flowdir
          ,'wbarea_permanent_identifier',p_input.wbarea_permanent_identifier

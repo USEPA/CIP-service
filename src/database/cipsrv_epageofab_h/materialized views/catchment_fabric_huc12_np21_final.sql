@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_m.catchment_fabric_huc12_f3_final CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_huc12_np21_final CASCADE;
 
-CREATE MATERIALIZED VIEW cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(
+CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_huc12_np21_final(
     objectid
    ,xwalk_huc12
    ,xwalk_huc12_version
@@ -10,16 +10,16 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                     AS objectid
+ ROW_NUMBER() OVER()              AS objectid
 ,a.xwalk_huc12
 ,a.xwalk_huc12_version
 ,a.areasqkm
-,'{' || uuid_generate_v1() || '}'        AS globalid
+,'{' || uuid_generate_v1() || '}' AS globalid
 ,a.shape
 FROM (
    SELECT
     aa.xwalk_huc12
-   ,'F3'                                 AS xwalk_huc12_version
+   ,'NP21'                               AS xwalk_huc12_version
    ,ST_AREA(aa.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(aa.shape,4269) AS shape
    FROM (
@@ -30,20 +30,20 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_5070_3 aaa
+      cipsrv_epageofab_h.catchment_fabric_5070_3 aaa
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxa
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxa
       ON
       xxa.nhdplusid = aaa.nhdplusid
       WHERE
-      xxa.xwalk_huc12_version = 'F3'
+      xxa.xwalk_huc12_version = 'NP21'
       GROUP BY
       xxa.xwalk_huc12
    ) aa
    UNION ALL
    SELECT
     bb.xwalk_huc12
-   ,'F3'                                 AS xwalk_huc12_version
+   ,'NP21'                               AS xwalk_huc12_version
    ,ST_AREA(bb.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(bb.shape,4269) AS shape
    FROM (
@@ -54,20 +54,20 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_3338_3 bbb
+      cipsrv_epageofab_h.catchment_fabric_3338_3 bbb
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxb
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxb
       ON
       xxb.nhdplusid = bbb.nhdplusid
       WHERE
-      xxb.xwalk_huc12_version = 'F3'
+      xxb.xwalk_huc12_version = 'NP21'
       GROUP BY
       xxb.xwalk_huc12
    ) bb
    UNION ALL
    SELECT
     cc.xwalk_huc12
-   ,'F3'                                 AS xwalk_huc12_version
+   ,'NP21'                               AS xwalk_huc12_version
    ,ST_AREA(cc.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(cc.shape,4269) AS shape
    FROM (
@@ -78,20 +78,20 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_26904_3 ccc
+      cipsrv_epageofab_h.catchment_fabric_26904_3 ccc
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxc
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxc
       ON
       xxc.nhdplusid = ccc.nhdplusid
       WHERE
-      xxc.xwalk_huc12_version = 'F3'
+      xxc.xwalk_huc12_version = 'NP21'
       GROUP BY
       xxc.xwalk_huc12
    ) cc
    UNION ALL
    SELECT
     dd.xwalk_huc12
-   ,'F3'                                 AS xwalk_huc12_version
+   ,'NP21'                               AS xwalk_huc12_version
    ,ST_AREA(dd.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(dd.shape,4269) AS shape
    FROM (
@@ -102,20 +102,20 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_32161_3 ddd
+      cipsrv_epageofab_h.catchment_fabric_32161_3 ddd
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxd
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxd
       ON
       xxd.nhdplusid = ddd.nhdplusid
       WHERE
-      xxd.xwalk_huc12_version = 'F3'
+      xxd.xwalk_huc12_version = 'NP21'
       GROUP BY
       xxd.xwalk_huc12
    ) dd
    UNION ALL
    SELECT
     ee.xwalk_huc12
-   ,'F3'                                 AS xwalk_huc12_version
+   ,'NP21'                               AS xwalk_huc12_version
    ,ST_AREA(ee.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(ee.shape,4269) AS shape
    FROM (
@@ -126,20 +126,20 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_32655_3 eee
+      cipsrv_epageofab_h.catchment_fabric_32655_3 eee
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxe
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxe
       ON
       xxe.nhdplusid = eee.nhdplusid
       WHERE
-      xxe.xwalk_huc12_version = 'F3'
+      xxe.xwalk_huc12_version = 'NP21'
       GROUP BY
       xxe.xwalk_huc12
    ) ee
    UNION ALL
    SELECT
     ff.xwalk_huc12
-   ,'F3'                                 AS xwalk_huc12_version
+   ,'NP21'                               AS xwalk_huc12_version
    ,ST_AREA(ff.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(ff.shape,4269) AS shape
    FROM (
@@ -150,13 +150,13 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_32702_3 fff
+      cipsrv_epageofab_h.catchment_fabric_32702_3 fff
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxf
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxf
       ON
       xxf.nhdplusid = fff.nhdplusid
       WHERE
-      xxf.xwalk_huc12_version = 'F3'
+      xxf.xwalk_huc12_version = 'NP21'
       GROUP BY
       xxf.xwalk_huc12
    ) ff
@@ -166,22 +166,22 @@ WHERE
 AND NOT ST_ISEMPTY(a.shape)
 AND a.areasqkm > 0.00000005;
 
-ALTER TABLE cipsrv_epageofab_m.catchment_fabric_huc12_f3_final OWNER TO cipsrv;
-GRANT SELECT ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final TO public;
+ALTER TABLE cipsrv_epageofab_h.catchment_fabric_huc12_np21_final OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_epageofab_h.catchment_fabric_huc12_np21_final TO public;
 
-CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_pk
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(xwalk_huc12);
+CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_np21_final_pk
+ON cipsrv_epageofab_h.catchment_fabric_huc12_np21_final(xwalk_huc12);
 
-CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_u01
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(objectid);
+CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_np21_final_u01
+ON cipsrv_epageofab_h.catchment_fabric_huc12_np21_final(objectid);
 
-CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_u02
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(globalid);
+CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_np21_final_u02
+ON cipsrv_epageofab_h.catchment_fabric_huc12_np21_final(globalid);
 
-CREATE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_spx
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final USING gist(shape);
+CREATE INDEX IF NOT EXISTS catchment_fabric_huc12_np21_final_spx
+ON cipsrv_epageofab_h.catchment_fabric_huc12_np21_final USING gist(shape);
 
-ANALYZE cipsrv_epageofab_m.catchment_fabric_huc12_f3_final;
+ANALYZE cipsrv_epageofab_h.catchment_fabric_huc12_np21_final;
 
---VACUUM FREEZE ANALYZE cipsrv_epageofab_m.catchment_fabric_huc12_f3_final;
+--VACUUM FREEZE ANALYZE cipsrv_epageofab_h.catchment_fabric_huc12_np21_final;
 

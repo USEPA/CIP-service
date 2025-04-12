@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_m.catchment_fabric_huc12_f3_final CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_huc12_f3_final CASCADE;
 
-CREATE MATERIALIZED VIEW cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(
+CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_huc12_f3_final(
     objectid
    ,xwalk_huc12
    ,xwalk_huc12_version
@@ -30,9 +30,9 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_5070_3 aaa
+      cipsrv_epageofab_h.catchment_fabric_5070_3 aaa
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxa
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxa
       ON
       xxa.nhdplusid = aaa.nhdplusid
       WHERE
@@ -54,9 +54,9 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_3338_3 bbb
+      cipsrv_epageofab_h.catchment_fabric_3338_3 bbb
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxb
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxb
       ON
       xxb.nhdplusid = bbb.nhdplusid
       WHERE
@@ -78,9 +78,9 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_26904_3 ccc
+      cipsrv_epageofab_h.catchment_fabric_26904_3 ccc
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxc
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxc
       ON
       xxc.nhdplusid = ccc.nhdplusid
       WHERE
@@ -102,9 +102,9 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_32161_3 ddd
+      cipsrv_epageofab_h.catchment_fabric_32161_3 ddd
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxd
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxd
       ON
       xxd.nhdplusid = ddd.nhdplusid
       WHERE
@@ -126,9 +126,9 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_32655_3 eee
+      cipsrv_epageofab_h.catchment_fabric_32655_3 eee
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxe
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxe
       ON
       xxe.nhdplusid = eee.nhdplusid
       WHERE
@@ -150,9 +150,9 @@ FROM (
          ,p_threshold_sqkm := 1.25
        ) AS shape
       FROM
-      cipsrv_epageofab_m.catchment_fabric_32702_3 fff
+      cipsrv_epageofab_h.catchment_fabric_32702_3 fff
       JOIN
-      cipsrv_epageofab_m.catchment_fabric_xwalk xxf
+      cipsrv_epageofab_h.catchment_fabric_xwalk xxf
       ON
       xxf.nhdplusid = fff.nhdplusid
       WHERE
@@ -166,22 +166,22 @@ WHERE
 AND NOT ST_ISEMPTY(a.shape)
 AND a.areasqkm > 0.00000005;
 
-ALTER TABLE cipsrv_epageofab_m.catchment_fabric_huc12_f3_final OWNER TO cipsrv;
-GRANT SELECT ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final TO public;
+ALTER TABLE cipsrv_epageofab_h.catchment_fabric_huc12_f3_final OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_epageofab_h.catchment_fabric_huc12_f3_final TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_pk
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(xwalk_huc12);
+ON cipsrv_epageofab_h.catchment_fabric_huc12_f3_final(xwalk_huc12);
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_u01
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(objectid);
+ON cipsrv_epageofab_h.catchment_fabric_huc12_f3_final(objectid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_u02
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final(globalid);
+ON cipsrv_epageofab_h.catchment_fabric_huc12_f3_final(globalid);
 
 CREATE INDEX IF NOT EXISTS catchment_fabric_huc12_f3_final_spx
-ON cipsrv_epageofab_m.catchment_fabric_huc12_f3_final USING gist(shape);
+ON cipsrv_epageofab_h.catchment_fabric_huc12_f3_final USING gist(shape);
 
-ANALYZE cipsrv_epageofab_m.catchment_fabric_huc12_f3_final;
+ANALYZE cipsrv_epageofab_h.catchment_fabric_huc12_f3_final;
 
---VACUUM FREEZE ANALYZE cipsrv_epageofab_m.catchment_fabric_huc12_f3_final;
+--VACUUM FREEZE ANALYZE cipsrv_epageofab_h.catchment_fabric_huc12_f3_final;
 

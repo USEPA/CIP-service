@@ -1428,6 +1428,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_3338(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1454,6 +1455,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1489,6 +1497,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1554,6 +1563,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_5070(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1580,6 +1590,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1615,6 +1632,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1680,6 +1698,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_26904(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1706,6 +1725,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1741,6 +1767,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1806,6 +1833,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32161(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1832,6 +1860,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1867,6 +1902,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -1932,6 +1968,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32655(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -1958,6 +1995,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -1993,6 +2037,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2058,6 +2103,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdflowline_32702(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -2084,6 +2130,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -2119,6 +2172,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier
@@ -2694,6 +2748,7 @@ AS(
    ,gnis_id                     VARCHAR(10)
    ,gnis_name                   VARCHAR(65)
    ,lengthkm                    NUMERIC
+   ,totma                       NUMERIC
    ,reachcode                   VARCHAR(14)
    ,flowdir                     INTEGER
    ,wbarea_permanent_identifier VARCHAR(40)
@@ -2734,20 +2789,20 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.catconstrained_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,IN  p_known_catchment_nhdplusid BIGINT DEFAULT NULL
-   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_reachcode               VARCHAR
-   ,OUT out_snap_measure            NUMERIC
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,IN  p_known_catchment_nhdplusid    BIGINT DEFAULT NULL
+   ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_reachcode                  VARCHAR
+   ,OUT out_snap_measure               NUMERIC
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -3005,6 +3060,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3041,6 +3097,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3067,6 +3124,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3105,6 +3163,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3141,6 +3200,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3167,6 +3227,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3205,6 +3266,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3241,6 +3303,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3267,6 +3330,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3305,6 +3369,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3341,6 +3406,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3367,6 +3433,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3405,6 +3472,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3441,6 +3509,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3467,6 +3536,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -3505,6 +3575,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -3541,6 +3612,7 @@ BEGIN
       ,rec_candidate.gnis_id
       ,rec_candidate.gnis_name
       ,rec_candidate.lengthkm
+      ,rec_candidate.totma
       ,rec_candidate.reachcode
       ,rec_candidate.flowdir
       ,rec_candidate.wbarea_permanent_identifier
@@ -3567,6 +3639,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5428,15 +5501,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.determine_grid_srid(
-    GEOMETRY
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.determine_grid_srid(
-    GEOMETRY
-   ,VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.determine_grid_srid';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/determine_grid_srid_f.sql 
@@ -5504,22 +5584,22 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.distance_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_distance_max_distkm       NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_fcode_allow                  INTEGER[]
+   ,IN  p_fcode_deny                   INTEGER[]
+   ,IN  p_distance_max_distkm          NUMERIC
+   ,IN  p_limit_innetwork              BOOLEAN
+   ,IN  p_limit_navigable              BOOLEAN
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -5643,6 +5723,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5667,6 +5748,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5727,6 +5809,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5751,6 +5834,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5811,6 +5895,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5835,6 +5920,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5895,6 +5981,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -5919,6 +6006,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -5979,6 +6067,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -6003,6 +6092,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -6063,6 +6153,7 @@ BEGIN
       ,a.gnis_id
       ,a.gnis_name
       ,a.lengthkm
+      ,a.totma
       ,a.reachcode
       ,a.flowdir
       ,a.wbarea_permanent_identifier
@@ -6087,6 +6178,7 @@ BEGIN
          ,aa.gnis_id
          ,aa.gnis_name
          ,aa.lengthkm
+         ,aa.totma
          ,aa.reachcode
          ,aa.flowdir
          ,aa.wbarea_permanent_identifier
@@ -6157,6 +6249,7 @@ BEGIN
       rec_candidate.gnis_id                     := rec_flowline.gnis_id;
       rec_candidate.gnis_name                   := rec_flowline.gnis_name;
       rec_candidate.lengthkm                    := rec_flowline.lengthkm;
+      rec_candidate.totma                       := rec_flowline.totma;
       rec_candidate.reachcode                   := rec_flowline.reachcode;
       rec_candidate.flowdir                     := rec_flowline.flowdir;
       rec_candidate.wbarea_permanent_identifier := rec_flowline.wbarea_permanent_identifier;
@@ -6252,27 +6345,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.distance_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.distance_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.distance_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;
 --******************************--
 ----- functions/distance_index_simple.sql 
 
@@ -7054,23 +7143,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
-    GEOMETRY
-   ,GEOMETRY
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.fetch_grids_by_geometry';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.fetch_grids_by_geometry(
-    GEOMETRY
-   ,GEOMETRY
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-) TO PUBLIC;
 --******************************--
 ----- functions/generic_common_mbr.sql 
 
@@ -7132,13 +7221,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
-   VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.generic_common_mbr(
-   VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.generic_common_mbr';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/get_flowline.sql 
@@ -7242,8 +7340,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -7305,8 +7415,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -7403,8 +7525,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma 
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -7466,8 +7600,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma 
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -7564,8 +7710,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma 
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -7627,8 +7785,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma 
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -7729,8 +7899,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma 
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema 
@@ -7801,8 +7983,20 @@ BEGIN
          /* ++++++++++ */
          ,a.lengthkm
          ,a.lengthkm / (a.tomeas - a.frommeas)
-         ,a.totma AS flowtimeday
-         ,a.totma / (a.tomeas - a.frommeas)
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma
+          END AS flowtimeday
+         ,CASE 
+          WHEN a.totma IN (-9998,-9999)
+          THEN
+             CAST(NULL AS NUMERIC)
+          ELSE
+             a.totma / (a.tomeas - a.frommeas)
+          END AS flowtimeday_ratio
          /* ++++++++++ */
          ,a.pathlength
          ,a.pathtimema
@@ -7920,25 +8114,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.get_flowline(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.get_flowline(
-    VARCHAR
-   ,BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,BIGINT
-   ,NUMERIC
-   ,VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.get_flowline';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/index_area_artpath.sql 
@@ -15383,11 +15574,13 @@ BEGIN
       
       RETURN;
    
-   ELSIF num_maximum_flowtimeday IS NOT NULL
+   END IF;
+
+   IF num_maximum_flowtimeday IS NOT NULL
    AND   obj_start_flowline.flowtimeday IS NULL
    THEN
       out_return_code    := -23;
-      out_status_message := 'Start flowline is tidal without flow time information.';
+      out_status_message := 'Start flowline does not have flowtime information.';
       
       RETURN;
       
@@ -15436,7 +15629,7 @@ BEGIN
       AND   obj_stop_flowline.flowtimeday IS NULL
       THEN
          out_return_code    := -23;
-         out_status_message := 'Stop flowline is tidal without flow time information.';
+         out_status_message := 'Stop flowline does not have flowtime information.';
          
          RETURN;
          
@@ -16269,45 +16462,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.pointindexing(
-    GEOMETRY
-   ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.pointindexing';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.pointindexing(
-    GEOMETRY
-   ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,BIGINT
-) TO PUBLIC;
 --******************************--
 ----- functions/query_generic_common_mbr.sql 
 
@@ -16645,23 +16816,23 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_raindrop_snap_max_distkm  NUMERIC
-   ,IN  p_raindrop_path_max_distkm  NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_flowlines               cipsrv_nhdplus_m.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_fcode_allow                  INTEGER[]
+   ,IN  p_fcode_deny                   INTEGER[]
+   ,IN  p_raindrop_snap_max_distkm     NUMERIC
+   ,IN  p_raindrop_path_max_distkm     NUMERIC
+   ,IN  p_limit_innetwork              BOOLEAN
+   ,IN  p_limit_navigable              BOOLEAN
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -17204,29 +17375,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.raindrop_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.raindrop_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.raindrop_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;
 --******************************--
 ----- functions/raindrop_next_coordinate.sql 
 
@@ -18732,6 +18897,7 @@ BEGIN
          ,'gnis_id'                    ,p_input.gnis_id
          ,'gnis_name'                  ,p_input.gnis_name
          ,'lengthkm'                   ,p_input.lengthkm
+         ,'totma'                      ,p_input.totma
          ,'reachcode'                  ,p_input.reachcode
          ,'flowdir'                    ,p_input.flowdir
          ,'wbarea_permanent_identifier',p_input.wbarea_permanent_identifier

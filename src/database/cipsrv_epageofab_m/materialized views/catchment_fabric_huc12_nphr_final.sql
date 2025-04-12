@@ -25,7 +25,10 @@ FROM (
    FROM (
       SELECT
        xxa.xwalk_huc12
-      ,ST_COLLECTIONEXTRACT(ST_UNION(aaa.shape),3) AS shape
+      ,cipsrv_engine.remove_holes(
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(aaa.shape),3)
+         ,p_threshold_sqkm := 1.25
+       ) AS shape
       FROM
       cipsrv_epageofab_m.catchment_fabric_5070_3 aaa
       JOIN
@@ -46,7 +49,10 @@ FROM (
    FROM (
       SELECT
        xxb.xwalk_huc12
-      ,ST_COLLECTIONEXTRACT(ST_UNION(bbb.shape),3) AS shape
+      ,cipsrv_engine.remove_holes(
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(bbb.shape),3)
+         ,p_threshold_sqkm := 1.25
+       ) AS shape
       FROM
       cipsrv_epageofab_m.catchment_fabric_3338_3 bbb
       JOIN
@@ -67,7 +73,10 @@ FROM (
    FROM (
       SELECT
        xxc.xwalk_huc12
-      ,ST_COLLECTIONEXTRACT(ST_UNION(ccc.shape),3) AS shape
+      ,cipsrv_engine.remove_holes(
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ccc.shape),3)
+         ,p_threshold_sqkm := 1.25
+       ) AS shape
       FROM
       cipsrv_epageofab_m.catchment_fabric_26904_3 ccc
       JOIN
@@ -88,7 +97,10 @@ FROM (
    FROM (
       SELECT
        xxd.xwalk_huc12
-      ,ST_COLLECTIONEXTRACT(ST_UNION(ddd.shape),3) AS shape
+      ,cipsrv_engine.remove_holes(
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ddd.shape),3)
+         ,p_threshold_sqkm := 1.25
+       ) AS shape
       FROM
       cipsrv_epageofab_m.catchment_fabric_32161_3 ddd
       JOIN
@@ -109,7 +121,10 @@ FROM (
    FROM (
       SELECT
        xxe.xwalk_huc12
-      ,ST_COLLECTIONEXTRACT(ST_UNION(eee.shape),3) AS shape
+      ,cipsrv_engine.remove_holes(
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(eee.shape),3)
+         ,p_threshold_sqkm := 1.25
+       ) AS shape
       FROM
       cipsrv_epageofab_m.catchment_fabric_32655_3 eee
       JOIN
@@ -130,7 +145,10 @@ FROM (
    FROM (
       SELECT
        xxf.xwalk_huc12
-      ,ST_COLLECTIONEXTRACT(ST_UNION(fff.shape),3) AS shape
+      ,cipsrv_engine.remove_holes(
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(fff.shape),3)
+         ,p_threshold_sqkm := 1.25
+       ) AS shape
       FROM
       cipsrv_epageofab_m.catchment_fabric_32702_3 fff
       JOIN

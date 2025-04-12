@@ -11,6 +11,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdflowline_26904(
    ,gnis_id
    ,gnis_name
    ,lengthkm
+   ,totma
    ,reachcode
    ,flowdir
    ,wbarea_permanent_identifier
@@ -37,6 +38,13 @@ SELECT
 ,a.gnis_id
 ,a.gnis_name
 ,a.lengthkm
+,CASE
+ WHEN a.totma IN (-9998,-9999)
+ THEN
+   CAST(NULL AS NUMERIC)
+ ELSE
+   a.totma
+ END AS totma
 ,a.reachcode
 ,a.flowdir
 ,a.wbarea_permanent_identifier
@@ -72,6 +80,7 @@ SELECT
 ,b.gnis_id
 ,b.gnis_name
 ,b.lengthkm
+,NULL AS totma
 ,b.reachcode
 ,b.flowdir
 ,b.wbarea_permanent_identifier

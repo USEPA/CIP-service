@@ -8,6 +8,7 @@ AS(
    ,gnis_id                     VARCHAR(10)
    ,gnis_name                   VARCHAR(65)
    ,lengthkm                    NUMERIC
+   ,totma                       NUMERIC
    ,reachcode                   VARCHAR(14)
    ,flowdir                     INTEGER
    ,wbarea_permanent_identifier VARCHAR(40)

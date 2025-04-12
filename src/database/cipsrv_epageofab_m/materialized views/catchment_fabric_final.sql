@@ -63,13 +63,15 @@ FROM (
    ,aa.isocean
    ,aa.isalaskan
    ,aa.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_5070_3 aaa WHERE aaa.nhdplusid = aa.nhdplusid) AS statecount
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_5070_3 aaa WHERE aaa.nhdplusid = aa.nhdplusid AND aaa.areasqkm > 0.00000005) AS state_count
    ,aa.vpuid
    ,aa.sourcedataset
    ,aa.globalid
    ,ST_TRANSFORM(aa.shape,4269) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_5070_3 aa
+   WHERE
+   aa.areasqkm > 0.00000005
    UNION ALL
    SELECT
     bb.catchmentstatecode
@@ -87,13 +89,15 @@ FROM (
    ,bb.isocean
    ,bb.isalaskan
    ,bb.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_3338_3 bbb WHERE bbb.nhdplusid = bb.nhdplusid) AS statecount
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_3338_3 bbb WHERE bbb.nhdplusid = bb.nhdplusid AND bbb.areasqkm > 0.00000005) AS state_count
    ,bb.vpuid
    ,bb.sourcedataset
    ,bb.globalid
    ,ST_TRANSFORM(bb.shape,4269) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_3338_3 bb
+   WHERE
+   bb.areasqkm > 0.00000005
    UNION ALL
    SELECT
     cc.catchmentstatecode
@@ -111,13 +115,15 @@ FROM (
    ,cc.isocean
    ,cc.isalaskan
    ,cc.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_26904_3 ccc WHERE ccc.nhdplusid = cc.nhdplusid) AS statecount
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_26904_3 ccc WHERE ccc.nhdplusid = cc.nhdplusid AND ccc.areasqkm > 0.00000005) AS state_count
    ,cc.vpuid
    ,cc.sourcedataset
    ,cc.globalid
    ,ST_TRANSFORM(cc.shape,4269) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_26904_3 cc
+   WHERE
+   cc.areasqkm > 0.00000005
    UNION ALL
    SELECT
     dd.catchmentstatecode
@@ -135,13 +141,15 @@ FROM (
    ,dd.isocean
    ,dd.isalaskan
    ,dd.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_32161_3 ddd WHERE ddd.nhdplusid = dd.nhdplusid) AS statecount
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_32161_3 ddd WHERE ddd.nhdplusid = dd.nhdplusid AND ddd.areasqkm > 0.00000005) AS state_count
    ,dd.vpuid
    ,dd.sourcedataset
    ,dd.globalid
    ,ST_TRANSFORM(dd.shape,4269) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_32161_3 dd
+   WHERE
+   dd.areasqkm > 0.00000005
    UNION ALL
    SELECT
     ee.catchmentstatecode
@@ -159,13 +167,15 @@ FROM (
    ,ee.isocean
    ,ee.isalaskan
    ,ee.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_32655_3 eee WHERE eee.nhdplusid = ee.nhdplusid) AS statecount
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_32655_3 eee WHERE eee.nhdplusid = ee.nhdplusid AND eee.areasqkm > 0.00000005) AS state_count
    ,ee.vpuid
    ,ee.sourcedataset
    ,ee.globalid
    ,ST_TRANSFORM(ee.shape,4269) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_32655_3 ee
+   WHERE
+   ee.areasqkm > 0.00000005
    UNION ALL
    SELECT
     ff.catchmentstatecode
@@ -183,13 +193,15 @@ FROM (
    ,ff.isocean
    ,ff.isalaskan
    ,ff.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_32702_3 fff WHERE fff.nhdplusid = ff.nhdplusid) AS statecount
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_m.catchment_fabric_32702_3 fff WHERE fff.nhdplusid = ff.nhdplusid AND fff.areasqkm > 0.00000005) AS state_count
    ,ff.vpuid
    ,ff.sourcedataset
    ,ff.globalid
    ,ST_TRANSFORM(ff.shape,4269) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_32702_3 ff
+   WHERE
+   ff.areasqkm > 0.00000005
 ) a;
 
 ALTER TABLE cipsrv_epageofab_m.catchment_fabric_final OWNER TO cipsrv;

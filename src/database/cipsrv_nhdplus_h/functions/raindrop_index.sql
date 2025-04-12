@@ -10,23 +10,23 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.raindrop_index(
-    IN  p_point                     GEOMETRY
-   ,IN  p_fcode_allow               INTEGER[]
-   ,IN  p_fcode_deny                INTEGER[]
-   ,IN  p_raindrop_snap_max_distkm  NUMERIC
-   ,IN  p_raindrop_path_max_distkm  NUMERIC
-   ,IN  p_limit_innetwork           BOOLEAN
-   ,IN  p_limit_navigable           BOOLEAN
-   ,IN  p_return_link_path          BOOLEAN
-   ,IN  p_known_region              VARCHAR
-   ,OUT out_flowlines               cipsrv_nhdplus_h.snapflowline[]
-   ,OUT out_path_distance_km        NUMERIC
-   ,OUT out_end_point               GEOMETRY
-   ,OUT out_indexing_line           GEOMETRY
-   ,OUT out_region                  VARCHAR
-   ,OUT out_nhdplusid               BIGINT
-   ,OUT out_return_code             INTEGER
-   ,OUT out_status_message          VARCHAR
+    IN  p_point                        GEOMETRY
+   ,IN  p_fcode_allow                  INTEGER[]
+   ,IN  p_fcode_deny                   INTEGER[]
+   ,IN  p_raindrop_snap_max_distkm     NUMERIC
+   ,IN  p_raindrop_path_max_distkm     NUMERIC
+   ,IN  p_limit_innetwork              BOOLEAN
+   ,IN  p_limit_navigable              BOOLEAN
+   ,IN  p_return_link_path             BOOLEAN
+   ,IN  p_known_region                 VARCHAR
+   ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
+   ,OUT out_path_distance_km           NUMERIC
+   ,OUT out_end_point                  GEOMETRY
+   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_region                     VARCHAR
+   ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_return_code                INTEGER
+   ,OUT out_status_message             VARCHAR
 )
 STABLE
 AS $BODY$ 
@@ -569,26 +569,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.raindrop_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.raindrop_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.raindrop_index(
-    GEOMETRY
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-) TO PUBLIC;

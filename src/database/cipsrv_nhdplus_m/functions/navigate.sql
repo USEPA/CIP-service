@@ -190,11 +190,13 @@ BEGIN
       
       RETURN;
    
-   ELSIF num_maximum_flowtimeday IS NOT NULL
+   END IF;
+
+   IF num_maximum_flowtimeday IS NOT NULL
    AND   obj_start_flowline.flowtimeday IS NULL
    THEN
       out_return_code    := -23;
-      out_status_message := 'Start flowline is tidal without flow time information.';
+      out_status_message := 'Start flowline does not have flowtime information.';
       
       RETURN;
       
@@ -243,7 +245,7 @@ BEGIN
       AND   obj_stop_flowline.flowtimeday IS NULL
       THEN
          out_return_code    := -23;
-         out_status_message := 'Stop flowline is tidal without flow time information.';
+         out_status_message := 'Stop flowline does not have flowtime information.';
          
          RETURN;
          
