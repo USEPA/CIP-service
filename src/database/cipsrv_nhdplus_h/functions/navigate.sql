@@ -190,7 +190,9 @@ BEGIN
       
       RETURN;
    
-   ELSIF num_maximum_flowtimeday IS NOT NULL
+   END IF;
+   
+   IF num_maximum_flowtimeday IS NOT NULL
    AND   obj_start_flowline.flowtimeday IS NULL
    THEN
       out_return_code    := -23;
