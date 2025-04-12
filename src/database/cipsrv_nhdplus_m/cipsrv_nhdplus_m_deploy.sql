@@ -8130,7 +8130,6 @@ BEGIN
    ELSE RAISE EXCEPTION 'prob'; 
    END IF;END IF;
 END$$;
-) TO PUBLIC;
 
 --******************************--
 ----- functions/index_area_artpath.sql 

@@ -7999,7 +7999,6 @@ BEGIN
    ELSE RAISE EXCEPTION 'prob'; 
    END IF;END IF;
 END$$;
-) TO PUBLIC;
 
 --******************************--
 ----- functions/index_area_artpath.sql 
@@ -15438,7 +15437,9 @@ BEGIN
       
       RETURN;
    
-   ELSIF num_maximum_flowtimeday IS NOT NULL
+   END IF;
+   
+   IF num_maximum_flowtimeday IS NOT NULL
    AND   obj_start_flowline.flowtimeday IS NULL
    THEN
       out_return_code    := -23;
