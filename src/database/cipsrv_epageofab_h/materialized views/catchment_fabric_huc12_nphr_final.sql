@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_huc12_nphr_final CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_huc12_nphr_final_seq;
+CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_huc12_nphr_final_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_huc12_nphr_final(
     objectid
    ,xwalk_huc12
@@ -10,7 +13,7 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_huc12_nphr_final(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                     AS objectid
+ NEXTVAL('cipsrv_epageofab_h.catchment_fabric_huc12_nphr_final_seq')::INTEGER AS objectid
 ,a.xwalk_huc12
 ,a.xwalk_huc12_version
 ,a.areasqkm
@@ -27,7 +30,7 @@ FROM (
        xxa.xwalk_huc12
       ,cipsrv_engine.remove_holes(
           p_input          := ST_COLLECTIONEXTRACT(ST_UNION(aaa.shape),3)
-         ,p_threshold_sqkm := 1.25
+         ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
       cipsrv_epageofab_h.catchment_fabric_5070_3 aaa
@@ -51,7 +54,7 @@ FROM (
        xxb.xwalk_huc12
       ,cipsrv_engine.remove_holes(
           p_input          := ST_COLLECTIONEXTRACT(ST_UNION(bbb.shape),3)
-         ,p_threshold_sqkm := 1.25
+         ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
       cipsrv_epageofab_h.catchment_fabric_3338_3 bbb
@@ -75,7 +78,7 @@ FROM (
        xxc.xwalk_huc12
       ,cipsrv_engine.remove_holes(
           p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ccc.shape),3)
-         ,p_threshold_sqkm := 1.25
+         ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
       cipsrv_epageofab_h.catchment_fabric_26904_3 ccc
@@ -99,7 +102,7 @@ FROM (
        xxd.xwalk_huc12
       ,cipsrv_engine.remove_holes(
           p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ddd.shape),3)
-         ,p_threshold_sqkm := 1.25
+         ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
       cipsrv_epageofab_h.catchment_fabric_32161_3 ddd
@@ -123,7 +126,7 @@ FROM (
        xxe.xwalk_huc12
       ,cipsrv_engine.remove_holes(
           p_input          := ST_COLLECTIONEXTRACT(ST_UNION(eee.shape),3)
-         ,p_threshold_sqkm := 1.25
+         ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
       cipsrv_epageofab_h.catchment_fabric_32655_3 eee
@@ -147,7 +150,7 @@ FROM (
        xxf.xwalk_huc12
       ,cipsrv_engine.remove_holes(
           p_input          := ST_COLLECTIONEXTRACT(ST_UNION(fff.shape),3)
-         ,p_threshold_sqkm := 1.25
+         ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
       cipsrv_epageofab_h.catchment_fabric_32702_3 fff
