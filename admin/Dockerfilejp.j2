@@ -1,4 +1,4 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-full-3.10.2
+FROM ghcr.io/osgeo/gdal:ubuntu-full-3.10.3
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -87,6 +87,7 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
       jupyter                                                 \
       jupyter_server                                          \
       fiona                                                   \
+      asyncpg                                                 \
       awscli                                                  \
       folium                                                  \
       geocoder                                                \
@@ -114,6 +115,7 @@ RUN pip3 install                                              \
       jupyter                                                 \
       jupyter_server                                          \
       fiona                                                   \
+      asyncpg                                                 \
       awscli                                                  \
       folium                                                  \
       boto3                                                   \
