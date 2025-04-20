@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_5070_1 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_5070_1_seq;
+CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_5070_1_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_5070_1(
     objectid
    ,catchmentstatecode
@@ -25,7 +28,7 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_5070_1(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                  AS objectid
+ NEXTVAL('cipsrv_epageofab_h.catchment_fabric_5070_1_seq')::INTEGER AS objectid
 ,CAST(NULL AS VARCHAR(2))             AS catchmentstatecode
 ,a.nhdplusid::BIGINT                  AS nhdplusid
 ,CAST(NULL AS VARCHAR(1))             AS istribal
@@ -110,6 +113,20 @@ FROM (
    WHERE
        bb.shape && cipsrv_nhdplus_h.generic_common_mbr('5070')
    AND cipsrv_nhdplus_h.determine_grid_srid_f(bb.shape) = 5070
+   UNION ALL
+   SELECT
+    cc.nhdplusid
+   ,cc.sourcefc
+   ,cc.gridcode
+   ,cc.areasqkm
+   ,CAST('N' AS VARCHAR(1))   AS isocean
+   ,CAST('N' AS VARCHAR(1))   AS isalaskan
+   ,cc.h3hexagonaddr
+   ,cc.vpuid
+   ,CAST('grid0catchment' AS VARCHAR(32)) AS sourcedataset
+   ,ST_TRANSFORM(cc.shape,5070) AS shape
+   FROM   
+   cipsrv_epageofab_h.grid0catchment cc
 ) a
 LEFT JOIN
 cipsrv_nhdplus_h.networknhdflowline b

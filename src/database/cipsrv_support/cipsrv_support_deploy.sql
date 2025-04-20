@@ -312,9 +312,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.determine_states(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-62-g6fe2211';
-   c_gitcommit     CONSTANT VARCHAR(255) := '6fe22115f929d6980604754d422eb60c9d7ad66d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 09:43:28 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-63-gc47c376';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'c47c37656465583830502c9daf8e743e652d34e0';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 10:06:44 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
 
    rec                RECORD;
@@ -512,9 +512,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_state(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-62-g6fe2211';
-   c_gitcommit     CONSTANT VARCHAR(255) := '6fe22115f929d6980604754d422eb60c9d7ad66d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 09:43:28 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-63-gc47c376';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'c47c37656465583830502c9daf8e743e652d34e0';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 10:06:44 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                RECORD;
@@ -616,17 +616,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_support.clip_by_state(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_support.clip_by_state(
-    GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_support.clip_by_state';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/clip_by_tribe.sql 
@@ -655,9 +660,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_tribe(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-62-g6fe2211';
-   c_gitcommit     CONSTANT VARCHAR(255) := '6fe22115f929d6980604754d422eb60c9d7ad66d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 09:43:28 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-63-gc47c376';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'c47c37656465583830502c9daf8e743e652d34e0';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 10:06:44 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                        RECORD;
@@ -1075,9 +1080,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.geometry_clip(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-62-g6fe2211';
-   c_gitcommit     CONSTANT VARCHAR(255) := '6fe22115f929d6980604754d422eb60c9d7ad66d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 09:43:28 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-63-gc47c376';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'c47c37656465583830502c9daf8e743e652d34e0';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Sat Apr 12 10:06:44 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                RECORD;

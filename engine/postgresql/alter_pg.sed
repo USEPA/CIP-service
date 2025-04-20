@@ -16,3 +16,7 @@ s/^#*max_worker_processes =.*$/max_worker_processes = ${PG_MAX_WORKER_PROCESSES}
 s/^#*max_parallel_workers_per_gather =.*$/max_parallel_workers_per_gather = ${PG_MAX_PAR_WORK_PER_GAT}/
 s/^#*max_parallel_workers =.*$/max_parallel_workers = ${PG_MAX_PAR_WORKERS}/
 s/^#*max_parallel_maintenance_workers =.*$/max_parallel_maintenance_workers = ${PG_MAX_PAR_MAINT_WORK}/
+s/^#*shared_preload_libraries =.*$/shared_preload_libraries = 'pg_stat_statements'/
+s/^#*track_io_timing =.*$/track_io_timing = on/
+s/^#*track_functions =.*$/track_functions = pl/
+s/^#*synchronous_commit =.*$/synchronous_commit = off/

@@ -63,6 +63,7 @@
             ,"functions/reverse_linestring.sql"
             ,"functions/safe_concatenate_geom_segments.sql"
             ,"functions/table_exists.sql"
+            ,"functions/resource_exists.sql"
             ,"functions/temp_table_exists.sql"
             ,"functions/unpackjsonb.sql"
             ,"procedures/cipsrv_batch_index.sql"
