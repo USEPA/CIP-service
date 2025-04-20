@@ -52,7 +52,18 @@ WITH
          SELECT
           aaaa.nhdplusid
          ,bbbb.geoid
-         ,ST_INTERSECTION(bbbb.shape,aaaa.shape,0.05) AS tribal_shape
+         ,ST_INTERSECTION(
+             cipsrv_nhdplus_h.snap_to_common_grid(
+                p_geometry      := bbbb.shape
+               ,p_known_region  := '32161'
+               ,p_grid_size     := 0.05
+             )
+            ,cipsrv_nhdplus_h.snap_to_common_grid(
+                p_geometry      := aaaa.shape
+               ,p_known_region  := '32161'
+               ,p_grid_size     := 0.05
+             )
+         ) AS tribal_shape
          FROM 
          cipsrv_epageofab_h.catchment_fabric_32161_1 aaaa
          INNER JOIN LATERAL (

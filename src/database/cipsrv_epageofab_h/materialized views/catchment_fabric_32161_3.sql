@@ -65,7 +65,21 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,aa.sourcedataset
-   ,ST_COLLECTIONEXTRACT(ST_INTERSECTION(bb.shape,aa.shape,0.05),3) AS shape
+   ,ST_COLLECTIONEXTRACT(
+       ST_INTERSECTION(
+         cipsrv_nhdplus_h.snap_to_common_grid(
+             p_geometry      := bb.shape
+            ,p_known_region  := '32161'
+            ,p_grid_size     := 0.05
+          )
+         ,cipsrv_nhdplus_h.snap_to_common_grid(
+             p_geometry      := aa.shape
+            ,p_known_region  := '32161'
+            ,p_grid_size     := 0.05
+          )
+       )     
+      ,3
+   ) AS shape
    FROM
    cipsrv_epageofab_h.catchment_fabric_32161_2 aa
    INNER JOIN LATERAL (
