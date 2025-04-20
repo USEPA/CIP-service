@@ -3,6 +3,7 @@
 *.j2    text eol=lf
 *.json  text eol=lf
 *.py    text eol=lf
+*.pyt   text eol=lf
 *.sh    text eol=lf
 *.sql   text eol=lf
 *.xml   text eol=lf

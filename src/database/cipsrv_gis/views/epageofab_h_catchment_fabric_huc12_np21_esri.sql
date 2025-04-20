@@ -29,7 +29,7 @@ BEGIN
       $q$;
       
    ELSE
-      RAISE WARNING 'skipping cipsrv_gis.epageofab_m_catchment_fabric_huc12_np21_esri';
+      RAISE WARNING 'skipping cipsrv_gis.epageofab_h_catchment_fabric_huc12_np21_esri';
    
    END IF;
 
