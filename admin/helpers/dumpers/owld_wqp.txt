@@ -17,4 +17,4 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_owld.wqp_src_l `
 -t cipsrv_owld.wqp_src_p `
 -t cipsrv_owld.wqp_control `
--f cipsrv_owld_wqp_20241006.dmp
+-f cipsrv_owld_wqp_20250221.dmp
