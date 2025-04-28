@@ -12,7 +12,8 @@ END$$;
 CREATE OR REPLACE FUNCTION cipsrv_epageofab_h.h3_ocean_catchments_by_state(
     IN  p_srid                 INTEGER
    ,IN  p_stusps               VARCHAR
-   ,IN  p_state_clip           BOOLEAN DEFAULT TRUE
+   ,IN  p_state_clip           BOOLEAN  DEFAULT TRUE
+   ,IN  p_bbox                 GEOMETRY DEFAULT NULL
 ) RETURNS TABLE(
     objectid           INTEGER
    ,catchmentstatecode VARCHAR(2)
@@ -32,6 +33,7 @@ DECLARE
    geom_state         GEOMETRY;
    geom_diff          GEOMETRY;
    num_areasqkm       NUMERIC;
+   geom_bbox          GEOMETRY;
 
 BEGIN
 
@@ -83,6 +85,39 @@ BEGIN
    
    --------------------------------------------------------------------------
    -- Step 30
+   -- Further restrict area of interest to bbox polygon
+   --------------------------------------------------------------------------
+   IF p_bbox IS NOT NULL
+   THEN
+      IF ST_SRID(p_bbox) = p_srid
+      THEN
+         geom_bbox := p_bbox;
+         
+      ELSE
+         geom_bbox := ST_TRANSFORM(p_bbox,p_srid);
+         
+      END IF;
+      
+      geom_state := ST_COLLECTIONEXTRACT(
+          ST_INTERSECTION(
+             geom_state
+            ,geom_bbox
+            ,0.05
+          )
+         ,3
+      );
+      
+      IF geom_state IS NULL
+      OR ST_ISEMPTY(geom_state)
+      THEN
+         RAISE EXCEPTION 'bbox not within %',p_stusps;
+         
+      END IF;
+   
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 40
    -- Get the H3 polygons covering the polygon
    --------------------------------------------------------------------------
    cnt := 0;

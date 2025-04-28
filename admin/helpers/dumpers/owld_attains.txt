@@ -13,8 +13,8 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_owld.attains_rad_p `
 -t cipsrv_owld.attains_rad_srccit `
 -t cipsrv_owld.attains_sfid `
--t cipsrv_owld.attains_src2cip `
 -t cipsrv_owld.attains_src_a `
 -t cipsrv_owld.attains_src_l `
 -t cipsrv_owld.attains_src_p `
+-t cipsrv_owld.attains_src2cip `
 -f cipsrv_owld_attains_20251026.dmp

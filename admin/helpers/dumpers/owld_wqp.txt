@@ -3,6 +3,7 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_owld.wqp_attr `
 -t cipsrv_owld.wqp_cip `
 -t cipsrv_owld.wqp_cip_geo `
+-t cipsrv_owld.wqp_control `
 -t cipsrv_owld.wqp_huc12 `
 -t cipsrv_owld.wqp_huc12_geo `
 -t cipsrv_owld.wqp_rad_a `
@@ -12,9 +13,8 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_owld.wqp_rad_p `
 -t cipsrv_owld.wqp_rad_srccit `
 -t cipsrv_owld.wqp_sfid `
--t cipsrv_owld.wqp_src2cip `
 -t cipsrv_owld.wqp_src_a `
 -t cipsrv_owld.wqp_src_l `
 -t cipsrv_owld.wqp_src_p `
--t cipsrv_owld.wqp_control `
+-t cipsrv_owld.wqp_src2cip `
 -f cipsrv_owld_wqp_20250221.dmp
