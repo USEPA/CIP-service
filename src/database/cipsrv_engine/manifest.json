@@ -26,6 +26,7 @@
             ,"functions/adjust_point_extent.sql"
             ,"functions/cipsrv_index.sql"
             ,"functions/cipsrv_version.sql"
+            ,"functions/clean_geometry.sql"
             ,"functions/column_has_single_index.sql"
             ,"functions/create_cip_batch_temp_tables.sql"
             ,"functions/create_cip_temp_tables.sql"
