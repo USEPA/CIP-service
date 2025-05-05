@@ -12,7 +12,6 @@ BEGIN
       SELECT
        a.objectid
       ,a.source_joinkey
-      ,a.external_permit_nmbr
       ,a.registry_id
       ,a.primary_name
       ,a.city_name
