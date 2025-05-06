@@ -10,7 +10,7 @@ BEGIN
       CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri
       AS
       SELECT
-       a.objectid
+       CAST(a.objectid   AS INTEGER)  AS objectid
       ,a.permanent_identifier
       ,a.fdate
       ,a.resolution
@@ -28,7 +28,7 @@ BEGIN
       ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
       ,a.vpuid
       ,a.globalid
-      ,ST_Force2D(a.shape) AS shape
+      ,ST_Force3DM(a.shape) AS shape
       FROM
       cipsrv_nhdplus_h.nonnetworknhdflowline a;
       $q$;                                                                                                                          
