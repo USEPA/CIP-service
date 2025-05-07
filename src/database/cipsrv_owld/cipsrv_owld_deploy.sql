@@ -303,6 +303,7 @@ BEGIN
       END;
       
       int_counter := 1;
+      program_resolutions = NULL;
       FOR rec2 IN EXECUTE '
          SELECT
          a.value_str
@@ -316,6 +317,7 @@ BEGIN
       END LOOP;
       
       int_counter := 1;
+      program_precisions = NULL;
       FOR rec2 IN EXECUTE '
          SELECT
          a.value_str
