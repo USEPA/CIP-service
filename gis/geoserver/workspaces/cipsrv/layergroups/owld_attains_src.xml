@@ -1,0 +1,34 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl-6a1fde1:196aab5130c:307c</id>
+  <name>owld_attains_src</name>
+  <mode>SINGLE</mode>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl-6a1fde1:196aab5130c:307b</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl-6a1fde1:196aab5130c:3078</id>
+    </published>
+    <published type="layer">
+      <id>LayerInfoImpl-6a1fde1:196aab5130c:3075</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+    <style/>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-176.673157437</minx>
+    <maxx>144.9718914030001</maxx>
+    <miny>13.228628159000039</miny>
+    <maxy>71.35609292300006</maxy>
+    <crs>EPSG:4269</crs>
+  </bounds>
+  <dateCreated>2025-05-07 16:16:19.960 UTC</dateCreated>
+</layerGroup>

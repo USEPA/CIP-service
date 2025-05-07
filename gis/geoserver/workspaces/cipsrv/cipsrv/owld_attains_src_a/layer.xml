@@ -1,0 +1,16 @@
+<layer>
+  <name>owld_attains_src_a</name>
+  <id>LayerInfoImpl-6a1fde1:196aab5130c:3075</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl-6a1fde1:196aab5130c:3072</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-6a1fde1:196aab5130c:3074</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-05-07 16:13:37.554 UTC</dateCreated>
+</layer>

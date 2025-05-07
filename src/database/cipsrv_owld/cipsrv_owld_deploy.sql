@@ -220,6 +220,7 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.owld_programs()
 RETURNS TABLE(
     program_id          VARCHAR
    ,program_name        VARCHAR
+   ,program_short_name  VARCHAR
    ,program_description VARCHAR
    ,program_url         VARCHAR
    ,program_eventtype   INTEGER
@@ -256,6 +257,7 @@ BEGIN
    LOOP
       program_id          := rec.program_id;
       program_name        := NULL;
+      program_short_name  := NULL;
       program_description := NULL;
       program_url         := NULL;
       program_eventtype   := NULL;
@@ -265,6 +267,14 @@ BEGIN
       BEGIN
          EXECUTE 'SELECT a.value_str FROM cipsrv_owld.' || rec.table_name || ' a WHERE UPPER(a.keyword) = ''NAME'' LIMIT 1' 
          INTO program_name; 
+      EXCEPTION
+         WHEN NO_DATA_FOUND THEN NULL;
+         WHEN OTHERS THEN RAISE;
+      END;
+      
+      BEGIN
+         EXECUTE 'SELECT a.value_str FROM cipsrv_owld.' || rec.table_name || ' a WHERE UPPER(a.keyword) = ''SHORT_NAME'' LIMIT 1' 
+         INTO program_short_name; 
       EXCEPTION
          WHEN NO_DATA_FOUND THEN NULL;
          WHEN OTHERS THEN RAISE;

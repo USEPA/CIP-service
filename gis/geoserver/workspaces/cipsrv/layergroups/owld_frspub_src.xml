@@ -1,0 +1,27 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl-6a1fde1:196aab5130c:14a4</id>
+  <name>owld_frspub_src</name>
+  <mode>SINGLE</mode>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl-6a1fde1:196aab5130c:14a2</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-179.3</minx>
+    <maxx>179.259925</maxx>
+    <miny>-33.809444</miny>
+    <maxy>71.57521</maxy>
+    <crs>EPSG:4269</crs>
+  </bounds>
+  <dateCreated>2025-05-07 15:16:27.415 UTC</dateCreated>
+  <dateModified>2025-05-07 15:16:51.456 UTC</dateModified>
+</layerGroup>

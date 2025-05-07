@@ -190,8 +190,7 @@
                <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px" value="15" />&nbsp;km
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: </span>
-               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px;" size="2" multiple onchange="change_linked_data();">
-                 <option value="WQP" SELECTED>Water Quality Portal Stations</option>
+               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px; width: 300px;" size="2" multiple onchange="change_linked_data();">
                </select>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Return Flowlines:</span>
@@ -239,6 +238,7 @@
    
    var map = L.map("map").setView([46.874626,-96.782341],12);
    mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+   var owld_programs = [];
 
    basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "Map data &copy; " + mapLink,
@@ -449,88 +449,20 @@
       onEachFeature: onEachFeature_flowlines
    }).addTo(map);
    
+   var lyr_program_hash = {};
    var layer_items = {
        "Snap path"      : snap_path
       ,"Catchments"     : catchments
       ,"Streams"        : flowlines
    };
-   
-   if (
-      typeof gis_host === "undefined" ||
-      gis_host === null ||
-      gis_host == "NONE"
-   ) {
-      null;
-   } else {
-      zgis_host = gis_host;
-      
-      if (
-         typeof gis_type === "undefined" ||
-         gis_type === null ||
-         gis_type == "NONE"
-      ) {
-         zgis_type = "geoserver";
-      } else {
-         zgis_type = gis_type;
-      }
-   
-      if (
-         typeof gis_prot === "undefined" ||
-         gis_prot === null ||
-         gis_prot == "NONE"
-      ) {
-         zgis_prot = "http";
-      } else {
-         zgis_prot = gis_prot;
-      }
-      
-      if (
-         typeof gis_port === "undefined" ||
-         gis_port === null ||
-         gis_port == "NONE"
-      ) {
-         zgis_port = "";
-      } else {
-         zgis_port = ":" + gis_port;
-      }
-      
-      if ( zgis_type == "geoserver" ) {
-         gis_server = zgis_prot + "://" + zgis_host + zgis_port;
-         
-         lyr_nhdplus_m_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
-             layers: 'cipsrv:nhdplus_m_flowlines'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
-         lyr_nhdplus_m_flowlines.addTo(map);
-         layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
-         
-         lyr_nhdplus_h_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
-             layers: 'cipsrv:nhdplus_h_flowlines'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
-         //lyr_nhdplus_h_flowlines.addTo(map);
-         layer_items["HR Flowlines"] = lyr_nhdplus_h_flowlines;
-         
-         lyr_wqp = L.tileLayer.betterWms(gis_server + "/wms",{
-             layers: 'cipsrv:owld_wqp_src'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
-         lyr_wqp.addTo(map);
-         layer_items["OWLD WQP Source"] = lyr_wqp;
-         
-      }
-      
-   }
-   L.control.layers(null, layer_items).addTo(map);   
+
+   var layerControl = L.control.layers(null, layer_items).addTo(map);
+
+   // Pull OWLD Programs
+   httpGet(
+      build_api() + "cipsrv_owld_programs",
+      populate_owld
+   );   
    
    function onEachFeature_snap_path(feature,layer) {
       if (feature.properties && feature.properties.snap_distancekm) {
@@ -694,7 +626,7 @@
             }
          }
       };
-      xmlHttp.send(JSON.stringify(data));
+      xmlHttp.send(null);
    }
    
    function httpPost(url,data,callback) {
@@ -751,6 +683,118 @@
          }
       }
       return result;
+   }
+   
+   function populate_owld(error,response) {
+      
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from cipsrv_owld_programs service.</P>";
+         return false;
+      }
+      
+      select = document.getElementById('p_linked_data_search_list');
+      for (var i=0, iLen=response.programs.length; i<iLen; i++) {
+         var opt = document.createElement('option');
+         opt.value = response.programs[i].program_id;
+         
+         if ('program_short_name' in response.programs[i] && response.programs[i].program_short_name != null) {
+            opt.innerHTML = response.programs[i].program_short_name;  
+         } else {
+            opt.innerHTML = response.programs[i].program_name;
+         }
+         
+         select.appendChild(opt);
+         
+      }
+      
+      if (
+         typeof gis_host === "undefined" ||
+         gis_host === null ||
+         gis_host == "NONE"
+      ) {
+         null;
+      } else {
+         zgis_host = gis_host;
+
+         if (
+            typeof gis_type === "undefined" ||
+            gis_type === null ||
+            gis_type == "NONE"
+         ) {
+            zgis_type = "geoserver";
+         } else {
+            zgis_type = gis_type;
+         }
+      
+         if (
+            typeof gis_prot === "undefined" ||
+            gis_prot === null ||
+            gis_prot == "NONE"
+         ) {
+            zgis_prot = "http";
+         } else {
+            zgis_prot = gis_prot;
+         }
+         
+         if (
+            typeof gis_port === "undefined" ||
+            gis_port === null ||
+            gis_port == "NONE"
+         ) {
+            zgis_port = "";
+         } else {
+            zgis_port = ":" + gis_port;
+         }
+
+         if ( zgis_type == "geoserver" ) {
+            gis_server = zgis_prot + "://" + zgis_host + zgis_port;
+            
+            lyr_nhdplus_m_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_m_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+            lyr_nhdplus_m_flowlines.addTo(map);
+            layerControl.addOverlay(lyr_nhdplus_m_flowlines,"MR Flowlines");
+            
+            lyr_nhdplus_h_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_h_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+            //lyr_nhdplus_h_flowlines.addTo(map);
+            layerControl.addOverlay(lyr_nhdplus_h_flowlines,"HR Flowlines");
+
+            var ary_programs = document.getElementById("p_linked_data_search_list").options;
+            
+            for (var i = 0; i < ary_programs.length; i++) {
+               var program = ary_programs[i].value.toLowerCase();
+
+               var lyr = L.tileLayer.betterWms(gis_server + "/wms",{
+                   layers: 'cipsrv:owld_' + program + '_src'
+                  ,format: 'image/png'
+                  ,transparent: true
+                  ,version: '1.3.0'
+                  ,attribution: "US EPA"
+               });
+               lyr_program_hash[ary_programs[i].value] = lyr;
+               //lyr.addTo(map);
+               layerControl.addOverlay(lyr,"OWLD " + ary_programs[i].value + " Source");
+               owld_programs.push(ary_programs[i].value);
+               
+            }
+            
+         }
+         
+      }
+      
    }
    
    function updn_response(error,response) {
@@ -1075,13 +1119,23 @@
    }
    
    function reset_linked_data() {
-      var ary_programs = get_mselect_values(document.getElementById("p_linked_data_search_list"));
+      var ary_selprograms = get_mselect_values(document.getElementById("p_linked_data_search_list"));
       var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
       
-      if ( ary_programs.includes("WQP") ) {
-      
-         if (! map.hasLayer(lyr_wqp) ) {
-            map.addLayer(lyr_wqp);
+      for (var i = 0; i < owld_programs.length; i++) {
+         boo = false;
+         for (var j = 0; j < ary_selprograms.length; j++) {
+            if (ary_selprograms[j] == owld_programs[i]) {
+               boo = true;
+            }
+         }
+         
+         if (boo && ! map.hasLayer(lyr_program_hash[owld_programs[i]]) ) {
+            map.addLayer(lyr_program_hash[owld_programs[i]]);
+         }
+         
+         if (! boo && map.hasLayer(lyr_program_hash[owld_programs[i]]) ) {
+            map.removeLayer(lyr_program_hash[owld_programs[i]]);
          }
          
       }

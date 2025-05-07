@@ -1,0 +1,27 @@
+<layerGroup>
+  <id>LayerGroupInfoImpl-6a1fde1:196aab5130c:14a3</id>
+  <name>owld_npdes_src</name>
+  <mode>SINGLE</mode>
+  <workspace>
+    <id>WorkspaceInfoImpl-42032311:192d83c2670:-7ff7</id>
+  </workspace>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <publishables>
+    <published type="layer">
+      <id>LayerInfoImpl-6a1fde1:196aab5130c:149f</id>
+    </published>
+  </publishables>
+  <styles>
+    <style/>
+  </styles>
+  <bounds>
+    <minx>-180.0</minx>
+    <maxx>166.6502</maxx>
+    <miny>-75.3535</miny>
+    <maxy>90.0</maxy>
+    <crs>EPSG:4269</crs>
+  </bounds>
+  <dateCreated>2025-05-07 15:15:52.557 UTC</dateCreated>
+  <dateModified>2025-05-07 15:17:00.121 UTC</dateModified>
+</layerGroup>
