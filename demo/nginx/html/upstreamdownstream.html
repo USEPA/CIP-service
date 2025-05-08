@@ -40,13 +40,13 @@
          <div id="map" class="map" style="height: 700px; width: 800px; float: left;"></div>
          <div id="righty" style="width: 600px; float: left;">
             <div id="top" style="text-align: center;">
-               <br/>
-               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
+               
+               <h2 style="margin-top:10px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
                <span style="font-family: Arial; font-size: 11px;">Add points to the map or enter GeoJSON text:</span>
                <br/>
-               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
+               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 12px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
                <br/>
-               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
+               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 12px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
                <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
@@ -60,126 +60,126 @@
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start NHDPlusID:
-                     <input name="pStartNHDPlusID" type="text" class="text" id="pStartNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartNHDPlusID" type="text" class="text" id="pStartNHDPlusID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop NHDPlusID:
-                     <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Perm Id: 
-                     <input name="pStartPermanentIdentifier" type="text" class="text" id="pStartPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartPermanentIdentifier" type="text" class="text" id="pStartPermanentIdentifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Perm Id: 
-                     <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Reach Code: 
-                     <input name="pStartReachCode" type="text" class="text" id="pStartReachCode" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartReachCode" type="text" class="text" id="pStartReachCode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Reach Code: 
-                     <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Hydro Seq: 
-                     <input name="pStartHydroSeq" type="text" class="text" id="pStartHydroSeq" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartHydroSeq" type="text" class="text" id="pStartHydroSeq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Hydro Seq: 
-                     <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Measure:
-                     <input name="pStartMeasure" type="text" class="text" id="pStartMeasure" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartMeasure" type="text" class="text" id="pStartMeasure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Measure:
-                     <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceFeatureID: 
-                     <input name="pStartSourceFeatureID" type="text" class="text" id="pStartSourceFeatureID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceFeatureID" type="text" class="text" id="pStartSourceFeatureID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceFeatureID: 
-                     <input name="pStopSourceFeatureID" type="text" class="text" id="pStopSourceFeatureID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceFeatureID" type="text" class="text" id="pStopSourceFeatureID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceFeatureID2: 
-                     <input name="pStartSourceFeatureID2" type="text" class="text" id="pStartSourceFeatureID2" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceFeatureID2" type="text" class="text" id="pStartSourceFeatureID2" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceFeatureID2: 
-                     <input name="pStopSourceFeatureID2" type="text" class="text" id="pStopSourceFeatureID2" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceFeatureID2" type="text" class="text" id="pStopSourceFeatureID2" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceOriginator: 
-                     <input name="pStartSourceOriginator" type="text" class="text" id="pStartSourceOriginator" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceOriginator" type="text" class="text" id="pStartSourceOriginator" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceOriginator: 
-                     <input name="pStopSourceOriginator" type="text" class="text" id="pStopSourceOriginator" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceOriginator" type="text" class="text" id="pStopSourceOriginator" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceSeries: 
-                     <input name="pStartSourceSeries" type="text" class="text" id="pStartSourceSeries" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceSeries" type="text" class="text" id="pStartSourceSeries" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceSeries: 
-                     <input name="pStopSourceSeries" type="text" class="text" id="pStopSourceSeries" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceSeries" type="text" class="text" id="pStopSourceSeries" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start StartDate: 
-                     <input name="pStartStartDate" type="text" class="text" id="pStartStartDate" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartStartDate" type="text" class="text" id="pStartStartDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop StartDate: 
-                     <input name="pStopStartDate" type="text" class="text" id="pStopStartDate" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopStartDate" type="text" class="text" id="pStopStartDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start EndDate: 
-                     <input name="pStartEndDate" type="text" class="text" id="pStartEndDate" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartEndDate" type="text" class="text" id="pStartEndDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop EndDate: 
-                     <input name="pStopEndDate" type="text" class="text" id="pStopEndDate" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopEndDate" type="text" class="text" id="pStopEndDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start PermID JoinKey: 
-                     <input name="pStartPermIDJoinKey" type="text" class="text" id="pStartPermIDJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartPermIDJoinKey" type="text" class="text" id="pStartPermIDJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop PermID JoinKey: 
-                     <input name="pStopPermIDJoinKey" type="text" class="text" id="pStopPermIDJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopPermIDJoinKey" type="text" class="text" id="pStopPermIDJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Source JoinKey: 
-                     <input name="pStartSourceJoinKey" type="text" class="text" id="pStartSourceJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceJoinKey" type="text" class="text" id="pStartSourceJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Source JoinKey: 
-                     <input name="pStopSourceJoinKey" type="text" class="text" id="pStopSourceJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceJoinKey" type="text" class="text" id="pStopSourceJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Cat JoinKey: 
-                     <input name="pStartCatJoinKey" type="text" class="text" id="pStartCatJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartCatJoinKey" type="text" class="text" id="pStartCatJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Cat JoinKey: 
-                     <input name="pStopCatJoinKey" type="text" class="text" id="pStopCatJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopCatJoinKey" type="text" class="text" id="pStopCatJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start LinkedData Program: 
-                     <input name="p_start_linked_data_program" type="text" class="text" id="p_start_linked_data_program" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_linked_data_program" type="text" class="text" id="p_start_linked_data_program" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop LinkedData Program: 
-                     <input name="p_stop_linked_data_program" type="text" class="text" id="p_stop_linked_data_program" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="p_stop_linked_data_program" type="text" class="text" id="p_stop_linked_data_program" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                </table>
-               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px;">
+               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px; font-family: Arial; font-size: 12px;">
                  <option value="UT" SELECTED>Upstream with Tributaries</option>
                  <option value="UM">Upstream Main Path Only</option>
                  <option value="DD">Downstream with Divergences</option>
@@ -187,10 +187,20 @@
                  <option value="PP">Point to Point</option>
                  <option value="PPALL">Point to Point, All Streams Between</option>
                </select>
-               <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px" value="15" />&nbsp;km
+               <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px; font-family: Arial; font-size: 12px;" value="15" />&nbsp;
+               <select name="selMaxType" id="selMaxType" style="font-family: Arial; font-size: 12px;">
+                  <option value="distkm" SELECTED>km (distance)</option>
+                  <option value="flowday"> day (flowtime)</option>
+               </select>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: </span>
-               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px; width: 300px;" size="2" multiple onchange="change_linked_data();">
+               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px; width: 300px; font-family: Arial; font-size: 12px;" size="2" multiple onchange="change_linked_data();">
+               </select>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Search Precision: </span>
+               <select name="p_search_precision" id="p_search_precision" style="margin-top: 6px; font-family: Arial; font-size: 12px;">
+                 <option value="CATCHMENT" SELECTED>Catchments</option>
+                 <option value="REACH">Reaches</option>
                </select>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Return Flowlines:</span>
@@ -229,7 +239,7 @@
       <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
       </div>
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
-      <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
    document.getElementById("dz_run_service").disabled = true;
@@ -530,58 +540,71 @@
          
          var search_type      = get_select_values(document.getElementById("p_search_type"));
          
+         var maxtype          = get_select_values(document.getElementById("selMaxType"));
+         var maxdistkm,maxtimeday;
+         if (maxtype == "distkm" ) {
+            maxdistkm  = document.getElementById("pSearchMax").value;
+            maxtimeday = null;
+         }
+         if (maxtype == "flowday" ) {
+            maxdistkm  = null;
+            maxtimeday = document.getElementById("pSearchMax").value;
+         }
+         
          var data = {
-             "search_type"                 : search_type
-            ,"nhdplus_version"             : nhdplus_version
+             "search_type"                  : search_type
+            ,"nhdplus_version"              : nhdplus_version
              
-            ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
-            ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
-            ,"start_reachcode"             : document.getElementById("pStartReachCode").value
-            ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
-            ,"start_measure"               : document.getElementById("pStartMeasure").value
+            ,"start_nhdplusid"              : document.getElementById("pStartNHDPlusID").value
+            ,"start_permanent_identifier"   : document.getElementById("pStartPermanentIdentifier").value
+            ,"start_reachcode"              : document.getElementById("pStartReachCode").value
+            ,"start_hydroseq"               : document.getElementById("pStartHydroSeq").value
+            ,"start_measure"                : document.getElementById("pStartMeasure").value
             
-            ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
-            ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
-            ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
-            ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
-            ,"start_start_date"            : document.getElementById("pStartStartDate").value
-            ,"start_end_date"              : document.getElementById("pStartEndDate").value
-            ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
-            ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
-            ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
-            ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+            ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
+            ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
+            ,"start_source_originator"      : document.getElementById("pStartSourceOriginator").value
+            ,"start_source_series"          : document.getElementById("pStartSourceSeries").value
+            ,"start_start_date"             : document.getElementById("pStartStartDate").value
+            ,"start_end_date"               : document.getElementById("pStartEndDate").value
+            ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
+            ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
+            ,"start_cat_joinkey"            : document.getElementById("pStartCatJoinKey").value
+            ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
             
-            ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
-            ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
-            ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
-            ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
-            ,"stop_measure"                : document.getElementById("pStopMeasure").value
+            ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"               : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"                : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"                 : document.getElementById("pStopMeasure").value
             
-            ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
-            ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
-            ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
-            ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
-            ,"stop_start_date"             : document.getElementById("pStopStartDate").value
-            ,"stop_end_date"               : document.getElementById("pStopEndDate").value
-            ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
-            ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
-            ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
-            ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+            ,"stop_source_featureid"        : document.getElementById("pStopSourceFeatureID").value
+            ,"stop_source_featureid2"       : document.getElementById("pStopSourceFeatureID2").value
+            ,"stop_source_originator"       : document.getElementById("pStopSourceOriginator").value
+            ,"stop_source_series"           : document.getElementById("pStopSourceSeries").value
+            ,"stop_start_date"              : document.getElementById("pStopStartDate").value
+            ,"stop_end_date"                : document.getElementById("pStopEndDate").value
+            ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
+            ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
+            ,"stop_cat_joinkey"             : document.getElementById("pStopCatJoinKey").value
+            ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
             
-            ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
-            ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
-            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
-            ,"return_catchments"           : document.getElementById("p_return_catchments").checked
-            ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
-            ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
-            ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
-            ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+            ,"max_distancekm"               : maxdistkm
+            ,"max_flowtimeday"              : maxtimeday
+            ,"linked_data_search_list"      : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+            ,"search_precision"             : get_select_values(document.getElementById("p_search_precision"))
+            ,"return_flowlines"             : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"      : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"     : document.getElementById("p_return_flowlines").checked
+            ,"return_catchments"            : document.getElementById("p_return_catchments").checked
+            ,"return_linked_data_cip"       : document.getElementById("p_return_linked_data_cip").checked
+            ,"return_linked_data_huc12"     : document.getElementById("p_return_linked_data_huc12").checked
+            ,"return_linked_data_source"    : document.getElementById("p_return_linked_data_source").checked
+            ,"return_linked_data_rad"       : document.getElementById("p_return_linked_data_rad").checked
             ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
             ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
             ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
-         }
+         };
       
          httpPost(
             build_api() + "upstreamdownstream",
@@ -748,10 +771,22 @@
          } else {
             zgis_port = ":" + gis_port;
          }
+         
+         if (
+            typeof gis_pref === "undefined" ||
+            gis_pref === null ||
+            gis_pref == "NONE"
+         ) {
+            zgis_pref = "";
+         } else {
+            zgis_pref = "/" + gis_pref;
+         }
+         
+         gis_server = zgis_prot + "://" + zgis_host + zgis_port + zgis_pref;
+         var ary_programs = document.getElementById("p_linked_data_search_list").options;
 
          if ( zgis_type == "geoserver" ) {
-            gis_server = zgis_prot + "://" + zgis_host + zgis_port;
-            
+         
             lyr_nhdplus_m_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
                 layers: 'cipsrv:nhdplus_m_flowlines'
                ,format: 'image/png'
@@ -771,8 +806,6 @@
             });
             //lyr_nhdplus_h_flowlines.addTo(map);
             layerControl.addOverlay(lyr_nhdplus_h_flowlines,"HR Flowlines");
-
-            var ary_programs = document.getElementById("p_linked_data_search_list").options;
             
             for (var i = 0; i < ary_programs.length; i++) {
                var program = ary_programs[i].value.toLowerCase();
@@ -784,6 +817,47 @@
                   ,version: '1.3.0'
                   ,attribution: "US EPA"
                });
+               lyr_program_hash[ary_programs[i].value] = lyr;
+               //lyr.addTo(map);
+               layerControl.addOverlay(lyr,"OWLD " + ary_programs[i].value + " Source");
+               owld_programs.push(ary_programs[i].value);
+               
+            }
+            
+         } else if ( zgis_type == "arcgis" ) {
+      
+            lyr_nhdplus_m_flowlines = L.esri.dynamicMapLayer({
+               url: gis_server + "/rest/services/NHDPlus/NHDPlus/MapServer",
+               position: "back",
+               layers: [2]
+            });
+            lyr_nhdplus_m_flowlines.addTo(map);
+            layerControl.addOverlay(lyr_nhdplus_m_flowlines,"MR Flowlines");
+            
+            lyr_nhdplus_h_flowlines = L.esri.dynamicMapLayer({
+               url: gis_server + "/rest/services/Support/NHDPlusH/MapServer",
+               position: "back",
+               layers: [1]
+            });
+            //lyr_nhdplus_h_flowlines.addTo(map);
+            layerControl.addOverlay(lyr_nhdplus_h_flowlines,"HR Flowlines");
+            
+            for (var i = 0; i < ary_programs.length; i++) {
+               var program = ary_programs[i].value.toLowerCase();
+
+               var lyr = L.esri.dynamicMapLayer({
+                  url: gis_server + "/rest/services/owld/" + program + "/MapServer",
+                  position: "back",
+                  layers: [0,1,2]
+               });
+               lyr.bindPopup(function(error,featureCollection) {
+                  if (error || featureCollection.features.length === 0) {
+                     return false;
+                  } else {
+                     return JSON.stringify(featureCollection.features[0].properties);
+                  }
+               });               
+               
                lyr_program_hash[ary_programs[i].value] = lyr;
                //lyr.addTo(map);
                layerControl.addOverlay(lyr,"OWLD " + ary_programs[i].value + " Source");

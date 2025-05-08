@@ -620,6 +620,7 @@ BEGIN
    ----------------------------------------------------------------------------
    RETURN JSONB_BUILD_OBJECT(
        'flowlines'                 , json_flowlines
+      ,'flowline_count'            , int_flowline_count
       ,'catchments'                , NULL
       ,'linked_data_sfid_found'    , NULL
       ,'linked_data_cip_found'     , NULL
