@@ -50,8 +50,8 @@
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
                <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
-                  <option value="nhdplus_m" SELECTED>Medium Resolution</option>
-                  <option value="nhdplus_h">High Resolution</option>
+                  <option value="nhdplus_m">Medium Resolution</option>
+                  <option value="nhdplus_h" SELECTED>High Resolution</option>
                </select>
                <br/>
                <table border="0" align="center">
@@ -187,7 +187,7 @@
                  <option value="PP">Point to Point</option>
                  <option value="PPALL">Point to Point, All Streams Between</option>
                </select>
-               <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px; font-family: Arial; font-size: 12px;" value="15" />&nbsp;
+               <input name="p_search_max" type="text" class="text" id="p_search_max" style="display:inline; width:30px; font-family: Arial; font-size: 12px;" value="15" />&nbsp;
                <select name="selMaxType" id="selMaxType" style="font-family: Arial; font-size: 12px;">
                   <option value="distkm" SELECTED>km (distance)</option>
                   <option value="flowday"> day (flowtime)</option>
@@ -236,8 +236,8 @@
             </div>
          </div>
       </div>
-      <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
-      </div>
+      <div id="output" style="position: absolute; top: 715px; width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
+      
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
       <script src='https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
@@ -258,17 +258,15 @@
    
    L.TileLayer.BetterWMS = L.TileLayer.WMS.extend({
   
-      onAdd: function (map) {
+      onAdd: function(map) {
          L.TileLayer.WMS.prototype.onAdd.call(this,map);
          map.on('click',this.getFeatureInfo,this);
-      },
-     
-      onRemove: function (map) {
+      },   
+      onRemove: function(map) {
          L.TileLayer.WMS.prototype.onRemove.call(this,map);
          map.off('click',this.getFeatureInfo,this);
       },
-     
-      getFeatureInfo: function (evt) {
+      getFeatureInfo: function(evt) {
          var url = this.getFeatureInfoUrl(evt.latlng);
          var showResults = L.Util.bind(this.showGetFeatureInfo,this);
        
@@ -289,9 +287,8 @@
          
          }
 
-      },
-     
-      getFeatureInfoUrl: function (latlng) {
+      }, 
+      getFeatureInfoUrl: function(latlng) {
          var point  = map.latLngToContainerPoint(latlng,map.getZoom());
          var size   = map.getSize();
          var bounds = map.getBounds();
@@ -331,24 +328,58 @@
          if ( url.includes("cipsrv%3Anhdplus_m_flowlines") ) {
             url = url.replace(/cipsrv\%3Anhdplus_m_flowlines/g,"cipsrv\%3Anhdplus_m_networknhdflowline");
          }
-         console.log(url);
+         //console.log(url);
          return url;
        
       },
-     
-      showGetFeatureInfo: function (err, latlng, content) {
-         if (err) { 
-            console.log(err); 
-            return; 
+      showGetFeatureInfo: function(err,latlng,content){
+         if (err){
+            console.log(err);
+            return;
          }
-       
-         L.popup({ maxWidth: 800})
+         cntobj = JSON.parse(content);
+         if ( cntobj.features.length == 0 ) {
+            return;
+         }
+         cnthtml = "";
+         if (cntobj.features[0].id.substring(10,28) == 'networknhdflowline' ) {
+            cnthtml = '<TABLE>'
+                    + '<TR><TD>GNIS Name: '   + dzfn(cntobj.features[0].properties.gnis_name) + '</TD></TR>'
+                    + '<TR><TD>NHDPlusID: '   + dzfi(cntobj.features[0].properties.nhdplusid) + '</TD></TR>'
+                    + '<TR><TD>Reach Code: '  + cntobj.features[0].properties.reachcode + '</TD></TR>'
+                    + '<TR><TD>FMeasure: '    + dzf5(cntobj.features[0].properties.frommeas) + '</TD></TR>'
+                    + '<TR><TD>TMeasure: '    + dzf5(cntobj.features[0].properties.tomeas) + '</TD></TR>'
+                    + '<TR><TD>FCODE: '       + dzfi(cntobj.features[0].properties.fcode) + '</TD></TR>'
+                    + '<TR><TD>Length (km): ' + dzf(cntobj.features[0].properties.lengthkm) + '</TD></TR>'
+                    + '<TR><TD>Flowtime (day): ' + dzf(cntobj.features[0].properties.totma) + '</TD></TR>'
+                    + '</TABLE>';
+         } else if (cntobj.features[0].id.substring(0,5) == 'owld_' ) {
+            if        (cntobj.features[0].id.substring(0,12) == 'owld_attains' ) {
+               prj = 'ATTAINS';
+            } else if (cntobj.features[0].id.substring(0,11) == 'owld_frspub' ) {
+               prj = 'FRSPUB';
+            } else if (cntobj.features[0].id.substring(0,10) == 'owld_npdes' ) {
+               prj = 'NPDES';
+            } else if (cntobj.features[0].id.substring(0,8) == 'owld_wqp' ) {
+               prj = 'WQP';
+            } else {
+               prj = 'ERR';
+               console.log(cntobj.features[0].id);
+            }            
+            cnthtml = '<TABLE>'
+                    + '<TR><TD>EventType: ' + prj + '</TD></TR>'
+                    + '<TR><TD>Source Originator: ' + cntobj.features[0].properties.source_originator + '</TD></TR>'
+                    + '<TR><TD>Source FeatureID: '  + cntobj.features[0].properties.source_featureid + '</TD></TR>'
+                    + '<TR><TD>Source FeatureID2: ' + dzfn(cntobj.features[0].properties.source_featureid2) + '</TD></TR>'
+                    + '</TABLE>';
+         }
+         
+         L.popup({maxWidth: 800})
             .setLatLng(latlng)
-            .setContent(content)
+            .setContent(cnthtml)
             .openOn(this._map);
       
       }
-      
    });
 
    L.tileLayer.betterWms = function (url,options) {
@@ -448,22 +479,244 @@
    });
    
    var snap_path = L.geoJson(null, {
-      onEachFeature: onEachFeature_snap_path
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.snap_distancekm) {
+            layer.bindPopup(
+               "Length (Km): " +
+               dzf(feature.properties.snap_distancekm)
+            );
+         }
+      }
    }).addTo(map);
    
    var catchments = new L.GeoJSON(null, {
-      onEachFeature: onEachFeature_catchments
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.nhdplusid) {
+            layer.bindPopup(
+               "NHDPlusID: " +
+               feature.properties.nhdplusid.toString() +
+               "<BR/>" +
+               "Area (SqKm): " +
+               dzd(feature.properties.areasqkm) +
+               "<BR/>" 
+            );
+         }
+      }
    }).addTo(map);
    
    var flowlines = new L.GeoJSON(null, {
-      onEachFeature: onEachFeature_flowlines
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.nhdplusid) {
+            layer.bindPopup(
+               "NHDPlusID: " +
+               feature.properties.nhdplusid.toString() +
+               "<BR/>" +
+               "Perm ID: " +
+               feature.properties.permanent_identifier +
+               "<BR/>" +
+               "Reach Code: " +
+               feature.properties.reachcode +
+               "<BR/>" +
+               "Hydro Seq: " +
+               feature.properties.hydroseq.toString() +
+               "<BR/>" +
+               "FMeasure: " +
+               dzf5(feature.properties.fmeasure) +
+               "<BR/>" +
+               "TMeasure: " +
+               dzf5(feature.properties.tmeasure) +
+               "<BR/>" +
+               "GNIS Name: " +
+               feature.properties.gnis_name +
+               "<BR/>" +
+               "Length (Km): " +
+               dzf(feature.properties.lengthkm) +
+               "<BR/>" +
+               "Network Distance (Km): " +
+               dzf(feature.properties.network_distancekm) +
+               "<BR/>" 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var src_p = new L.GeoJSON(null, {
+      pointToLayer: function (feature, latlng) {
+         return L.circleMarker(latlng,{
+            radius: 4,
+            fillColor: "#006400",
+            color: "#000000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+         });
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>' 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var src_l = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            color: "#006400",
+            weight: 4
+         }
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>' +
+               'Length (km): ' +
+               dzf(feature.properties.lengthkm) +
+               '<BR/>' 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var src_a = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            fillColor: "#006400",
+            color: "#000000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+         }
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>' +
+               'Area (sqkm): ' +
+               dzf(feature.properties.areasqkm) +
+               '<BR/>' 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var fcats = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            fillColor: "#FFFFFF",
+            color: "#000000",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+         }
+      }
+   }).addTo(map);
+   
+   var rad_p = new L.GeoJSON(null, {
+      pointToLayer: function (feature, latlng) {
+         return L.circleMarker(latlng,{
+            radius: 4,
+            fillColor: "#000000",
+            color: "#FF0000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+         });
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>'  +
+               'Reach Code: ' +
+               feature.properties.reachcode +
+               '<BR/>' +
+               'Measure: ' +
+               dzf5(feature.properties.measure) +
+               '<BR/>'
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var rad_l = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            color: "#FFFFFF",
+            weight: 4
+         }
+      }
+   }).addTo(map);
+   
+   var rad_a = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            fillColor: "#FFFFFF",
+            color: "#000000",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+         }
+      }
    }).addTo(map);
    
    var lyr_program_hash = {};
    var layer_items = {
-       "Snap path"      : snap_path
-      ,"Catchments"     : catchments
-      ,"Streams"        : flowlines
+       "Snap path"                : snap_path
+      ,"Navigated Streams"        : flowlines
+      ,"Navigated Catchments"     : catchments
+      ,"Found Source Points"      : src_p
+      ,"Found Source Lines"       : src_l
+      ,"Found Source Areas"       : src_a
+      ,"Found CIP Catchments"     : fcats
+      ,"Found RAD Points"         : rad_p
+      ,"Found RAD Lines"          : rad_l
+      ,"Found RAD Areas"          : rad_a
+      
    };
 
    var layerControl = L.control.layers(null, layer_items).addTo(map);
@@ -472,63 +725,7 @@
    httpGet(
       build_api() + "cipsrv_owld_programs",
       populate_owld
-   );   
-   
-   function onEachFeature_snap_path(feature,layer) {
-      if (feature.properties && feature.properties.snap_distancekm) {
-         layer.bindPopup(
-            "Length (Km): " +
-            feature.properties.snap_distancekm.toString()
-         );
-      }
-   }
-   
-   function onEachFeature_catchments(feature,layer) {
-      if (feature.properties && feature.properties.nhdplusid) {
-         layer.bindPopup(
-            "NHDPlusID: " +
-            feature.properties.nhdplusid.toString() +
-            "<BR/>" +
-            "Area (SqKm): " +
-            feature.properties.areasqkm +
-            "<BR/>" 
-         );
-      }
-   }
-   
-   function onEachFeature_flowlines(feature,layer) {
-      if (feature.properties && feature.properties.nhdplusid) {
-         layer.bindPopup(
-            "NHDPlusID: " +
-            feature.properties.nhdplusid.toString() +
-            "<BR/>" +
-            "Perm ID: " +
-            feature.properties.permanent_identifier +
-            "<BR/>" +
-            "Reach Code: " +
-            feature.properties.reachcode +
-            "<BR/>" +
-            "Hydro Seq: " +
-            feature.properties.hydroseq.toString() +
-            "<BR/>" +
-            "FMeasure: " +
-            feature.properties.fmeasure.toString() +
-            "<BR/>" +
-            "TMeasure: " +
-            feature.properties.tmeasure.toString() +
-            "<BR/>" +
-            "GNIS Name: " +
-            feature.properties.gnis_name +
-            "<BR/>" +
-            "Length (Km): " +
-            feature.properties.lengthkm +
-            "<BR/>" +
-            "Network Distance (Km): " +
-            feature.properties.network_distancekm +
-            "<BR/>" 
-         );
-      }
-   }
+   );
 
    function run_service() {
       dz_clear_old();
@@ -543,12 +740,12 @@
          var maxtype          = get_select_values(document.getElementById("selMaxType"));
          var maxdistkm,maxtimeday;
          if (maxtype == "distkm" ) {
-            maxdistkm  = document.getElementById("pSearchMax").value;
+            maxdistkm  = document.getElementById("p_search_max").value;
             maxtimeday = null;
          }
          if (maxtype == "flowday" ) {
             maxdistkm  = null;
-            maxtimeday = document.getElementById("pSearchMax").value;
+            maxtimeday = document.getElementById("p_search_max").value;
          }
          
          var data = {
@@ -883,10 +1080,73 @@
       } else if (response.return_code != 0) {
          document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
          return false;
-      } else if (response.catchment_count == 0) {
-         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      } else if (response.linked_data_sfid_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No linked data found.</P>";
+      }
+      boo_zoom = false;
+      
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      document.getElementById("output").innerHTML += '<B>Search Summary:</B><BR/>'
+         + '<TABLE style="border: 1px solid black; font-family: Arial; font-size: 13px;"><TBODY>'
+         + '<TR style="border: 1px solid;"><TD>Resolution: ' + nhdplus_version + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Flowlines Navigated: ' + dzfi(response.flowline_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Catchments Navigated: ' + dzfi(response.catchment_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>SFIDs Found: ' + dzfi(response.linked_data_sfid_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>CIP Events Found: ' + dzfi(response.linked_data_cip_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>RAD Events Found: ' + dzfi(response.linked_data_reached_count) + '</TD></TR>'
+         + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.flowlines !== null) {
+         
+         if (response.flowlines.features[0].geometry.type !== null) {
+            flowlines.addData(response.flowlines).setStyle({
+                "color": "#0000FF"
+               ,"fillColor": "#0000FF"
+               ,"weight": 4
+            });
+            
+            if (!boo_zoom) {
+               map.fitBounds(flowlines.getBounds(), {
+                  maxZoom: 16
+               });
+               boo_zoom = true;
+            }
+            
+         }
+         
+         var tbl = '<BR/><BR/><B>Navigated Streams Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 5px;">NHDPlusID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">GNIS Name</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">FCODE</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Reach Code</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">FMeasure</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">TMeasure</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Network Distance (km)</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Network Flowtime (day)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.flowlines.features.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfi(response.flowlines.features[i].properties.nhdplusid) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.flowlines.features[i].properties.gnis_name) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfi(response.flowlines.features[i].properties.fcode) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.flowlines.features[i].properties.reachcode) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzf5(response.flowlines.features[i].properties.fmeasure) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzf5(response.flowlines.features[i].properties.tmeasure) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzf(response.flowlines.features[i].properties.network_distancekm) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px; border-right: 1px solid;">' + dzf(response.flowlines.features[i].properties.network_flowtimeday) + '</TD>'
+                 + '</TR>';
+
+         }         
+                
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+         
       }
       
+      /////////////////////////////////////////////////////////////////////////
       if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
          catchments.addData(response.catchments).setStyle({
              "color": "#E38A1E"
@@ -894,22 +1154,353 @@
             ,"weight": 2
          });
          
-         map.fitBounds(catchments.getBounds(), {
-            maxZoom: 16
-         });
+         if (!boo_zoom) {
+            map.fitBounds(catchments.getBounds(), {
+               maxZoom: 16
+            });
+            boo_zoom = true;
+         }
+         
+         var tbl = '<BR/><BR/><B>Navigated Catchments Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 5px;">NHDPlusID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FC</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Area (sqkm)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.catchments.features.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfi(response.catchments.features[i].properties.nhdplusid) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.catchments.features[i].properties.sourcefc) + '</TD>'
+                 + '<TD style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.catchments.features[i].properties.areasqkm) + '</TD>'
+                 + '</TR>';
+
+         }         
+                
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
          
       } 
+
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_sfid_found !== null && response.linked_data_sfid_count > 0 ) {
+         var tbl = '<BR/><BR/><B>Linked Data SFID Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Nearest CIP (km)</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Nearest CIP (day)</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Nearest RAD (km)</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Nearest RAD (day)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.linked_data_sfid_found.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                 + '<SPAN title="' + response.linked_data_sfid_found[i].source_joinkey + '" data-toggle="tooltip">'
+                 + dzfet(response.linked_data_sfid_found[i].eventtype) 
+                 + '</SPAN>'
+                 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_sfid_found[i].source_originator + '</TD>';
+            
+            if ( response.linked_data_sfid_found[i].sfiddetailurl === null ) {
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_sfid_found[i].source_featureid + '</TD>';
+               
+            } else {
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_sfid_found[i].sfiddetailurl + '">' + response.linked_data_sfid_found[i].source_featureid + '</a></TD>';
+               
+            }
+            
+            tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_sfid_found[i].source_featureid2) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_cip_network_distancekm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_cip_network_flowtimeday) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_rad_network_distancekm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_rad_network_flowtimeday) + '</TD>'
+                 + '</TR>';
+         
+         }
+         
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      }
       
-      if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
-         flowlines.addData(response.flowlines).setStyle({
-             "color": "#0000FF"
-            ,"fillColor": "#0000FF"
-            ,"weight": 4
-         });
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_cip_found !== null && response.linked_data_cip_count > 0 ) {
+         var tbl = '<BR/><BR/><B>Linked Data CIP Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">NHDPlusID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">State Code</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Area (sqkm)</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Network Distance (km)</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Network Flowtime (day)</TH>'
+                 + '</TR>';
          
-         document.getElementById("output").innerHTML = "<P>&nbsp;</P><P align='center'>Flowline Count: " + response.flowline_count + "</P>";
+         for (var i = 0; i < response.linked_data_cip_found.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                 + '<SPAN title="' + response.linked_data_cip_found[i].cip_joinkey + '" data-toggle="tooltip">'
+                 + dzfet(response.linked_data_cip_found[i].eventtype) 
+                 + '</SPAN>'
+                 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_cip_found[i].source_originator + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_cip_found[i].source_featureid + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_cip_found[i].source_featureid2) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzfi(response.linked_data_cip_found[i].nhdplusid) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_cip_found[i].catchmentstatecode + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].catchmentareasqkm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].network_distancekm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].network_flowtimeday) + '</TD>'
+                 + '</TR>';
          
-      }            
+         }
+         
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      }
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_reached_count > 0 ) {
+      
+         if (response.linked_data_reached_points !== null && response.linked_data_reached_points.features.length > 0) {
+         
+            rad_p.addData(response.linked_data_reached_points);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data RAD Points Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Reach Code</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Measure</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Network Distance (km)</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Network Flowtime (day)</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_reached_points.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_reached_points.features[i].properties.permanent_identifier + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_reached_points.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_reached_points.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_reached_points.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_reached_points.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_reached_points.features[i].properties.featuredetailurl + '">' + response.linked_data_reached_points.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_reached_points.features[i].properties.source_featureid2) + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_reached_points.features[i].properties.reachcode) + '</TD>'
+                    + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf5(response.linked_data_reached_points.features[i].properties.measure) + '</TD>'
+                    + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_reached_points.features[i].properties.network_distancekm) + '</TD>'
+                    + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_reached_points.features[i].properties.network_flowtimeday) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+      }
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_source_count > 0 ) {
+      
+         //////////////////////////////////////////////////////////////////////
+         if (response.linked_data_source_points !== null && response.linked_data_source_points.features.length > 0) {
+         
+            src_p.addData(response.linked_data_source_points);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data Source Points Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_source_points.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_source_points.features[i].permid_joinkey + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_source_points.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_points.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_source_points.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_points.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_source_points.features[i].properties.featuredetailurl + '">' + response.linked_data_source_points.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzfn(response.linked_data_source_points.features[i].properties.source_featureid2) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+         //////////////////////////////////////////////////////////////////////
+         if (response.linked_data_source_lines !== null && response.linked_data_source_lines.features.length > 0) {
+         
+            src_l.addData(response.linked_data_source_lines);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data Source Lines Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_source_lines.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_source_lines.features[i].permid_joinkey + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_source_lines.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_lines.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_source_lines.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_lines.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_source_lines.features[i].properties.featuredetailurl + '">' + response.linked_data_source_lines.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzfn(response.linked_data_source_lines.features[i].properties.source_featureid2) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+         //////////////////////////////////////////////////////////////////////
+         if (response.linked_data_source_areas !== null && response.linked_data_source_areas.features.length > 0) {
+         
+            src_p.addData(response.linked_data_source_areas);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data Source Areas Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_source_areas.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_source_areas.features[i].permid_joinkey + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_source_areas.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_areas.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_source_areas.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_areas.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_source_areas.features[i].properties.featuredetailurl + '">' + response.linked_data_source_areas.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzfn(response.linked_data_source_points.features[i].properties.source_featureid2) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+      }
+      
+      document.getElementById("output").innerHTML += '<BR/>&nbsp;<BR/>&nbsp;<BR/>&nbsp;';
+      
+   }
+   
+   function dzfi(val) {
+      if (val === null) {
+         return "&nbsp;";
+      }
+      
+      return val.toFixed(0);
+      
+   }
+   
+   function dzf(val) {
+      if (val === null) {
+         return "&nbsp;";
+      }
+      
+      return val.toFixed(3);
+      
+   }
+   
+   function dzf5(val) {
+      if (val === null) {
+         return "&nbsp;";
+      }
+      
+      return val.toFixed(5);
+      
+   }
+   
+   function dzfn(val) {
+      if (val === null) {
+         return "&nbsp;";
+      }
+      
+      return val;
+      
+   }
+
+   function dzfet(val) {
+      if (val === null) {
+         return "&nbsp;";
+      
+      } else if ( val == 10015 ) {
+         return "NPDES";
+         
+      } else if ( val == 10028 ) {
+         return "FRSPUB";
+         
+      } else if ( val == 10032 ) {
+         return "WQP";
+         
+      } else if ( val == 10033 ) {
+         return "ATTAINS";
+         
+      }
+      
+      return val;
+      
    }
    
    function pt1_response(error,response) {
@@ -959,55 +1550,68 @@
       
       } else {
          var search_type      = get_select_values(document.getElementById("p_search_type"));
+         
+         var maxtype          = get_select_values(document.getElementById("selMaxType"));
+         var maxdistkm,maxtimeday;
+         if (maxtype == "distkm" ) {
+            maxdistkm  = document.getElementById("p_search_max").value;
+            maxtimeday = null;
+         }
+         if (maxtype == "flowday" ) {
+            maxdistkm  = null;
+            maxtimeday = document.getElementById("p_search_max").value;
+         }
       
          var data = {
-             "search_type"                 : search_type
-            ,"nhdplus_version"             : nhdplus_version
+             "search_type"                  : search_type
+            ,"nhdplus_version"              : nhdplus_version
              
-            ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
-            ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
-            ,"start_reachcode"             : document.getElementById("pStartReachCode").value
-            ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
-            ,"start_measure"               : document.getElementById("pStartMeasure").value
+            ,"start_nhdplusid"              : document.getElementById("pStartNHDPlusID").value
+            ,"start_permanent_identifier"   : document.getElementById("pStartPermanentIdentifier").value
+            ,"start_reachcode"              : document.getElementById("pStartReachCode").value
+            ,"start_hydroseq"               : document.getElementById("pStartHydroSeq").value
+            ,"start_measure"                : document.getElementById("pStartMeasure").value
             
-            ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
-            ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
-            ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
-            ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
-            ,"start_start_date"            : document.getElementById("pStartStartDate").value
-            ,"start_end_date"              : document.getElementById("pStartEndDate").value
-            ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
-            ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
-            ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
-            ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+            ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
+            ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
+            ,"start_source_originator"      : document.getElementById("pStartSourceOriginator").value
+            ,"start_source_series"          : document.getElementById("pStartSourceSeries").value
+            ,"start_start_date"             : document.getElementById("pStartStartDate").value
+            ,"start_end_date"               : document.getElementById("pStartEndDate").value
+            ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
+            ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
+            ,"start_cat_joinkey"            : document.getElementById("pStartCatJoinKey").value
+            ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
             
-            ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
-            ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
-            ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
-            ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
-            ,"stop_measure"                : document.getElementById("pStopMeasure").value
+            ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"               : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"                : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"                 : document.getElementById("pStopMeasure").value
             
-            ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
-            ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
-            ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
-            ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
-            ,"stop_start_date"             : document.getElementById("pStopStartDate").value
-            ,"stop_end_date"               : document.getElementById("pStopEndDate").value
-            ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
-            ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
-            ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
-            ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+            ,"stop_source_featureid"        : document.getElementById("pStopSourceFeatureID").value
+            ,"stop_source_featureid2"       : document.getElementById("pStopSourceFeatureID2").value
+            ,"stop_source_originator"       : document.getElementById("pStopSourceOriginator").value
+            ,"stop_source_series"           : document.getElementById("pStopSourceSeries").value
+            ,"stop_start_date"              : document.getElementById("pStopStartDate").value
+            ,"stop_end_date"                : document.getElementById("pStopEndDate").value
+            ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
+            ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
+            ,"stop_cat_joinkey"             : document.getElementById("pStopCatJoinKey").value
+            ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
             
-            ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
-            ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
-            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
-            ,"return_catchments"           : document.getElementById("p_return_catchments").checked
-            ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
-            ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
-            ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
-            ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+            ,"max_distancekm"               : maxdistkm
+            ,"max_flowtimeday"              : maxtimeday
+            ,"linked_data_search_list"      : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+            ,"search_precision"             : get_select_values(document.getElementById("p_search_precision"))
+            ,"return_flowlines"             : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"      : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"     : document.getElementById("p_return_flowlines").checked
+            ,"return_catchments"            : document.getElementById("p_return_catchments").checked
+            ,"return_linked_data_cip"       : document.getElementById("p_return_linked_data_cip").checked
+            ,"return_linked_data_huc12"     : document.getElementById("p_return_linked_data_huc12").checked
+            ,"return_linked_data_source"    : document.getElementById("p_return_linked_data_source").checked
+            ,"return_linked_data_rad"       : document.getElementById("p_return_linked_data_rad").checked
             ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
             ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
             ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
@@ -1053,54 +1657,67 @@
       var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
       var search_type      = get_select_values(document.getElementById("p_search_type"));
       
+      var maxtype          = get_select_values(document.getElementById("selMaxType"));
+      var maxdistkm,maxtimeday;
+      if (maxtype == "distkm" ) {
+         maxdistkm  = document.getElementById("p_search_max").value;
+         maxtimeday = null;
+      }
+      if (maxtype == "flowday" ) {
+         maxdistkm  = null;
+         maxtimeday = document.getElementById("p_search_max").value;
+      }
+      
       var data = {
-          "search_type"                 : search_type
-         ,"nhdplus_version"             : nhdplus_version
+          "search_type"                  : search_type
+         ,"nhdplus_version"              : nhdplus_version
           
-         ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
-         ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
-         ,"start_reachcode"             : document.getElementById("pStartReachCode").value
-         ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
-         ,"start_measure"               : document.getElementById("pStartMeasure").value
+         ,"start_nhdplusid"              : document.getElementById("pStartNHDPlusID").value
+         ,"start_permanent_identifier"   : document.getElementById("pStartPermanentIdentifier").value
+         ,"start_reachcode"              : document.getElementById("pStartReachCode").value
+         ,"start_hydroseq"               : document.getElementById("pStartHydroSeq").value
+         ,"start_measure"                : document.getElementById("pStartMeasure").value
          
-         ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
-         ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
-         ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
-         ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
-         ,"start_start_date"            : document.getElementById("pStartStartDate").value
-         ,"start_end_date"              : document.getElementById("pStartEndDate").value
-         ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
-         ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
-         ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
-         ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+         ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
+         ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
+         ,"start_source_originator"      : document.getElementById("pStartSourceOriginator").value
+         ,"start_source_series"          : document.getElementById("pStartSourceSeries").value
+         ,"start_start_date"             : document.getElementById("pStartStartDate").value
+         ,"start_end_date"               : document.getElementById("pStartEndDate").value
+         ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
+         ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
+         ,"start_cat_joinkey"            : document.getElementById("pStartCatJoinKey").value
+         ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
          
-         ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
-         ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
-         ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
-         ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
-         ,"stop_measure"                : document.getElementById("pStopMeasure").value
+         ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
+         ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
+         ,"stop_reachcode"               : document.getElementById("pStopReachCode").value
+         ,"stop_hydroseq"                : document.getElementById("pStopHydroSeq").value
+         ,"stop_measure"                 : document.getElementById("pStopMeasure").value
          
-         ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
-         ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
-         ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
-         ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
-         ,"stop_start_date"             : document.getElementById("pStopStartDate").value
-         ,"stop_end_date"               : document.getElementById("pStopEndDate").value
-         ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
-         ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
-         ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
-         ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+         ,"stop_source_featureid"        : document.getElementById("pStopSourceFeatureID").value
+         ,"stop_source_featureid2"       : document.getElementById("pStopSourceFeatureID2").value
+         ,"stop_source_originator"       : document.getElementById("pStopSourceOriginator").value
+         ,"stop_source_series"           : document.getElementById("pStopSourceSeries").value
+         ,"stop_start_date"              : document.getElementById("pStopStartDate").value
+         ,"stop_end_date"                : document.getElementById("pStopEndDate").value
+         ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
+         ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
+         ,"stop_cat_joinkey"             : document.getElementById("pStopCatJoinKey").value
+         ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
          
-         ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
-         ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
-         ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
-         ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
-         ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
-         ,"return_catchments"           : document.getElementById("p_return_catchments").checked
-         ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
-         ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
-         ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
-         ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+         ,"max_distancekm"               : maxdistkm
+         ,"max_flowtimeday"              : maxtimeday
+         ,"linked_data_search_list"      : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+         ,"search_precision"             : get_select_values(document.getElementById("p_search_precision"))
+         ,"return_flowlines"             : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_details"      : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_geometry"     : document.getElementById("p_return_flowlines").checked
+         ,"return_catchments"            : document.getElementById("p_return_catchments").checked
+         ,"return_linked_data_cip"       : document.getElementById("p_return_linked_data_cip").checked
+         ,"return_linked_data_huc12"     : document.getElementById("p_return_linked_data_huc12").checked
+         ,"return_linked_data_source"    : document.getElementById("p_return_linked_data_source").checked
+         ,"return_linked_data_rad"       : document.getElementById("p_return_linked_data_rad").checked
          ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
          ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
          ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
@@ -1119,6 +1736,13 @@
       snap_path.clearLayers();
       flowlines.clearLayers();
       catchments.clearLayers();
+      rad_p.clearLayers();
+      rad_l.clearLayers();
+      rad_a.clearLayers();
+      src_p.clearLayers();
+      src_l.clearLayers();
+      src_a.clearLayers();
+      fcats.clearLayers();
       blank_pts();
       blank_nhdplusids()
       busy_off();
@@ -1130,6 +1754,13 @@
       snap_path.clearLayers();
       flowlines.clearLayers();
       catchments.clearLayers();
+      rad_p.clearLayers();
+      rad_l.clearLayers();
+      rad_a.clearLayers();
+      src_p.clearLayers();
+      src_l.clearLayers();
+      src_a.clearLayers();
+      fcats.clearLayers();
       busy_off();
       document.getElementById("dz_run_service").disabled = true;
    }
@@ -1386,7 +2017,7 @@
          document.getElementById("p_stop_linked_data_program").disabled = false;
          
          document.getElementById("pPoint2").disabled = false;
-         document.getElementById("p_search_max_distancekm").disabled = true;
+         document.getElementById("p_search_max").disabled = true;
       } else {
          document.getElementById("pStopNHDPlusID").disabled = true;
          document.getElementById("pStopPermanentIdentifier").disabled = true;
@@ -1405,7 +2036,7 @@
          document.getElementById("p_stop_linked_data_program").disabled = true;
          
          document.getElementById("pPoint2").disabled = true;
-         document.getElementById("p_search_max_distancekm").disabled = false;
+         document.getElementById("p_search_max").disabled = false;
       }
    }
 

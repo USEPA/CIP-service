@@ -19,6 +19,7 @@ BEGIN
          ,sourcefc                    VARCHAR
          ,areasqkm                    NUMERIC
          ,hydroseq                    BIGINT
+         ,orderingkey                 NUMERIC
          ,shape                       GEOMETRY
          ,shape_3338                  GEOMETRY
          ,shape_5070                  GEOMETRY

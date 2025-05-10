@@ -73,8 +73,11 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,OUT out_stop_nhdplusid              BIGINT
    ,OUT out_stop_measure                NUMERIC
    ,OUT out_flowline_count              INTEGER
+   ,OUT out_catchment_count             INTEGER
+   ,OUT out_cip_found_count             INTEGER
    ,OUT out_rad_found_count             INTEGER
-   ,OUT out_sfid_found_count            INTEGER 
+   ,OUT out_sfid_found_count            INTEGER
+   ,OUT out_src_found_count             INTEGER
    ,OUT out_return_flowlines            BOOLEAN
    ,OUT out_return_code                 NUMERIC
    ,OUT out_status_message              VARCHAR
@@ -129,15 +132,26 @@ DECLARE
    str_stop_cat_joinkey           VARCHAR;
    str_stop_search_precision      VARCHAR := p_stop_search_precision;
    
-   str_search_precision           VARCHAR := p_search_precision;   
+   str_search_precision           VARCHAR := UPPER(p_search_precision);   
+   int_attains_eventtype          INTEGER := 10033;
+   int_frspub_eventtype           INTEGER := 10028;
+   int_npdes_eventtype            INTEGER := 10015;
    int_wqp_eventtype              INTEGER := 10032;
    boo_remove_stop_start_sfids    BOOLEAN;
    str_remove_start_permid        VARCHAR(40);
    str_remove_stop_permid         VARCHAR(40);
+   str_resolution_abbrev          VARCHAR(2);
+   str_owld                       VARCHAR(64);
+   int_count                      INTEGER;
+   int_owld                       INTEGER;
+   boo_catchment_okay             BOOLEAN;
+   boo_reach_okay                 BOOLEAN;
+   str_joinkey_fix                VARCHAR;
       
 BEGIN
 
    out_return_code := cipsrv_engine.create_navigation_temp_tables();
+   out_return_code := cipsrv_engine.create_delineation_temp_tables();
    out_return_code := cipsrv_owld.create_updn_temp_tables();
 
    ----------------------------------------------------------------------------
@@ -172,6 +186,8 @@ BEGIN
       boo_remove_stop_start_sfids := p_remove_stop_start_sfids;
       
    END IF;
+   
+   out_flowline_count  := 0;
    
    ----------------------------------------------------------------------------
    -- Step 20
@@ -301,6 +317,8 @@ BEGIN
    ----------------------------------------------------------------------------
    IF str_nhdplus_version = 'nhdplus_m'
    THEN
+      str_resolution_abbrev := 'MR';
+      
       rec := cipsrv_nhdplus_m.navigate(
           p_search_type                 := str_search_type
          ,p_start_nhdplusid             := int_start_nhdplusid
@@ -315,7 +333,7 @@ BEGIN
          ,p_stop_measure                := num_stop_measure
          ,p_max_distancekm              := num_max_distancekm
          ,p_max_flowtimeday             := num_max_flowtimeday
-         ,p_return_flowline_details     := boo_return_flowline_details
+         ,p_return_flowline_details     := TRUE
          ,p_return_flowline_geometry    := boo_return_flowline_geometry
          ,p_known_region                := str_known_region
       );
@@ -329,8 +347,45 @@ BEGIN
       out_return_code     := rec.out_return_code;
       out_status_message  := rec.out_status_message;
       
+      IF p_return_catchments
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,areasqkm
+            ,orderingkey
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.sourcefc
+         ,a.areasqkm
+         ,b.network_distancekm
+         ,a.shape
+         FROM
+         cipsrv_nhdplus_m.nhdpluscatchment a
+         JOIN
+         tmp_navigation_results b
+         ON
+         a.nhdplusid = b.nhdplusid;
+         
+         GET DIAGNOSTICS int_count = ROW_COUNT;
+         
+         IF out_catchment_count IS NULL
+         THEN
+            out_catchment_count := int_count;
+            
+         ELSE
+            out_catchment_count := out_catchment_count + int_count;
+         
+         END IF;
+      
+      END IF;
+      
    ELSIF str_nhdplus_version = 'nhdplus_h'
    THEN
+      str_resolution_abbrev := 'HR';
+      
       rec := cipsrv_nhdplus_h.navigate(
           p_search_type                 := str_search_type
          ,p_start_nhdplusid             := int_start_nhdplusid
@@ -345,7 +400,7 @@ BEGIN
          ,p_stop_measure                := num_stop_measure
          ,p_max_distancekm              := num_max_distancekm
          ,p_max_flowtimeday             := num_max_flowtimeday
-         ,p_return_flowline_details     := boo_return_flowline_details
+         ,p_return_flowline_details     := TRUE
          ,p_return_flowline_geometry    := boo_return_flowline_geometry
          ,p_known_region                := str_known_region
       );
@@ -358,6 +413,41 @@ BEGIN
       out_flowline_count  := rec.out_flowline_count;
       out_return_code     := rec.out_return_code;
       out_status_message  := rec.out_status_message;
+      
+      IF p_return_catchments
+      THEN
+         INSERT INTO tmp_catchments(
+             nhdplusid
+            ,sourcefc
+            ,areasqkm
+            ,orderingkey
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,a.sourcefc
+         ,a.areasqkm
+         ,b.network_distancekm
+         ,a.shape
+         FROM
+         cipsrv_nhdplus_h.nhdpluscatchment a
+         JOIN
+         tmp_navigation_results b
+         ON
+         a.nhdplusid = b.nhdplusid;
+         
+         GET DIAGNOSTICS int_count = ROW_COUNT;
+         
+         IF out_catchment_count IS NULL
+         THEN
+            out_catchment_count := int_count;
+            
+         ELSE
+            out_catchment_count := out_catchment_count + int_count;
+         
+         END IF;
+         
+      END IF;
    
    ELSE
       RAISE EXCEPTION 'err %',str_nhdplus_version;
@@ -369,156 +459,225 @@ BEGIN
       RETURN;
       
    END IF;
-   
+
    ----------------------------------------------------------------------------
    -- Step 30
    -- Search programs for results
    ----------------------------------------------------------------------------
-   IF p_linked_data_search_list IS NOT NULL
+   IF  p_linked_data_search_list IS NOT NULL
    AND array_length(p_linked_data_search_list,1) > 0
    THEN
-   
+
       FOR i IN 1 .. array_length(p_linked_data_search_list,1)
       LOOP
-         IF p_linked_data_search_list[i] = int_wqp_eventtype::VARCHAR
+      
+         boo_catchment_okay := FALSE;
+         boo_reach_okay     := FALSE;
+         
+         IF p_linked_data_search_list[i] IN (int_frspub_eventtype::VARCHAR,'FRSPUB')
          THEN
-            out_sfid_found_count := NULL;
+            str_owld := 'cipsrv_owld.frspub';
+            int_owld := int_frspub_eventtype;
             
-            IF str_search_precision = 'CATCHMENT'
+            boo_catchment_okay := TRUE;
+            boo_reach_okay     := TRUE;
+            str_joinkey_fix    := 'permid_joinkey';
+            
+         ELSIF p_linked_data_search_list[i] IN (int_npdes_eventtype::VARCHAR,'NPDES')
+         THEN
+            str_owld := 'cipsrv_owld.npdes';
+            int_owld := int_npdes_eventtype;
+            
+            boo_catchment_okay := TRUE;
+            boo_reach_okay     := TRUE;
+            str_joinkey_fix    := 'permid_joinkey';
+            
+         ELSIF p_linked_data_search_list[i] IN (int_wqp_eventtype::VARCHAR,'WQP')
+         THEN
+            str_owld := 'cipsrv_owld.wqp';
+            int_owld := int_wqp_eventtype;
+            
+            boo_catchment_okay := TRUE;
+            boo_reach_okay     := TRUE;
+            str_joinkey_fix    := 'permid_joinkey';
+            
+         ELSIF p_linked_data_search_list[i] IN (int_attains_eventtype::VARCHAR,'ATTAINS')
+         THEN
+            str_owld := 'cipsrv_owld.attains';
+            int_owld := int_attains_eventtype;
+            
+            boo_catchment_okay := TRUE;
+            boo_reach_okay     := FALSE;
+            str_joinkey_fix    := 'source_joinkey';
+            
+         ELSE
+            CONTINUE;
+         
+         END IF;
+
+         --##################################################################--
+         IF  str_search_precision IN ('REACH','REACHED') 
+         AND boo_reach_okay
+         THEN
+            -------------------------------------------------------------------
+            EXECUTE '
+               INSERT INTO tmp_rad_points(
+                   eventtype
+                  ,permanent_identifier
+                  ,eventdate
+                  ,reachcode
+                  ,reachsmdate
+                  ,reachresolution
+                  ,feature_permanent_identifier
+                  ,featureclassref
+                  ,source_originator
+                  ,source_featureid
+                  ,source_featureid2
+                  ,source_datadesc
+                  ,source_series
+                  ,source_subdivision
+                  ,source_joinkey
+                  ,permid_joinkey
+                  ,start_date
+                  ,end_date
+                  ,featuredetailurl
+                  ,measure
+                  ,eventoffset
+                  ,geogstate
+                  ,xwalk_huc12
+                  ,isnavigable
+                  ,network_distancekm
+                  ,network_flowtimeday
+                  ,shape
+               )
+               SELECT
+                $1
+               ,b.permanent_identifier
+               ,b.eventdate
+               ,b.reachcode
+               ,b.reachsmdate
+               ,$2 AS reachresolution
+               ,b.feature_permanent_identifier
+               ,b.featureclassref
+               ,b.source_originator
+               ,b.source_featureid
+               ,b.source_featureid2
+               ,b.source_datadesc
+               ,b.source_series
+               ,b.source_subdivision
+               ,b.source_joinkey
+               ,b.permid_joinkey
+               ,b.start_date
+               ,b.end_date
+               ,b.featuredetailurl
+               ,b.measure
+               ,b.eventoffset
+               ,b.geogstate
+               ,b.xwalk_huc12
+               ,b.isnavigable
+               ,cipsrv_owld.adjust_point_extent(
+                   p_extent_value      => a.network_distancekm
+                  ,p_direction         => $3
+                  ,p_flowline_amount   => a.lengthkm
+                  ,p_flowline_fmeasure => a.fmeasure
+                  ,p_flowline_tmeasure => a.tmeasure
+                  ,p_event_measure     => b.measure::NUMERIC
+                ) AS network_distancekm
+               ,cipsrv_owld.adjust_point_extent(
+                   p_extent_value      => a.network_flowtimeday
+                  ,p_direction         => $4
+                  ,p_flowline_amount   => a.flowtimeday
+                  ,p_flowline_fmeasure => a.fmeasure
+                  ,p_flowline_tmeasure => a.tmeasure
+                  ,p_event_measure     => b.measure::NUMERIC
+                ) AS network_flowtimeday
+               ,CASE
+                WHEN NOT $5
+                THEN
+                  NULL::GEOMETRY
+                ELSE
+                  b.shape
+                END AS shape
+               FROM
+               tmp_navigation_results a
+               JOIN
+               ' || str_owld || '_rad_p b
+               ON
+                   b.reachcode  = a.reachcode
+               AND b.measure   >= a.fmeasure
+               AND b.measure   <= a.tmeasure
+               WHERE
+                   b.reachresolution = $6
+               AND ($7 IS NULL OR b.permid_joinkey != $8)
+               AND ($9 IS NULL OR b.permid_joinkey != $10);
+            ' 
+            USING
+             int_owld
+            ,str_resolution_abbrev
+            ,p_search_type
+            ,p_search_type
+            ,p_return_linked_data_rad
+            ,str_resolution_abbrev
+            ,str_remove_start_permid
+            ,str_remove_start_permid
+            ,str_remove_stop_permid
+            ,str_remove_stop_permid;
+
+            GET DIAGNOSTICS int_count = ROW_COUNT;           
+
+            IF out_rad_found_count IS NULL
+            OR out_rad_found_count = 0
             THEN
-               NULL;
+               out_rad_found_count := int_count;
                
-            ELSIF str_search_precision IN ('REACH','REACHED MEASURES','ALL')
+            ELSE
+               out_rad_found_count := out_rad_found_count + int_count;
+            
+            END IF;
+
+            -------------------------------------------------------------------
+            IF p_push_source_geometry_as_rad
+            AND int_count > 0
             THEN
-               IF str_nhdplus_version = 'nhdplus_m'
-               THEN            
-                  INSERT INTO tmp_rad_points(
+               EXECUTE '
+                  UPDATE tmp_rad_points a
+                  SET shape = (
+                     SELECT
+                     b.shape
+                     FROM
+                     ' || str_owld || '_src_p b
+                     WHERE
+                     b.permid_joinkey = a.permid_joinkey
+                  )
+                  WHERE
+                  a.eventtype = $1
+               ' USING
+               int_owld;
+            
+            END IF;
+
+            -------------------------------------------------------------------
+            IF p_return_linked_data_source
+            THEN
+               EXECUTE '
+                  INSERT INTO tmp_src_points(
                       eventtype
-                     ,permanent_identifier
-                     ,eventdate
-                     ,reachcode
-                     ,reachsmdate
-                     ,reachresolution
-                     ,feature_permanent_identifier
-                     ,featureclassref
+                     ,permid_joinkey
                      ,source_originator
                      ,source_featureid
                      ,source_featureid2
-                     ,source_datadesc
                      ,source_series
                      ,source_subdivision
                      ,source_joinkey
-                     ,permid_joinkey
                      ,start_date
                      ,end_date
                      ,featuredetailurl
-                     ,measure
-                     ,eventoffset
-                     ,geogstate
-                     ,xwalk_huc12
-                     ,navigable
-                     ,network_distancekm
-                     ,network_flowtimeday
+                     ,orderingkey
                      ,shape
                   )
                   SELECT
-                   int_wqp_eventtype
-                  ,b.permanent_identifier
-                  ,b.eventdate
-                  ,b.reachcode
-                  ,b.reachsmdate
-                  ,'MR' AS reachresolution
-                  ,b.feature_permanent_identifier
-                  ,b.featureclassref
-                  ,b.source_originator
-                  ,b.source_featureid
-                  ,b.source_featureid2
-                  ,b.source_datadesc
-                  ,b.source_series
-                  ,b.source_subdivision
-                  ,b.source_joinkey
-                  ,b.permid_joinkey
-                  ,b.start_date
-                  ,b.end_date
-                  ,b.featuredetailurl
-                  ,b.measure
-                  ,b.eventoffset
-                  ,b.geogstate
-                  ,b.xwalk_huc12
-                  ,b.isnavigable AS navigable
-                  ,cipsrv_owld.adjust_point_extent(
-                      p_extent_value      => a.network_distancekm
-                     ,p_direction         => p_search_type
-                     ,p_flowline_amount   => a.lengthkm
-                     ,p_flowline_fmeasure => a.fmeasure
-                     ,p_flowline_tmeasure => a.tmeasure
-                     ,p_event_measure     => b.measure::NUMERIC
-                   ) AS network_distancekm
-                  ,cipsrv_owld.adjust_point_extent(
-                      p_extent_value      => a.network_flowtimeday
-                     ,p_direction         => p_search_type
-                     ,p_flowline_amount   => a.flowtimeday
-                     ,p_flowline_fmeasure => a.fmeasure
-                     ,p_flowline_tmeasure => a.tmeasure
-                     ,p_event_measure     => b.measure::NUMERIC
-                   ) AS network_flowtimeday
-                  ,CASE
-                   WHEN NOT p_return_linked_data_rad
-                   THEN
-                     NULL::GEOMETRY
-                   ELSE
-                     b.shape
-                   END AS shape
-                  FROM
-                  tmp_navigation_results a
-                  JOIN
-                  cipsrv_owld.wqp_rad_p b
-                  ON
-                      b.reachcode  = a.reachcode
-                  AND b.measure   >= a.fmeasure
-                  AND b.measure   <= a.tmeasure
-                  WHERE
-                      b.reachresolution = 'MR'
-                  AND (str_remove_start_permid IS NULL OR b.permid_joinkey != str_remove_start_permid)
-                  AND (str_remove_stop_permid  IS NULL OR b.permid_joinkey != str_remove_stop_permid);
-                  
-                  GET DIAGNOSTICS out_rad_found_count = ROW_COUNT;
-                  
-                  IF p_push_source_geometry_as_rad
-                  THEN
-                     UPDATE tmp_rad_points a
-                     SET shape = (
-                        SELECT
-                        b.shape
-                        FROM
-                        cipsrv_owld.wqp_src_p b
-                        WHERE
-                        b.permid_joinkey = a.permid_joinkey
-                     )
-                     WHERE
-                     a.eventtype = int_wqp_eventtype;
-                  
-                  END IF;
-                  
-                  INSERT INTO tmp_sfid_found(
-                      eventtype
-                     ,source_originator
-                     ,source_featureid
-                     ,source_featureid2
-                     ,source_series
-                     ,source_subdivision
-                     ,source_joinkey
-                     ,start_date
-                     ,end_date
-                     ,sfiddetailurl
-                     ,rad_event_count
-                     ,nearest_rad_distancekm_permid
-                     ,nearest_rad_network_distancekm
-                     ,nearest_rad_flowtimeday_permid
-                     ,nearest_rad_network_flowtimeday
-                  )
-                  SELECT
-                   int_wqp_eventtype
+                   $1
+                  ,a.permid_joinkey
                   ,a.source_originator
                   ,a.source_featureid
                   ,a.source_featureid2
@@ -527,48 +686,496 @@ BEGIN
                   ,a.source_joinkey
                   ,a.start_date
                   ,a.end_date
-                  ,a.sfiddetailurl
-                  ,b.rad_event_count
-                  ,b.nearest_rad_distancekm_permid
-                  ,b.nearest_rad_network_distancekm
-                  ,b.nearest_rad_flowtimeday_permid
-                  ,b.nearest_rad_network_flowtimeda
+                  ,a.featuredetailurl
+                  ,b.network_distancekm
+                  ,a.shape
                   FROM
-                  cipsrv_owld.wqp_sfid a
-                  JOIN (
-                     /* needs better conversion from oracle */
-                     SELECT
-                      bb.source_joinkey
-                     ,COUNT(*) AS rad_event_count
-                     ,MIN(bb.permid_joinkey)      AS nearest_rad_distancekm_permid
-                     ,MIN(bb.network_distancekm)  AS nearest_rad_network_distancekm
-                     ,CASE
-                      WHEN MIN(bb.network_flowtimeday) IS NULL
-                      THEN
-                        NULL
-                      ELSE
-                        MIN(bb.permid_joinkey)
-                      END AS nearest_rad_flowtimeday_permid
-                     ,MIN(bb.network_flowtimeday) AS nearest_rad_network_flowtimeda
-                     FROM
-                     tmp_rad_points bb
-                     WHERE
-                     bb.eventtype  = int_wqp_eventtype
-                     GROUP BY
-                     bb.source_joinkey
-                  ) b
+                  ' || str_owld || '_src_p a
+                  JOIN
+                  tmp_rad_points b
                   ON
-                  a.source_joinkey = b.source_joinkey;
-             
-                  GET DIAGNOSTICS out_sfid_found_count = ROW_COUNT;
+                  a.' || str_joinkey_fix || ' = b.' || str_joinkey_fix || '
+                  ON CONFLICT DO NOTHING
+               ' USING
+               int_owld;
+
+               GET DIAGNOSTICS int_count = ROW_COUNT;
+               
+               IF out_src_found_count IS NULL
+               OR out_src_found_count = 0
+               THEN
+                  out_src_found_count := int_count;
+                  
+               ELSE
+                  out_src_found_count := out_src_found_count + int_count;
                   
                END IF;
-               
+
             END IF;
             
+            EXECUTE '
+               INSERT INTO tmp_sfid_found(
+                   eventtype
+                  ,source_originator
+                  ,source_featureid
+                  ,source_featureid2
+                  ,source_series
+                  ,source_subdivision
+                  ,source_joinkey
+                  ,start_date
+                  ,end_date
+                  ,sfiddetailurl
+                  ,rad_event_count
+                  ,nearest_rad_distancekm_permid
+                  ,nearest_rad_network_distancekm
+                  ,nearest_rad_flowtimeday_permid
+                  ,nearest_rad_network_flowtimeday
+               )
+               SELECT
+                $1
+               ,a.source_originator
+               ,a.source_featureid
+               ,a.source_featureid2
+               ,a.source_series
+               ,a.source_subdivision
+               ,a.source_joinkey
+               ,a.start_date
+               ,a.end_date
+               ,a.sfiddetailurl
+               ,b.rad_event_count
+               ,b.nearest_rad_distancekm_permid
+               ,b.nearest_rad_network_distancekm
+               ,b.nearest_rad_flowtimeday_permid
+               ,b.nearest_rad_network_flowtimeda
+               FROM
+               ' || str_owld || '_sfid a
+               JOIN (
+                  /* needs better conversion from oracle */
+                  SELECT
+                   bb.source_joinkey
+                  ,COUNT(*) AS rad_event_count
+                  ,MIN(bb.permid_joinkey)      AS nearest_rad_distancekm_permid
+                  ,MIN(bb.network_distancekm)  AS nearest_rad_network_distancekm
+                  ,CASE
+                   WHEN MIN(bb.network_flowtimeday) IS NULL
+                   THEN
+                     NULL
+                   ELSE
+                     MIN(bb.permid_joinkey)
+                   END AS nearest_rad_flowtimeday_permid
+                  ,MIN(bb.network_flowtimeday) AS nearest_rad_network_flowtimeda
+                  FROM
+                  tmp_rad_points bb
+                  WHERE
+                  bb.eventtype = $2
+                  GROUP BY
+                  bb.source_joinkey
+               ) b
+               ON
+               a.source_joinkey = b.source_joinkey
+            ' USING
+             int_owld
+            ,int_owld;
+                
+            GET DIAGNOSTICS int_count = ROW_COUNT;
+       
+            IF out_sfid_found_count IS NULL
+            OR out_sfid_found_count = 0
+            THEN
+               out_sfid_found_count := int_count;
+               
+            ELSE
+               out_sfid_found_count := out_sfid_found_count + int_count;
+            
+            END IF;
+            
+         --##################################################################--
+         ELSIF str_search_precision IN ('CATCHMENT') 
+         AND boo_catchment_okay
+         THEN
+            -------------------------------------------------------------------
+            -------------------------------------------------------------------
+            EXECUTE '
+               INSERT INTO tmp_cip_found(
+                   eventtype
+                  ,cip_joinkey
+                  ,permid_joinkey
+                  ,source_originator
+                  ,source_featureid
+                  ,source_featureid2
+                  ,source_series
+                  ,source_subdivision
+                  ,source_joinkey
+                  ,start_date
+                  ,end_date
+                  ,cat_joinkey
+                  ,catchmentstatecode
+                  ,nhdplusid
+                  ,istribal
+                  ,istribal_areasqkm
+                  ,catchmentresolution
+                  ,catchmentareasqkm
+                  ,xwalk_huc12
+                  ,xwalk_method
+                  ,xwalk_huc12_version
+                  ,isnavigable
+                  ,hasvaa
+                  ,issink
+                  ,isheadwater
+                  ,iscoastal
+                  ,isocean
+                  ,isalaskan
+                  ,h3hexagonaddr
+                  ,network_distancekm
+                  ,network_flowtimeday
+               )
+               SELECT
+                $1
+               ,a.cip_joinkey
+               ,a.permid_joinkey
+               ,a.source_originator
+               ,a.source_featureid
+               ,a.source_featureid2
+               ,a.source_series
+               ,a.source_subdivision
+               ,a.source_joinkey
+               ,a.start_date
+               ,a.end_date
+               ,a.cat_joinkey
+               ,a.catchmentstatecode
+               ,a.nhdplusid
+               ,a.istribal
+               ,a.istribal_areasqkm
+               ,a.catchmentresolution
+               ,a.catchmentareasqkm
+               ,a.xwalk_huc12
+               ,a.xwalk_method
+               ,a.xwalk_huc12_version
+               ,a.isnavigable
+               ,a.hasvaa
+               ,a.issink
+               ,a.isheadwater
+               ,a.iscoastal
+               ,a.isocean
+               ,a.isalaskan
+               ,a.h3hexagonaddr
+               ,b.network_distancekm
+               ,b.network_flowtimeday
+               FROM
+               ' || str_owld || '_cip a
+               JOIN (
+                  SELECT
+                   bb.nhdplusid
+                  ,MIN(bb.network_distancekm)  AS network_distancekm
+                  ,MIN(bb.network_flowtimeday) AS network_flowtimeday
+                  FROM 
+                  tmp_navigation_results bb
+                  GROUP BY
+                  bb.nhdplusid
+               ) b
+               ON
+               b.nhdplusid = a.nhdplusid
+               WHERE
+                   a.catchmentresolution = $2
+               AND ($3 IS NULL OR a.permid_joinkey != $4)
+               AND ($5 IS NULL OR a.permid_joinkey != $6);
+            ' USING
+             int_owld
+            ,str_resolution_abbrev
+            ,str_remove_start_permid
+            ,str_remove_start_permid
+            ,str_remove_stop_permid
+            ,str_remove_stop_permid;
+            
+            GET DIAGNOSTICS int_count = ROW_COUNT;
+
+            IF out_cip_found_count IS NULL
+            OR out_cip_found_count = 0
+            THEN
+               out_cip_found_count := int_count;
+               
+            ELSE
+               out_cip_found_count := out_cip_found_count + int_count;
+            
+            END IF;
+
+            -------------------------------------------------------------------
+            -------------------------------------------------------------------
+            IF p_return_linked_data_source
+            THEN
+               ----------------------------------------------------------------
+               EXECUTE '
+                  INSERT INTO tmp_src_points(
+                      eventtype
+                     ,permid_joinkey
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,start_date
+                     ,end_date
+                     ,featuredetailurl
+                     ,orderingkey
+                     ,shape
+                  )
+                  SELECT
+                   $1
+                  ,a.permid_joinkey
+                  ,a.source_originator
+                  ,a.source_featureid
+                  ,a.source_featureid2
+                  ,a.source_series
+                  ,a.source_subdivision
+                  ,a.source_joinkey
+                  ,a.start_date
+                  ,a.end_date
+                  ,a.featuredetailurl
+                  ,b.network_distancekm
+                  ,a.shape
+                  FROM
+                  ' || str_owld || '_src_p a
+                  JOIN (
+                     SELECT
+                      bb.' || str_joinkey_fix || '
+                     ,MIN(bb.network_distancekm) AS network_distancekm
+                     FROM
+                     tmp_cip_found bb
+                     GROUP BY
+                     bb.' || str_joinkey_fix || '
+                  ) b
+                  ON
+                  a.' || str_joinkey_fix || ' = b.' || str_joinkey_fix || '
+                  ON CONFLICT DO NOTHING
+               ' USING
+               int_owld;
+               
+               GET DIAGNOSTICS int_count = ROW_COUNT;
+               
+               IF out_src_found_count IS NULL
+               OR out_src_found_count = 0
+               THEN
+                  out_src_found_count := int_count;
+                  
+               ELSE
+                  out_src_found_count := out_src_found_count + int_count;
+                  
+               END IF;
+
+               ----------------------------------------------------------------
+               EXECUTE '
+                  INSERT INTO tmp_src_lines(
+                      eventtype
+                     ,permid_joinkey
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,start_date
+                     ,end_date
+                     ,featuredetailurl
+                     ,lengthkm
+                     ,orderingkey
+                     ,shape
+                  )
+                  SELECT
+                   $1
+                  ,a.permid_joinkey
+                  ,a.source_originator
+                  ,a.source_featureid
+                  ,a.source_featureid2
+                  ,a.source_series
+                  ,a.source_subdivision
+                  ,a.source_joinkey
+                  ,a.start_date
+                  ,a.end_date
+                  ,a.featuredetailurl
+                  ,a.lengthkm
+                  ,b.network_distancekm
+                  ,a.shape
+                  FROM
+                  ' || str_owld || '_src_l a
+                  JOIN (
+                     SELECT
+                      bb.' || str_joinkey_fix || '
+                     ,MIN(bb.network_distancekm) AS network_distancekm
+                     FROM
+                     tmp_cip_found bb
+                     GROUP BY
+                     bb.' || str_joinkey_fix || '
+                  ) b
+                  ON
+                  a.' || str_joinkey_fix || ' = b.' || str_joinkey_fix || '
+                  ON CONFLICT DO NOTHING
+               ' USING
+               int_owld;
+               
+               GET DIAGNOSTICS int_count = ROW_COUNT;
+               
+               IF out_src_found_count IS NULL
+               OR out_src_found_count = 0
+               THEN
+                  out_src_found_count := int_count;
+                  
+               ELSE
+                  out_src_found_count := out_src_found_count + int_count;
+                  
+               END IF;
+
+               ----------------------------------------------------------------
+               EXECUTE '
+                  INSERT INTO tmp_src_areas(
+                      eventtype
+                     ,permid_joinkey
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,start_date
+                     ,end_date
+                     ,featuredetailurl
+                     ,areasqkm
+                     ,orderingkey
+                     ,shape
+                  )
+                  SELECT
+                   $1
+                  ,a.permid_joinkey
+                  ,a.source_originator
+                  ,a.source_featureid
+                  ,a.source_featureid2
+                  ,a.source_series
+                  ,a.source_subdivision
+                  ,a.source_joinkey
+                  ,a.start_date
+                  ,a.end_date
+                  ,a.featuredetailurl
+                  ,a.areasqkm
+                  ,b.network_distancekm
+                  ,a.shape
+                  FROM
+                  ' || str_owld || '_src_a a
+                  JOIN (
+                     SELECT
+                      bb.' || str_joinkey_fix || '
+                     ,MIN(bb.network_distancekm) AS network_distancekm
+                     FROM
+                     tmp_cip_found bb
+                     GROUP BY
+                     bb.' || str_joinkey_fix || '
+                  ) b
+                  ON
+                  a.' || str_joinkey_fix || ' = b.' || str_joinkey_fix || '
+                  ON CONFLICT DO NOTHING
+               ' USING
+               int_owld;
+
+               GET DIAGNOSTICS int_count = ROW_COUNT;
+               
+               IF out_src_found_count IS NULL
+               OR out_src_found_count = 0
+               THEN
+                  out_src_found_count := int_count;
+                  
+               ELSE
+                  out_src_found_count := out_src_found_count + int_count;
+                  
+               END IF;               
+
+            END IF;
+            
+            -------------------------------------------------------------------
+            -------------------------------------------------------------------
+            EXECUTE '
+               INSERT INTO tmp_sfid_found(
+                   eventtype
+                  ,source_originator
+                  ,source_featureid
+                  ,source_featureid2
+                  ,source_series
+                  ,source_subdivision
+                  ,source_joinkey
+                  ,start_date
+                  ,end_date
+                  ,sfiddetailurl
+                  ,src_cat_joinkey_count
+                  ,nearest_cip_distancekm_permid
+                  ,nearest_cip_network_distancekm
+                  ,nearest_cip_flowtimeday_permid
+                  ,nearest_cip_network_flowtimeday
+               )
+               SELECT
+                $1
+               ,a.source_originator
+               ,a.source_featureid
+               ,a.source_featureid2
+               ,a.source_series
+               ,a.source_subdivision
+               ,a.source_joinkey
+               ,a.start_date
+               ,a.end_date
+               ,a.sfiddetailurl
+               ,b.src_cat_joinkey_count
+               ,b.nearest_cip_distancekm_permid
+               ,b.nearest_cip_network_distancekm
+               ,b.nearest_cip_flowtimeday_permid
+               ,b.nearest_cip_network_flowtimeday
+               FROM
+               ' || str_owld || '_sfid a
+               JOIN (
+                  SELECT
+                   bb.source_joinkey
+                  ,COUNT(*) AS src_cat_joinkey_count
+                  ,MIN(bb.permid_joinkey)      AS nearest_cip_distancekm_permid
+                  ,MIN(bb.network_distancekm)  AS nearest_cip_network_distancekm
+                  ,CASE
+                   WHEN MIN(bb.network_flowtimeday) IS NULL
+                   THEN
+                     NULL
+                   ELSE
+                     MIN(bb.permid_joinkey)
+                   END AS nearest_cip_flowtimeday_permid
+                  ,MIN(bb.network_flowtimeday) AS nearest_cip_network_flowtimeday
+                  FROM
+                  tmp_cip_found bb
+                  WHERE
+                  bb.eventtype = $2
+                  GROUP BY
+                  bb.source_joinkey
+               ) b
+               ON
+               a.source_joinkey = b.source_joinkey
+            ' USING
+             int_owld
+            ,int_owld;
+                
+            GET DIAGNOSTICS int_count = ROW_COUNT;
+       
+            IF out_sfid_found_count IS NULL
+            OR out_sfid_found_count = 0
+            THEN
+               out_sfid_found_count := int_count;
+               
+            ELSE
+               out_sfid_found_count := out_sfid_found_count + int_count;
+            
+            END IF;
+      
          END IF;
    
       END LOOP;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   IF NOT p_return_linked_data_rad
+   THEN
+      out_rad_found_count := NULL;
       
    END IF;
 
