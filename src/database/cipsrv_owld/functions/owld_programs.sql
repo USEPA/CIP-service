@@ -27,6 +27,7 @@ DECLARE
    rec         RECORD;
    rec2        RECORD;
    int_counter INTEGER;
+   
 BEGIN
 
    ----------------------------------------------------------------------------

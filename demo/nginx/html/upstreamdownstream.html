@@ -163,11 +163,11 @@
                    </td>
                  </tr>
                  <tr>
-                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Cat JoinKey: 
-                     <input name="pStartCatJoinKey" type="text" class="text" id="pStartCatJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start CIP JoinKey: 
+                     <input name="pStartCIPJoinKey" type="text" class="text" id="pStartCIPJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
-                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Cat JoinKey: 
-                     <input name="pStopCatJoinKey" type="text" class="text" id="pStopCatJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop CIP JoinKey: 
+                     <input name="pStopCIPJoinKey" type="text" class="text" id="pStopCIPJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
@@ -365,13 +365,19 @@
             } else {
                prj = 'ERR';
                console.log(cntobj.features[0].id);
-            }            
-            cnthtml = '<TABLE>'
-                    + '<TR><TD>EventType: ' + prj + '</TD></TR>'
-                    + '<TR><TD>Source Originator: ' + cntobj.features[0].properties.source_originator + '</TD></TR>'
-                    + '<TR><TD>Source FeatureID: '  + cntobj.features[0].properties.source_featureid + '</TD></TR>'
-                    + '<TR><TD>Source FeatureID2: ' + dzfn(cntobj.features[0].properties.source_featureid2) + '</TD></TR>'
-                    + '</TABLE>';
+            }
+            var search_type = get_select_values(document.getElementById("p_search_type"));
+            cnthtml  = '<TABLE>'
+                     + '<TR><TD>EventType: ' + prj + '</TD></TR>'
+                     + '<TR><TD>Source Originator: ' + cntobj.features[0].properties.source_originator + '</TD></TR>'
+                     + '<TR><TD>Source FeatureID: '  + cntobj.features[0].properties.source_featureid + '</TD></TR>'
+                     + '<TR><TD>Source FeatureID2: ' + dzfn(cntobj.features[0].properties.source_featureid2) + '</TD></TR>'
+                     + '<TR><TD>'
+                     + '<input type="button" onclick="add_to_start(\''  + prj + '\',\''  + cntobj.features[0].properties.source_joinkey + '\',\''  + cntobj.features[0].properties.permid_joinkey + '\',\''  + cntobj.features[0].properties.source_featureid + '\');" value="Add to Start" id="dz_add_start" />&nbsp;&nbsp;&nbsp;';
+            if (search_type == "PP" || search_type == "PPALL") {         
+               cnthtml += '<input type="button" onclick="add_to_stop(\''  + prj + '\',\''  + cntobj.features[0].properties.source_joinkey + '\',\''  + cntobj.features[0].properties.permid_joinkey + '\',\''  + cntobj.features[0].properties.source_featureid + '\');"  value="Add to Stop" id="dz_add_stop" />'
+            }       
+            cnthtml += '</TD></TR></TABLE>';
          }
          
          L.popup({maxWidth: 800})
@@ -766,8 +772,9 @@
             ,"start_end_date"               : document.getElementById("pStartEndDate").value
             ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
             ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
-            ,"start_cat_joinkey"            : document.getElementById("pStartCatJoinKey").value
+            ,"start_cip_joinkey"            : document.getElementById("pStartCIPJoinKey").value
             ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
+            ,"start_push_rad_for_permid"    : true
             
             ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
             ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
@@ -783,8 +790,9 @@
             ,"stop_end_date"                : document.getElementById("pStopEndDate").value
             ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
             ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
-            ,"stop_cat_joinkey"             : document.getElementById("pStopCatJoinKey").value
+            ,"stop_cip_joinkey"             : document.getElementById("pStopCIPJoinKey").value
             ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
+            ,"stop_push_rad_for_permid"     : true
             
             ,"max_distancekm"               : maxdistkm
             ,"max_flowtimeday"              : maxtimeday
@@ -1077,12 +1085,29 @@
       } else if (response == null) {
          document.getElementById("output").innerHTML = "<P>No response from service.</P>";
          return false;
-      } else if (response.return_code != 0) {
+      } 
+      
+      if ( response.start_nhdplusid !== null ) {
+         document.getElementById("pStartNHDPlusID").value = response.start_nhdplusid;
+      }
+      if ( response.start_measure   !== null ) {
+         document.getElementById("pStartMeasure").value   = response.start_measure;
+      }
+      
+      if ( response.stop_nhdplusid  !== null ) {
+         document.getElementById("pStopNHDPlusID").value  = response.stop_nhdplusid;
+      }
+      if ( response.stop_measure    !== null ) {
+         document.getElementById("pStopMeasure").value    = response.stop_measure;
+      }
+      
+      if (response.return_code != 0) {
          document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
          return false;
       } else if (response.linked_data_sfid_count == 0) {
          document.getElementById("output").innerHTML = "<P>No linked data found.</P>";
       }
+
       boo_zoom = false;
       
       var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
@@ -1580,7 +1605,7 @@
             ,"start_end_date"               : document.getElementById("pStartEndDate").value
             ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
             ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
-            ,"start_cat_joinkey"            : document.getElementById("pStartCatJoinKey").value
+            ,"start_cip_joinkey"            : document.getElementById("pStartCIPJoinKey").value
             ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
             
             ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
@@ -1597,7 +1622,7 @@
             ,"stop_end_date"                : document.getElementById("pStopEndDate").value
             ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
             ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
-            ,"stop_cat_joinkey"             : document.getElementById("pStopCatJoinKey").value
+            ,"stop_cip_joinkey"             : document.getElementById("pStopCIPJoinKey").value
             ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
             
             ,"max_distancekm"               : maxdistkm
@@ -1686,7 +1711,7 @@
          ,"start_end_date"               : document.getElementById("pStartEndDate").value
          ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
          ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
-         ,"start_cat_joinkey"            : document.getElementById("pStartCatJoinKey").value
+         ,"start_cip_joinkey"            : document.getElementById("pStartCIPJoinKey").value
          ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
          
          ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
@@ -1703,7 +1728,7 @@
          ,"stop_end_date"                : document.getElementById("pStopEndDate").value
          ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
          ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
-         ,"stop_cat_joinkey"             : document.getElementById("pStopCatJoinKey").value
+         ,"stop_cip_joinkey"             : document.getElementById("pStopCIPJoinKey").value
          ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
          
          ,"max_distancekm"               : maxdistkm
@@ -1731,6 +1756,29 @@
       
    }
    
+   ////////////////////////////////////////////////////////////////////////////
+   function add_to_start(prg,source_joinkey,permid_joinkey,source_featureid) {
+      blank_pt1();
+      blank_start_nhdplusids();
+      document.getElementById("pStartSourceFeatureID").value = source_featureid;
+      document.getElementById("pStartPermIDJoinKey").value   = permid_joinkey;
+      document.getElementById("pStartSourceJoinKey").value   = source_joinkey;
+      document.getElementById("p_start_linked_data_program").value = prj;
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
+   function add_to_stop(prg,source_joinkey,permid_joinkey,source_featureid) {
+      blank_pt2();
+      blank_stop_nhdplusids();
+      document.getElementById("pStopSourceFeatureID").value = source_featureid;
+      document.getElementById("pStopPermIDJoinKey").value   = permid_joinkey;
+      document.getElementById("pStopSourceJoinKey").value   = source_joinkey;
+      document.getElementById("p_stop_linked_data_program").value = prj;
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
    function dz_reset() {
       document.getElementById("output").innerHTML = "";
       snap_path.clearLayers();
@@ -1890,7 +1938,7 @@
       document.getElementById("pStartEndDate").value = "";
       document.getElementById("pStartPermIDJoinKey").value = "";
       document.getElementById("pStartSourceJoinKey").value = "";
-      document.getElementById("pStartCatJoinKey").value = "";
+      document.getElementById("pStartCIPJoinKey").value = "";
       document.getElementById("p_start_linked_data_program").value = "";
          
    }
@@ -1910,7 +1958,7 @@
       document.getElementById("pStopEndDate").value = "";
       document.getElementById("pStopPermIDJoinKey").value = "";
       document.getElementById("pStopSourceJoinKey").value = "";
-      document.getElementById("pStopCatJoinKey").value = "";
+      document.getElementById("pStopCIPJoinKey").value = "";
       document.getElementById("p_stop_linked_data_program").value = "";
    }
 
@@ -1933,7 +1981,7 @@
       var sed1 = document.getElementById("pStartEndDate").value;
       var spj1 = document.getElementById("pStartPermIDJoinKey").value;
       var ssj1 = document.getElementById("pStartSourceJoinKey").value;
-      var scj1 = document.getElementById("pStartCatJoinKey").value;
+      var scj1 = document.getElementById("pStartCIPJoinKey").value;
       var sld1 = document.getElementById("p_start_linked_data_program").value;
 
       var com2 = document.getElementById("pStopNHDPlusID").value;
@@ -1949,7 +1997,7 @@
       var sed2 = document.getElementById("pStopEndDate").value;
       var spj2 = document.getElementById("pStopPermIDJoinKey").value;
       var ssj2 = document.getElementById("pStopSourceJoinKey").value;
-      var scj2 = document.getElementById("pStopCatJoinKey").value;
+      var scj2 = document.getElementById("pStopCIPJoinKey").value;
       var sld2 = document.getElementById("p_stop_linked_data_program").value;
 
       if (search_type != "PP" && search_type != "PPALL" && pt1 !== null && pt1 !== "") {
@@ -1978,24 +2026,33 @@
                ) {
                   document.getElementById("dz_run_service").disabled = false;
                } else {
-                  document.getElementById("dz_run_service").disabled = true;
+                  if ( spj1 !== null && spj1 !== "" && spj2 !== null && spj2 !== "" ) {
+                     document.getElementById("dz_run_service").disabled = false;
+                  } else if ( ssj1 !== null && ssj1 !== "" && ssj2 !== null && ssj2 !== "" ) {
+                     document.getElementById("dz_run_service").disabled = false;
+                  } else {
+                     document.getElementById("dz_run_service").disabled = true;
+                  }
                }
             }
          } else {
-         if (
-           (com1 !== null && com1 !== "") ||
-           (per1 !== null && per1 !== "") ||
-           (rch1 !== null && rch1 !== "") ||
-           (hyd1 !== null && hyd1 !== "") 
-         ) {
-           document.getElementById("dz_run_service").disabled = false;
-         } else {
-           document.getElementById("dz_run_service").disabled = true;
+            if (
+              (com1 !== null && com1 !== "") ||
+              (per1 !== null && per1 !== "") ||
+              (rch1 !== null && rch1 !== "") ||
+              (hyd1 !== null && hyd1 !== "") ||
+              (spj1 !== null && spj1 !== "") ||
+              (ssj1 !== null && ssj1 !== "")
+            ) {
+              document.getElementById("dz_run_service").disabled = false;
+            } else {
+              document.getElementById("dz_run_service").disabled = true;
+            }
          }
-       }
-     }
+      }
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function update_form() {
       var search_type = get_select_values(document.getElementById("p_search_type"));
 
@@ -2013,7 +2070,7 @@
          document.getElementById("pStopEndDate").disabled = false;
          document.getElementById("pStopPermIDJoinKey").disabled = false;
          document.getElementById("pStopSourceJoinKey").disabled = false;
-         document.getElementById("pStopCatJoinKey").disabled = false;
+         document.getElementById("pStopCIPJoinKey").disabled = false;
          document.getElementById("p_stop_linked_data_program").disabled = false;
          
          document.getElementById("pPoint2").disabled = false;
@@ -2032,7 +2089,7 @@
          document.getElementById("pStopEndDate").disabled = true;
          document.getElementById("pStopPermIDJoinKey").disabled = true;
          document.getElementById("pStopSourceJoinKey").disabled = true;
-         document.getElementById("pStopCatJoinKey").disabled = true;
+         document.getElementById("pStopCIPJoinKey").disabled = true;
          document.getElementById("p_stop_linked_data_program").disabled = true;
          
          document.getElementById("pPoint2").disabled = true;
@@ -2040,6 +2097,7 @@
       }
    }
 
+   ////////////////////////////////////////////////////////////////////////////
    function get_url_parameter(param_key) {
       var page_url = window.location.search.substring(1);
       
@@ -2053,6 +2111,7 @@
       return null;
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function updatept(geojson) {
       if (geojson == null || geojson == undefined || geojson == "") {
          document.getElementById("dz_run_service").disabled = true;
@@ -2073,6 +2132,7 @@
       }
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function updatept2(geojson) {
       if (geojson == null || geojson == undefined || geojson == "") {
          document.getElementById("dz_run_service").disabled = true;
@@ -2093,6 +2153,7 @@
       }
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function build_api() {
       
       if (

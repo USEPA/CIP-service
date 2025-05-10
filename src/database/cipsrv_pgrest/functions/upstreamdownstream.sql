@@ -34,9 +34,10 @@ DECLARE
    dat_start_end_date                DATE;
    str_start_permid_joinkey          VARCHAR;
    str_start_source_joinkey          VARCHAR;
-   str_start_cat_joinkey             VARCHAR;
+   str_start_cip_joinkey             VARCHAR;
    str_start_linked_data_program     VARCHAR;
    str_start_search_precision        VARCHAR;
+   boo_start_push_rad_for_permid     BOOLEAN;
    
    int_stop_nhdplusid                BIGINT;
    str_stop_permanent_identifier     VARCHAR(40);
@@ -51,9 +52,10 @@ DECLARE
    dat_stop_end_date                 DATE;
    str_stop_permid_joinkey           VARCHAR;
    str_stop_source_joinkey           VARCHAR;
-   str_stop_cat_joinkey              VARCHAR;
+   str_stop_cip_joinkey              VARCHAR;
    str_stop_linked_data_program      VARCHAR;
    str_stop_search_precision         VARCHAR;
+   boo_stop_push_rad_for_permid      BOOLEAN;
    
    num_max_distancekm                NUMERIC;
    num_max_flowtimeday               NUMERIC;
@@ -133,6 +135,10 @@ BEGIN
          ,'linked_data_reached_areas' , NULL
          ,'linked_data_reached_count' , NULL
          ,'linked_data_attributes'    , NULL
+         ,'start_nhdplusid'           , NULL
+         ,'start_measure'             , NULL
+         ,'stop_nhdplusid'            , NULL
+         ,'stop_measure'              , NULL
          ,'return_code'               , -100
          ,'status_message'            , 'nhdplus version parameter is required'
       );
@@ -251,11 +257,11 @@ BEGIN
       
    END IF;
    
-   IF JSONB_PATH_EXISTS(json_input,'$.start_cat_joinkey')
-   AND json_input->>'start_cat_joinkey' IS NOT NULL
-   AND json_input->>'start_cat_joinkey' != ''
+   IF JSONB_PATH_EXISTS(json_input,'$.start_cip_joinkey')
+   AND json_input->>'start_cip_joinkey' IS NOT NULL
+   AND json_input->>'start_cip_joinkey' != ''
    THEN
-      str_start_cat_joinkey := json_input->>'start_cat_joinkey';
+      str_start_cip_joinkey := json_input->>'start_cip_joinkey';
       
    END IF;
    
@@ -272,6 +278,14 @@ BEGIN
    AND json_input->>'start_search_precision' != ''
    THEN
       str_start_search_precision := json_input->>'start_search_precision';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.start_push_rad_for_permid')
+   AND json_input->>'start_push_rad_for_permid' IS NOT NULL
+   AND json_input->>'start_push_rad_for_permid' != ''
+   THEN
+      boo_start_push_rad_for_permid := (json_input->>'start_push_rad_for_permid')::BOOLEAN;
       
    END IF;
 
@@ -379,11 +393,11 @@ BEGIN
       
    END IF;
    
-   IF JSONB_PATH_EXISTS(json_input,'$.stop_cat_joinkey')
-   AND json_input->>'stop_cat_joinkey' IS NOT NULL
-   AND json_input->>'stop_cat_joinkey' != ''
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_cip_joinkey')
+   AND json_input->>'stop_cip_joinkey' IS NOT NULL
+   AND json_input->>'stop_cip_joinkey' != ''
    THEN
-      str_stop_cat_joinkey := json_input->>'stop_cat_joinkey';
+      str_stop_cip_joinkey := json_input->>'stop_cip_joinkey';
       
    END IF;
    
@@ -400,6 +414,14 @@ BEGIN
    AND json_input->>'stop_search_precision' != ''
    THEN
       str_stop_search_precision := json_input->>'stop_search_precision';
+      
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.stop_push_rad_for_permid')
+   AND json_input->>'stop_push_rad_for_permid' IS NOT NULL
+   AND json_input->>'stop_push_rad_for_permid' != ''
+   THEN
+      boo_stop_push_rad_for_permid := (json_input->>'stop_push_rad_for_permid')::BOOLEAN;
       
    END IF;
    
@@ -562,9 +584,10 @@ BEGIN
       ,p_start_end_date                := dat_start_end_date
       ,p_start_permid_joinkey          := str_start_permid_joinkey
       ,p_start_source_joinkey          := str_start_source_joinkey
-      ,p_start_cat_joinkey             := str_start_cat_joinkey
+      ,p_start_cip_joinkey             := str_start_cip_joinkey
       ,p_start_linked_data_program     := str_start_linked_data_program
       ,p_start_search_precision        := str_start_search_precision
+      ,p_start_push_rad_for_permid     := boo_start_push_rad_for_permid
       
       ,p_stop_nhdplusid                := int_stop_nhdplusid
       ,p_stop_permanent_identifier     := str_stop_permanent_identifier
@@ -579,9 +602,10 @@ BEGIN
       ,p_stop_end_date                 := dat_stop_end_date
       ,p_stop_permid_joinkey           := str_stop_permid_joinkey
       ,p_stop_source_joinkey           := str_stop_source_joinkey
-      ,p_stop_cat_joinkey              := str_stop_cat_joinkey
+      ,p_stop_cip_joinkey              := str_stop_cip_joinkey
       ,p_stop_linked_data_program      := str_stop_linked_data_program
       ,p_stop_search_precision         := str_stop_search_precision
+      ,p_stop_push_rad_for_permid      := boo_stop_push_rad_for_permid
       
       ,p_max_distancekm                := num_max_distancekm
       ,p_max_flowtimeday               := num_max_flowtimeday
@@ -639,6 +663,10 @@ BEGIN
          ,'linked_data_reached_areas' , NULL
          ,'linked_data_reached_count' , NULL
          ,'linked_data_attributes'    , NULL
+         ,'start_nhdplusid'           , int_start_nhdplusid
+         ,'start_measure'             , num_start_measure
+         ,'stop_nhdplusid'            , int_stop_nhdplusid
+         ,'stop_measure'              , num_stop_measure
          ,'return_code'               , int_return_code
          ,'status_message'            , str_status_message
       );
@@ -1155,6 +1183,10 @@ BEGIN
       ,'linked_data_reached_areas' , NULL
       ,'linked_data_reached_count' , int_rad_found_count
       ,'linked_data_attributes'    , NULL
+      ,'start_nhdplusid'           , int_start_nhdplusid
+      ,'start_measure'             , num_start_measure
+      ,'stop_nhdplusid'            , int_stop_nhdplusid
+      ,'stop_measure'              , num_stop_measure
       ,'return_code'               , int_return_code
       ,'status_message'            , str_status_message
    );

@@ -26,9 +26,10 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,IN  p_start_end_date                DATE
    ,IN  p_start_permid_joinkey          VARCHAR
    ,IN  p_start_source_joinkey          VARCHAR
-   ,IN  p_start_cat_joinkey             VARCHAR
+   ,IN  p_start_cip_joinkey             VARCHAR
    ,IN  p_start_linked_data_program     VARCHAR
    ,IN  p_start_search_precision        VARCHAR
+   ,IN  p_start_push_rad_for_permid     BOOLEAN
       
    ,IN  p_stop_nhdplusid                BIGINT
    ,IN  p_stop_permanent_identifier     VARCHAR
@@ -43,9 +44,10 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,IN  p_stop_end_date                 DATE
    ,IN  p_stop_permid_joinkey           VARCHAR
    ,IN  p_stop_source_joinkey           VARCHAR
-   ,IN  p_stop_cat_joinkey              VARCHAR
+   ,IN  p_stop_cip_joinkey              VARCHAR
    ,IN  p_stop_linked_data_program      VARCHAR
    ,IN  p_stop_search_precision         VARCHAR
+   ,IN  p_stop_push_rad_for_permid      BOOLEAN
    
    ,IN  p_max_distancekm                NUMERIC
    ,IN  p_max_flowtimeday               NUMERIC
@@ -108,9 +110,10 @@ DECLARE
    str_start_source_subdivision   VARCHAR;
    dat_start_start_date           DATE;
    dat_start_end_date             DATE;
+   str_start_nhdplus_version      VARCHAR;
    str_start_source_joinkey       VARCHAR;
    str_start_permid_joinkey       VARCHAR;
-   str_start_cat_joinkey          VARCHAR;
+   str_start_cip_joinkey          VARCHAR;
    str_start_search_precision     VARCHAR := p_start_search_precision;
    
    int_stop_nhdplusid             BIGINT  := p_stop_nhdplusid;
@@ -127,9 +130,10 @@ DECLARE
    str_stop_source_subdivision    VARCHAR;
    dat_stop_start_date            DATE;
    dat_stop_end_date              DATE;
+   str_stop_nhdplus_version       VARCHAR;
    str_stop_source_joinkey        VARCHAR;
    str_stop_permid_joinkey        VARCHAR;
-   str_stop_cat_joinkey           VARCHAR;
+   str_stop_cip_joinkey           VARCHAR;
    str_stop_search_precision      VARCHAR := p_stop_search_precision;
    
    str_search_precision           VARCHAR := UPPER(p_search_precision);   
@@ -161,9 +165,18 @@ BEGIN
    out_return_code    := 0;
    
    IF str_nhdplus_version IS NULL
+   OR str_nhdplus_version IN ('MR','nhdplus_m')
    THEN
-      str_nhdplus_version := 'nhdplus_m';
+      str_nhdplus_version := 'MR';
       
+   ELSIF str_nhdplus_version IN ('HR','nhdplus_h')
+   THEN
+      str_nhdplus_version := 'HR';
+      
+   ELSE
+      out_return_code    := -10;
+      out_status_message := 'Invalid resolution value ' || str_nhdplus_version || '.';
+   
    END IF;
    
    IF str_search_type IS NULL
@@ -207,7 +220,7 @@ BEGIN
          ,p_linked_data_program           := p_start_linked_data_program
          ,p_source_joinkey                := p_start_source_joinkey
          ,p_permid_joinkey                := p_start_permid_joinkey
-         ,p_cat_joinkey                   := p_start_cat_joinkey
+         ,p_cip_joinkey                   := p_start_cip_joinkey
          ,p_search_direction              := str_search_type
          ,p_reference_catchment_nhdplusid := NULL
          ,p_reference_reachcode           := NULL
@@ -217,11 +230,37 @@ BEGIN
          ,p_reference_point               := NULL
          ,p_search_precision              := str_start_search_precision
          ,p_known_region                  := str_known_region
+         ,p_push_rad_for_permid           := p_start_push_rad_for_permid
       );
       int_start_catnhdplusid         := rec.out_catchment_nhdplusid;
       str_start_permanent_identifier := rec.out_permanent_identifier;
       str_start_reachcode            := rec.out_reachcode;
-      int_start_nhdplusid            := rec.out_flowline_nhdplusid;
+      str_start_nhdplus_version      := rec.out_nhdplus_version;
+      
+      IF rec.out_flowline_nhdplusid IS NOT NULL
+      THEN
+         int_start_nhdplusid         := rec.out_flowline_nhdplusid;
+         
+      ELSIF rec.out_catchment_nhdplusid IS NOT NULL
+      THEN
+         int_start_nhdplusid         := rec.out_catchment_nhdplusid;
+      
+      ELSE
+         IF rec.out_return_code != 0
+         THEN
+            out_return_code          := rec.out_return_code;
+            out_status_message       := rec.out_status_message;
+     
+         ELSE
+            out_return_code          := -20;
+            out_status_message       := 'Unable to determine network location for start event';
+
+         END IF;
+         
+         RETURN;
+         
+      END IF;
+      
       int_start_hydroseq             := rec.out_hydroseq;
       num_start_measure              := rec.out_measure;
       sdo_start_shape                := rec.out_shape;
@@ -234,7 +273,7 @@ BEGIN
       dat_start_end_date             := rec.out_end_date;
       str_start_source_joinkey       := rec.out_source_joinkey;
       str_start_permid_joinkey       := rec.out_permid_joinkey;
-      str_start_cat_joinkey          := rec.out_cat_joinkey;
+      str_start_cip_joinkey          := rec.out_cip_joinkey;
       out_return_code                := rec.out_return_code;
       out_status_message             := rec.out_status_message;
       
@@ -266,7 +305,7 @@ BEGIN
          ,p_linked_data_program           := p_stop_linked_data_program
          ,p_source_joinkey                := p_stop_source_joinkey
          ,p_permid_joinkey                := p_stop_permid_joinkey
-         ,p_cat_joinkey                   := p_stop_cat_joinkey
+         ,p_cip_joinkey                   := p_stop_cip_joinkey
          ,p_search_direction              := str_search_type
          ,p_reference_catchment_nhdplusid := NULL
          ,p_reference_reachcode           := NULL
@@ -276,11 +315,37 @@ BEGIN
          ,p_reference_point               := NULL
          ,p_search_precision              := str_stop_search_precision
          ,p_known_region                  := str_known_region
+         ,p_push_rad_for_permid           := TRUE
       );
       int_stop_catnhdplusid          := rec.out_catchment_nhdplusid;
       str_stop_permanent_identifier  := rec.out_permanent_identifier;
       str_stop_reachcode             := rec.out_reachcode;
-      int_stop_nhdplusid             := rec.out_flowline_nhdplusid;
+      str_stop_nhdplus_version       := rec.out_nhdplus_version;
+      
+      IF rec.out_flowline_nhdplusid IS NOT NULL
+      THEN
+         int_stop_nhdplusid          := rec.out_flowline_nhdplusid;
+         
+      ELSIF rec.out_catchment_nhdplusid IS NOT NULL
+      THEN
+         int_stop_nhdplusid          := rec.out_catchment_nhdplusid;
+      
+      ELSE
+         IF rec.out_return_code != 0
+         THEN
+            out_return_code          := rec.out_return_code;
+            out_status_message       := rec.out_status_message;
+     
+         ELSE
+            out_return_code          := -20;
+            out_status_message       := 'Unable to determine network location for stop event';
+
+         END IF;
+         
+         RETURN;
+         
+      END IF;
+      
       int_stop_hydroseq              := rec.out_hydroseq;
       num_stop_measure               := rec.out_measure;
       sdo_stop_shape                 := rec.out_shape;
@@ -293,7 +358,7 @@ BEGIN
       dat_stop_end_date              := rec.out_end_date;
       str_stop_source_joinkey        := rec.out_source_joinkey;
       str_stop_permid_joinkey        := rec.out_permid_joinkey;
-      str_stop_cat_joinkey           := rec.out_cat_joinkey;
+      str_stop_cip_joinkey           := rec.out_cip_joinkey;
       out_return_code                := rec.out_return_code;
       out_status_message             := rec.out_status_message;
       
@@ -311,11 +376,17 @@ BEGIN
    
    END IF;
    
+   out_start_nhdplusid            := int_start_nhdplusid;
+   out_start_measure              := num_start_measure;
+   out_start_permanent_identifier := str_start_permanent_identifier;
+   out_stop_nhdplusid             := int_stop_nhdplusid;
+   out_stop_measure               := num_stop_measure;
+   
    ----------------------------------------------------------------------------
    -- Step 30
    -- Call the navigation engine
    ----------------------------------------------------------------------------
-   IF str_nhdplus_version = 'nhdplus_m'
+   IF str_nhdplus_version IN ('MR','nhdplus_m')
    THEN
       str_resolution_abbrev := 'MR';
       
@@ -382,7 +453,7 @@ BEGIN
       
       END IF;
       
-   ELSIF str_nhdplus_version = 'nhdplus_h'
+   ELSIF str_nhdplus_version IN ('HR','nhdplus_h')
    THEN
       str_resolution_abbrev := 'HR';
       

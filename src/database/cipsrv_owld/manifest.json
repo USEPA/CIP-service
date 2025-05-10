@@ -22,9 +22,11 @@
           "id": "concatenate"
          ,"output": "cipsrv_owld_deploy.sql"
          ,"includes": [
-             "functions/create_updn_temp_tables.sql"
+             "types/owld_locator_query"
+            ,"functions/create_updn_temp_tables.sql"
             ,"functions/adjust_point_extent.sql"
             ,"functions/owld_programs.sql"
+            ,"functions/owld_programs_ary.sql"
             ,"functions/owld_locator.sql"
             ,"functions/upstreamdownstream.sql"
           ]
