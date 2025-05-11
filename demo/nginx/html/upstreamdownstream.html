@@ -343,41 +343,11 @@
          }
          cnthtml = "";
          if (cntobj.features[0].id.substring(10,28) == 'networknhdflowline' ) {
-            cnthtml = '<TABLE>'
-                    + '<TR><TD>GNIS Name: '   + dzfn(cntobj.features[0].properties.gnis_name) + '</TD></TR>'
-                    + '<TR><TD>NHDPlusID: '   + dzfi(cntobj.features[0].properties.nhdplusid) + '</TD></TR>'
-                    + '<TR><TD>Reach Code: '  + cntobj.features[0].properties.reachcode + '</TD></TR>'
-                    + '<TR><TD>FMeasure: '    + dzf5(cntobj.features[0].properties.frommeas) + '</TD></TR>'
-                    + '<TR><TD>TMeasure: '    + dzf5(cntobj.features[0].properties.tomeas) + '</TD></TR>'
-                    + '<TR><TD>FCODE: '       + dzfi(cntobj.features[0].properties.fcode) + '</TD></TR>'
-                    + '<TR><TD>Length (km): ' + dzf(cntobj.features[0].properties.lengthkm) + '</TD></TR>'
-                    + '<TR><TD>Flowtime (day): ' + dzf(cntobj.features[0].properties.totma) + '</TD></TR>'
-                    + '</TABLE>';
+            cnthtml = popup1(cntobj.features[0]);
+            
          } else if (cntobj.features[0].id.substring(0,5) == 'owld_' ) {
-            if        (cntobj.features[0].id.substring(0,12) == 'owld_attains' ) {
-               prj = 'ATTAINS';
-            } else if (cntobj.features[0].id.substring(0,11) == 'owld_frspub' ) {
-               prj = 'FRSPUB';
-            } else if (cntobj.features[0].id.substring(0,10) == 'owld_npdes' ) {
-               prj = 'NPDES';
-            } else if (cntobj.features[0].id.substring(0,8) == 'owld_wqp' ) {
-               prj = 'WQP';
-            } else {
-               prj = 'ERR';
-               console.log(cntobj.features[0].id);
-            }
-            var search_type = get_select_values(document.getElementById("p_search_type"));
-            cnthtml  = '<TABLE>'
-                     + '<TR><TD>EventType: ' + prj + '</TD></TR>'
-                     + '<TR><TD>Source Originator: ' + cntobj.features[0].properties.source_originator + '</TD></TR>'
-                     + '<TR><TD>Source FeatureID: '  + cntobj.features[0].properties.source_featureid + '</TD></TR>'
-                     + '<TR><TD>Source FeatureID2: ' + dzfn(cntobj.features[0].properties.source_featureid2) + '</TD></TR>'
-                     + '<TR><TD>'
-                     + '<input type="button" onclick="add_to_start(\''  + prj + '\',\''  + cntobj.features[0].properties.source_joinkey + '\',\''  + cntobj.features[0].properties.permid_joinkey + '\',\''  + cntobj.features[0].properties.source_featureid + '\');" value="Add to Start" id="dz_add_start" />&nbsp;&nbsp;&nbsp;';
-            if (search_type == "PP" || search_type == "PPALL") {         
-               cnthtml += '<input type="button" onclick="add_to_stop(\''  + prj + '\',\''  + cntobj.features[0].properties.source_joinkey + '\',\''  + cntobj.features[0].properties.permid_joinkey + '\',\''  + cntobj.features[0].properties.source_featureid + '\');"  value="Add to Stop" id="dz_add_stop" />'
-            }       
-            cnthtml += '</TD></TR></TABLE>';
+            cnthml = popup2(cntobj.features[0],null);
+
          }
          
          L.popup({maxWidth: 800})
@@ -1037,6 +1007,15 @@
                layers: [2]
             });
             lyr_nhdplus_m_flowlines.addTo(map);
+            
+            lyr_nhdplus_m_flowlines.bindPopup(function(error,featureCollection){
+               if (error || featureCollection.features.length === 0) {
+                  return false;
+               } else {
+                  return popup1(featureCollection.features[0]);
+               }
+            });
+            
             layerControl.addOverlay(lyr_nhdplus_m_flowlines,"MR Flowlines");
             
             lyr_nhdplus_h_flowlines = L.esri.dynamicMapLayer({
@@ -1045,6 +1024,15 @@
                layers: [1]
             });
             //lyr_nhdplus_h_flowlines.addTo(map);
+            
+            lyr_nhdplus_h_flowlines.bindPopup(function(error,featureCollection){
+               if (error || featureCollection.features.length === 0) {
+                  return false;
+               } else {
+                  return popup1(featureCollection.features[0]);
+               }
+            });
+            
             layerControl.addOverlay(lyr_nhdplus_h_flowlines,"HR Flowlines");
             
             for (var i = 0; i < ary_programs.length; i++) {
@@ -1053,16 +1041,51 @@
                var lyr = L.esri.dynamicMapLayer({
                   url: gis_server + "/rest/services/owld/" + program + "/MapServer",
                   position: "back",
-                  layers: [0,1,2]
+                  layers: [0,1,2],
+                  prj: ary_programs[i].value
                });
-               lyr.bindPopup(function(error,featureCollection) {
-                  if (error || featureCollection.features.length === 0) {
-                     return false;
-                  } else {
-                     return JSON.stringify(featureCollection.features[0].properties);
-                  }
-               });               
                
+               var func;
+               if (program == 'attains') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'ATTAINS');
+                     }
+                     
+                  }
+               } else if (program == 'frspub') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'FRSPUB');
+                     }
+                     
+                  }
+               } else if (program == 'npdes') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'NPDES');
+                     }
+                     
+                  }
+               } else if (program == 'wqp') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'WQP');
+                     }
+                     
+                  }
+               }
+               
+               lyr.bindPopup(func);            
+               //console.log(lyr);
                lyr_program_hash[ary_programs[i].value] = lyr;
                //lyr.addTo(map);
                layerControl.addOverlay(lyr,"OWLD " + ary_programs[i].value + " Source");
@@ -1471,8 +1494,12 @@
    }
    
    function dzfi(val) {
-      if (val === null) {
+      if (val === undefined || val === null) {
          return "&nbsp;";
+      }
+      
+      if ( typeof val === 'string') {
+         val = parseInt(val);
       }
       
       return val.toFixed(0);
@@ -1480,8 +1507,12 @@
    }
    
    function dzf(val) {
-      if (val === null) {
+      if (val === undefined || val === null) {
          return "&nbsp;";
+      }
+      
+      if ( typeof val === 'string') {
+         val = parseFloat(val);
       }
       
       return val.toFixed(3);
@@ -1489,16 +1520,19 @@
    }
    
    function dzf5(val) {
-      if (val === null) {
+      if (val === undefined || val === null) {
          return "&nbsp;";
       }
       
+      if ( typeof val === 'string') {
+         val = parseFloat(val);
+      }
+         
       return val.toFixed(5);
-      
    }
    
    function dzfn(val) {
-      if (val === null) {
+      if (val === undefined || val === null || val == 'Null') {
          return "&nbsp;";
       }
       
@@ -1507,7 +1541,7 @@
    }
 
    function dzfet(val) {
-      if (val === null) {
+      if (val === undefined || val === null) {
          return "&nbsp;";
       
       } else if ( val == 10015 ) {
@@ -1763,7 +1797,7 @@
       document.getElementById("pStartSourceFeatureID").value = source_featureid;
       document.getElementById("pStartPermIDJoinKey").value   = permid_joinkey;
       document.getElementById("pStartSourceJoinKey").value   = source_joinkey;
-      document.getElementById("p_start_linked_data_program").value = prj;
+      document.getElementById("p_start_linked_data_program").value = prg;
       document.getElementById("dz_run_service").disabled = false;
    }
    
@@ -1774,7 +1808,7 @@
       document.getElementById("pStopSourceFeatureID").value = source_featureid;
       document.getElementById("pStopPermIDJoinKey").value   = permid_joinkey;
       document.getElementById("pStopSourceJoinKey").value   = source_joinkey;
-      document.getElementById("p_stop_linked_data_program").value = prj;
+      document.getElementById("p_stop_linked_data_program").value = prg;
       document.getElementById("dz_run_service").disabled = false;
    }
    
@@ -2151,6 +2185,54 @@
             null;
          } 
       }
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
+   function popup1(feature) {
+      
+      return '<TABLE>'
+        + '<TR><TD>GNIS Name: '   + dzfn(feature.properties.gnis_name) + '</TD></TR>'
+        + '<TR><TD>NHDPlusID: '   + dzfi(feature.properties.nhdplusid) + '</TD></TR>'
+        + '<TR><TD>Reach Code: '  + feature.properties.reachcode + '</TD></TR>'
+        + '<TR><TD>FMeasure: '    + dzf5(feature.properties.frommeas) + '</TD></TR>'
+        + '<TR><TD>TMeasure: '    + dzf5(feature.properties.tomeas) + '</TD></TR>'
+        + '<TR><TD>FCODE: '       + dzfn(feature.properties.fcode) + '</TD></TR>'
+        + '<TR><TD>Length (km): ' + dzf(feature.properties.lengthkm) + '</TD></TR>'
+        + '<TR><TD>Flowtime (day): ' + dzf(feature.properties.totma) + '</TD></TR>'
+        + '</TABLE>';
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
+   function popup2(feature,prj) {
+   
+      if ( prj === null ) {
+         if        (feature.id.substring(0,12) == 'owld_attains' || feature.id == '105672' ) {
+            prj = 'ATTAINS';
+         } else if (feature.id.substring(0,11) == 'owld_frspub' || feature.id == '2467311' ) {
+            prj = 'FRSPUB';
+         } else if (feature.id.substring(0,10) == 'owld_npdes' || feature.id == '150974' ) {
+            prj = 'NPDES';
+         } else if (feature.id.substring(0,8) == 'owld_wqp' || feature.id == '1322934' ) {
+            prj = 'WQP';
+         } else {
+            prj = '&nbsp;';
+            console.log(feature);
+         }
+      }
+      var search_type = get_select_values(document.getElementById("p_search_type"));
+      var cnthtml  = '<TABLE>'
+               + '<TR><TD>EventType: ' + prj + '</TD></TR>'
+               + '<TR><TD>Source Originator: ' + feature.properties.source_originator + '</TD></TR>'
+               + '<TR><TD>Source FeatureID: '  + feature.properties.source_featureid + '</TD></TR>'
+               + '<TR><TD>Source FeatureID2: ' + dzfn(feature.properties.source_featureid2) + '</TD></TR>'
+               + '<TR><TD>'
+               + '<input type="button" onclick="add_to_start(\''  + prj + '\',\''  + feature.properties.source_joinkey + '\',\''  + feature.properties.permid_joinkey + '\',\''  + feature.properties.source_featureid + '\');" value="Add to Start" id="dz_add_start" />&nbsp;&nbsp;&nbsp;';
+      if (search_type == "PP" || search_type == "PPALL") {         
+         cnthtml += '<input type="button" onclick="add_to_stop(\''  + prj + '\',\''  + feature.properties.source_joinkey + '\',\''  + feature.properties.permid_joinkey + '\',\''  + feature.properties.source_featureid + '\');"  value="Add to Stop" id="dz_add_stop" />'
+      }       
+      
+      return cnthtml + '</TD></TR></TABLE>';
+   
    }
    
    ////////////////////////////////////////////////////////////////////////////
