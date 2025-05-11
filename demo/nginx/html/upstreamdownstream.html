@@ -41,26 +41,26 @@
          <div id="righty" style="width: 600px; float: left;">
             <div id="top" style="text-align: center;">
                
-               <h2 style="margin-top:10px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
+               <h2 style="margin-top: 3px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
                <span style="font-family: Arial; font-size: 11px;">Add points to the map or enter GeoJSON text:</span>
                <br/>
-               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 12px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
+               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 11px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
                <br/>
-               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 12px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
+               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 11px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
-               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
+               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 12px; width:170px" onChange="change_resolution();">
                   <option value="nhdplus_m">Medium Resolution</option>
                   <option value="nhdplus_h" SELECTED>High Resolution</option>
                </select>
                <br/>
                <table border="0" align="center">
                  <tr>
-                   <td colspan="2" style="font-family: Arial; font-size: 11px;padding-top: 5px;">Or enter NHDPlus identifiers and optional Measures</td>
+                   <td colspan="2" style="font-family: Arial; font-size: 11px; padding-top: 5px;">Or enter NHDPlus identifiers and optional Measures</td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start NHDPlusID:
-                     <input name="pStartNHDPlusID" type="text" class="text" id="pStartNHDPlusID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_nhdplusid" type="text" class="text" id="p_start_nhdplusid" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop NHDPlusID:
                      <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
@@ -68,7 +68,7 @@
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Perm Id: 
-                     <input name="pStartPermanentIdentifier" type="text" class="text" id="pStartPermanentIdentifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_permanent_identifier" type="text" class="text" id="p_start_permanent_identifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Perm Id: 
                      <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
@@ -76,7 +76,7 @@
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Reach Code: 
-                     <input name="pStartReachCode" type="text" class="text" id="pStartReachCode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_reachcode" type="text" class="text" id="p_start_reachcode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Reach Code: 
                      <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
@@ -84,7 +84,7 @@
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Hydro Seq: 
-                     <input name="pStartHydroSeq" type="text" class="text" id="pStartHydroSeq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_hydroseq" type="text" class="text" id="p_start_hydroseq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Hydro Seq: 
                      <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
@@ -92,7 +92,7 @@
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Measure:
-                     <input name="pStartMeasure" type="text" class="text" id="pStartMeasure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_measure" type="text" class="text" id="p_start_measure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Measure:
                      <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
@@ -179,7 +179,7 @@
                    </td>
                  </tr>
                </table>
-               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px; font-family: Arial; font-size: 12px;">
+               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px; margin-bottom: 4px; font-family: Arial; font-size: 12px;">
                  <option value="UT" SELECTED>Upstream with Tributaries</option>
                  <option value="UM">Upstream Main Path Only</option>
                  <option value="DD">Downstream with Divergences</option>
@@ -193,46 +193,61 @@
                   <option value="flowday"> day (flowtime)</option>
                </select>
                <br/>
-               <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: </span>
-               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px; width: 300px; font-family: Arial; font-size: 12px;" size="2" multiple onchange="change_linked_data();">
+               <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: &nbsp;</span>
+               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px; width: 300px; font-family: Arial; font-size: 12px;" size="4" multiple onchange="change_linked_data();">
                </select>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">Search Precision: </span>
-               <select name="p_search_precision" id="p_search_precision" style="margin-top: 6px; font-family: Arial; font-size: 12px;">
+               <select name="p_search_precision" id="p_search_precision" style="margin-top: 6px; margin-bottom: 3px; font-family: Arial; font-size: 12px;">
                  <option value="CATCHMENT" SELECTED>Catchments</option>
                  <option value="REACH">Reaches</option>
                </select>
-               <br/>
+               <table style="border: 0px; padding: 0px; margin: 0px auto;">
+               <tr style="padding: 0px; margin: 0px;">
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Flowlines:</span>
                <input name="p_return_flowlines" id="p_return_flowlines" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Catchments:</span>
                <input name="p_return_catchments" id="p_return_catchments" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data CIP:</span>
                <input name="p_return_linked_data_cip" id="p_return_linked_data_cip" type="checkbox">
-               <br/>
+               </td>
+               </tr>
+               <tr style="padding: 0px; margin: 0px;">
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data HUC12:</span>
                <input name="p_return_linked_data_huc12" id="p_return_linked_data_huc12" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data SRC:</span>
                <input name="p_return_linked_data_src" id="p_return_linked_data_source" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
-               <span style="font-family: Arial; font-size: 12px;">Return Linked Data RAD:</span>
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
+               <span style="font-family: Arial; font-size: 12px;">&nbsp;Return Linked Data RAD:</span>
                <input name="p_return_linked_data_rad" id="p_return_linked_data_rad" type="checkbox">
-               <br/>
+               </td>
+               </tr>
+               <tr style="padding: 0px; margin: 0px;">
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data Attr:</span>
                <input name="p_return_linked_data_attributes" id="p_return_linked_data_attributes" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
-               <span style="font-family: Arial; font-size: 12px;">Remove Stop/Start SFIDs:</span>
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
+               <span style="font-family: Arial; font-size: 12px;">&nbsp;Remove Stop/Start SFIDs:</span>
                <input name="p_remove_stop_start_sfids" id="p_remove_stop_start_sfids" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Push SRC as RAD:</span>
                <input name="p_push_source_geometry_as_rad" id="p_push_source_geometry_as_rad" type="checkbox">
-               <br/>
-               <br/>
-               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
-               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
+               </td>
+               </tr>
+               </table>
+               <input style="margin-top: 7px;" type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input style="margin-top: 7px;" type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
             </div>
          </div>
       </div>
@@ -346,7 +361,7 @@
             cnthtml = popup1(cntobj.features[0]);
             
          } else if (cntobj.features[0].id.substring(0,5) == 'owld_' ) {
-            cnthml = popup2(cntobj.features[0],null);
+            cnthtml = popup2(cntobj.features[0],null);
 
          }
          
@@ -473,7 +488,7 @@
                feature.properties.nhdplusid.toString() +
                "<BR/>" +
                "Area (SqKm): " +
-               dzd(feature.properties.areasqkm) +
+               dzf(feature.properties.areasqkm) +
                "<BR/>" 
             );
          }
@@ -728,11 +743,11 @@
              "search_type"                  : search_type
             ,"nhdplus_version"              : nhdplus_version
              
-            ,"start_nhdplusid"              : document.getElementById("pStartNHDPlusID").value
-            ,"start_permanent_identifier"   : document.getElementById("pStartPermanentIdentifier").value
-            ,"start_reachcode"              : document.getElementById("pStartReachCode").value
-            ,"start_hydroseq"               : document.getElementById("pStartHydroSeq").value
-            ,"start_measure"                : document.getElementById("pStartMeasure").value
+            ,"start_nhdplusid"              : document.getElementById("p_start_nhdplusid").value
+            ,"start_permanent_identifier"   : document.getElementById("p_start_permanent_identifier").value
+            ,"start_reachcode"              : document.getElementById("p_start_reachcode").value
+            ,"start_hydroseq"               : document.getElementById("p_start_hydroseq").value
+            ,"start_measure"                : document.getElementById("p_start_measure").value
             
             ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
             ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
@@ -1111,17 +1126,23 @@
       } 
       
       if ( response.start_nhdplusid !== null ) {
-         document.getElementById("pStartNHDPlusID").value = response.start_nhdplusid;
+         document.getElementById("p_start_nhdplusid").value = response.start_nhdplusid;
       }
-      if ( response.start_measure   !== null ) {
-         document.getElementById("pStartMeasure").value   = response.start_measure;
+      if ( response.start_measure !== null ) {
+         document.getElementById("p_start_measure").value   = response.start_measure;
+      }
+      if ( response.start_linked_data_program !== null ) {
+         document.getElementById("p_start_linked_data_program").value = response.start_linked_data_program;
       }
       
       if ( response.stop_nhdplusid  !== null ) {
          document.getElementById("pStopNHDPlusID").value  = response.stop_nhdplusid;
       }
-      if ( response.stop_measure    !== null ) {
+      if ( response.stop_measure !== null ) {
          document.getElementById("pStopMeasure").value    = response.stop_measure;
+      }
+      if ( response.stop_linked_data_program !== null ) {
+         document.getElementById("p_stop_linked_data_program").value = response.stop_linked_data_program;
       }
       
       if (response.return_code != 0) {
@@ -1494,7 +1515,11 @@
    }
    
    function dzfi(val) {
-      if (val === undefined || val === null) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
          return "&nbsp;";
       }
       
@@ -1507,7 +1532,11 @@
    }
    
    function dzf(val) {
-      if (val === undefined || val === null) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
          return "&nbsp;";
       }
       
@@ -1520,7 +1549,11 @@
    }
    
    function dzf5(val) {
-      if (val === undefined || val === null) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
          return "&nbsp;";
       }
       
@@ -1532,7 +1565,11 @@
    }
    
    function dzfn(val) {
-      if (val === undefined || val === null || val == 'Null') {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null || val == 'Null') {
          return "&nbsp;";
       }
       
@@ -1541,7 +1578,11 @@
    }
 
    function dzfet(val) {
-      if (val === undefined || val === null) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
          return "&nbsp;";
       
       } else if ( val == 10015 ) {
@@ -1582,11 +1623,11 @@
             ,"fillColor": "#FFA500"
          });
          
-         document.getElementById("pStartNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
-         document.getElementById("pStartPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
-         document.getElementById("pStartReachCode").value           = response.flowlines.features[0].properties.reachcode;
-         document.getElementById("pStartHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
-         document.getElementById("pStartMeasure").value             = response.flowlines.features[0].properties.snap_measure;
+         document.getElementById("p_start_nhdplusid").value           = response.flowlines.features[0].properties.nhdplusid;
+         document.getElementById("p_start_permanent_identifier").value = response.flowlines.features[0].properties.permanent_identifier;
+         document.getElementById("p_start_reachcode").value           = response.flowlines.features[0].properties.reachcode;
+         document.getElementById("p_start_hydroseq").value            = response.flowlines.features[0].properties.hydroseq;
+         document.getElementById("p_start_measure").value             = response.flowlines.features[0].properties.snap_measure;
          
       }
 
@@ -1625,11 +1666,11 @@
              "search_type"                  : search_type
             ,"nhdplus_version"              : nhdplus_version
              
-            ,"start_nhdplusid"              : document.getElementById("pStartNHDPlusID").value
-            ,"start_permanent_identifier"   : document.getElementById("pStartPermanentIdentifier").value
-            ,"start_reachcode"              : document.getElementById("pStartReachCode").value
-            ,"start_hydroseq"               : document.getElementById("pStartHydroSeq").value
-            ,"start_measure"                : document.getElementById("pStartMeasure").value
+            ,"start_nhdplusid"              : document.getElementById("p_start_nhdplusid").value
+            ,"start_permanent_identifier"   : document.getElementById("p_start_permanent_identifier").value
+            ,"start_reachcode"              : document.getElementById("p_start_reachcode").value
+            ,"start_hydroseq"               : document.getElementById("p_start_hydroseq").value
+            ,"start_measure"                : document.getElementById("p_start_measure").value
             
             ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
             ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
@@ -1731,11 +1772,11 @@
           "search_type"                  : search_type
          ,"nhdplus_version"              : nhdplus_version
           
-         ,"start_nhdplusid"              : document.getElementById("pStartNHDPlusID").value
-         ,"start_permanent_identifier"   : document.getElementById("pStartPermanentIdentifier").value
-         ,"start_reachcode"              : document.getElementById("pStartReachCode").value
-         ,"start_hydroseq"               : document.getElementById("pStartHydroSeq").value
-         ,"start_measure"                : document.getElementById("pStartMeasure").value
+         ,"start_nhdplusid"              : document.getElementById("p_start_nhdplusid").value
+         ,"start_permanent_identifier"   : document.getElementById("p_start_permanent_identifier").value
+         ,"start_reachcode"              : document.getElementById("p_start_reachcode").value
+         ,"start_hydroseq"               : document.getElementById("p_start_hydroseq").value
+         ,"start_measure"                : document.getElementById("p_start_measure").value
          
          ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
          ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
@@ -1958,11 +1999,11 @@
    }
 
    function blank_start_nhdplusids() {
-      document.getElementById("pStartNHDPlusID").value = "";
-      document.getElementById("pStartPermanentIdentifier").value = "";
-      document.getElementById("pStartReachCode").value = "";
-      document.getElementById("pStartHydroSeq").value = "";
-      document.getElementById("pStartMeasure").value = "";
+      document.getElementById("p_start_nhdplusid").value = "";
+      document.getElementById("p_start_permanent_identifier").value = "";
+      document.getElementById("p_start_reachcode").value = "";
+      document.getElementById("p_start_hydroseq").value = "";
+      document.getElementById("p_start_measure").value = "";
       
       document.getElementById("pStartSourceFeatureID").value = "";
       document.getElementById("pStartSourceFeatureID2").value = "";
@@ -2002,10 +2043,10 @@
       var pt1 = document.getElementById("pPoint").value;
       var pt2 = document.getElementById("pPoint2").value;
 
-      var com1 = document.getElementById("pStartNHDPlusID").value;
-      var per1 = document.getElementById("pStartPermanentIdentifier").value;
-      var rch1 = document.getElementById("pStartReachCode").value;
-      var hyd1 = document.getElementById("pStartHydroSeq").value;
+      var com1 = document.getElementById("p_start_nhdplusid").value;
+      var per1 = document.getElementById("p_start_permanent_identifier").value;
+      var rch1 = document.getElementById("p_start_reachcode").value;
+      var hyd1 = document.getElementById("p_start_hydroseq").value;
       
       var sfi1 = document.getElementById("pStartSourceFeatureID").value;
       var sf21 = document.getElementById("pStartSourceFeatureID2").value;
@@ -2076,7 +2117,8 @@
               (rch1 !== null && rch1 !== "") ||
               (hyd1 !== null && hyd1 !== "") ||
               (spj1 !== null && spj1 !== "") ||
-              (ssj1 !== null && ssj1 !== "")
+              (ssj1 !== null && ssj1 !== "") ||
+              (scj1 !== null && scj1 !== "") 
             ) {
               document.getElementById("dz_run_service").disabled = false;
             } else {

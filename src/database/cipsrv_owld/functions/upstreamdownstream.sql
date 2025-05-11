@@ -71,9 +71,11 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,OUT out_start_nhdplusid             BIGINT
    ,OUT out_start_permanent_identifier  VARCHAR
    ,OUT out_start_measure               NUMERIC
+   ,OUT out_start_linked_data_program   VARCHAR
    ,OUT out_grid_srid                   INTEGER
    ,OUT out_stop_nhdplusid              BIGINT
    ,OUT out_stop_measure                NUMERIC
+   ,OUT out_stop_linked_data_program    VARCHAR
    ,OUT out_flowline_count              INTEGER
    ,OUT out_catchment_count             INTEGER
    ,OUT out_cip_found_count             INTEGER
@@ -115,6 +117,7 @@ DECLARE
    str_start_permid_joinkey       VARCHAR;
    str_start_cip_joinkey          VARCHAR;
    str_start_search_precision     VARCHAR := p_start_search_precision;
+   str_start_linked_data_program  VARCHAR;
    
    int_stop_nhdplusid             BIGINT  := p_stop_nhdplusid;
    str_stop_permanent_identifier  VARCHAR := p_stop_permanent_identifier;
@@ -135,6 +138,7 @@ DECLARE
    str_stop_permid_joinkey        VARCHAR;
    str_stop_cip_joinkey           VARCHAR;
    str_stop_search_precision      VARCHAR := p_stop_search_precision;
+   str_stop_linked_data_program   VARCHAR;
    
    str_search_precision           VARCHAR := UPPER(p_search_precision);   
    int_attains_eventtype          INTEGER := 10033;
@@ -207,6 +211,9 @@ BEGIN
    -- Convert any program locations to network locations
    ----------------------------------------------------------------------------
    IF p_start_linked_data_program IS NOT NULL
+   OR p_start_permid_joinkey      IS NOT NULL
+   OR p_start_source_joinkey      IS NOT NULL
+   OR p_start_cip_joinkey         IS NOT NULL
    THEN
    
       rec := cipsrv_owld.owld_locator(
@@ -261,6 +268,7 @@ BEGIN
          
       END IF;
       
+      str_start_linked_data_program  := rec.out_linked_data_program;
       int_start_hydroseq             := rec.out_hydroseq;
       num_start_measure              := rec.out_measure;
       sdo_start_shape                := rec.out_shape;
@@ -292,6 +300,9 @@ BEGIN
    END IF;
    
    IF p_stop_linked_data_program IS NOT NULL
+   OR p_stop_permid_joinkey      IS NOT NULL
+   OR p_stop_source_joinkey      IS NOT NULL
+   OR p_stop_cip_joinkey         IS NOT NULL
    THEN
    
       rec := cipsrv_owld.owld_locator(
@@ -346,6 +357,7 @@ BEGIN
          
       END IF;
       
+      str_stop_linked_data_program   := rec.out_linked_data_program;
       int_stop_hydroseq              := rec.out_hydroseq;
       num_stop_measure               := rec.out_measure;
       sdo_stop_shape                 := rec.out_shape;
@@ -379,8 +391,10 @@ BEGIN
    out_start_nhdplusid            := int_start_nhdplusid;
    out_start_measure              := num_start_measure;
    out_start_permanent_identifier := str_start_permanent_identifier;
+   out_start_linked_data_program  := str_start_linked_data_program;
    out_stop_nhdplusid             := int_stop_nhdplusid;
    out_stop_measure               := num_stop_measure;
+   out_stop_linked_data_program   := str_stop_linked_data_program;
    
    ----------------------------------------------------------------------------
    -- Step 30

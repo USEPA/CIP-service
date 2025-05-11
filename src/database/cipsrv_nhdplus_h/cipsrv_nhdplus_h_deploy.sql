@@ -7311,8 +7311,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7345,8 +7345,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7405,8 +7405,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7439,8 +7439,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7499,8 +7499,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7533,8 +7533,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7597,8 +7597,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa
@@ -7638,8 +7638,8 @@ BEGIN
           a.nhdplusid
          ,a.permanent_identifier 
          ,a.reachcode
-         ,ROUND(a.frommeas,5) AS fmeasure
-         ,ROUND(a.tomeas,5)   AS tmeasure
+         ,ROUND(a.frommeas::NUMERIC,5) AS fmeasure
+         ,ROUND(a.tomeas::NUMERIC,5)   AS tmeasure
          ,a.hydroseq
          ,a.uphydroseq
          ,a.terminalpa

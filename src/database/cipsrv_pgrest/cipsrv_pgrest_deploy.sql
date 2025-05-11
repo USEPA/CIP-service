@@ -2373,9 +2373,9 @@ DECLARE
    str_start_permid_joinkey          VARCHAR;
    str_start_source_joinkey          VARCHAR;
    str_start_cip_joinkey             VARCHAR;
-   str_start_linked_data_program     VARCHAR;
    str_start_search_precision        VARCHAR;
    boo_start_push_rad_for_permid     BOOLEAN;
+   str_start_linked_data_program     VARCHAR;
    
    int_stop_nhdplusid                BIGINT;
    str_stop_permanent_identifier     VARCHAR(40);
@@ -2391,9 +2391,9 @@ DECLARE
    str_stop_permid_joinkey           VARCHAR;
    str_stop_source_joinkey           VARCHAR;
    str_stop_cip_joinkey              VARCHAR;
-   str_stop_linked_data_program      VARCHAR;
    str_stop_search_precision         VARCHAR;
    boo_stop_push_rad_for_permid      BOOLEAN;
+   str_stop_linked_data_program      VARCHAR;
    
    num_max_distancekm                NUMERIC;
    num_max_flowtimeday               NUMERIC;
@@ -2475,8 +2475,10 @@ BEGIN
          ,'linked_data_attributes'    , NULL
          ,'start_nhdplusid'           , NULL
          ,'start_measure'             , NULL
+         ,'start_linked_data_program' , NULL
          ,'stop_nhdplusid'            , NULL
          ,'stop_measure'              , NULL
+         ,'stop_linked_data_program'  , NULL
          ,'return_code'               , -100
          ,'status_message'            , 'nhdplus version parameter is required'
       );
@@ -2964,20 +2966,22 @@ BEGIN
       
       ,p_known_region                  := str_known_region
    );
-   int_start_nhdplusid  := rec.out_start_nhdplusid;
+   int_start_nhdplusid            := rec.out_start_nhdplusid;
    str_start_permanent_identifier := rec.out_start_permanent_identifier;
-   num_start_measure    := rec.out_start_measure;
-   int_grid_srid        := rec.out_grid_srid;
-   int_stop_nhdplusid   := rec.out_stop_nhdplusid;
-   num_stop_measure     := rec.out_stop_measure;
-   int_flowline_count   := rec.out_flowline_count;
-   int_catchment_count  := rec.out_catchment_count;
-   int_rad_found_count  := rec.out_rad_found_count;
-   int_sfid_found_count := rec.out_sfid_found_count;
-   int_cip_found_count  := rec.out_cip_found_count;
-   int_src_found_count  := rec.out_src_found_count;
-   int_return_code      := rec.out_return_code;
-   str_status_message   := rec.out_status_message;
+   num_start_measure              := rec.out_start_measure;
+   str_start_linked_data_program  := rec.out_start_linked_data_program; 
+   int_grid_srid                  := rec.out_grid_srid;
+   int_stop_nhdplusid             := rec.out_stop_nhdplusid;
+   num_stop_measure               := rec.out_stop_measure;
+   str_stop_linked_data_program   := rec.out_stop_linked_data_program;
+   int_flowline_count             := rec.out_flowline_count;
+   int_catchment_count            := rec.out_catchment_count;
+   int_rad_found_count            := rec.out_rad_found_count;
+   int_sfid_found_count           := rec.out_sfid_found_count;
+   int_cip_found_count            := rec.out_cip_found_count;
+   int_src_found_count            := rec.out_src_found_count;
+   int_return_code                := rec.out_return_code;
+   str_status_message             := rec.out_status_message;
    
    IF int_return_code != 0
    THEN
@@ -3003,8 +3007,10 @@ BEGIN
          ,'linked_data_attributes'    , NULL
          ,'start_nhdplusid'           , int_start_nhdplusid
          ,'start_measure'             , num_start_measure
+         ,'start_linked_data_program' , str_start_linked_data_program
          ,'stop_nhdplusid'            , int_stop_nhdplusid
          ,'stop_measure'              , num_stop_measure
+         ,'stop_linked_data_program'  , str_stop_linked_data_program
          ,'return_code'               , int_return_code
          ,'status_message'            , str_status_message
       );
@@ -3523,8 +3529,10 @@ BEGIN
       ,'linked_data_attributes'    , NULL
       ,'start_nhdplusid'           , int_start_nhdplusid
       ,'start_measure'             , num_start_measure
+      ,'start_linked_data_program' , str_start_linked_data_program
       ,'stop_nhdplusid'            , int_stop_nhdplusid
       ,'stop_measure'              , num_stop_measure
+      ,'stop_linked_data_program'  , str_stop_linked_data_program
       ,'return_code'               , int_return_code
       ,'status_message'            , str_status_message
    );
