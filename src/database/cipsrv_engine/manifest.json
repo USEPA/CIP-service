@@ -44,6 +44,7 @@
             ,"functions/features2geomcollection.sql"
             ,"functions/features2jsonb.sql"
             ,"functions/field_exists.sql"
+            ,"functions/get_measure.sql"
             ,"functions/index_exists.sql"
             ,"functions/is_lrs.sql"
             ,"functions/json2geometry.sql"

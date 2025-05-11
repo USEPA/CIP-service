@@ -61,6 +61,7 @@
             ,"functions/fetch_grids_by_geometry.sql"
             ,"functions/generic_common_mbr.sql"
             ,"functions/snap_to_common_grid.sql"
+            ,"functions/get_measure.sql"
             ,"functions/get_flowline.sql"
             ,"functions/index_area_artpath.sql"
             ,"functions/index_area_centroid.sql"

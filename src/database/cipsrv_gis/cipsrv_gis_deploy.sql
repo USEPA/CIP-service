@@ -94,13 +94,9 @@ BEGIN
       ,a.nhdplusid
       ,a.istribal
       ,a.istribal_areasqkm
-      ,a.xwalk_huc12
-      ,a.xwalk_method
-      ,a.xwalk_huc12_version
       ,a.sourcefc
       ,a.gridcode
       ,a.areasqkm
-      ,a.areasqkm_geo
       ,a.isnavigable
       ,a.hasvaa
       ,a.issink
@@ -152,13 +148,9 @@ BEGIN
       ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
       ,a.istribal
       ,a.istribal_areasqkm
-      ,a.xwalk_huc12
-      ,a.xwalk_method
-      ,a.xwalk_huc12_version
       ,a.sourcefc
       ,a.gridcode
       ,a.areasqkm
-      ,a.areasqkm_geo
       ,a.isnavigable
       ,a.hasvaa
       ,a.issink
@@ -288,13 +280,9 @@ BEGIN
       ,a.nhdplusid
       ,a.istribal
       ,a.istribal_areasqkm
-      ,a.xwalk_huc12
-      ,a.xwalk_method
-      ,a.xwalk_huc12_version
       ,a.sourcefc
       ,a.gridcode
       ,a.areasqkm
-      ,a.areasqkm_geo
       ,a.isnavigable
       ,a.hasvaa
       ,a.issink
@@ -346,13 +334,9 @@ BEGIN
       ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
       ,a.istribal
       ,a.istribal_areasqkm
-      ,a.xwalk_huc12
-      ,a.xwalk_method
-      ,a.xwalk_huc12_version
       ,a.sourcefc
       ,a.gridcode
       ,a.areasqkm
-      ,a.areasqkm_geo
       ,a.isnavigable
       ,a.hasvaa
       ,a.issink
@@ -742,7 +726,7 @@ BEGIN
       CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_networknhdflowline_esri
       AS
       SELECT
-       a.objectid
+       CAST(a.objectid   AS INTEGER)  AS objectid
       ,a.permanent_identifier
       ,a.fdate
       ,a.resolution
@@ -827,7 +811,7 @@ BEGIN
       ,a.gageidma
       ,a.gageqma
       ,a.globalid
-      ,ST_Force2D(a.shape) AS shape
+      ,ST_Force3DM(a.shape) AS shape
       FROM
       cipsrv_nhdplus_h.networknhdflowline a;
       $q$;                                                                                                                          
@@ -1700,7 +1684,7 @@ BEGIN
       CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nonnetworknhdflowline_esri
       AS
       SELECT
-       a.objectid
+       CAST(a.objectid   AS INTEGER)  AS objectid
       ,a.permanent_identifier
       ,a.fdate
       ,a.resolution
@@ -1718,7 +1702,7 @@ BEGIN
       ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
       ,a.vpuid
       ,a.globalid
-      ,ST_Force2D(a.shape) AS shape
+      ,ST_Force3DM(a.shape) AS shape
       FROM
       cipsrv_nhdplus_h.nonnetworknhdflowline a;
       $q$;                                                                                                                          
@@ -2126,7 +2110,7 @@ BEGIN
       CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_networknhdflowline_esri
       AS
       SELECT
-       a.objectid
+       CAST(a.objectid   AS INTEGER)  AS objectid
       ,a.permanent_identifier
       ,a.fdate
       ,a.resolution
@@ -2211,7 +2195,7 @@ BEGIN
       ,a.gageidma
       ,a.gageqma
       ,a.globalid
-      ,ST_Force2D(a.shape) AS shape
+      ,ST_Force3DM(a.shape) AS shape
       FROM
       cipsrv_nhdplus_m.networknhdflowline a;
       $q$;                                                                                                                          
@@ -3079,7 +3063,7 @@ BEGIN
       CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri
       AS
       SELECT
-       a.objectid
+       CAST(a.objectid   AS INTEGER)  AS objectid
       ,a.permanent_identifier
       ,a.fdate
       ,a.resolution
@@ -3097,7 +3081,7 @@ BEGIN
       ,CAST(a.nhdplusid  AS NUMERIC) AS nhdplusid
       ,a.vpuid
       ,a.globalid
-      ,ST_Force2D(a.shape) AS shape
+      ,ST_Force3DM(a.shape) AS shape
       FROM
       cipsrv_nhdplus_m.nonnetworknhdflowline a;
       $q$;                                                                                                                          
@@ -3220,6 +3204,6804 @@ BEGIN
       
    ELSE
       RAISE WARNING 'skipping cipsrv_gis.nhdplus_m_wbdhu12_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_control.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_control;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_control') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_control
+      AS
+      SELECT
+       (ROW_NUMBER() OVER())::INTEGER AS objectid
+      ,a.keyword
+      ,a.value_str
+      ,a.value_num
+      ,a.value_date
+      FROM
+      cipsrv_owld.attains_control a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_control OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_control TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_control';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_control_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_control_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_control') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_control_esri
+      AS
+      SELECT
+       (ROW_NUMBER() OVER())::INTEGER AS objectid
+      ,a.keyword
+      ,a.value_str
+      ,a.value_num
+      ,a.value_date
+      FROM
+      cipsrv_owld.attains_control a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_control_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_control_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_control_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_attr.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_attr;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_attr') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_attr
+      AS
+      SELECT
+       a.objectid
+      ,a.source_joinkey
+      ,a.state
+      ,a.region
+      ,a.organizationid
+      ,a.orgtype
+      ,a.tas303d
+      ,a.organizationname
+      ,a.reportingcycle
+      ,a.assessmentunitidentifier
+      ,a.assessmentunitname
+      ,a.waterbodyreportlink
+      ,a.ircategory
+      ,a.overallstatus
+      ,a.isassessed
+      ,a.isimpaired
+      ,a.isthreatened
+      ,a.on303dlist
+      ,a.hastmdl
+      ,a.has4bplan
+      ,a.hasalternativeplan
+      ,a.hasprotectionplan
+      ,a.visionpriority303d
+      ,a.cultural_use
+      ,a.drinkingwater_use
+      ,a.ecological_use
+      ,a.fishconsumption_use
+      ,a.recreation_use
+      ,a.other_use
+      ,a.algal_growth
+      ,a.ammonia
+      ,a.biotoxins
+      ,a.cause_unknown
+      ,a.cause_unknown_fish_kills
+      ,a.cause_unknown_impaired_biota
+      ,a.chlorine
+      ,a.dioxins
+      ,a.fish_consumption_advisory
+      ,a.flow_alterations
+      ,a.habitat_alterations
+      ,a.hydrologic_alteration
+      ,a.mercury
+      ,a.metals_other_than_mercury
+      ,a.noxious_aquatic_plants
+      ,a.nuisance_exotic_species
+      ,a.nuisance_native_species
+      ,a.nutrients
+      ,a.oil_and_grease
+      ,a.oxygen_depletion
+      ,a.other_cause
+      ,a.pathogens
+      ,a.pesticides
+      ,a.pfas
+      ,a.ph_acidity_caustic_conditions
+      ,a.polychlorinated_biphenyls_pcbs
+      ,a.radiation
+      ,a.solids_chlorides_sulfates
+      ,a.sediment
+      ,a.taste_color_and_odor
+      ,a.temperature
+      ,a.total_toxics
+      ,a.toxic_inorganics
+      ,a.toxic_organics
+      ,a.trash
+      ,a.turbidity
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_attr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_attr OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_attr TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_attr';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_attr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_attr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_attr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_attr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_joinkey
+      ,a.state
+      ,a.region
+      ,a.organizationid
+      ,a.orgtype
+      ,a.tas303d
+      ,a.organizationname
+      ,a.reportingcycle
+      ,a.assessmentunitidentifier
+      ,a.assessmentunitname
+      ,a.waterbodyreportlink
+      ,a.ircategory
+      ,a.overallstatus
+      ,a.isassessed
+      ,a.isimpaired
+      ,a.isthreatened
+      ,a.on303dlist
+      ,a.hastmdl
+      ,a.has4bplan
+      ,a.hasalternativeplan
+      ,a.hasprotectionplan
+      ,a.visionpriority303d
+      ,a.cultural_use
+      ,a.drinkingwater_use
+      ,a.ecological_use
+      ,a.fishconsumption_use
+      ,a.recreation_use
+      ,a.other_use
+      ,a.algal_growth
+      ,a.ammonia
+      ,a.biotoxins
+      ,a.cause_unknown
+      ,a.cause_unknown_fish_kills
+      ,a.cause_unknown_impaired_biota
+      ,a.chlorine
+      ,a.dioxins
+      ,a.fish_consumption_advisory
+      ,a.flow_alterations
+      ,a.habitat_alterations
+      ,a.hydrologic_alteration
+      ,a.mercury
+      ,a.metals_other_than_mercury
+      ,a.noxious_aquatic_plants
+      ,a.nuisance_exotic_species
+      ,a.nuisance_native_species
+      ,a.nutrients
+      ,a.oil_and_grease
+      ,a.oxygen_depletion
+      ,a.other_cause
+      ,a.pathogens
+      ,a.pesticides
+      ,a.pfas
+      ,a.ph_acidity_caustic_conditions
+      ,a.polychlorinated_biphenyls_pcbs
+      ,a.radiation
+      ,a.solids_chlorides_sulfates
+      ,a.sediment
+      ,a.taste_color_and_odor
+      ,a.temperature
+      ,a.total_toxics
+      ,a.toxic_inorganics
+      ,a.toxic_organics
+      ,a.trash
+      ,a.turbidity
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_attr a
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_attr_esri OWNER TO cipsrv_gis
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_attr_esri TO public
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping owld_attains_attr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_cip_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_cip_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_cip_h
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_cip a
+      WHERE
+      a.catchmentresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_cip_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_cip_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_cip_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_cip_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_cip_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_cip_m
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_cip a
+      WHERE
+      a.catchmentresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_cip_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_cip_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_cip_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_cip_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_cip_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_cip_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_cip_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_cip';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_cip_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_cip_geo_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_cip_geo_h
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_cip_geo a
+      WHERE
+      a.catchmentresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_cip_geo_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_cip_geo_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_cip_geo_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_cip_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_cip_geo_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_cip_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_cip_geo a
+      WHERE
+      a.catchmentresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_cip_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_cip_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_cip_geo_m';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_cip_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_cip_geo_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_cip_geo_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_cip_geo a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_cip_geo_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_cip_geo_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_cip_geo_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_huc12_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_huc12_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_huc12_h
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_huc12 a
+      WHERE
+      a.xwalk_catresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_huc12_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_huc12_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_huc12_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_huc12_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_huc12_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_huc12_m
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_huc12 a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_huc12_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_huc12_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_huc12_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_huc12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_huc12_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_huc12_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_huc12 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_huc12_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_huc12_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.attains_huc12_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_huc12_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_huc12_geo_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_huc12_geo_h
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_huc12_geo_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_huc12_geo_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.attains_huc12_geo_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_huc12_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_huc12_geo_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_huc12_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_huc12_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_huc12_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.attains_huc12_geo_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_huc12_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_huc12_geo_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_huc12_geo_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_huc12_geo a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_huc12_geo_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_huc12_geo_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.attains_huc12_geo_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_rad_a_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_a_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_a_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_a a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_rad_a_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_a_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_a_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_a_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_a_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_a_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_a a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_a_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_a_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_a_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_a_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_a_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_rad_a_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_a_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_a_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_evt2meta_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_evt2meta_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_evt2meta_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_evt2meta a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_evt2meta_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_evt2meta_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_evt2meta_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_evt2meta_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_evt2meta_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_evt2meta_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_evt2meta a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_evt2meta_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_evt2meta_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_evt2meta_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_evt2meta_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_evt2meta_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_evt2meta_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_evt2meta a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_evt2meta_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_evt2meta_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_evt2meta';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_l_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_l_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_l_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_l a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_l_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_l_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_l_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_l_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_l_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_l_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_l a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_l_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_l_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_l_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_l_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_l_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_l_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_l_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_l_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_metadata.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_metadata;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_metadata') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_metadata
+      AS
+      SELECT
+       a.objectid
+      ,a.meta_processid
+      ,a.processdescription
+      ,a.processdate
+      ,a.attributeaccuracyreport
+      ,a.logicalconsistencyreport
+      ,a.completenessreport
+      ,a.horizpositionalaccuracyreport
+      ,a.vertpositionalaccuracyreport
+      ,a.metadatastandardname
+      ,a.metadatastandardversion
+      ,a.metadatadate
+      ,a.datasetcredit
+      ,a.contactorganization
+      ,a.addresstype
+      ,a.address
+      ,a.city
+      ,a.stateorprovince
+      ,a.postalcode
+      ,a.contactvoicetelephone
+      ,a.contactinstructions
+      ,a.contactemailaddress
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_metadata a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_metadata OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_metadata TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_metadata';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_metadata_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_metadata_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_metadata') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_metadata_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.meta_processid
+      ,a.processdescription
+      ,a.processdate
+      ,a.attributeaccuracyreport
+      ,a.logicalconsistencyreport
+      ,a.completenessreport
+      ,a.horizpositionalaccuracyreport
+      ,a.vertpositionalaccuracyreport
+      ,a.metadatastandardname
+      ,a.metadatastandardversion
+      ,a.metadatadate
+      ,a.datasetcredit
+      ,a.contactorganization
+      ,a.addresstype
+      ,a.address
+      ,a.city
+      ,a.stateorprovince
+      ,a.postalcode
+      ,a.contactvoicetelephone
+      ,a.contactinstructions
+      ,a.contactemailaddress
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_metadata a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_metadata_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_metadata_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_metadata_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_p_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_p_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_p_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_p a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_p_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_p_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_p_h';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_rad_p_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_p_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_p_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_p a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_p_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_p_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_p_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_p_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_p_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_rad_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_p_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_p_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_p_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_srccit.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_srccit;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_srccit') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_srccit
+      AS
+      SELECT
+       a.objectid
+      ,a.title
+      ,a.source_datasetid
+      ,a.sourcecitationabbreviation
+      ,a.originator
+      ,a.publicationdate
+      ,a.beginningdate
+      ,a.endingdate
+      ,a.sourcecontribution
+      ,a.sourcescaledenominator
+      ,a.typeofsourcemedia
+      ,a.calendardate
+      ,a.sourcecurrentnessreference
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_srccit a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_srccit OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_srccit TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_srccit';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_rad_srccit_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_rad_srccit_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_rad_srccit') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_rad_srccit_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.title
+      ,a.source_datasetid
+      ,a.sourcecitationabbreviation
+      ,a.originator
+      ,a.publicationdate
+      ,a.beginningdate
+      ,a.endingdate
+      ,a.sourcecontribution
+      ,a.sourcescaledenominator
+      ,a.typeofsourcemedia
+      ,a.calendardate
+      ,a.sourcecurrentnessreference
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_rad_srccit a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_rad_srccit_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_rad_srccit_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_rad_srccit_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_sfid.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_sfid;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_sfid') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_sfid
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.sfiddetailurl
+      ,a.load_id
+      ,a.load_date
+      ,a.src_event_count
+      ,a.src_point_count
+      ,a.src_line_count
+      ,a.src_area_count
+      ,a.cat_mr_count
+      ,a.cat_hr_count
+      ,a.xwalk_huc12_np21_count
+      ,a.rad_mr_event_count
+      ,a.rad_hr_event_count
+      ,a.rad_mr_point_count
+      ,a.rad_hr_point_count
+      ,a.rad_mr_line_count
+      ,a.rad_hr_line_count
+      ,a.rad_mr_area_count
+      ,a.rad_hr_area_count
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_sfid a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_sfid OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_sfid TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_sfid';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_sfid_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_sfid_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_sfid') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_sfid_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.sfiddetailurl
+      ,a.load_id
+      ,a.load_date
+      ,a.src_event_count
+      ,a.src_point_count
+      ,a.src_line_count
+      ,a.src_area_count
+      ,a.cat_mr_count
+      ,a.cat_hr_count
+      ,a.xwalk_huc12_np21_count
+      ,a.rad_mr_event_count
+      ,a.rad_hr_event_count
+      ,a.rad_mr_point_count
+      ,a.rad_hr_point_count
+      ,a.rad_mr_line_count
+      ,a.rad_hr_line_count
+      ,a.rad_mr_area_count
+      ,a.rad_hr_area_count
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_sfid a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_sfid_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_sfid_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_sfid_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_src2cip.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src2cip;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src2cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src2cip
+      AS
+      SELECT
+       a.objectid
+      ,a.src2cip_joinkey
+      ,a.cip_joinkey
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.cip_action
+      ,a.overlap_measure
+      ,a.cip_method
+      ,a.cip_parms
+      ,a.cip_date
+      ,a.cip_version
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_src2cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src2cip OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src2cip TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src2cip';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_src2cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src2cip_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src2cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src2cip_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.src2cip_joinkey
+      ,a.cip_joinkey
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.catchmentresolution
+      ,a.cip_action
+      ,a.overlap_measure
+      ,a.cip_method
+      ,a.cip_parms
+      ,a.cip_date
+      ,a.cip_version
+      ,a.globalid
+      FROM
+      cipsrv_owld.attains_src2cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src2cip_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src2cip_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src2cip';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_src_a.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src_a;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src_a
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_src_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_attains_src_a OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src_a TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src_a';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_src_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src_a_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src_a_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_src_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src_a_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src_a_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src_a';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_attains_src_l.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src_l;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src_l
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.lengthkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_src_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src_l OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src_l TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src_l';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_src_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src_l_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src_l_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.lengthkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_src_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src_l_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src_l_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src_l';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_src_p.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src_p;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src_p
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_src_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src_p OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src_p TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src_p';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_attains_src_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_attains_src_p_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','attains_src_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_attains_src_p_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.attains_src_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_attains_src_p_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_attains_src_p_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_attains_src_p';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_control.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_control;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_control') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_control
+      AS
+      SELECT
+       (ROW_NUMBER() OVER())::INTEGER AS objectid
+      ,a.keyword
+      ,a.value_str
+      ,a.value_num
+      ,a.value_date
+      FROM
+      cipsrv_owld.frspub_control a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_control OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_control TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_control';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_control_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_control_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_control') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_control_esri
+      AS
+      SELECT
+       (ROW_NUMBER() OVER())::INTEGER AS objectid
+      ,a.keyword
+      ,a.value_str
+      ,a.value_num
+      ,a.value_date
+      FROM
+      cipsrv_owld.frspub_control a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_control_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_control_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_control_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_attr.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_attr;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_attr') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_attr
+      AS
+      SELECT
+       a.objectid
+      ,a.source_joinkey
+      ,a.registry_id
+      ,a.primary_name
+      ,a.city_name
+      ,a.county_name
+      ,a.fips_code
+      ,a.state_code
+      ,a.state_name
+      ,a.country_name
+      ,a.postal_code
+      ,a.tribal_land_code
+      ,a.tribal_land_name
+      ,a.us_mexico_border_ind
+      ,a.pgm_sys_id
+      ,a.pgm_sys_acrnm
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_attr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_attr OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_attr TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_attr';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_attr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_attr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_attr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_attr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_joinkey
+      ,a.registry_id
+      ,a.primary_name
+      ,a.city_name
+      ,a.county_name
+      ,a.fips_code
+      ,a.state_code
+      ,a.state_name
+      ,a.country_name
+      ,a.postal_code
+      ,a.tribal_land_code
+      ,a.tribal_land_name
+      ,a.us_mexico_border_ind
+      ,a.pgm_sys_id
+      ,a.pgm_sys_acrnm
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_attr a
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_attr_esri OWNER TO cipsrv_gis
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_attr_esri TO public
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping owld_frspub_attr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_cip_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_cip_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_cip_h
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_cip a
+      WHERE
+      a.catchmentresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_cip_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_cip_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_cip_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_cip_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_cip_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_cip_m
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_cip a
+      WHERE
+      a.catchmentresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_cip_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_cip_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_cip_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_cip_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_cip_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_cip_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_cip_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_cip';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_cip_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_cip_geo_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_cip_geo_h
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_cip_geo a
+      WHERE
+      a.catchmentresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_cip_geo_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_cip_geo_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_cip_geo_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_cip_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_cip_geo_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_cip_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_cip_geo a
+      WHERE
+      a.catchmentresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_cip_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_cip_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_cip_geo_m';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_cip_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_cip_geo_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_cip_geo_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_cip_geo a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_cip_geo_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_cip_geo_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_cip_geo_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_huc12_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_huc12_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_huc12_h
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_huc12 a
+      WHERE
+      a.xwalk_catresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_huc12_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_huc12_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_huc12_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_huc12_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_huc12_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_huc12_m
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_huc12 a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_huc12_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_huc12_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_huc12_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_huc12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_huc12_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_huc12_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_huc12 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_huc12_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_huc12_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.frspub_huc12_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_huc12_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_huc12_geo_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_huc12_geo_h
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_huc12_geo_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_huc12_geo_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.frspub_huc12_geo_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_huc12_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_huc12_geo_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_huc12_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_huc12_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_huc12_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.frspub_huc12_geo_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_huc12_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_huc12_geo_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_huc12_geo_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_huc12_geo a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_huc12_geo_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_huc12_geo_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.frspub_huc12_geo_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_rad_a_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_a_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_a_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_a a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_a_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_a_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_a_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_a_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_a_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_a_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_a a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_a_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_a_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_a_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_a_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_a_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_a_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_a_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_a_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_evt2meta_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_evt2meta_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_evt2meta_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_evt2meta a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_evt2meta_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_evt2meta_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_evt2meta_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_evt2meta_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_evt2meta_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_evt2meta_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_evt2meta a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_evt2meta_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_evt2meta_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_evt2meta_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_evt2meta_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_evt2meta_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_evt2meta_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_evt2meta a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_evt2meta_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_evt2meta_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_evt2meta';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_l_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_l_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_l_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_l a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_l_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_l_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_l_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_l_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_l_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_l_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_l a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_l_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_l_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_l_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_l_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_l_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_l_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_l_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_l_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_metadata.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_metadata;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_metadata') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_metadata
+      AS
+      SELECT
+       a.objectid
+      ,a.meta_processid
+      ,a.processdescription
+      ,a.processdate
+      ,a.attributeaccuracyreport
+      ,a.logicalconsistencyreport
+      ,a.completenessreport
+      ,a.horizpositionalaccuracyreport
+      ,a.vertpositionalaccuracyreport
+      ,a.metadatastandardname
+      ,a.metadatastandardversion
+      ,a.metadatadate
+      ,a.datasetcredit
+      ,a.contactorganization
+      ,a.addresstype
+      ,a.address
+      ,a.city
+      ,a.stateorprovince
+      ,a.postalcode
+      ,a.contactvoicetelephone
+      ,a.contactinstructions
+      ,a.contactemailaddress
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_metadata a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_metadata OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_metadata TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_metadata';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_metadata_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_metadata_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_metadata') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_metadata_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.meta_processid
+      ,a.processdescription
+      ,a.processdate
+      ,a.attributeaccuracyreport
+      ,a.logicalconsistencyreport
+      ,a.completenessreport
+      ,a.horizpositionalaccuracyreport
+      ,a.vertpositionalaccuracyreport
+      ,a.metadatastandardname
+      ,a.metadatastandardversion
+      ,a.metadatadate
+      ,a.datasetcredit
+      ,a.contactorganization
+      ,a.addresstype
+      ,a.address
+      ,a.city
+      ,a.stateorprovince
+      ,a.postalcode
+      ,a.contactvoicetelephone
+      ,a.contactinstructions
+      ,a.contactemailaddress
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_metadata a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_metadata_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_metadata_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_metadata_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_p_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_p_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_p_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_p a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_p_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_p_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_p_h';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_rad_p_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_p_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_p_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_p a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_p_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_p_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_p_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_p_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_p_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_rad_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_p_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_p_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_p_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_srccit.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_srccit;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_srccit') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_srccit
+      AS
+      SELECT
+       a.objectid
+      ,a.title
+      ,a.source_datasetid
+      ,a.sourcecitationabbreviation
+      ,a.originator
+      ,a.publicationdate
+      ,a.beginningdate
+      ,a.endingdate
+      ,a.sourcecontribution
+      ,a.sourcescaledenominator
+      ,a.typeofsourcemedia
+      ,a.calendardate
+      ,a.sourcecurrentnessreference
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_srccit a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_srccit OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_srccit TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_srccit';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_rad_srccit_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_rad_srccit_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_rad_srccit') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_rad_srccit_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.title
+      ,a.source_datasetid
+      ,a.sourcecitationabbreviation
+      ,a.originator
+      ,a.publicationdate
+      ,a.beginningdate
+      ,a.endingdate
+      ,a.sourcecontribution
+      ,a.sourcescaledenominator
+      ,a.typeofsourcemedia
+      ,a.calendardate
+      ,a.sourcecurrentnessreference
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_rad_srccit a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_rad_srccit_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_rad_srccit_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_rad_srccit_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_sfid.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_sfid;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_sfid') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_sfid
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.sfiddetailurl
+      ,a.load_id
+      ,a.load_date
+      ,a.src_event_count
+      ,a.src_point_count
+      ,a.src_line_count
+      ,a.src_area_count
+      ,a.cat_mr_count
+      ,a.cat_hr_count
+      ,a.xwalk_huc12_np21_count
+      ,a.rad_mr_event_count
+      ,a.rad_hr_event_count
+      ,a.rad_mr_point_count
+      ,a.rad_hr_point_count
+      ,a.rad_mr_line_count
+      ,a.rad_hr_line_count
+      ,a.rad_mr_area_count
+      ,a.rad_hr_area_count
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_sfid a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_sfid OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_sfid TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_sfid';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_sfid_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_sfid_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_sfid') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_sfid_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.sfiddetailurl
+      ,a.load_id
+      ,a.load_date
+      ,a.src_event_count
+      ,a.src_point_count
+      ,a.src_line_count
+      ,a.src_area_count
+      ,a.cat_mr_count
+      ,a.cat_hr_count
+      ,a.xwalk_huc12_np21_count
+      ,a.rad_mr_event_count
+      ,a.rad_hr_event_count
+      ,a.rad_mr_point_count
+      ,a.rad_hr_point_count
+      ,a.rad_mr_line_count
+      ,a.rad_hr_line_count
+      ,a.rad_mr_area_count
+      ,a.rad_hr_area_count
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_sfid a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_sfid_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_sfid_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_sfid_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_src2cip.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src2cip;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src2cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src2cip
+      AS
+      SELECT
+       a.objectid
+      ,a.src2cip_joinkey
+      ,a.cip_joinkey
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.cip_action
+      ,a.overlap_measure
+      ,a.cip_method
+      ,a.cip_parms
+      ,a.cip_date
+      ,a.cip_version
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_src2cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src2cip OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src2cip TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src2cip';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_src2cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src2cip_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src2cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src2cip_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.src2cip_joinkey
+      ,a.cip_joinkey
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.catchmentresolution
+      ,a.cip_action
+      ,a.overlap_measure
+      ,a.cip_method
+      ,a.cip_parms
+      ,a.cip_date
+      ,a.cip_version
+      ,a.globalid
+      FROM
+      cipsrv_owld.frspub_src2cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src2cip_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src2cip_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src2cip';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_src_a.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src_a;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src_a
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_src_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_frspub_src_a OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src_a TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src_a';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_src_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src_a_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src_a_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_src_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src_a_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src_a_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src_a';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_frspub_src_l.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src_l;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src_l
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.lengthkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_src_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src_l OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src_l TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src_l';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_src_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src_l_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src_l_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.lengthkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_src_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src_l_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src_l_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src_l';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_src_p.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src_p;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src_p
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_src_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src_p OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src_p TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src_p';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_frspub_src_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_frspub_src_p_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','frspub_src_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_frspub_src_p_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.frspub_src_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_frspub_src_p_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_frspub_src_p_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_frspub_src_p';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_control.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_control;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_control') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_control
+      AS
+      SELECT
+       (ROW_NUMBER() OVER())::INTEGER AS objectid
+      ,a.keyword
+      ,a.value_str
+      ,a.value_num
+      ,a.value_date
+      FROM
+      cipsrv_owld.npdes_control a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_control OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_control TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_control';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_control_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_control_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_control') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_control_esri
+      AS
+      SELECT
+       (ROW_NUMBER() OVER())::INTEGER AS objectid
+      ,a.keyword
+      ,a.value_str
+      ,a.value_num
+      ,a.value_date
+      FROM
+      cipsrv_owld.npdes_control a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_control_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_control_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_control_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_attr.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_attr;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_attr') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_attr
+      AS
+      SELECT
+       a.objectid
+      ,a.source_joinkey
+      ,a.external_permit_nmbr
+      ,a.permit_name
+      ,a.registry_id
+      ,a.primary_name
+      ,a.state_code
+      ,a.agency_type_code
+      ,a.issue_date
+      ,a.issuing_agency
+      ,a.original_issue_date
+      ,a.permit_status_code
+      ,a.permit_type_code
+      ,a.retirement_date
+      ,a.termination_date
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_attr a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_attr OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_attr TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_attr';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_attr_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_attr_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_attr')
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_attr_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_joinkey
+      ,a.external_permit_nmbr
+      ,a.permit_name
+      ,a.registry_id
+      ,a.primary_name
+      ,a.state_code
+      ,a.agency_type_code
+      ,a.issue_date
+      ,a.issuing_agency
+      ,a.original_issue_date
+      ,a.permit_status_code
+      ,a.permit_type_code
+      ,a.retirement_date
+      ,a.termination_date
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_attr a
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_attr_esri OWNER TO cipsrv_gis
+      $q$;
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_attr_esri TO public
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping owld_npdes_attr_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_cip_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_cip_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_cip_h
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_cip a
+      WHERE
+      a.catchmentresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_cip_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_cip_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_cip_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_cip_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_cip_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_cip_m
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_cip a
+      WHERE
+      a.catchmentresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_cip_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_cip_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_cip_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_cip_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_cip_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.cip_joinkey
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_cip_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_cip_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_cip';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_cip_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_cip_geo_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_cip_geo_h
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_cip_geo a
+      WHERE
+      a.catchmentresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_cip_geo_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_cip_geo_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_cip_geo_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_cip_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_cip_geo_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_cip_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_cip_geo a
+      WHERE
+      a.catchmentresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_cip_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_cip_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_cip_geo_m';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_cip_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_cip_geo_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_cip_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_cip_geo_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.catchmentresolution
+      ,a.catchmentareasqkm
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_cip_geo a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_cip_geo_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_cip_geo_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_cip_geo_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_huc12_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_huc12_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_huc12_h
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_huc12 a
+      WHERE
+      a.xwalk_catresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_huc12_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_huc12_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_huc12_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_huc12_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_huc12_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_huc12_m
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_huc12 a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_huc12_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_huc12_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_huc12_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_huc12_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_huc12_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_huc12') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_huc12_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_huc12 a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_huc12_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_huc12_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.npdes_huc12_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_huc12_geo_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_huc12_geo_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_huc12_geo_h
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_huc12_geo_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_huc12_geo_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.npdes_huc12_geo_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_huc12_geo_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_huc12_geo_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_huc12_geo_m
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_huc12_geo a
+      WHERE
+      a.xwalk_catresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_huc12_geo_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_huc12_geo_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.npdes_huc12_geo_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_huc12_geo_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_huc12_geo_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_huc12_geo') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_huc12_geo_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.xwalk_huc12
+      ,a.xwalk_catresolution
+      ,a.xwalk_huc12_version
+      ,a.xwalk_huc12_areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_huc12_geo a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_huc12_geo_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_huc12_geo_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.npdes_huc12_geo_esri';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_rad_a_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_a_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_a_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_a a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_a_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_a_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_a_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_a_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_a_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_a_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_a a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_a_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_a_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_a_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_a_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_a_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.eventtype
+      ,a.event_areasqkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_a_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_a_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_a_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_evt2meta_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_evt2meta_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_evt2meta_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_evt2meta a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_evt2meta_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_evt2meta_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_evt2meta_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_evt2meta_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_evt2meta_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_evt2meta_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_evt2meta a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_evt2meta_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_evt2meta_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_evt2meta_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_evt2meta_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_evt2meta_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_evt2meta') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_evt2meta_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_evt2meta a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_evt2meta_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_evt2meta_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_evt2meta';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_l_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_l_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_l_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_l a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_l_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_l_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_l_h';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_l_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_l_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_l_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_l a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_l_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_l_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_l_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_l_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_l_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.event_lengthkm
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_l_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_l_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_l_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_metadata.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_metadata;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_metadata') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_metadata
+      AS
+      SELECT
+       a.objectid
+      ,a.meta_processid
+      ,a.processdescription
+      ,a.processdate
+      ,a.attributeaccuracyreport
+      ,a.logicalconsistencyreport
+      ,a.completenessreport
+      ,a.horizpositionalaccuracyreport
+      ,a.vertpositionalaccuracyreport
+      ,a.metadatastandardname
+      ,a.metadatastandardversion
+      ,a.metadatadate
+      ,a.datasetcredit
+      ,a.contactorganization
+      ,a.addresstype
+      ,a.address
+      ,a.city
+      ,a.stateorprovince
+      ,a.postalcode
+      ,a.contactvoicetelephone
+      ,a.contactinstructions
+      ,a.contactemailaddress
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_metadata a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_metadata OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_metadata TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_metadata';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_metadata_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_metadata_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_metadata') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_metadata_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.meta_processid
+      ,a.processdescription
+      ,a.processdate
+      ,a.attributeaccuracyreport
+      ,a.logicalconsistencyreport
+      ,a.completenessreport
+      ,a.horizpositionalaccuracyreport
+      ,a.vertpositionalaccuracyreport
+      ,a.metadatastandardname
+      ,a.metadatastandardversion
+      ,a.metadatadate
+      ,a.datasetcredit
+      ,a.contactorganization
+      ,a.addresstype
+      ,a.address
+      ,a.city
+      ,a.stateorprovince
+      ,a.postalcode
+      ,a.contactvoicetelephone
+      ,a.contactinstructions
+      ,a.contactemailaddress
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_metadata a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_metadata_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_metadata_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_metadata_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_p_h.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_p_h;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_p_h
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_p a
+      WHERE
+      a.reachresolution = 'HR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_p_h OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_p_h TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_p_h';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_rad_p_m.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_p_m;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_p_m
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_p a
+      WHERE
+      a.reachresolution = 'MR';
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_p_m OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_p_m TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_p_m';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_p_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_p_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permanent_identifier
+      ,a.eventdate
+      ,a.reachcode
+      ,a.reachsmdate
+      ,a.reachresolution
+      ,a.feature_permanent_identifier
+      ,a.featureclassref
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_datadesc
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.measure
+      ,a.eventtype
+      ,a.eventoffset
+      ,a.geogstate
+      ,a.xwalk_huc12
+      ,a.xwalk_method
+      ,a.xwalk_huc12_version
+      ,a.isnavigable
+      ,a.hasvaa
+      ,a.issink
+      ,a.isheadwater
+      ,a.iscoastal
+      ,a.isocean
+      ,a.isalaskan
+      ,a.h3hexagonaddr
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_rad_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_p_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_p_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_p_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_srccit.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_srccit;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_srccit') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_srccit
+      AS
+      SELECT
+       a.objectid
+      ,a.title
+      ,a.source_datasetid
+      ,a.sourcecitationabbreviation
+      ,a.originator
+      ,a.publicationdate
+      ,a.beginningdate
+      ,a.endingdate
+      ,a.sourcecontribution
+      ,a.sourcescaledenominator
+      ,a.typeofsourcemedia
+      ,a.calendardate
+      ,a.sourcecurrentnessreference
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_srccit a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_srccit OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_srccit TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_srccit';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_rad_srccit_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_rad_srccit_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_rad_srccit') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_rad_srccit_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.title
+      ,a.source_datasetid
+      ,a.sourcecitationabbreviation
+      ,a.originator
+      ,a.publicationdate
+      ,a.beginningdate
+      ,a.endingdate
+      ,a.sourcecontribution
+      ,a.sourcescaledenominator
+      ,a.typeofsourcemedia
+      ,a.calendardate
+      ,a.sourcecurrentnessreference
+      ,a.meta_processid
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_rad_srccit a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_rad_srccit_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_rad_srccit_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_rad_srccit_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_sfid.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_sfid;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_sfid') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_sfid
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.sfiddetailurl
+      ,a.load_id
+      ,a.load_date
+      ,a.src_event_count
+      ,a.src_point_count
+      ,a.src_line_count
+      ,a.src_area_count
+      ,a.cat_mr_count
+      ,a.cat_hr_count
+      ,a.xwalk_huc12_np21_count
+      ,a.rad_mr_event_count
+      ,a.rad_hr_event_count
+      ,a.rad_mr_point_count
+      ,a.rad_hr_point_count
+      ,a.rad_mr_line_count
+      ,a.rad_hr_line_count
+      ,a.rad_mr_area_count
+      ,a.rad_hr_area_count
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_sfid a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_sfid OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_sfid TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_sfid';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_sfid_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_sfid_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_sfid') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_sfid_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.sfiddetailurl
+      ,a.load_id
+      ,a.load_date
+      ,a.src_event_count
+      ,a.src_point_count
+      ,a.src_line_count
+      ,a.src_area_count
+      ,a.cat_mr_count
+      ,a.cat_hr_count
+      ,a.xwalk_huc12_np21_count
+      ,a.rad_mr_event_count
+      ,a.rad_hr_event_count
+      ,a.rad_mr_point_count
+      ,a.rad_hr_point_count
+      ,a.rad_mr_line_count
+      ,a.rad_hr_line_count
+      ,a.rad_mr_area_count
+      ,a.rad_hr_area_count
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_sfid a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_sfid_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_sfid_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_sfid_esri';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_src2cip.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src2cip;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src2cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src2cip
+      AS
+      SELECT
+       a.objectid
+      ,a.src2cip_joinkey
+      ,a.cip_joinkey
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,a.nhdplusid
+      ,a.catchmentresolution
+      ,a.cip_action
+      ,a.overlap_measure
+      ,a.cip_method
+      ,a.cip_parms
+      ,a.cip_date
+      ,a.cip_version
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_src2cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src2cip OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src2cip TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src2cip';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_src2cip_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src2cip_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src2cip') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src2cip_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.src2cip_joinkey
+      ,a.cip_joinkey
+      ,a.source_joinkey
+      ,a.permid_joinkey
+      ,a.cat_joinkey
+      ,a.catchmentstatecode
+      ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
+      ,a.catchmentresolution
+      ,a.cip_action
+      ,a.overlap_measure
+      ,a.cip_method
+      ,a.cip_parms
+      ,a.cip_date
+      ,a.cip_version
+      ,a.globalid
+      FROM
+      cipsrv_owld.npdes_src2cip a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src2cip_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src2cip_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src2cip';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_src_a.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src_a;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src_a
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_src_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      ALTER TABLE cipsrv_gis.owld_npdes_src_a OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src_a TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src_a';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_src_a_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src_a_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src_a') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src_a_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.areasqkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_src_a a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src_a_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src_a_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src_a';
+   
+   END IF;
+
+END$$;
+
+--******************************--
+----- views/owld_npdes_src_l.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src_l;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src_l
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.lengthkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_src_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src_l OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src_l TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src_l';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_src_l_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src_l_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src_l') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src_l_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.lengthkm
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_src_l a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src_l_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src_l_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src_l';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_src_p.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src_p;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src_p
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_src_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src_p OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src_p TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src_p';
+   
+   END IF;
+
+END$$;
+--******************************--
+----- views/owld_npdes_src_p_esri.sql 
+
+DROP VIEW IF EXISTS cipsrv_gis.owld_npdes_src_p_esri;
+
+DO $$DECLARE 
+BEGIN
+
+   IF cipsrv_gis.resource_exists('cipsrv_owld','npdes_src_p') 
+   THEN 
+
+      EXECUTE $q$
+      CREATE OR REPLACE VIEW cipsrv_gis.owld_npdes_src_p_esri
+      AS
+      SELECT
+       a.objectid
+      ,a.permid_joinkey
+      ,a.source_originator
+      ,a.source_featureid
+      ,a.source_featureid2
+      ,a.source_series
+      ,a.source_subdivision
+      ,a.source_joinkey
+      ,a.start_date
+      ,a.end_date
+      ,a.featuredetailurl
+      ,a.globalid
+      ,a.shape
+      FROM
+      cipsrv_owld.npdes_src_p a;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+
+      ALTER TABLE cipsrv_gis.owld_npdes_src_p_esri OWNER TO cipsrv_gis;
+      $q$;                                                                                                                          
+
+      EXECUTE $q$
+      GRANT SELECT ON cipsrv_gis.owld_npdes_src_p_esri TO public;
+      $q$;
+      
+   ELSE
+      RAISE WARNING 'skipping cipsrv_gis.owld_npdes_src_p';
    
    END IF;
 

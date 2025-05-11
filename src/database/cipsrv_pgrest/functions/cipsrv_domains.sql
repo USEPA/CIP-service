@@ -30,7 +30,7 @@ BEGIN
    -- Collect the state domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSON_AGG(a.*)
+   JSONB_AGG(a.*)
    INTO json_states
    FROM (
       SELECT
@@ -48,7 +48,7 @@ BEGIN
    -- Collect the tribes domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSON_AGG(a.*)
+   JSONB_AGG(a.*)
    INTO json_tribes
    FROM (
       SELECT
@@ -66,7 +66,7 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSON_BUILD_OBJECT(
+   RETURN JSONB_BUILD_OBJECT(
        'states', json_states
       ,'tribes', json_tribes
    );

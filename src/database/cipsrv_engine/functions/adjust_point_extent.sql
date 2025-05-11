@@ -33,7 +33,7 @@ BEGIN
       
       num_amount := p_flowline_amount * ((p_flowline_tmeasure - p_event_measure) / (p_flowline_tmeasure - p_flowline_fmeasure));
       
-   ELSIF str_direction IN ('DM','DD','PP','D')
+   ELSIF str_direction IN ('DM','DD','PP','PPALL','D')
    THEN
       IF p_flowline_fmeasure = p_event_measure
       THEN
@@ -44,7 +44,7 @@ BEGIN
       num_amount := p_flowline_amount * ((p_event_measure - p_flowline_fmeasure) / (p_flowline_tmeasure - p_flowline_fmeasure));
       
    ELSE
-      RAISE EXCEPTION 'err';
+      RAISE EXCEPTION 'err direction %',str_direction;
       
    END IF;
    

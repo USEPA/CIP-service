@@ -1,0 +1,16 @@
+<layer>
+  <name>owld_frspub_src_p</name>
+  <id>LayerInfoImpl-6a1fde1:196aab5130c:14a2</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl-6a1fde1:196aab5130c:1499</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl-6a1fde1:196aab5130c:14a1</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-05-07 15:11:36.270 UTC</dateCreated>
+</layer>

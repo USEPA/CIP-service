@@ -15,13 +15,9 @@ BEGIN
       ,a.nhdplusid
       ,a.istribal
       ,a.istribal_areasqkm
-      ,a.xwalk_huc12
-      ,a.xwalk_method
-      ,a.xwalk_huc12_version
       ,a.sourcefc
       ,a.gridcode
       ,a.areasqkm
-      ,a.areasqkm_geo
       ,a.isnavigable
       ,a.hasvaa
       ,a.issink

@@ -40,146 +40,146 @@
          <div id="map" class="map" style="height: 700px; width: 800px; float: left;"></div>
          <div id="righty" style="width: 600px; float: left;">
             <div id="top" style="text-align: center;">
-               <br/>
-               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
+               
+               <h2 style="margin-top: 3px; margin-bottom: 3px;">CIP Service Upstream/Downstream Test Harness</h2>
                <span style="font-family: Arial; font-size: 11px;">Add points to the map or enter GeoJSON text:</span>
                <br/>
-               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
+               <input id="pPoint"  name="pPoint"  type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 11px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
                <br/>
-               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
+               <input id="pPoint2" name="pPoint2" type="text" class="textbox" style="width: 400px; font-family: Arial; font-size: 11px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
-               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
-                  <option value="nhdplus_m" SELECTED>Medium Resolution</option>
-                  <option value="nhdplus_h">High Resolution</option>
+               <select name="pNHDPlusVersion" id="pNHDPlusVersion" style="font-family: Arial; font-size: 12px; width:170px" onChange="change_resolution();">
+                  <option value="nhdplus_m">Medium Resolution</option>
+                  <option value="nhdplus_h" SELECTED>High Resolution</option>
                </select>
                <br/>
                <table border="0" align="center">
                  <tr>
-                   <td colspan="2" style="font-family: Arial; font-size: 11px;padding-top: 5px;">Or enter NHDPlus identifiers and optional Measures</td>
+                   <td colspan="2" style="font-family: Arial; font-size: 11px; padding-top: 5px;">Or enter NHDPlus identifiers and optional Measures</td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start NHDPlusID:
-                     <input name="pStartNHDPlusID" type="text" class="text" id="pStartNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_nhdplusid" type="text" class="text" id="p_start_nhdplusid" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop NHDPlusID:
-                     <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopNHDPlusID" type="text" class="text" id="pStopNHDPlusID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Perm Id: 
-                     <input name="pStartPermanentIdentifier" type="text" class="text" id="pStartPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_permanent_identifier" type="text" class="text" id="p_start_permanent_identifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Perm Id: 
-                     <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopPermanentIdentifier" type="text" class="text" id="pStopPermanentIdentifier" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Reach Code: 
-                     <input name="pStartReachCode" type="text" class="text" id="pStartReachCode" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_reachcode" type="text" class="text" id="p_start_reachcode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Reach Code: 
-                     <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopReachCode" type="text" class="text" id="pStopReachCode" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Hydro Seq: 
-                     <input name="pStartHydroSeq" type="text" class="text" id="pStartHydroSeq" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_hydroseq" type="text" class="text" id="p_start_hydroseq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Hydro Seq: 
-                     <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopHydroSeq" type="text" class="text" id="pStopHydroSeq" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Measure:
-                     <input name="pStartMeasure" type="text" class="text" id="pStartMeasure" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_measure" type="text" class="text" id="p_start_measure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Measure:
-                     <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopMeasure" type="text" class="text" id="pStopMeasure" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceFeatureID: 
-                     <input name="pStartSourceFeatureID" type="text" class="text" id="pStartSourceFeatureID" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceFeatureID" type="text" class="text" id="pStartSourceFeatureID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceFeatureID: 
-                     <input name="pStopSourceFeatureID" type="text" class="text" id="pStopSourceFeatureID" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceFeatureID" type="text" class="text" id="pStopSourceFeatureID" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceFeatureID2: 
-                     <input name="pStartSourceFeatureID2" type="text" class="text" id="pStartSourceFeatureID2" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceFeatureID2" type="text" class="text" id="pStartSourceFeatureID2" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceFeatureID2: 
-                     <input name="pStopSourceFeatureID2" type="text" class="text" id="pStopSourceFeatureID2" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceFeatureID2" type="text" class="text" id="pStopSourceFeatureID2" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceOriginator: 
-                     <input name="pStartSourceOriginator" type="text" class="text" id="pStartSourceOriginator" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceOriginator" type="text" class="text" id="pStartSourceOriginator" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceOriginator: 
-                     <input name="pStopSourceOriginator" type="text" class="text" id="pStopSourceOriginator" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceOriginator" type="text" class="text" id="pStopSourceOriginator" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start SourceSeries: 
-                     <input name="pStartSourceSeries" type="text" class="text" id="pStartSourceSeries" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceSeries" type="text" class="text" id="pStartSourceSeries" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop SourceSeries: 
-                     <input name="pStopSourceSeries" type="text" class="text" id="pStopSourceSeries" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceSeries" type="text" class="text" id="pStopSourceSeries" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start StartDate: 
-                     <input name="pStartStartDate" type="text" class="text" id="pStartStartDate" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartStartDate" type="text" class="text" id="pStartStartDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop StartDate: 
-                     <input name="pStopStartDate" type="text" class="text" id="pStopStartDate" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopStartDate" type="text" class="text" id="pStopStartDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start EndDate: 
-                     <input name="pStartEndDate" type="text" class="text" id="pStartEndDate" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartEndDate" type="text" class="text" id="pStartEndDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop EndDate: 
-                     <input name="pStopEndDate" type="text" class="text" id="pStopEndDate" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopEndDate" type="text" class="text" id="pStopEndDate" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start PermID JoinKey: 
-                     <input name="pStartPermIDJoinKey" type="text" class="text" id="pStartPermIDJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartPermIDJoinKey" type="text" class="text" id="pStartPermIDJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop PermID JoinKey: 
-                     <input name="pStopPermIDJoinKey" type="text" class="text" id="pStopPermIDJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopPermIDJoinKey" type="text" class="text" id="pStopPermIDJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start Source JoinKey: 
-                     <input name="pStartSourceJoinKey" type="text" class="text" id="pStartSourceJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="pStartSourceJoinKey" type="text" class="text" id="pStartSourceJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop Source JoinKey: 
-                     <input name="pStopSourceJoinKey" type="text" class="text" id="pStopSourceJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="pStopSourceJoinKey" type="text" class="text" id="pStopSourceJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
-                   <td align="right" style="font-family: Arial; font-size: 11px;">Start Cat JoinKey: 
-                     <input name="pStartCatJoinKey" type="text" class="text" id="pStartCatJoinKey" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Start CIP JoinKey: 
+                     <input name="pStartCIPJoinKey" type="text" class="text" id="pStartCIPJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
-                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop Cat JoinKey: 
-                     <input name="pStopCatJoinKey" type="text" class="text" id="pStopCatJoinKey" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                   <td align="right" style="font-family: Arial; font-size: 11px;">Stop CIP JoinKey: 
+                     <input name="pStopCIPJoinKey" type="text" class="text" id="pStopCIPJoinKey" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                  <tr>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Start LinkedData Program: 
-                     <input name="p_start_linked_data_program" type="text" class="text" id="p_start_linked_data_program" style="display:inline; width:150px" onChange ="blank_pt1();check_start();"/>
+                     <input name="p_start_linked_data_program" type="text" class="text" id="p_start_linked_data_program" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt1();check_start();"/>
                    </td>
                    <td align="right" style="font-family: Arial; font-size: 11px;">Stop LinkedData Program: 
-                     <input name="p_stop_linked_data_program" type="text" class="text" id="p_stop_linked_data_program" style="display:inline; width:150px" onChange ="blank_pt2();check_start();"/>
+                     <input name="p_stop_linked_data_program" type="text" class="text" id="p_stop_linked_data_program" style="display:inline; width:150px; font-family: Arial; font-size: 12px;" onChange ="blank_pt2();check_start();"/>
                    </td>
                  </tr>
                </table>
-               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px;">
+               <select name="p_search_type" id="p_search_type" onchange="update_form();check_start();" style="margin-top: 6px; margin-bottom: 4px; font-family: Arial; font-size: 12px;">
                  <option value="UT" SELECTED>Upstream with Tributaries</option>
                  <option value="UM">Upstream Main Path Only</option>
                  <option value="DD">Downstream with Divergences</option>
@@ -187,50 +187,74 @@
                  <option value="PP">Point to Point</option>
                  <option value="PPALL">Point to Point, All Streams Between</option>
                </select>
-               <input name="p_search_max_distancekm" type="text" class="text" id="p_search_max_distancekm" style="display:inline; width:30px" value="15" />&nbsp;km
-               <br/>
-               <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: </span>
-               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px;" size="2" multiple onchange="change_linked_data();">
-                 <option value="WQP" SELECTED>Water Quality Portal Stations</option>
+               <input name="p_search_max" type="text" class="text" id="p_search_max" style="display:inline; width:30px; font-family: Arial; font-size: 12px;" value="15" />&nbsp;
+               <select name="selMaxType" id="selMaxType" style="font-family: Arial; font-size: 12px;">
+                  <option value="distkm" SELECTED>km (distance)</option>
+                  <option value="flowday"> day (flowtime)</option>
                </select>
                <br/>
+               <span style="font-family: Arial; font-size: 12px;">Linked Data Search List: &nbsp;</span>
+               <select name="p_linked_data_search_list" id="p_linked_data_search_list" style="margin-top: 3px; width: 300px; font-family: Arial; font-size: 12px;" size="4" multiple onchange="change_linked_data();">
+               </select>
+               <br/>
+               <span style="font-family: Arial; font-size: 12px;">Search Precision: </span>
+               <select name="p_search_precision" id="p_search_precision" style="margin-top: 6px; margin-bottom: 3px; font-family: Arial; font-size: 12px;">
+                 <option value="CATCHMENT" SELECTED>Catchments</option>
+                 <option value="REACH">Reaches</option>
+               </select>
+               <table style="border: 0px; padding: 0px; margin: 0px auto;">
+               <tr style="padding: 0px; margin: 0px;">
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Flowlines:</span>
                <input name="p_return_flowlines" id="p_return_flowlines" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Catchments:</span>
                <input name="p_return_catchments" id="p_return_catchments" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data CIP:</span>
                <input name="p_return_linked_data_cip" id="p_return_linked_data_cip" type="checkbox">
-               <br/>
+               </td>
+               </tr>
+               <tr style="padding: 0px; margin: 0px;">
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data HUC12:</span>
                <input name="p_return_linked_data_huc12" id="p_return_linked_data_huc12" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data SRC:</span>
                <input name="p_return_linked_data_src" id="p_return_linked_data_source" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
-               <span style="font-family: Arial; font-size: 12px;">Return Linked Data RAD:</span>
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
+               <span style="font-family: Arial; font-size: 12px;">&nbsp;Return Linked Data RAD:</span>
                <input name="p_return_linked_data_rad" id="p_return_linked_data_rad" type="checkbox">
-               <br/>
+               </td>
+               </tr>
+               <tr style="padding: 0px; margin: 0px;">
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Return Linked Data Attr:</span>
                <input name="p_return_linked_data_attributes" id="p_return_linked_data_attributes" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
-               <span style="font-family: Arial; font-size: 12px;">Remove Stop/Start SFIDs:</span>
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
+               <span style="font-family: Arial; font-size: 12px;">&nbsp;Remove Stop/Start SFIDs:</span>
                <input name="p_remove_stop_start_sfids" id="p_remove_stop_start_sfids" type="checkbox">
-               &nbsp;&nbsp;&nbsp;
+               </td>
+               <td style="text-align: right; padding: 0px; margin: 0px;">
                <span style="font-family: Arial; font-size: 12px;">Push SRC as RAD:</span>
                <input name="p_push_source_geometry_as_rad" id="p_push_source_geometry_as_rad" type="checkbox">
-               <br/>
-               <br/>
-               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
-               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
+               </td>
+               </tr>
+               </table>
+               <input style="margin-top: 7px;" type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input style="margin-top: 7px;" type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;  
             </div>
          </div>
       </div>
-      <div id="output" style="width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
-      </div>
+      <div id="output" style="position: absolute; top: 715px; width: 1200px; text-align: left; font-family: Arial; font-size: 15px;" />
+      
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
-      <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
       <script>
    document.getElementById("dz_run_service").disabled = true;
@@ -239,6 +263,7 @@
    
    var map = L.map("map").setView([46.874626,-96.782341],12);
    mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+   var owld_programs = [];
 
    basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "Map data &copy; " + mapLink,
@@ -248,17 +273,15 @@
    
    L.TileLayer.BetterWMS = L.TileLayer.WMS.extend({
   
-      onAdd: function (map) {
+      onAdd: function(map) {
          L.TileLayer.WMS.prototype.onAdd.call(this,map);
          map.on('click',this.getFeatureInfo,this);
-      },
-     
-      onRemove: function (map) {
+      },   
+      onRemove: function(map) {
          L.TileLayer.WMS.prototype.onRemove.call(this,map);
          map.off('click',this.getFeatureInfo,this);
       },
-     
-      getFeatureInfo: function (evt) {
+      getFeatureInfo: function(evt) {
          var url = this.getFeatureInfoUrl(evt.latlng);
          var showResults = L.Util.bind(this.showGetFeatureInfo,this);
        
@@ -279,9 +302,8 @@
          
          }
 
-      },
-     
-      getFeatureInfoUrl: function (latlng) {
+      }, 
+      getFeatureInfoUrl: function(latlng) {
          var point  = map.latLngToContainerPoint(latlng,map.getZoom());
          var size   = map.getSize();
          var bounds = map.getBounds();
@@ -321,24 +343,34 @@
          if ( url.includes("cipsrv%3Anhdplus_m_flowlines") ) {
             url = url.replace(/cipsrv\%3Anhdplus_m_flowlines/g,"cipsrv\%3Anhdplus_m_networknhdflowline");
          }
-         console.log(url);
+         //console.log(url);
          return url;
        
       },
-     
-      showGetFeatureInfo: function (err, latlng, content) {
-         if (err) { 
-            console.log(err); 
-            return; 
+      showGetFeatureInfo: function(err,latlng,content){
+         if (err){
+            console.log(err);
+            return;
          }
-       
-         L.popup({ maxWidth: 800})
+         cntobj = JSON.parse(content);
+         if ( cntobj.features.length == 0 ) {
+            return;
+         }
+         cnthtml = "";
+         if (cntobj.features[0].id.substring(10,28) == 'networknhdflowline' ) {
+            cnthtml = popup1(cntobj.features[0]);
+            
+         } else if (cntobj.features[0].id.substring(0,5) == 'owld_' ) {
+            cnthtml = popup2(cntobj.features[0],null);
+
+         }
+         
+         L.popup({maxWidth: 800})
             .setLatLng(latlng)
-            .setContent(content)
+            .setContent(cnthtml)
             .openOn(this._map);
       
       }
-      
    });
 
    L.tileLayer.betterWms = function (url,options) {
@@ -438,155 +470,253 @@
    });
    
    var snap_path = L.geoJson(null, {
-      onEachFeature: onEachFeature_snap_path
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.snap_distancekm) {
+            layer.bindPopup(
+               "Length (Km): " +
+               dzf(feature.properties.snap_distancekm)
+            );
+         }
+      }
    }).addTo(map);
    
    var catchments = new L.GeoJSON(null, {
-      onEachFeature: onEachFeature_catchments
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.nhdplusid) {
+            layer.bindPopup(
+               "NHDPlusID: " +
+               feature.properties.nhdplusid.toString() +
+               "<BR/>" +
+               "Area (SqKm): " +
+               dzf(feature.properties.areasqkm) +
+               "<BR/>" 
+            );
+         }
+      }
    }).addTo(map);
    
    var flowlines = new L.GeoJSON(null, {
-      onEachFeature: onEachFeature_flowlines
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.nhdplusid) {
+            layer.bindPopup(
+               "NHDPlusID: " +
+               feature.properties.nhdplusid.toString() +
+               "<BR/>" +
+               "Perm ID: " +
+               feature.properties.permanent_identifier +
+               "<BR/>" +
+               "Reach Code: " +
+               feature.properties.reachcode +
+               "<BR/>" +
+               "Hydro Seq: " +
+               feature.properties.hydroseq.toString() +
+               "<BR/>" +
+               "FMeasure: " +
+               dzf5(feature.properties.fmeasure) +
+               "<BR/>" +
+               "TMeasure: " +
+               dzf5(feature.properties.tmeasure) +
+               "<BR/>" +
+               "GNIS Name: " +
+               feature.properties.gnis_name +
+               "<BR/>" +
+               "Length (Km): " +
+               dzf(feature.properties.lengthkm) +
+               "<BR/>" +
+               "Network Distance (Km): " +
+               dzf(feature.properties.network_distancekm) +
+               "<BR/>" 
+            );
+         }
+      }
    }).addTo(map);
    
+   var src_p = new L.GeoJSON(null, {
+      pointToLayer: function (feature, latlng) {
+         return L.circleMarker(latlng,{
+            radius: 4,
+            fillColor: "#006400",
+            color: "#000000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+         });
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>' 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var src_l = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            color: "#006400",
+            weight: 4
+         }
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>' +
+               'Length (km): ' +
+               dzf(feature.properties.lengthkm) +
+               '<BR/>' 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var src_a = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            fillColor: "#006400",
+            color: "#000000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+         }
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>' +
+               'Area (sqkm): ' +
+               dzf(feature.properties.areasqkm) +
+               '<BR/>' 
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var fcats = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            fillColor: "#FFFFFF",
+            color: "#000000",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+         }
+      }
+   }).addTo(map);
+   
+   var rad_p = new L.GeoJSON(null, {
+      pointToLayer: function (feature, latlng) {
+         return L.circleMarker(latlng,{
+            radius: 4,
+            fillColor: "#000000",
+            color: "#FF0000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+         });
+      },
+      onEachFeature: function(feature,layer) {
+         if (feature.properties && feature.properties.eventtype) {
+            layer.bindPopup(
+               'EventType: ' +
+               dzfet(feature.properties.eventtype) +
+               '<BR/>' +
+               'Source Originator: ' +
+               feature.properties.source_originator +
+               '<BR/>' +
+               'Source FeatureID: <a href="' + feature.properties.featuredetailurl + '">' +
+               feature.properties.source_featureid +
+               '</a><BR/>' +
+               'Source FeatureID2: ' +
+               feature.properties.source_featureid2 +
+               '<BR/>'  +
+               'Reach Code: ' +
+               feature.properties.reachcode +
+               '<BR/>' +
+               'Measure: ' +
+               dzf5(feature.properties.measure) +
+               '<BR/>'
+            );
+         }
+      }
+   }).addTo(map);
+   
+   var rad_l = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            color: "#FFFFFF",
+            weight: 4
+         }
+      }
+   }).addTo(map);
+   
+   var rad_a = new L.GeoJSON(null, {
+      style: function(feature) {
+         return {
+            fillColor: "#FFFFFF",
+            color: "#000000",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+         }
+      }
+   }).addTo(map);
+   
+   var lyr_program_hash = {};
    var layer_items = {
-       "Snap path"      : snap_path
-      ,"Catchments"     : catchments
-      ,"Streams"        : flowlines
+       "Snap path"                : snap_path
+      ,"Navigated Streams"        : flowlines
+      ,"Navigated Catchments"     : catchments
+      ,"Found Source Points"      : src_p
+      ,"Found Source Lines"       : src_l
+      ,"Found Source Areas"       : src_a
+      ,"Found CIP Catchments"     : fcats
+      ,"Found RAD Points"         : rad_p
+      ,"Found RAD Lines"          : rad_l
+      ,"Found RAD Areas"          : rad_a
+      
    };
-   
-   if (
-      typeof gis_host === "undefined" ||
-      gis_host === null ||
-      gis_host == "NONE"
-   ) {
-      null;
-   } else {
-      zgis_host = gis_host;
-      
-      if (
-         typeof gis_type === "undefined" ||
-         gis_type === null ||
-         gis_type == "NONE"
-      ) {
-         zgis_type = "geoserver";
-      } else {
-         zgis_type = gis_type;
-      }
-   
-      if (
-         typeof gis_prot === "undefined" ||
-         gis_prot === null ||
-         gis_prot == "NONE"
-      ) {
-         zgis_prot = "http";
-      } else {
-         zgis_prot = gis_prot;
-      }
-      
-      if (
-         typeof gis_port === "undefined" ||
-         gis_port === null ||
-         gis_port == "NONE"
-      ) {
-         zgis_port = "";
-      } else {
-         zgis_port = ":" + gis_port;
-      }
-      
-      if ( zgis_type == "geoserver" ) {
-         gis_server = zgis_prot + "://" + zgis_host + zgis_port;
-         
-         lyr_nhdplus_m_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
-             layers: 'cipsrv:nhdplus_m_flowlines'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
-         lyr_nhdplus_m_flowlines.addTo(map);
-         layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
-         
-         lyr_nhdplus_h_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
-             layers: 'cipsrv:nhdplus_h_flowlines'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
-         //lyr_nhdplus_h_flowlines.addTo(map);
-         layer_items["HR Flowlines"] = lyr_nhdplus_h_flowlines;
-         
-         lyr_wqp = L.tileLayer.betterWms(gis_server + "/wms",{
-             layers: 'cipsrv:owld_wqp_src'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
-         lyr_wqp.addTo(map);
-         layer_items["OWLD WQP Source"] = lyr_wqp;
-         
-      }
-      
-   }
-   L.control.layers(null, layer_items).addTo(map);   
-   
-   function onEachFeature_snap_path(feature,layer) {
-      if (feature.properties && feature.properties.snap_distancekm) {
-         layer.bindPopup(
-            "Length (Km): " +
-            feature.properties.snap_distancekm.toString()
-         );
-      }
-   }
-   
-   function onEachFeature_catchments(feature,layer) {
-      if (feature.properties && feature.properties.nhdplusid) {
-         layer.bindPopup(
-            "NHDPlusID: " +
-            feature.properties.nhdplusid.toString() +
-            "<BR/>" +
-            "Area (SqKm): " +
-            feature.properties.areasqkm +
-            "<BR/>" 
-         );
-      }
-   }
-   
-   function onEachFeature_flowlines(feature,layer) {
-      if (feature.properties && feature.properties.nhdplusid) {
-         layer.bindPopup(
-            "NHDPlusID: " +
-            feature.properties.nhdplusid.toString() +
-            "<BR/>" +
-            "Perm ID: " +
-            feature.properties.permanent_identifier +
-            "<BR/>" +
-            "Reach Code: " +
-            feature.properties.reachcode +
-            "<BR/>" +
-            "Hydro Seq: " +
-            feature.properties.hydroseq.toString() +
-            "<BR/>" +
-            "FMeasure: " +
-            feature.properties.fmeasure.toString() +
-            "<BR/>" +
-            "TMeasure: " +
-            feature.properties.tmeasure.toString() +
-            "<BR/>" +
-            "GNIS Name: " +
-            feature.properties.gnis_name +
-            "<BR/>" +
-            "Length (Km): " +
-            feature.properties.lengthkm +
-            "<BR/>" +
-            "Network Distance (Km): " +
-            feature.properties.network_distancekm +
-            "<BR/>" 
-         );
-      }
-   }
+
+   var layerControl = L.control.layers(null, layer_items).addTo(map);
+
+   // Pull OWLD Programs
+   httpGet(
+      build_api() + "cipsrv_owld_programs",
+      populate_owld
+   );
 
    function run_service() {
       dz_clear_old();
@@ -598,58 +728,73 @@
          
          var search_type      = get_select_values(document.getElementById("p_search_type"));
          
+         var maxtype          = get_select_values(document.getElementById("selMaxType"));
+         var maxdistkm,maxtimeday;
+         if (maxtype == "distkm" ) {
+            maxdistkm  = document.getElementById("p_search_max").value;
+            maxtimeday = null;
+         }
+         if (maxtype == "flowday" ) {
+            maxdistkm  = null;
+            maxtimeday = document.getElementById("p_search_max").value;
+         }
+         
          var data = {
-             "search_type"                 : search_type
-            ,"nhdplus_version"             : nhdplus_version
+             "search_type"                  : search_type
+            ,"nhdplus_version"              : nhdplus_version
              
-            ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
-            ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
-            ,"start_reachcode"             : document.getElementById("pStartReachCode").value
-            ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
-            ,"start_measure"               : document.getElementById("pStartMeasure").value
+            ,"start_nhdplusid"              : document.getElementById("p_start_nhdplusid").value
+            ,"start_permanent_identifier"   : document.getElementById("p_start_permanent_identifier").value
+            ,"start_reachcode"              : document.getElementById("p_start_reachcode").value
+            ,"start_hydroseq"               : document.getElementById("p_start_hydroseq").value
+            ,"start_measure"                : document.getElementById("p_start_measure").value
             
-            ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
-            ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
-            ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
-            ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
-            ,"start_start_date"            : document.getElementById("pStartStartDate").value
-            ,"start_end_date"              : document.getElementById("pStartEndDate").value
-            ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
-            ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
-            ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
-            ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+            ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
+            ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
+            ,"start_source_originator"      : document.getElementById("pStartSourceOriginator").value
+            ,"start_source_series"          : document.getElementById("pStartSourceSeries").value
+            ,"start_start_date"             : document.getElementById("pStartStartDate").value
+            ,"start_end_date"               : document.getElementById("pStartEndDate").value
+            ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
+            ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
+            ,"start_cip_joinkey"            : document.getElementById("pStartCIPJoinKey").value
+            ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
+            ,"start_push_rad_for_permid"    : true
             
-            ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
-            ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
-            ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
-            ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
-            ,"stop_measure"                : document.getElementById("pStopMeasure").value
+            ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"               : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"                : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"                 : document.getElementById("pStopMeasure").value
             
-            ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
-            ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
-            ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
-            ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
-            ,"stop_start_date"             : document.getElementById("pStopStartDate").value
-            ,"stop_end_date"               : document.getElementById("pStopEndDate").value
-            ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
-            ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
-            ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
-            ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+            ,"stop_source_featureid"        : document.getElementById("pStopSourceFeatureID").value
+            ,"stop_source_featureid2"       : document.getElementById("pStopSourceFeatureID2").value
+            ,"stop_source_originator"       : document.getElementById("pStopSourceOriginator").value
+            ,"stop_source_series"           : document.getElementById("pStopSourceSeries").value
+            ,"stop_start_date"              : document.getElementById("pStopStartDate").value
+            ,"stop_end_date"                : document.getElementById("pStopEndDate").value
+            ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
+            ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
+            ,"stop_cip_joinkey"             : document.getElementById("pStopCIPJoinKey").value
+            ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
+            ,"stop_push_rad_for_permid"     : true
             
-            ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
-            ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
-            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
-            ,"return_catchments"           : document.getElementById("p_return_catchments").checked
-            ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
-            ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
-            ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
-            ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+            ,"max_distancekm"               : maxdistkm
+            ,"max_flowtimeday"              : maxtimeday
+            ,"linked_data_search_list"      : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+            ,"search_precision"             : get_select_values(document.getElementById("p_search_precision"))
+            ,"return_flowlines"             : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"      : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"     : document.getElementById("p_return_flowlines").checked
+            ,"return_catchments"            : document.getElementById("p_return_catchments").checked
+            ,"return_linked_data_cip"       : document.getElementById("p_return_linked_data_cip").checked
+            ,"return_linked_data_huc12"     : document.getElementById("p_return_linked_data_huc12").checked
+            ,"return_linked_data_source"    : document.getElementById("p_return_linked_data_source").checked
+            ,"return_linked_data_rad"       : document.getElementById("p_return_linked_data_rad").checked
             ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
             ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
             ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
-         }
+         };
       
          httpPost(
             build_api() + "upstreamdownstream",
@@ -694,7 +839,7 @@
             }
          }
       };
-      xmlHttp.send(JSON.stringify(data));
+      xmlHttp.send(null);
    }
    
    function httpPost(url,data,callback) {
@@ -753,6 +898,222 @@
       return result;
    }
    
+   function populate_owld(error,response) {
+      
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      } else if (response == null) {
+         document.getElementById("output").innerHTML = "<P>No response from cipsrv_owld_programs service.</P>";
+         return false;
+      }
+      
+      select = document.getElementById('p_linked_data_search_list');
+      for (var i=0, iLen=response.programs.length; i<iLen; i++) {
+         var opt = document.createElement('option');
+         opt.value = response.programs[i].program_id;
+         
+         if ('program_short_name' in response.programs[i] && response.programs[i].program_short_name != null) {
+            opt.innerHTML = response.programs[i].program_short_name;  
+         } else {
+            opt.innerHTML = response.programs[i].program_name;
+         }
+         
+         select.appendChild(opt);
+         
+      }
+      
+      if (
+         typeof gis_host === "undefined" ||
+         gis_host === null ||
+         gis_host == "NONE"
+      ) {
+         null;
+      } else {
+         zgis_host = gis_host;
+
+         if (
+            typeof gis_type === "undefined" ||
+            gis_type === null ||
+            gis_type == "NONE"
+         ) {
+            zgis_type = "geoserver";
+         } else {
+            zgis_type = gis_type;
+         }
+      
+         if (
+            typeof gis_prot === "undefined" ||
+            gis_prot === null ||
+            gis_prot == "NONE"
+         ) {
+            zgis_prot = "http";
+         } else {
+            zgis_prot = gis_prot;
+         }
+         
+         if (
+            typeof gis_port === "undefined" ||
+            gis_port === null ||
+            gis_port == "NONE"
+         ) {
+            zgis_port = "";
+         } else {
+            zgis_port = ":" + gis_port;
+         }
+         
+         if (
+            typeof gis_pref === "undefined" ||
+            gis_pref === null ||
+            gis_pref == "NONE"
+         ) {
+            zgis_pref = "";
+         } else {
+            zgis_pref = "/" + gis_pref;
+         }
+         
+         gis_server = zgis_prot + "://" + zgis_host + zgis_port + zgis_pref;
+         var ary_programs = document.getElementById("p_linked_data_search_list").options;
+
+         if ( zgis_type == "geoserver" ) {
+         
+            lyr_nhdplus_m_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_m_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+            lyr_nhdplus_m_flowlines.addTo(map);
+            layerControl.addOverlay(lyr_nhdplus_m_flowlines,"MR Flowlines");
+            
+            lyr_nhdplus_h_flowlines = L.tileLayer.betterWms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_h_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+            //lyr_nhdplus_h_flowlines.addTo(map);
+            layerControl.addOverlay(lyr_nhdplus_h_flowlines,"HR Flowlines");
+            
+            for (var i = 0; i < ary_programs.length; i++) {
+               var program = ary_programs[i].value.toLowerCase();
+
+               var lyr = L.tileLayer.betterWms(gis_server + "/wms",{
+                   layers: 'cipsrv:owld_' + program + '_src'
+                  ,format: 'image/png'
+                  ,transparent: true
+                  ,version: '1.3.0'
+                  ,attribution: "US EPA"
+               });
+               lyr_program_hash[ary_programs[i].value] = lyr;
+               //lyr.addTo(map);
+               layerControl.addOverlay(lyr,"OWLD " + ary_programs[i].value + " Source");
+               owld_programs.push(ary_programs[i].value);
+               
+            }
+            
+         } else if ( zgis_type == "arcgis" ) {
+      
+            lyr_nhdplus_m_flowlines = L.esri.dynamicMapLayer({
+               url: gis_server + "/rest/services/NHDPlus/NHDPlus/MapServer",
+               position: "back",
+               layers: [2]
+            });
+            lyr_nhdplus_m_flowlines.addTo(map);
+            
+            lyr_nhdplus_m_flowlines.bindPopup(function(error,featureCollection){
+               if (error || featureCollection.features.length === 0) {
+                  return false;
+               } else {
+                  return popup1(featureCollection.features[0]);
+               }
+            });
+            
+            layerControl.addOverlay(lyr_nhdplus_m_flowlines,"MR Flowlines");
+            
+            lyr_nhdplus_h_flowlines = L.esri.dynamicMapLayer({
+               url: gis_server + "/rest/services/Support/NHDPlusH/MapServer",
+               position: "back",
+               layers: [1]
+            });
+            //lyr_nhdplus_h_flowlines.addTo(map);
+            
+            lyr_nhdplus_h_flowlines.bindPopup(function(error,featureCollection){
+               if (error || featureCollection.features.length === 0) {
+                  return false;
+               } else {
+                  return popup1(featureCollection.features[0]);
+               }
+            });
+            
+            layerControl.addOverlay(lyr_nhdplus_h_flowlines,"HR Flowlines");
+            
+            for (var i = 0; i < ary_programs.length; i++) {
+               var program = ary_programs[i].value.toLowerCase();
+
+               var lyr = L.esri.dynamicMapLayer({
+                  url: gis_server + "/rest/services/owld/" + program + "/MapServer",
+                  position: "back",
+                  layers: [0,1,2],
+                  prj: ary_programs[i].value
+               });
+               
+               var func;
+               if (program == 'attains') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'ATTAINS');
+                     }
+                     
+                  }
+               } else if (program == 'frspub') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'FRSPUB');
+                     }
+                     
+                  }
+               } else if (program == 'npdes') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'NPDES');
+                     }
+                     
+                  }
+               } else if (program == 'wqp') {
+                  func = function(error,featureCollection){
+                     if (error || featureCollection.features.length === 0) {
+                        return false;
+                     } else {
+                        return popup2(featureCollection.features[0],'WQP');
+                     }
+                     
+                  }
+               }
+               
+               lyr.bindPopup(func);            
+               //console.log(lyr);
+               lyr_program_hash[ary_programs[i].value] = lyr;
+               //lyr.addTo(map);
+               layerControl.addOverlay(lyr,"OWLD " + ary_programs[i].value + " Source");
+               owld_programs.push(ary_programs[i].value);
+               
+            }
+            
+         }
+         
+      }
+      
+   }
+   
    function updn_response(error,response) {
       busy_off();
 
@@ -762,13 +1123,99 @@
       } else if (response == null) {
          document.getElementById("output").innerHTML = "<P>No response from service.</P>";
          return false;
-      } else if (response.return_code != 0) {
-         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
-         return false;
-      } else if (response.catchment_count == 0) {
-         document.getElementById("output").innerHTML = "<P>No catchments indexed.</P>";
+      } 
+      
+      if ( response.start_nhdplusid !== null ) {
+         document.getElementById("p_start_nhdplusid").value = response.start_nhdplusid;
+      }
+      if ( response.start_measure !== null ) {
+         document.getElementById("p_start_measure").value   = response.start_measure;
+      }
+      if ( response.start_linked_data_program !== null ) {
+         document.getElementById("p_start_linked_data_program").value = response.start_linked_data_program;
       }
       
+      if ( response.stop_nhdplusid  !== null ) {
+         document.getElementById("pStopNHDPlusID").value  = response.stop_nhdplusid;
+      }
+      if ( response.stop_measure !== null ) {
+         document.getElementById("pStopMeasure").value    = response.stop_measure;
+      }
+      if ( response.stop_linked_data_program !== null ) {
+         document.getElementById("p_stop_linked_data_program").value = response.stop_linked_data_program;
+      }
+      
+      if (response.return_code != 0) {
+         document.getElementById("output").innerHTML = "<P>" + response.status_message + "</P>";
+         return false;
+      } else if (response.linked_data_sfid_count == 0) {
+         document.getElementById("output").innerHTML = "<P>No linked data found.</P>";
+      }
+
+      boo_zoom = false;
+      
+      var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
+      document.getElementById("output").innerHTML += '<B>Search Summary:</B><BR/>'
+         + '<TABLE style="border: 1px solid black; font-family: Arial; font-size: 13px;"><TBODY>'
+         + '<TR style="border: 1px solid;"><TD>Resolution: ' + nhdplus_version + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Flowlines Navigated: ' + dzfi(response.flowline_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Catchments Navigated: ' + dzfi(response.catchment_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>SFIDs Found: ' + dzfi(response.linked_data_sfid_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>CIP Events Found: ' + dzfi(response.linked_data_cip_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>RAD Events Found: ' + dzfi(response.linked_data_reached_count) + '</TD></TR>'
+         + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.flowlines !== null) {
+         
+         if (response.flowlines.features[0].geometry.type !== null) {
+            flowlines.addData(response.flowlines).setStyle({
+                "color": "#0000FF"
+               ,"fillColor": "#0000FF"
+               ,"weight": 4
+            });
+            
+            if (!boo_zoom) {
+               map.fitBounds(flowlines.getBounds(), {
+                  maxZoom: 16
+               });
+               boo_zoom = true;
+            }
+            
+         }
+         
+         var tbl = '<BR/><BR/><B>Navigated Streams Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 5px;">NHDPlusID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">GNIS Name</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">FCODE</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Reach Code</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">FMeasure</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">TMeasure</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Network Distance (km)</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Network Flowtime (day)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.flowlines.features.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfi(response.flowlines.features[i].properties.nhdplusid) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.flowlines.features[i].properties.gnis_name) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfi(response.flowlines.features[i].properties.fcode) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.flowlines.features[i].properties.reachcode) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzf5(response.flowlines.features[i].properties.fmeasure) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzf5(response.flowlines.features[i].properties.tmeasure) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzf(response.flowlines.features[i].properties.network_distancekm) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px; border-right: 1px solid;">' + dzf(response.flowlines.features[i].properties.network_flowtimeday) + '</TD>'
+                 + '</TR>';
+
+         }         
+                
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+         
+      }
+      
+      /////////////////////////////////////////////////////////////////////////
       if (response.catchments !== null && response.catchments.features[0].geometry.type !== null) {
          catchments.addData(response.catchments).setStyle({
              "color": "#E38A1E"
@@ -776,22 +1223,384 @@
             ,"weight": 2
          });
          
-         map.fitBounds(catchments.getBounds(), {
-            maxZoom: 16
-         });
+         if (!boo_zoom) {
+            map.fitBounds(catchments.getBounds(), {
+               maxZoom: 16
+            });
+            boo_zoom = true;
+         }
+         
+         var tbl = '<BR/><BR/><B>Navigated Catchments Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 5px;">NHDPlusID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FC</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Area (sqkm)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.catchments.features.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfi(response.catchments.features[i].properties.nhdplusid) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.catchments.features[i].properties.sourcefc) + '</TD>'
+                 + '<TD style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.catchments.features[i].properties.areasqkm) + '</TD>'
+                 + '</TR>';
+
+         }         
+                
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
          
       } 
+
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_sfid_found !== null && response.linked_data_sfid_count > 0 ) {
+         var tbl = '<BR/><BR/><B>Linked Data SFID Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Nearest CIP (km)</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Nearest CIP (day)</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Nearest RAD (km)</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Nearest RAD (day)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.linked_data_sfid_found.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                 + '<SPAN title="' + response.linked_data_sfid_found[i].source_joinkey + '" data-toggle="tooltip">'
+                 + dzfet(response.linked_data_sfid_found[i].eventtype) 
+                 + '</SPAN>'
+                 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_sfid_found[i].source_originator + '</TD>';
+            
+            if ( response.linked_data_sfid_found[i].sfiddetailurl === null ) {
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_sfid_found[i].source_featureid + '</TD>';
+               
+            } else {
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_sfid_found[i].sfiddetailurl + '">' + response.linked_data_sfid_found[i].source_featureid + '</a></TD>';
+               
+            }
+            
+            tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_sfid_found[i].source_featureid2) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_cip_network_distancekm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_cip_network_flowtimeday) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_rad_network_distancekm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_sfid_found[i].nearest_rad_network_flowtimeday) + '</TD>'
+                 + '</TR>';
+         
+         }
+         
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      }
       
-      if (response.flowlines !== null && response.flowlines.features[0].geometry.type !== null) {
-         flowlines.addData(response.flowlines).setStyle({
-             "color": "#0000FF"
-            ,"fillColor": "#0000FF"
-            ,"weight": 4
-         });
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_cip_found !== null && response.linked_data_cip_count > 0 ) {
+         var tbl = '<BR/><BR/><B>Linked Data CIP Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">NHDPlusID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">State Code</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Area (sqkm)</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Network Distance (km)</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Network Flowtime (day)</TH>'
+                 + '</TR>';
          
-         document.getElementById("output").innerHTML = "<P>&nbsp;</P><P align='center'>Flowline Count: " + response.flowline_count + "</P>";
+         for (var i = 0; i < response.linked_data_cip_found.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                 + '<SPAN title="' + response.linked_data_cip_found[i].cip_joinkey + '" data-toggle="tooltip">'
+                 + dzfet(response.linked_data_cip_found[i].eventtype) 
+                 + '</SPAN>'
+                 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_cip_found[i].source_originator + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_cip_found[i].source_featureid + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_cip_found[i].source_featureid2) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzfi(response.linked_data_cip_found[i].nhdplusid) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_cip_found[i].catchmentstatecode + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].catchmentareasqkm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].network_distancekm) + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].network_flowtimeday) + '</TD>'
+                 + '</TR>';
          
-      }            
+         }
+         
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      }
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_reached_count > 0 ) {
+      
+         if (response.linked_data_reached_points !== null && response.linked_data_reached_points.features.length > 0) {
+         
+            rad_p.addData(response.linked_data_reached_points);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data RAD Points Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Reach Code</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Measure</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Network Distance (km)</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">Network Flowtime (day)</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_reached_points.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_reached_points.features[i].properties.permanent_identifier + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_reached_points.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_reached_points.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_reached_points.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_reached_points.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_reached_points.features[i].properties.featuredetailurl + '">' + response.linked_data_reached_points.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_reached_points.features[i].properties.source_featureid2) + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_reached_points.features[i].properties.reachcode) + '</TD>'
+                    + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf5(response.linked_data_reached_points.features[i].properties.measure) + '</TD>'
+                    + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_reached_points.features[i].properties.network_distancekm) + '</TD>'
+                    + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_reached_points.features[i].properties.network_flowtimeday) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+      }
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_source_count > 0 ) {
+      
+         //////////////////////////////////////////////////////////////////////
+         if (response.linked_data_source_points !== null && response.linked_data_source_points.features.length > 0) {
+         
+            src_p.addData(response.linked_data_source_points);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data Source Points Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_source_points.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_source_points.features[i].permid_joinkey + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_source_points.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_points.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_source_points.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_points.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_source_points.features[i].properties.featuredetailurl + '">' + response.linked_data_source_points.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzfn(response.linked_data_source_points.features[i].properties.source_featureid2) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+         //////////////////////////////////////////////////////////////////////
+         if (response.linked_data_source_lines !== null && response.linked_data_source_lines.features.length > 0) {
+         
+            src_l.addData(response.linked_data_source_lines);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data Source Lines Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_source_lines.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_source_lines.features[i].permid_joinkey + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_source_lines.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_lines.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_source_lines.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_lines.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_source_lines.features[i].properties.featuredetailurl + '">' + response.linked_data_source_lines.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzfn(response.linked_data_source_lines.features[i].properties.source_featureid2) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+         //////////////////////////////////////////////////////////////////////
+         if (response.linked_data_source_areas !== null && response.linked_data_source_areas.features.length > 0) {
+         
+            src_p.addData(response.linked_data_source_areas);   
+         
+            var tbl = '<BR/><BR/><B>Linked Data Source Areas Summary:</B><BR/>'
+                    + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                    + '<TBODY><TR style="border: 1px solid;">'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                    + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                    + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">&nbsp;</TH>'
+                    + '</TR>';
+                    
+            for (var i = 0; i < response.linked_data_source_areas.features.length; i++) {
+               tbl += '<TR>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                    + '<SPAN title="' + response.linked_data_source_areas.features[i].permid_joinkey + '" data-toggle="tooltip">'
+                    + dzfet(response.linked_data_source_areas.features[i].properties.eventtype) 
+                    + '</SPAN>'
+                    + '</TD>'
+                    + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_areas.features[i].properties.source_originator + '</TD>';
+            
+               if ( response.linked_data_source_areas.features[i].properties.featuredetailurl === null ) {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_source_areas.features[i].properties.source_featureid + '</TD>';
+                  
+               } else {
+                  tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_source_areas.features[i].properties.featuredetailurl + '">' + response.linked_data_source_areas.features[i].properties.source_featureid + '</a></TD>';
+                  
+               }
+               
+               tbl += '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzfn(response.linked_data_source_points.features[i].properties.source_featureid2) + '</TD>'
+                    + '</TR>';
+                    
+            }
+            
+            document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+            
+         }
+         
+      }
+      
+      document.getElementById("output").innerHTML += '<BR/>&nbsp;<BR/>&nbsp;<BR/>&nbsp;';
+      
+   }
+   
+   function dzfi(val) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
+         return "&nbsp;";
+      }
+      
+      if ( typeof val === 'string') {
+         val = parseInt(val);
+      }
+      
+      return val.toFixed(0);
+      
+   }
+   
+   function dzf(val) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
+         return "&nbsp;";
+      }
+      
+      if ( typeof val === 'string') {
+         val = parseFloat(val);
+      }
+      
+      return val.toFixed(3);
+      
+   }
+   
+   function dzf5(val) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
+         return "&nbsp;";
+      }
+      
+      if ( typeof val === 'string') {
+         val = parseFloat(val);
+      }
+         
+      return val.toFixed(5);
+   }
+   
+   function dzfn(val) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null || val == 'Null') {
+         return "&nbsp;";
+      }
+      
+      return val;
+      
+   }
+
+   function dzfet(val) {
+      if (val === undefined ) {
+         console.log(val);
+         return "&nbsp;";
+      
+      } else if ( val === null) {
+         return "&nbsp;";
+      
+      } else if ( val == 10015 ) {
+         return "NPDES";
+         
+      } else if ( val == 10028 ) {
+         return "FRSPUB";
+         
+      } else if ( val == 10032 ) {
+         return "WQP";
+         
+      } else if ( val == 10033 ) {
+         return "ATTAINS";
+         
+      }
+      
+      return val;
+      
    }
    
    function pt1_response(error,response) {
@@ -814,11 +1623,11 @@
             ,"fillColor": "#FFA500"
          });
          
-         document.getElementById("pStartNHDPlusID").value           = response.flowlines.features[0].properties.nhdplusid;
-         document.getElementById("pStartPermanentIdentifier").value = response.flowlines.features[0].properties.permanent_identifier;
-         document.getElementById("pStartReachCode").value           = response.flowlines.features[0].properties.reachcode;
-         document.getElementById("pStartHydroSeq").value            = response.flowlines.features[0].properties.hydroseq;
-         document.getElementById("pStartMeasure").value             = response.flowlines.features[0].properties.snap_measure;
+         document.getElementById("p_start_nhdplusid").value           = response.flowlines.features[0].properties.nhdplusid;
+         document.getElementById("p_start_permanent_identifier").value = response.flowlines.features[0].properties.permanent_identifier;
+         document.getElementById("p_start_reachcode").value           = response.flowlines.features[0].properties.reachcode;
+         document.getElementById("p_start_hydroseq").value            = response.flowlines.features[0].properties.hydroseq;
+         document.getElementById("p_start_measure").value             = response.flowlines.features[0].properties.snap_measure;
          
       }
 
@@ -841,55 +1650,68 @@
       
       } else {
          var search_type      = get_select_values(document.getElementById("p_search_type"));
+         
+         var maxtype          = get_select_values(document.getElementById("selMaxType"));
+         var maxdistkm,maxtimeday;
+         if (maxtype == "distkm" ) {
+            maxdistkm  = document.getElementById("p_search_max").value;
+            maxtimeday = null;
+         }
+         if (maxtype == "flowday" ) {
+            maxdistkm  = null;
+            maxtimeday = document.getElementById("p_search_max").value;
+         }
       
          var data = {
-             "search_type"                 : search_type
-            ,"nhdplus_version"             : nhdplus_version
+             "search_type"                  : search_type
+            ,"nhdplus_version"              : nhdplus_version
              
-            ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
-            ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
-            ,"start_reachcode"             : document.getElementById("pStartReachCode").value
-            ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
-            ,"start_measure"               : document.getElementById("pStartMeasure").value
+            ,"start_nhdplusid"              : document.getElementById("p_start_nhdplusid").value
+            ,"start_permanent_identifier"   : document.getElementById("p_start_permanent_identifier").value
+            ,"start_reachcode"              : document.getElementById("p_start_reachcode").value
+            ,"start_hydroseq"               : document.getElementById("p_start_hydroseq").value
+            ,"start_measure"                : document.getElementById("p_start_measure").value
             
-            ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
-            ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
-            ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
-            ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
-            ,"start_start_date"            : document.getElementById("pStartStartDate").value
-            ,"start_end_date"              : document.getElementById("pStartEndDate").value
-            ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
-            ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
-            ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
-            ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+            ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
+            ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
+            ,"start_source_originator"      : document.getElementById("pStartSourceOriginator").value
+            ,"start_source_series"          : document.getElementById("pStartSourceSeries").value
+            ,"start_start_date"             : document.getElementById("pStartStartDate").value
+            ,"start_end_date"               : document.getElementById("pStartEndDate").value
+            ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
+            ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
+            ,"start_cip_joinkey"            : document.getElementById("pStartCIPJoinKey").value
+            ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
             
-            ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
-            ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
-            ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
-            ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
-            ,"stop_measure"                : document.getElementById("pStopMeasure").value
+            ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
+            ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
+            ,"stop_reachcode"               : document.getElementById("pStopReachCode").value
+            ,"stop_hydroseq"                : document.getElementById("pStopHydroSeq").value
+            ,"stop_measure"                 : document.getElementById("pStopMeasure").value
             
-            ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
-            ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
-            ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
-            ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
-            ,"stop_start_date"             : document.getElementById("pStopStartDate").value
-            ,"stop_end_date"               : document.getElementById("pStopEndDate").value
-            ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
-            ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
-            ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
-            ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+            ,"stop_source_featureid"        : document.getElementById("pStopSourceFeatureID").value
+            ,"stop_source_featureid2"       : document.getElementById("pStopSourceFeatureID2").value
+            ,"stop_source_originator"       : document.getElementById("pStopSourceOriginator").value
+            ,"stop_source_series"           : document.getElementById("pStopSourceSeries").value
+            ,"stop_start_date"              : document.getElementById("pStopStartDate").value
+            ,"stop_end_date"                : document.getElementById("pStopEndDate").value
+            ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
+            ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
+            ,"stop_cip_joinkey"             : document.getElementById("pStopCIPJoinKey").value
+            ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
             
-            ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
-            ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
-            ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
-            ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
-            ,"return_catchments"           : document.getElementById("p_return_catchments").checked
-            ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
-            ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
-            ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
-            ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+            ,"max_distancekm"               : maxdistkm
+            ,"max_flowtimeday"              : maxtimeday
+            ,"linked_data_search_list"      : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+            ,"search_precision"             : get_select_values(document.getElementById("p_search_precision"))
+            ,"return_flowlines"             : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_details"      : document.getElementById("p_return_flowlines").checked
+            ,"return_flowline_geometry"     : document.getElementById("p_return_flowlines").checked
+            ,"return_catchments"            : document.getElementById("p_return_catchments").checked
+            ,"return_linked_data_cip"       : document.getElementById("p_return_linked_data_cip").checked
+            ,"return_linked_data_huc12"     : document.getElementById("p_return_linked_data_huc12").checked
+            ,"return_linked_data_source"    : document.getElementById("p_return_linked_data_source").checked
+            ,"return_linked_data_rad"       : document.getElementById("p_return_linked_data_rad").checked
             ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
             ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
             ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
@@ -935,54 +1757,67 @@
       var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
       var search_type      = get_select_values(document.getElementById("p_search_type"));
       
+      var maxtype          = get_select_values(document.getElementById("selMaxType"));
+      var maxdistkm,maxtimeday;
+      if (maxtype == "distkm" ) {
+         maxdistkm  = document.getElementById("p_search_max").value;
+         maxtimeday = null;
+      }
+      if (maxtype == "flowday" ) {
+         maxdistkm  = null;
+         maxtimeday = document.getElementById("p_search_max").value;
+      }
+      
       var data = {
-          "search_type"                 : search_type
-         ,"nhdplus_version"             : nhdplus_version
+          "search_type"                  : search_type
+         ,"nhdplus_version"              : nhdplus_version
           
-         ,"start_nhdplusid"             : document.getElementById("pStartNHDPlusID").value
-         ,"start_permanent_identifier"  : document.getElementById("pStartPermanentIdentifier").value
-         ,"start_reachcode"             : document.getElementById("pStartReachCode").value
-         ,"start_hydroseq"              : document.getElementById("pStartHydroSeq").value
-         ,"start_measure"               : document.getElementById("pStartMeasure").value
+         ,"start_nhdplusid"              : document.getElementById("p_start_nhdplusid").value
+         ,"start_permanent_identifier"   : document.getElementById("p_start_permanent_identifier").value
+         ,"start_reachcode"              : document.getElementById("p_start_reachcode").value
+         ,"start_hydroseq"               : document.getElementById("p_start_hydroseq").value
+         ,"start_measure"                : document.getElementById("p_start_measure").value
          
-         ,"start_source_featureid"      : document.getElementById("pStartSourceFeatureID").value
-         ,"start_source_featureid2"     : document.getElementById("pStartSourceFeatureID2").value
-         ,"start_source_originator"     : document.getElementById("pStartSourceOriginator").value
-         ,"start_source_series"         : document.getElementById("pStartSourceSeries").value
-         ,"start_start_date"            : document.getElementById("pStartStartDate").value
-         ,"start_end_date"              : document.getElementById("pStartEndDate").value
-         ,"start_permid_joinkey"        : document.getElementById("pStartPermIDJoinKey").value
-         ,"start_source_joinkey"        : document.getElementById("pStartSourceJoinKey").value
-         ,"start_cat_joinkey"           : document.getElementById("pStartCatJoinKey").value
-         ,"start_linked_data_program"   : document.getElementById("p_start_linked_data_program").value
+         ,"start_source_featureid"       : document.getElementById("pStartSourceFeatureID").value
+         ,"start_source_featureid2"      : document.getElementById("pStartSourceFeatureID2").value
+         ,"start_source_originator"      : document.getElementById("pStartSourceOriginator").value
+         ,"start_source_series"          : document.getElementById("pStartSourceSeries").value
+         ,"start_start_date"             : document.getElementById("pStartStartDate").value
+         ,"start_end_date"               : document.getElementById("pStartEndDate").value
+         ,"start_permid_joinkey"         : document.getElementById("pStartPermIDJoinKey").value
+         ,"start_source_joinkey"         : document.getElementById("pStartSourceJoinKey").value
+         ,"start_cip_joinkey"            : document.getElementById("pStartCIPJoinKey").value
+         ,"start_linked_data_program"    : document.getElementById("p_start_linked_data_program").value
          
-         ,"stop_nhdplusid"              : document.getElementById("pStopNHDPlusID").value
-         ,"stop_permanent_identifier"   : document.getElementById("pStopPermanentIdentifier").value
-         ,"stop_reachcode"              : document.getElementById("pStopReachCode").value
-         ,"stop_hydroseq"               : document.getElementById("pStopHydroSeq").value
-         ,"stop_measure"                : document.getElementById("pStopMeasure").value
+         ,"stop_nhdplusid"               : document.getElementById("pStopNHDPlusID").value
+         ,"stop_permanent_identifier"    : document.getElementById("pStopPermanentIdentifier").value
+         ,"stop_reachcode"               : document.getElementById("pStopReachCode").value
+         ,"stop_hydroseq"                : document.getElementById("pStopHydroSeq").value
+         ,"stop_measure"                 : document.getElementById("pStopMeasure").value
          
-         ,"stop_source_featureid"       : document.getElementById("pStopSourceFeatureID").value
-         ,"stop_source_featureid2"      : document.getElementById("pStopSourceFeatureID2").value
-         ,"stop_source_originator"      : document.getElementById("pStopSourceOriginator").value
-         ,"stop_source_series"          : document.getElementById("pStopSourceSeries").value
-         ,"stop_start_date"             : document.getElementById("pStopStartDate").value
-         ,"stop_end_date"               : document.getElementById("pStopEndDate").value
-         ,"stop_permid_joinkey"         : document.getElementById("pStopPermIDJoinKey").value
-         ,"stop_source_joinkey"         : document.getElementById("pStopSourceJoinKey").value
-         ,"stop_cat_joinkey"            : document.getElementById("pStopCatJoinKey").value
-         ,"stop_linked_data_program"    : document.getElementById("p_stop_linked_data_program").value
+         ,"stop_source_featureid"        : document.getElementById("pStopSourceFeatureID").value
+         ,"stop_source_featureid2"       : document.getElementById("pStopSourceFeatureID2").value
+         ,"stop_source_originator"       : document.getElementById("pStopSourceOriginator").value
+         ,"stop_source_series"           : document.getElementById("pStopSourceSeries").value
+         ,"stop_start_date"              : document.getElementById("pStopStartDate").value
+         ,"stop_end_date"                : document.getElementById("pStopEndDate").value
+         ,"stop_permid_joinkey"          : document.getElementById("pStopPermIDJoinKey").value
+         ,"stop_source_joinkey"          : document.getElementById("pStopSourceJoinKey").value
+         ,"stop_cip_joinkey"             : document.getElementById("pStopCIPJoinKey").value
+         ,"stop_linked_data_program"     : document.getElementById("p_stop_linked_data_program").value
          
-         ,"max_distancekm"              : document.getElementById("p_search_max_distancekm").value
-         ,"linked_data_search_list"     : get_mselect_values(document.getElementById("p_linked_data_search_list"))
-         ,"return_flowlines"            : document.getElementById("p_return_flowlines").checked
-         ,"return_flowline_details"     : document.getElementById("p_return_flowlines").checked
-         ,"return_flowline_geometry"    : document.getElementById("p_return_flowlines").checked
-         ,"return_catchments"           : document.getElementById("p_return_catchments").checked
-         ,"return_linked_data_cip"      : document.getElementById("p_return_linked_data_cip").checked
-         ,"return_linked_data_huc12"    : document.getElementById("p_return_linked_data_huc12").checked
-         ,"return_linked_data_source"   : document.getElementById("p_return_linked_data_source").checked
-         ,"return_linked_data_rad"      : document.getElementById("p_return_linked_data_rad").checked
+         ,"max_distancekm"               : maxdistkm
+         ,"max_flowtimeday"              : maxtimeday
+         ,"linked_data_search_list"      : get_mselect_values(document.getElementById("p_linked_data_search_list"))
+         ,"search_precision"             : get_select_values(document.getElementById("p_search_precision"))
+         ,"return_flowlines"             : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_details"      : document.getElementById("p_return_flowlines").checked
+         ,"return_flowline_geometry"     : document.getElementById("p_return_flowlines").checked
+         ,"return_catchments"            : document.getElementById("p_return_catchments").checked
+         ,"return_linked_data_cip"       : document.getElementById("p_return_linked_data_cip").checked
+         ,"return_linked_data_huc12"     : document.getElementById("p_return_linked_data_huc12").checked
+         ,"return_linked_data_source"    : document.getElementById("p_return_linked_data_source").checked
+         ,"return_linked_data_rad"       : document.getElementById("p_return_linked_data_rad").checked
          ,"return_linked_data_attributes": document.getElementById("p_return_linked_data_attributes").checked
          ,"remove_stop_start_sfids"      : document.getElementById("p_remove_stop_start_sfids").checked
          ,"push_source_geometry_as_rad"  : document.getElementById("p_push_source_geometry_as_rad").checked
@@ -996,11 +1831,41 @@
       
    }
    
+   ////////////////////////////////////////////////////////////////////////////
+   function add_to_start(prg,source_joinkey,permid_joinkey,source_featureid) {
+      blank_pt1();
+      blank_start_nhdplusids();
+      document.getElementById("pStartSourceFeatureID").value = source_featureid;
+      document.getElementById("pStartPermIDJoinKey").value   = permid_joinkey;
+      document.getElementById("pStartSourceJoinKey").value   = source_joinkey;
+      document.getElementById("p_start_linked_data_program").value = prg;
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
+   function add_to_stop(prg,source_joinkey,permid_joinkey,source_featureid) {
+      blank_pt2();
+      blank_stop_nhdplusids();
+      document.getElementById("pStopSourceFeatureID").value = source_featureid;
+      document.getElementById("pStopPermIDJoinKey").value   = permid_joinkey;
+      document.getElementById("pStopSourceJoinKey").value   = source_joinkey;
+      document.getElementById("p_stop_linked_data_program").value = prg;
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
    function dz_reset() {
       document.getElementById("output").innerHTML = "";
       snap_path.clearLayers();
       flowlines.clearLayers();
       catchments.clearLayers();
+      rad_p.clearLayers();
+      rad_l.clearLayers();
+      rad_a.clearLayers();
+      src_p.clearLayers();
+      src_l.clearLayers();
+      src_a.clearLayers();
+      fcats.clearLayers();
       blank_pts();
       blank_nhdplusids()
       busy_off();
@@ -1012,6 +1877,13 @@
       snap_path.clearLayers();
       flowlines.clearLayers();
       catchments.clearLayers();
+      rad_p.clearLayers();
+      rad_l.clearLayers();
+      rad_a.clearLayers();
+      src_p.clearLayers();
+      src_l.clearLayers();
+      src_a.clearLayers();
+      fcats.clearLayers();
       busy_off();
       document.getElementById("dz_run_service").disabled = true;
    }
@@ -1075,13 +1947,23 @@
    }
    
    function reset_linked_data() {
-      var ary_programs = get_mselect_values(document.getElementById("p_linked_data_search_list"));
+      var ary_selprograms = get_mselect_values(document.getElementById("p_linked_data_search_list"));
       var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
       
-      if ( ary_programs.includes("WQP") ) {
-      
-         if (! map.hasLayer(lyr_wqp) ) {
-            map.addLayer(lyr_wqp);
+      for (var i = 0; i < owld_programs.length; i++) {
+         boo = false;
+         for (var j = 0; j < ary_selprograms.length; j++) {
+            if (ary_selprograms[j] == owld_programs[i]) {
+               boo = true;
+            }
+         }
+         
+         if (boo && ! map.hasLayer(lyr_program_hash[owld_programs[i]]) ) {
+            map.addLayer(lyr_program_hash[owld_programs[i]]);
+         }
+         
+         if (! boo && map.hasLayer(lyr_program_hash[owld_programs[i]]) ) {
+            map.removeLayer(lyr_program_hash[owld_programs[i]]);
          }
          
       }
@@ -1117,11 +1999,11 @@
    }
 
    function blank_start_nhdplusids() {
-      document.getElementById("pStartNHDPlusID").value = "";
-      document.getElementById("pStartPermanentIdentifier").value = "";
-      document.getElementById("pStartReachCode").value = "";
-      document.getElementById("pStartHydroSeq").value = "";
-      document.getElementById("pStartMeasure").value = "";
+      document.getElementById("p_start_nhdplusid").value = "";
+      document.getElementById("p_start_permanent_identifier").value = "";
+      document.getElementById("p_start_reachcode").value = "";
+      document.getElementById("p_start_hydroseq").value = "";
+      document.getElementById("p_start_measure").value = "";
       
       document.getElementById("pStartSourceFeatureID").value = "";
       document.getElementById("pStartSourceFeatureID2").value = "";
@@ -1131,7 +2013,7 @@
       document.getElementById("pStartEndDate").value = "";
       document.getElementById("pStartPermIDJoinKey").value = "";
       document.getElementById("pStartSourceJoinKey").value = "";
-      document.getElementById("pStartCatJoinKey").value = "";
+      document.getElementById("pStartCIPJoinKey").value = "";
       document.getElementById("p_start_linked_data_program").value = "";
          
    }
@@ -1151,7 +2033,7 @@
       document.getElementById("pStopEndDate").value = "";
       document.getElementById("pStopPermIDJoinKey").value = "";
       document.getElementById("pStopSourceJoinKey").value = "";
-      document.getElementById("pStopCatJoinKey").value = "";
+      document.getElementById("pStopCIPJoinKey").value = "";
       document.getElementById("p_stop_linked_data_program").value = "";
    }
 
@@ -1161,10 +2043,10 @@
       var pt1 = document.getElementById("pPoint").value;
       var pt2 = document.getElementById("pPoint2").value;
 
-      var com1 = document.getElementById("pStartNHDPlusID").value;
-      var per1 = document.getElementById("pStartPermanentIdentifier").value;
-      var rch1 = document.getElementById("pStartReachCode").value;
-      var hyd1 = document.getElementById("pStartHydroSeq").value;
+      var com1 = document.getElementById("p_start_nhdplusid").value;
+      var per1 = document.getElementById("p_start_permanent_identifier").value;
+      var rch1 = document.getElementById("p_start_reachcode").value;
+      var hyd1 = document.getElementById("p_start_hydroseq").value;
       
       var sfi1 = document.getElementById("pStartSourceFeatureID").value;
       var sf21 = document.getElementById("pStartSourceFeatureID2").value;
@@ -1174,7 +2056,7 @@
       var sed1 = document.getElementById("pStartEndDate").value;
       var spj1 = document.getElementById("pStartPermIDJoinKey").value;
       var ssj1 = document.getElementById("pStartSourceJoinKey").value;
-      var scj1 = document.getElementById("pStartCatJoinKey").value;
+      var scj1 = document.getElementById("pStartCIPJoinKey").value;
       var sld1 = document.getElementById("p_start_linked_data_program").value;
 
       var com2 = document.getElementById("pStopNHDPlusID").value;
@@ -1190,7 +2072,7 @@
       var sed2 = document.getElementById("pStopEndDate").value;
       var spj2 = document.getElementById("pStopPermIDJoinKey").value;
       var ssj2 = document.getElementById("pStopSourceJoinKey").value;
-      var scj2 = document.getElementById("pStopCatJoinKey").value;
+      var scj2 = document.getElementById("pStopCIPJoinKey").value;
       var sld2 = document.getElementById("p_stop_linked_data_program").value;
 
       if (search_type != "PP" && search_type != "PPALL" && pt1 !== null && pt1 !== "") {
@@ -1219,24 +2101,34 @@
                ) {
                   document.getElementById("dz_run_service").disabled = false;
                } else {
-                  document.getElementById("dz_run_service").disabled = true;
+                  if ( spj1 !== null && spj1 !== "" && spj2 !== null && spj2 !== "" ) {
+                     document.getElementById("dz_run_service").disabled = false;
+                  } else if ( ssj1 !== null && ssj1 !== "" && ssj2 !== null && ssj2 !== "" ) {
+                     document.getElementById("dz_run_service").disabled = false;
+                  } else {
+                     document.getElementById("dz_run_service").disabled = true;
+                  }
                }
             }
          } else {
-         if (
-           (com1 !== null && com1 !== "") ||
-           (per1 !== null && per1 !== "") ||
-           (rch1 !== null && rch1 !== "") ||
-           (hyd1 !== null && hyd1 !== "") 
-         ) {
-           document.getElementById("dz_run_service").disabled = false;
-         } else {
-           document.getElementById("dz_run_service").disabled = true;
+            if (
+              (com1 !== null && com1 !== "") ||
+              (per1 !== null && per1 !== "") ||
+              (rch1 !== null && rch1 !== "") ||
+              (hyd1 !== null && hyd1 !== "") ||
+              (spj1 !== null && spj1 !== "") ||
+              (ssj1 !== null && ssj1 !== "") ||
+              (scj1 !== null && scj1 !== "") 
+            ) {
+              document.getElementById("dz_run_service").disabled = false;
+            } else {
+              document.getElementById("dz_run_service").disabled = true;
+            }
          }
-       }
-     }
+      }
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function update_form() {
       var search_type = get_select_values(document.getElementById("p_search_type"));
 
@@ -1254,11 +2146,11 @@
          document.getElementById("pStopEndDate").disabled = false;
          document.getElementById("pStopPermIDJoinKey").disabled = false;
          document.getElementById("pStopSourceJoinKey").disabled = false;
-         document.getElementById("pStopCatJoinKey").disabled = false;
+         document.getElementById("pStopCIPJoinKey").disabled = false;
          document.getElementById("p_stop_linked_data_program").disabled = false;
          
          document.getElementById("pPoint2").disabled = false;
-         document.getElementById("p_search_max_distancekm").disabled = true;
+         document.getElementById("p_search_max").disabled = true;
       } else {
          document.getElementById("pStopNHDPlusID").disabled = true;
          document.getElementById("pStopPermanentIdentifier").disabled = true;
@@ -1273,14 +2165,15 @@
          document.getElementById("pStopEndDate").disabled = true;
          document.getElementById("pStopPermIDJoinKey").disabled = true;
          document.getElementById("pStopSourceJoinKey").disabled = true;
-         document.getElementById("pStopCatJoinKey").disabled = true;
+         document.getElementById("pStopCIPJoinKey").disabled = true;
          document.getElementById("p_stop_linked_data_program").disabled = true;
          
          document.getElementById("pPoint2").disabled = true;
-         document.getElementById("p_search_max_distancekm").disabled = false;
+         document.getElementById("p_search_max").disabled = false;
       }
    }
 
+   ////////////////////////////////////////////////////////////////////////////
    function get_url_parameter(param_key) {
       var page_url = window.location.search.substring(1);
       
@@ -1294,6 +2187,7 @@
       return null;
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function updatept(geojson) {
       if (geojson == null || geojson == undefined || geojson == "") {
          document.getElementById("dz_run_service").disabled = true;
@@ -1314,6 +2208,7 @@
       }
    }
    
+   ////////////////////////////////////////////////////////////////////////////
    function updatept2(geojson) {
       if (geojson == null || geojson == undefined || geojson == "") {
          document.getElementById("dz_run_service").disabled = true;
@@ -1334,6 +2229,55 @@
       }
    }
    
+   ////////////////////////////////////////////////////////////////////////////
+   function popup1(feature) {
+      
+      return '<TABLE>'
+        + '<TR><TD>GNIS Name: '   + dzfn(feature.properties.gnis_name) + '</TD></TR>'
+        + '<TR><TD>NHDPlusID: '   + dzfi(feature.properties.nhdplusid) + '</TD></TR>'
+        + '<TR><TD>Reach Code: '  + feature.properties.reachcode + '</TD></TR>'
+        + '<TR><TD>FMeasure: '    + dzf5(feature.properties.frommeas) + '</TD></TR>'
+        + '<TR><TD>TMeasure: '    + dzf5(feature.properties.tomeas) + '</TD></TR>'
+        + '<TR><TD>FCODE: '       + dzfn(feature.properties.fcode) + '</TD></TR>'
+        + '<TR><TD>Length (km): ' + dzf(feature.properties.lengthkm) + '</TD></TR>'
+        + '<TR><TD>Flowtime (day): ' + dzf(feature.properties.totma) + '</TD></TR>'
+        + '</TABLE>';
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
+   function popup2(feature,prj) {
+   
+      if ( prj === null ) {
+         if        (feature.id.substring(0,12) == 'owld_attains' || feature.id == '105672' ) {
+            prj = 'ATTAINS';
+         } else if (feature.id.substring(0,11) == 'owld_frspub' || feature.id == '2467311' ) {
+            prj = 'FRSPUB';
+         } else if (feature.id.substring(0,10) == 'owld_npdes' || feature.id == '150974' ) {
+            prj = 'NPDES';
+         } else if (feature.id.substring(0,8) == 'owld_wqp' || feature.id == '1322934' ) {
+            prj = 'WQP';
+         } else {
+            prj = '&nbsp;';
+            console.log(feature);
+         }
+      }
+      var search_type = get_select_values(document.getElementById("p_search_type"));
+      var cnthtml  = '<TABLE>'
+               + '<TR><TD>EventType: ' + prj + '</TD></TR>'
+               + '<TR><TD>Source Originator: ' + feature.properties.source_originator + '</TD></TR>'
+               + '<TR><TD>Source FeatureID: '  + feature.properties.source_featureid + '</TD></TR>'
+               + '<TR><TD>Source FeatureID2: ' + dzfn(feature.properties.source_featureid2) + '</TD></TR>'
+               + '<TR><TD>'
+               + '<input type="button" onclick="add_to_start(\''  + prj + '\',\''  + feature.properties.source_joinkey + '\',\''  + feature.properties.permid_joinkey + '\',\''  + feature.properties.source_featureid + '\');" value="Add to Start" id="dz_add_start" />&nbsp;&nbsp;&nbsp;';
+      if (search_type == "PP" || search_type == "PPALL") {         
+         cnthtml += '<input type="button" onclick="add_to_stop(\''  + prj + '\',\''  + feature.properties.source_joinkey + '\',\''  + feature.properties.permid_joinkey + '\',\''  + feature.properties.source_featureid + '\');"  value="Add to Stop" id="dz_add_stop" />'
+      }       
+      
+      return cnthtml + '</TD></TR></TABLE>';
+   
+   }
+   
+   ////////////////////////////////////////////////////////////////////////////
    function build_api() {
       
       if (
