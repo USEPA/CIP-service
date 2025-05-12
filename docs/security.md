@@ -9,4 +9,4 @@ Before running the quickconfig.py script, do the following.
 3. In the new file, update the password entries from cip123 to something stronger.
 4. Redeploy CIP-service using the quickconfig.py script.
 
-CIP-service was created with the general idea that the container host would be isolated or tightly controlled.  Deploying into a shared or public container environment would involve far more custom configuration outside the scope of simple compose setup script.  If you have suggestions for improving the overall security of the project please open a project issue.
+CIP-service was created with the general idea that the container host would be isolated or tightly controlled.  Deploying into a shared or public container environment would involve far more custom configuration outside the scope of a simple compose setup script.  If you have suggestions for improving the overall security of the project please open a project issue.
