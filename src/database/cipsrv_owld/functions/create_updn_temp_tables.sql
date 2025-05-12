@@ -110,6 +110,50 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 30
+   -- Create tmp_huc12 temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_huc12_found')
+   THEN
+      TRUNCATE TABLE tmp_huc12_found;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_huc12_found(            
+          eventtype                       INTEGER      NOT NULL
+         ,huc12_joinkey                   VARCHAR(40)
+         ,permid_joinkey                  VARCHAR(40)
+         ,source_originator               VARCHAR(130) NOT NULL
+         ,source_featureid                VARCHAR(100) NOT NULL
+         ,source_featureid2               VARCHAR(100)
+         ,source_series                   VARCHAR(100)
+         ,source_subdivision              VARCHAR(100)
+         ,source_joinkey                  VARCHAR(40)  NOT NULL
+         ,start_date                      DATE
+         ,end_date                        DATE
+         ,xwalk_huc12                     VARCHAR(12)  NOT NULL
+         ,xwalk_huc12_version             VARCHAR(16)  NOT NULL
+         ,xwalk_catresolution             VARCHAR(2)   NOT NULL
+         ,xwalk_huc12_areasqkm            NUMERIC
+      );
+ 
+      --CREATE UNIQUE INDEX tmp_huc12_found_pk
+      --ON tmp_huc12_found(huc12_joinkey);
+      
+      CREATE INDEX tmp_huc12_found_01i
+      ON tmp_huc12_found(eventtype);
+      
+      CREATE INDEX tmp_huc12_found_02i
+      ON tmp_huc12_found(source_joinkey);
+      
+      CREATE INDEX tmp_huc12_found_03i
+      ON tmp_huc12_found(xwalk_huc12);
+      
+      CREATE INDEX tmp_huc12_found_04i
+      ON tmp_huc12_found(source_featureid);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
    -- Create tmp_src_points temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_src_points')
@@ -148,7 +192,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 40
+   -- Step 50
    -- Create tmp_src_lines temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_src_lines')
@@ -188,7 +232,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 60
    -- Create tmp_src_areas temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_src_areas')
@@ -228,7 +272,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 60
+   -- Step 70
    -- Create tmp_rad points temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_rad_points')
@@ -284,7 +328,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 80
    -- Create tmp_rad lines temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_rad_lines')
@@ -340,7 +384,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 90
    -- Create tmp_rad areas temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_rad_areas')
