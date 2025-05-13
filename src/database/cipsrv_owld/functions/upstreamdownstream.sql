@@ -79,6 +79,7 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,OUT out_flowline_count              INTEGER
    ,OUT out_catchment_count             INTEGER
    ,OUT out_cip_found_count             INTEGER
+   ,OUT out_huc12_found_count           INTEGER
    ,OUT out_rad_found_count             INTEGER
    ,OUT out_sfid_found_count            INTEGER
    ,OUT out_src_found_count             INTEGER
@@ -981,6 +982,74 @@ BEGIN
                
             ELSE
                out_cip_found_count := out_cip_found_count + int_count;
+            
+            END IF;
+            
+            -------------------------------------------------------------------
+            -------------------------------------------------------------------
+            IF p_return_linked_data_huc12
+            THEN
+               EXECUTE '
+                  INSERT INTO tmp_huc12_found(            
+                      eventtype
+                     ,huc12_joinkey
+                     ,permid_joinkey
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,start_date
+                     ,end_date
+                     ,xwalk_huc12
+                     ,xwalk_huc12_version
+                     ,xwalk_catresolution
+                     ,xwalk_huc12_areasqkm
+                  )
+                  SELECT
+                   $1
+                  ,NULL
+                  ,a.permid_joinkey
+                  ,a.source_originator
+                  ,a.source_featureid
+                  ,a.source_featureid2
+                  ,a.source_series
+                  ,a.source_subdivision
+                  ,a.source_joinkey
+                  ,a.start_date
+                  ,a.end_date
+                  ,a.xwalk_huc12
+                  ,a.xwalk_huc12_version
+                  ,a.xwalk_catresolution
+                  ,a.xwalk_huc12_areasqkm
+                  FROM
+                  ' || str_owld || '_huc12 a
+                  WHERE
+                      a.xwalk_catresolution = $2
+                  AND EXISTS (
+                     SELECT
+                     1
+                     FROM
+                     tmp_cip_found bb
+                     WHERE
+                     bb.' || str_joinkey_fix || ' = a.' || str_joinkey_fix || '
+                  ) 
+               ' USING
+                int_owld
+               ,str_resolution_abbrev;
+               
+               GET DIAGNOSTICS int_count = ROW_COUNT;
+               
+               IF out_huc12_found_count IS NULL
+               OR out_huc12_found_count = 0
+               THEN
+                  out_huc12_found_count := int_count;
+                  
+               ELSE
+                  out_huc12_found_count := out_huc12_found_count + int_count;
+                  
+               END IF;
             
             END IF;
 

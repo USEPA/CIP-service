@@ -135,6 +135,50 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 30
+   -- Create tmp_huc12 temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_huc12_found')
+   THEN
+      TRUNCATE TABLE tmp_huc12_found;
+      
+   ELSE
+      CREATE TEMPORARY TABLE tmp_huc12_found(            
+          eventtype                       INTEGER      NOT NULL
+         ,huc12_joinkey                   VARCHAR(40)
+         ,permid_joinkey                  VARCHAR(40)
+         ,source_originator               VARCHAR(130) NOT NULL
+         ,source_featureid                VARCHAR(100) NOT NULL
+         ,source_featureid2               VARCHAR(100)
+         ,source_series                   VARCHAR(100)
+         ,source_subdivision              VARCHAR(100)
+         ,source_joinkey                  VARCHAR(40)  NOT NULL
+         ,start_date                      DATE
+         ,end_date                        DATE
+         ,xwalk_huc12                     VARCHAR(12)  NOT NULL
+         ,xwalk_huc12_version             VARCHAR(16)  NOT NULL
+         ,xwalk_catresolution             VARCHAR(2)   NOT NULL
+         ,xwalk_huc12_areasqkm            NUMERIC
+      );
+ 
+      --CREATE UNIQUE INDEX tmp_huc12_found_pk
+      --ON tmp_huc12_found(huc12_joinkey);
+      
+      CREATE INDEX tmp_huc12_found_01i
+      ON tmp_huc12_found(eventtype);
+      
+      CREATE INDEX tmp_huc12_found_02i
+      ON tmp_huc12_found(source_joinkey);
+      
+      CREATE INDEX tmp_huc12_found_03i
+      ON tmp_huc12_found(xwalk_huc12);
+      
+      CREATE INDEX tmp_huc12_found_04i
+      ON tmp_huc12_found(source_featureid);
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 40
    -- Create tmp_src_points temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_src_points')
@@ -173,7 +217,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 40
+   -- Step 50
    -- Create tmp_src_lines temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_src_lines')
@@ -213,7 +257,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 60
    -- Create tmp_src_areas temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_src_areas')
@@ -253,7 +297,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 60
+   -- Step 70
    -- Create tmp_rad points temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_rad_points')
@@ -309,7 +353,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 70
+   -- Step 80
    -- Create tmp_rad lines temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_rad_lines')
@@ -365,7 +409,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 90
    -- Create tmp_rad areas temp table
    ---------------------------------------------------------------------------- 
    IF cipsrv_engine.temp_table_exists('tmp_rad_areas')
@@ -1972,6 +2016,7 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,OUT out_flowline_count              INTEGER
    ,OUT out_catchment_count             INTEGER
    ,OUT out_cip_found_count             INTEGER
+   ,OUT out_huc12_found_count           INTEGER
    ,OUT out_rad_found_count             INTEGER
    ,OUT out_sfid_found_count            INTEGER
    ,OUT out_src_found_count             INTEGER
@@ -2874,6 +2919,74 @@ BEGIN
                
             ELSE
                out_cip_found_count := out_cip_found_count + int_count;
+            
+            END IF;
+            
+            -------------------------------------------------------------------
+            -------------------------------------------------------------------
+            IF p_return_linked_data_huc12
+            THEN
+               EXECUTE '
+                  INSERT INTO tmp_huc12_found(            
+                      eventtype
+                     ,huc12_joinkey
+                     ,permid_joinkey
+                     ,source_originator
+                     ,source_featureid
+                     ,source_featureid2
+                     ,source_series
+                     ,source_subdivision
+                     ,source_joinkey
+                     ,start_date
+                     ,end_date
+                     ,xwalk_huc12
+                     ,xwalk_huc12_version
+                     ,xwalk_catresolution
+                     ,xwalk_huc12_areasqkm
+                  )
+                  SELECT
+                   $1
+                  ,NULL
+                  ,a.permid_joinkey
+                  ,a.source_originator
+                  ,a.source_featureid
+                  ,a.source_featureid2
+                  ,a.source_series
+                  ,a.source_subdivision
+                  ,a.source_joinkey
+                  ,a.start_date
+                  ,a.end_date
+                  ,a.xwalk_huc12
+                  ,a.xwalk_huc12_version
+                  ,a.xwalk_catresolution
+                  ,a.xwalk_huc12_areasqkm
+                  FROM
+                  ' || str_owld || '_huc12 a
+                  WHERE
+                      a.xwalk_catresolution = $2
+                  AND EXISTS (
+                     SELECT
+                     1
+                     FROM
+                     tmp_cip_found bb
+                     WHERE
+                     bb.' || str_joinkey_fix || ' = a.' || str_joinkey_fix || '
+                  ) 
+               ' USING
+                int_owld
+               ,str_resolution_abbrev;
+               
+               GET DIAGNOSTICS int_count = ROW_COUNT;
+               
+               IF out_huc12_found_count IS NULL
+               OR out_huc12_found_count = 0
+               THEN
+                  out_huc12_found_count := int_count;
+                  
+               ELSE
+                  out_huc12_found_count := out_huc12_found_count + int_count;
+                  
+               END IF;
             
             END IF;
 

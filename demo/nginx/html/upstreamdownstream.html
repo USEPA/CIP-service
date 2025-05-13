@@ -1157,12 +1157,13 @@
       var nhdplus_version  = get_select_values(document.getElementById("pNHDPlusVersion"));
       document.getElementById("output").innerHTML += '<B>Search Summary:</B><BR/>'
          + '<TABLE style="border: 1px solid black; font-family: Arial; font-size: 13px;"><TBODY>'
-         + '<TR style="border: 1px solid;"><TD>Resolution: ' + nhdplus_version + '</TD></TR>'
-         + '<TR style="border: 1px solid;"><TD>Flowlines Navigated: ' + dzfi(response.flowline_count) + '</TD></TR>'
-         + '<TR style="border: 1px solid;"><TD>Catchments Navigated: ' + dzfi(response.catchment_count) + '</TD></TR>'
-         + '<TR style="border: 1px solid;"><TD>SFIDs Found: ' + dzfi(response.linked_data_sfid_count) + '</TD></TR>'
-         + '<TR style="border: 1px solid;"><TD>CIP Events Found: ' + dzfi(response.linked_data_cip_count) + '</TD></TR>'
-         + '<TR style="border: 1px solid;"><TD>RAD Events Found: ' + dzfi(response.linked_data_reached_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Resolution:</TD><TD><B>' + nhdplus_version + '</B></TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Flowlines Navigated:</TD><TD>' + dzfi(response.flowline_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Catchments Returned:</TD><TD>' + dzfi(response.catchment_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>SFIDs Found:</TD><TD>' + dzfi(response.linked_data_sfid_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>CIP Events Returned:</TD><TD>' + dzfi(response.linked_data_cip_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>HUC12s Returned:</TD><TD>' + dzfi(response.linked_data_huc12_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>RAD Events Returned:</TD><TD>' + dzfi(response.linked_data_reached_count) + '</TD></TR>'
          + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
       
       /////////////////////////////////////////////////////////////////////////
@@ -1326,6 +1327,40 @@
                  + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].catchmentareasqkm) + '</TD>'
                  + '<TD style="text-align: right; border-left: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].network_distancekm) + '</TD>'
                  + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_cip_found[i].network_flowtimeday) + '</TD>'
+                 + '</TR>';
+         
+         }
+         
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      }
+      
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_huc12_found !== null && response.linked_data_huc12_count > 0 ) {
+         var tbl = '<BR/><BR/><B>Linked Data HUC12 Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">XWalk HUC12</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">XWalk HUC12 Version</TH>'
+                 + '<TH style="border-left: 1px solid; border-right: 1px solid; padding: 3px;">XWalk HUC12 Area (sqkm)</TH>'
+                 + '</TR>';
+         
+         for (var i = 0; i < response.linked_data_huc12_found.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                 + '<SPAN title="' + response.linked_data_huc12_found[i].huc12_joinkey + '" data-toggle="tooltip">'
+                 + dzfet(response.linked_data_huc12_found[i].eventtype) 
+                 + '</SPAN>'
+                 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_huc12_found[i].source_originator + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_huc12_found[i].source_featureid + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_huc12_found[i].source_featureid2) + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_huc12_found[i].xwalk_huc12 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_huc12_found[i].xwalk_huc12_version + '</TD>'
+                 + '<TD style="text-align: right; border-left: 1px solid; border-right: 1px solid; padding: 3px;">' + dzf(response.linked_data_huc12_found[i].xwalk_huc12_areasqkm) + '</TD>'
                  + '</TR>';
          
          }

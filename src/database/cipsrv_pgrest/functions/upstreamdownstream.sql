@@ -82,6 +82,7 @@ DECLARE
    int_rad_found_count               INTEGER;
    int_src_found_count               INTEGER;
    int_cip_found_count               INTEGER;
+   int_huc12_found_count             INTEGER;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    
@@ -532,6 +533,17 @@ BEGIN
       
    END IF;
 
+   IF JSONB_PATH_EXISTS(json_input,'$.return_linked_data_huc12')
+   AND json_input->'return_linked_data_huc12' IS NOT NULL
+   AND json_input->>'return_linked_data_huc12' != ''
+   THEN
+      boo_return_linked_data_huc12 := (json_input->'return_linked_data_huc12')::BOOLEAN;
+      
+   ELSE
+      boo_return_linked_data_huc12 := FALSE;
+      
+   END IF;
+
    IF JSONB_PATH_EXISTS(json_input,'$.return_linked_data_source')
    AND json_input->'return_linked_data_source' IS NOT NULL
    AND json_input->>'return_linked_data_source' != ''
@@ -641,6 +653,7 @@ BEGIN
    int_rad_found_count            := rec.out_rad_found_count;
    int_sfid_found_count           := rec.out_sfid_found_count;
    int_cip_found_count            := rec.out_cip_found_count;
+   int_huc12_found_count          := rec.out_huc12_found_count;
    int_src_found_count            := rec.out_src_found_count;
    int_return_code                := rec.out_return_code;
    str_status_message             := rec.out_status_message;
@@ -909,11 +922,61 @@ BEGIN
       
    ELSE
       json_linked_data_cip_found := NULL;
+      int_cip_found_count        := NULL;
    
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 80
+   -- Build the huc12 featurecollection
+   ----------------------------------------------------------------------------
+   IF boo_return_linked_data_huc12
+   AND int_huc12_found_count > 0
+   THEN
+      json_linked_data_huc12_found := (
+         SELECT 
+         JSONB_AGG(a.*)
+         FROM (
+            SELECT
+             aa.eventtype
+            ,aa.huc12_joinkey
+            ,aa.permid_joinkey
+            ,aa.source_originator
+            ,aa.source_featureid
+            ,aa.source_featureid2
+            ,aa.source_series
+            ,aa.source_subdivision
+            ,aa.source_joinkey
+            ,aa.start_date
+            ,aa.end_date
+            ,aa.xwalk_huc12
+            ,aa.xwalk_huc12_version
+            ,aa.xwalk_catresolution
+            ,aa.xwalk_huc12_areasqkm
+            FROM
+            tmp_huc12_found aa
+            ORDER BY
+             aa.eventtype
+            ,aa.source_joinkey
+            ,aa.permid_joinkey
+            ,aa.xwalk_huc12
+         ) a
+      );
+            
+      IF json_linked_data_huc12_found IS NULL
+      OR JSONB_ARRAY_LENGTH(json_linked_data_huc12_found) = 0
+      THEN
+         json_linked_data_huc12_found := NULL;
+         
+      END IF;
+      
+   ELSE
+      json_linked_data_huc12_found := NULL;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 90
    -- Build the source points featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_source
@@ -972,7 +1035,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 100
    -- Build the source lines featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_source
@@ -1032,7 +1095,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 110
    -- Build the source areas featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_source
@@ -1092,7 +1155,7 @@ BEGIN
    END IF;
 
    ----------------------------------------------------------------------------
-   -- Step 110
+   -- Step 120
    -- Build the reached points featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_rad
@@ -1166,7 +1229,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 120
+   -- Step 130
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSONB_BUILD_OBJECT(
@@ -1178,8 +1241,8 @@ BEGIN
       ,'linked_data_sfid_count'    , int_sfid_found_count
       ,'linked_data_cip_found'     , json_linked_data_cip_found
       ,'linked_data_cip_count'     , int_cip_found_count
-      ,'linked_data_huc12_found'   , NULL
-      ,'linked_data_huc12_count'   , NULL
+      ,'linked_data_huc12_found'   , json_linked_data_huc12_found
+      ,'linked_data_huc12_count'   , int_huc12_found_count
       ,'linked_data_source_points' , json_linked_data_source_points
       ,'linked_data_source_lines'  , json_linked_data_source_lines
       ,'linked_data_source_areas'  , json_linked_data_source_areas
