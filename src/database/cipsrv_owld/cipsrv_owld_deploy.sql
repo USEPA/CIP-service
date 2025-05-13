@@ -459,9 +459,40 @@ BEGIN
       ON tmp_rad_areas(source_featureid);
       
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 100
+   -- Create tmp_attr temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_attr')
+   THEN
+      TRUNCATE TABLE tmp_attr;
+
+   ELSE
+      CREATE TEMPORARY TABLE tmp_attr(            
+          eventtype                       INTEGER      NOT NULL
+         ,source_joinkey                  VARCHAR(40)  NOT NULL
+         ,source_originator               VARCHAR(130) NOT NULL
+         ,source_featureid                VARCHAR(100) NOT NULL
+         ,source_featureid2               VARCHAR(100)
+         ,source_series                   VARCHAR(100)
+         ,source_subdivision              VARCHAR(100)
+         ,start_date                      DATE
+         ,end_date                        DATE
+         ,sfiddetailurl                   VARCHAR(255)
+         ,attributes                      JSONB
+      );
+
+      CREATE UNIQUE INDEX tmp_attr_pk
+      ON tmp_attr(source_joinkey);
+
+      CREATE INDEX tmp_attr_01i
+      ON tmp_attr(eventtype);
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 110
    -- I guess that went okay
    ----------------------------------------------------------------------------
    RETURN 0;
@@ -2020,6 +2051,7 @@ CREATE OR REPLACE FUNCTION cipsrv_owld.upstreamdownstream(
    ,OUT out_rad_found_count             INTEGER
    ,OUT out_sfid_found_count            INTEGER
    ,OUT out_src_found_count             INTEGER
+   ,OUT out_attr_found_count            INTEGER
    ,OUT out_return_flowlines            BOOLEAN
    ,OUT out_return_code                 NUMERIC
    ,OUT out_status_message              VARCHAR
@@ -3254,6 +3286,59 @@ BEGIN
                
             ELSE
                out_sfid_found_count := out_sfid_found_count + int_count;
+            
+            END IF;
+      
+         END IF;
+         
+         ----------------------------------------------------------------------
+         ----------------------------------------------------------------------
+         IF p_return_linked_data_attributes
+         THEN
+            EXECUTE '
+               INSERT INTO tmp_attr(
+                   eventtype
+                  ,source_joinkey
+                  ,source_originator
+                  ,source_featureid
+                  ,source_featureid2
+                  ,source_series
+                  ,source_subdivision
+                  ,start_date
+                  ,end_date
+                  ,sfiddetailurl
+                  ,attributes
+               )
+               SELECT
+                $1
+               ,a.source_joinkey
+               ,b.source_originator
+               ,b.source_featureid
+               ,b.source_featureid2
+               ,b.source_series
+               ,b.source_subdivision
+               ,b.start_date
+               ,b.end_date
+               ,b.sfiddetailurl
+               ,(TO_JSONB(a) -''objectid'' -''source_joinkey'' -''globalid'') AS attribute
+               FROM
+               ' || str_owld || '_attr a
+               JOIN
+               tmp_sfid_found b
+               ON
+               b.source_joinkey = a.source_joinkey
+            ' USING
+            int_owld;
+            
+            GET DIAGNOSTICS int_count = ROW_COUNT;
+       
+            IF out_attr_found_count IS NULL
+            OR out_attr_found_count = 0
+            THEN
+               out_attr_found_count := int_count;
+               
+            ELSE
+               out_attr_found_count := out_attr_found_count + int_count;
             
             END IF;
       

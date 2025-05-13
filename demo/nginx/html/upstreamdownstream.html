@@ -1164,6 +1164,7 @@
          + '<TR style="border: 1px solid;"><TD>CIP Events Returned:</TD><TD>' + dzfi(response.linked_data_cip_count) + '</TD></TR>'
          + '<TR style="border: 1px solid;"><TD>HUC12s Returned:</TD><TD>' + dzfi(response.linked_data_huc12_count) + '</TD></TR>'
          + '<TR style="border: 1px solid;"><TD>RAD Events Returned:</TD><TD>' + dzfi(response.linked_data_reached_count) + '</TD></TR>'
+         + '<TR style="border: 1px solid;"><TD>Program Attributes Returned:</TD><TD>' + dzfi(response.linked_data_attributes_count) + '</TD></TR>'
          + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
       
       /////////////////////////////////////////////////////////////////////////
@@ -1545,6 +1546,57 @@
          
       }
       
+      /////////////////////////////////////////////////////////////////////////
+      if (response.linked_data_attributes_found !== null && response.linked_data_attributes_count > 0 ) {
+         var tbl = '<BR/><BR/><B>Program Attributes Summary:</B><BR/>'
+                 + '<TABLE style="border: 1px; border-collapse: collapse; font-family: Arial; font-size: 13px;">'
+                 + '<TBODY><TR style="border: 1px solid;">'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">EventType</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source Originator</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">Source FeatureID</TH>'
+                 + '<TH style="border-left: 1px solid; padding: 3px;">&nbsp;</TH>';
+         
+         var skip = ['eventtype','source_joinkey','source_originator','source_featureid','source_featureid2','source_series','source_subdivision','start_date','end_date','sfiddetailurl'];
+         for (const [key,val] of Object.entries(response.linked_data_attributes_found[0])) {
+            if (!skip.includes(key)) {
+               tbl += '<TH style="border-left: 1px solid; padding: 3px;">' + key + '</TH>';
+         
+            }
+            
+         }         
+         tbl += '</TR>';
+         
+         for (var i = 0; i < response.linked_data_attributes_found.length; i++) {
+            tbl += '<TR>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' 
+                 + '<SPAN title="' + response.linked_data_attributes_found[i].source_joinkey + '" data-toggle="tooltip">'
+                 + dzfet(response.linked_data_attributes_found[i].eventtype) 
+                 + '</SPAN>'
+                 + '</TD>'
+                 + '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_attributes_found[i].source_originator + '</TD>';
+            
+            if ( response.linked_data_attributes_found[i].sfiddetailurl === null ) {
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + response.linked_data_attributes_found[i].source_featureid + '</TD>';
+               
+            } else {
+               tbl += '<TD style="border-left: 1px solid; padding: 3px;"><a href="' + response.linked_data_attributes_found[i].sfiddetailurl + '">' + response.linked_data_attributes_found[i].source_featureid + '</a></TD>';
+               
+            }
+            
+            tbl += '<TD style="border-left: 1px solid; padding: 3px;">' + dzfn(response.linked_data_attributes_found[i].source_featureid2) + '</TD>';
+         
+            for (const [key,val] of Object.entries(response.linked_data_attributes_found[i])) {
+               if (!skip.includes(key)) {
+                  tbl += '<TH style="border-left: 1px solid; padding: 3px;">' + dzfn(val) + '</TH>';
+            
+               }
+               
+            } 
+         }
+         
+         document.getElementById("output").innerHTML += tbl + '<TR style="border-top: 1px solid;"></TR></TBODY></TABLE>';
+      }
+      
       document.getElementById("output").innerHTML += '<BR/>&nbsp;<BR/>&nbsp;<BR/>&nbsp;';
       
    }
@@ -1606,6 +1658,10 @@
       
       } else if ( val === null || val == 'Null') {
          return "&nbsp;";
+      }
+      
+      if ( typeof val === 'string') {
+         val = val.substring(0,80);
       }
       
       return val;

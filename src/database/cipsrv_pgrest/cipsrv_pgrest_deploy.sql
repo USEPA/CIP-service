@@ -2421,6 +2421,7 @@ DECLARE
    int_src_found_count               INTEGER;
    int_cip_found_count               INTEGER;
    int_huc12_found_count             INTEGER;
+   int_attr_found_count              INTEGER;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    
@@ -2455,33 +2456,34 @@ BEGIN
 
    ELSE
       RETURN JSONB_BUILD_OBJECT(
-          'flowlines'                 , NULL
-         ,'flowline_count'            , NULL
-         ,'catchments'                , NULL
-         ,'catchment_count'           , NULL
-         ,'linked_data_sfid_found'    , NULL
-         ,'linked_data_sfid_count'    , NULL
-         ,'linked_data_cip_found'     , NULL
-         ,'linked_data_cip_count'     , NULL
-         ,'linked_data_huc12_found'   , NULL
-         ,'linked_data_huc12_count'   , NULL
-         ,'linked_data_source_points' , NULL
-         ,'linked_data_source_lines'  , NULL
-         ,'linked_data_source_areas'  , NULL
-         ,'linked_data_source_count'  , NULL
-         ,'linked_data_reached_points', NULL
-         ,'linked_data_reached_lines' , NULL
-         ,'linked_data_reached_areas' , NULL
-         ,'linked_data_reached_count' , NULL
-         ,'linked_data_attributes'    , NULL
-         ,'start_nhdplusid'           , NULL
-         ,'start_measure'             , NULL
-         ,'start_linked_data_program' , NULL
-         ,'stop_nhdplusid'            , NULL
-         ,'stop_measure'              , NULL
-         ,'stop_linked_data_program'  , NULL
-         ,'return_code'               , -100
-         ,'status_message'            , 'nhdplus version parameter is required'
+          'flowlines'                   , NULL
+         ,'flowline_count'              , NULL
+         ,'catchments'                  , NULL
+         ,'catchment_count'             , NULL
+         ,'linked_data_sfid_found'      , NULL
+         ,'linked_data_sfid_count'      , NULL
+         ,'linked_data_cip_found'       , NULL
+         ,'linked_data_cip_count'       , NULL
+         ,'linked_data_huc12_found'     , NULL
+         ,'linked_data_huc12_count'     , NULL
+         ,'linked_data_source_points'   , NULL
+         ,'linked_data_source_lines'    , NULL
+         ,'linked_data_source_areas'    , NULL
+         ,'linked_data_source_count'    , NULL
+         ,'linked_data_reached_points'  , NULL
+         ,'linked_data_reached_lines'   , NULL
+         ,'linked_data_reached_areas'   , NULL
+         ,'linked_data_reached_count'   , NULL
+         ,'linked_data_attributes_found', NULL
+         ,'linked_data_attributes_count', NULL
+         ,'start_nhdplusid'             , NULL
+         ,'start_measure'               , NULL
+         ,'start_linked_data_program'   , NULL
+         ,'stop_nhdplusid'              , NULL
+         ,'stop_measure'                , NULL
+         ,'stop_linked_data_program'    , NULL
+         ,'return_code'                 , -100
+         ,'status_message'              , 'nhdplus version parameter is required'
       );
    
    END IF;
@@ -2893,6 +2895,17 @@ BEGIN
       
    END IF;
 
+   IF JSONB_PATH_EXISTS(json_input,'$.return_linked_data_attributes')
+   AND json_input->'return_linked_data_attributes' IS NOT NULL
+   AND json_input->>'return_linked_data_attributes' != ''
+   THEN
+      boo_return_linked_data_attributes := (json_input->'return_linked_data_attributes')::BOOLEAN;
+      
+   ELSE
+      boo_return_linked_data_attributes := FALSE;
+      
+   END IF;
+
    IF JSONB_PATH_EXISTS(json_input,'$.push_source_geometry_as_rad')
    AND json_input->'push_source_geometry_as_rad' IS NOT NULL
    AND json_input->>'push_source_geometry_as_rad' != ''
@@ -2993,39 +3006,41 @@ BEGIN
    int_cip_found_count            := rec.out_cip_found_count;
    int_huc12_found_count          := rec.out_huc12_found_count;
    int_src_found_count            := rec.out_src_found_count;
+   int_attr_found_count           := rec.out_attr_found_count;
    int_return_code                := rec.out_return_code;
    str_status_message             := rec.out_status_message;
    
    IF int_return_code != 0
    THEN
       RETURN JSONB_BUILD_OBJECT(
-          'flowlines'                 , NULL
-         ,'flowline_count'            , NULL
-         ,'catchments'                , NULL
-         ,'catchment_count'           , NULL
-         ,'linked_data_sfid_found'    , NULL
-         ,'linked_data_sfid_count'    , NULL
-         ,'linked_data_cip_found'     , NULL
-         ,'linked_data_cip_count'     , NULL
-         ,'linked_data_huc12_found'   , NULL
-         ,'linked_data_huc12_count'   , NULL
-         ,'linked_data_source_points' , NULL
-         ,'linked_data_source_lines'  , NULL
-         ,'linked_data_source_areas'  , NULL
-         ,'linked_data_source_count'  , NULL
-         ,'linked_data_reached_points', NULL
-         ,'linked_data_reached_lines' , NULL
-         ,'linked_data_reached_areas' , NULL
-         ,'linked_data_reached_count' , NULL
-         ,'linked_data_attributes'    , NULL
-         ,'start_nhdplusid'           , int_start_nhdplusid
-         ,'start_measure'             , num_start_measure
-         ,'start_linked_data_program' , str_start_linked_data_program
-         ,'stop_nhdplusid'            , int_stop_nhdplusid
-         ,'stop_measure'              , num_stop_measure
-         ,'stop_linked_data_program'  , str_stop_linked_data_program
-         ,'return_code'               , int_return_code
-         ,'status_message'            , str_status_message
+          'flowlines'                   , NULL
+         ,'flowline_count'              , NULL
+         ,'catchments'                  , NULL
+         ,'catchment_count'             , NULL
+         ,'linked_data_sfid_found'      , NULL
+         ,'linked_data_sfid_count'      , NULL
+         ,'linked_data_cip_found'       , NULL
+         ,'linked_data_cip_count'       , NULL
+         ,'linked_data_huc12_found'     , NULL
+         ,'linked_data_huc12_count'     , NULL
+         ,'linked_data_source_points'   , NULL
+         ,'linked_data_source_lines'    , NULL
+         ,'linked_data_source_areas'    , NULL
+         ,'linked_data_source_count'    , NULL
+         ,'linked_data_reached_points'  , NULL
+         ,'linked_data_reached_lines'   , NULL
+         ,'linked_data_reached_areas'   , NULL
+         ,'linked_data_reached_count'   , NULL
+         ,'linked_data_attributes_found', NULL
+         ,'linked_data_attributes_count', NULL
+         ,'start_nhdplusid'             , int_start_nhdplusid
+         ,'start_measure'               , num_start_measure
+         ,'start_linked_data_program'   , str_start_linked_data_program
+         ,'stop_nhdplusid'              , int_stop_nhdplusid
+         ,'stop_measure'                , num_stop_measure
+         ,'stop_linked_data_program'    , str_stop_linked_data_program
+         ,'return_code'                 , int_return_code
+         ,'status_message'              , str_status_message
       );
    
    END IF;
@@ -3568,36 +3583,84 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 130
+   -- Build the reached points featurecollection
+   ----------------------------------------------------------------------------
+   IF boo_return_linked_data_attributes
+   AND int_attr_found_count > 0
+   THEN
+      json_linked_data_attributes := (
+         SELECT 
+         JSONB_AGG(j.my_json)
+         FROM (
+            SELECT
+            TO_JSONB(aa) -'attributes' || aa.attributes AS my_json
+            FROM (
+               SELECT
+                aaa.eventtype
+               ,aaa.source_joinkey
+               ,aaa.source_originator
+               ,aaa.source_featureid
+               ,aaa.source_featureid2
+               ,aaa.source_series
+               ,aaa.source_subdivision
+               ,aaa.start_date
+               ,aaa.end_date
+               ,aaa.sfiddetailurl
+               ,aaa.attributes
+               FROM
+               tmp_attr aaa
+               ORDER BY
+                aaa.eventtype
+               ,aaa.source_joinkey
+            ) aa
+         ) j
+      );
+            
+      IF json_linked_data_attributes IS NULL
+      OR JSONB_ARRAY_LENGTH(json_linked_data_attributes) = 0
+      THEN
+         json_linked_data_attributes := NULL;
+         
+      END IF;
+      
+   ELSE
+      json_linked_data_attributes := NULL;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 130
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSONB_BUILD_OBJECT(
-       'flowlines'                 , json_flowlines
-      ,'flowline_count'            , int_flowline_count
-      ,'catchments'                , json_catchments
-      ,'catchment_count'           , int_catchment_count
-      ,'linked_data_sfid_found'    , json_linked_data_sfid_found
-      ,'linked_data_sfid_count'    , int_sfid_found_count
-      ,'linked_data_cip_found'     , json_linked_data_cip_found
-      ,'linked_data_cip_count'     , int_cip_found_count
-      ,'linked_data_huc12_found'   , json_linked_data_huc12_found
-      ,'linked_data_huc12_count'   , int_huc12_found_count
-      ,'linked_data_source_points' , json_linked_data_source_points
-      ,'linked_data_source_lines'  , json_linked_data_source_lines
-      ,'linked_data_source_areas'  , json_linked_data_source_areas
-      ,'linked_data_source_count'  , int_src_found_count
-      ,'linked_data_reached_points', json_linked_data_reached_points
-      ,'linked_data_reached_lines' , NULL
-      ,'linked_data_reached_areas' , NULL
-      ,'linked_data_reached_count' , int_rad_found_count
-      ,'linked_data_attributes'    , NULL
-      ,'start_nhdplusid'           , int_start_nhdplusid
-      ,'start_measure'             , num_start_measure
-      ,'start_linked_data_program' , str_start_linked_data_program
-      ,'stop_nhdplusid'            , int_stop_nhdplusid
-      ,'stop_measure'              , num_stop_measure
-      ,'stop_linked_data_program'  , str_stop_linked_data_program
-      ,'return_code'               , int_return_code
-      ,'status_message'            , str_status_message
+       'flowlines'                   , json_flowlines
+      ,'flowline_count'              , int_flowline_count
+      ,'catchments'                  , json_catchments
+      ,'catchment_count'             , int_catchment_count
+      ,'linked_data_sfid_found'      , json_linked_data_sfid_found
+      ,'linked_data_sfid_count'      , int_sfid_found_count
+      ,'linked_data_cip_found'       , json_linked_data_cip_found
+      ,'linked_data_cip_count'       , int_cip_found_count
+      ,'linked_data_huc12_found'     , json_linked_data_huc12_found
+      ,'linked_data_huc12_count'     , int_huc12_found_count
+      ,'linked_data_source_points'   , json_linked_data_source_points
+      ,'linked_data_source_lines'    , json_linked_data_source_lines
+      ,'linked_data_source_areas'    , json_linked_data_source_areas
+      ,'linked_data_source_count'    , int_src_found_count
+      ,'linked_data_reached_points'  , json_linked_data_reached_points
+      ,'linked_data_reached_lines'   , NULL
+      ,'linked_data_reached_areas'   , NULL
+      ,'linked_data_reached_count'   , int_rad_found_count
+      ,'linked_data_attributes_found', json_linked_data_attributes
+      ,'linked_data_attributes_count', int_attr_found_count
+      ,'start_nhdplusid'             , int_start_nhdplusid
+      ,'start_measure'               , num_start_measure
+      ,'start_linked_data_program'   , str_start_linked_data_program
+      ,'stop_nhdplusid'              , int_stop_nhdplusid
+      ,'stop_measure'                , num_stop_measure
+      ,'stop_linked_data_program'    , str_stop_linked_data_program
+      ,'return_code'                 , int_return_code
+      ,'status_message'              , str_status_message
    );
       
 END;

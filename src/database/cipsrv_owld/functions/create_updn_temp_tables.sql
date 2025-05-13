@@ -434,9 +434,40 @@ BEGIN
       ON tmp_rad_areas(source_featureid);
       
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 100
+   -- Create tmp_attr temp table
+   ---------------------------------------------------------------------------- 
+   IF cipsrv_engine.temp_table_exists('tmp_attr')
+   THEN
+      TRUNCATE TABLE tmp_attr;
+
+   ELSE
+      CREATE TEMPORARY TABLE tmp_attr(            
+          eventtype                       INTEGER      NOT NULL
+         ,source_joinkey                  VARCHAR(40)  NOT NULL
+         ,source_originator               VARCHAR(130) NOT NULL
+         ,source_featureid                VARCHAR(100) NOT NULL
+         ,source_featureid2               VARCHAR(100)
+         ,source_series                   VARCHAR(100)
+         ,source_subdivision              VARCHAR(100)
+         ,start_date                      DATE
+         ,end_date                        DATE
+         ,sfiddetailurl                   VARCHAR(255)
+         ,attributes                      JSONB
+      );
+
+      CREATE UNIQUE INDEX tmp_attr_pk
+      ON tmp_attr(source_joinkey);
+
+      CREATE INDEX tmp_attr_01i
+      ON tmp_attr(eventtype);
+
+   END IF;
+
+   ----------------------------------------------------------------------------
+   -- Step 110
    -- I guess that went okay
    ----------------------------------------------------------------------------
    RETURN 0;
