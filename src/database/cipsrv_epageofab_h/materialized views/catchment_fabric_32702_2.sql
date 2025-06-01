@@ -47,7 +47,7 @@ WITH
    FROM (
       SELECT
        aaa.nhdplusid
-      ,ST_UNION(aaa.tribal_shape) AS tribal_shape
+      ,ST_UNION(aaa.tribal_shape,0.001) AS tribal_shape
       FROM (
          SELECT
           aaaa.nhdplusid
@@ -56,12 +56,12 @@ WITH
              cipsrv_nhdplus_h.snap_to_common_grid(
                 p_geometry      := bbbb.shape
                ,p_known_region  := '32702'
-               ,p_grid_size     := 0.05
+               ,p_grid_size     := 0.001
              )
             ,cipsrv_nhdplus_h.snap_to_common_grid(
                 p_geometry      := aaaa.shape
                ,p_known_region  := '32702'
-               ,p_grid_size     := 0.05
+               ,p_grid_size     := 0.001
              )
          ) AS tribal_shape
          FROM 

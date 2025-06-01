@@ -30,7 +30,10 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2feature(
    ,IN  p_areacat_threshold      NUMERIC  DEFAULT NULL
    ,IN  p_areaevt_threshold      NUMERIC  DEFAULT NULL
    
-) RETURNS cipsrv_engine.cip_feature[]
+   ,OUT out_cip_features         cipsrv_engine.cip_feature[]
+   ,OUT out_known_region         VARCHAR
+   
+)
 IMMUTABLE
 AS $BODY$ 
 DECLARE
@@ -42,7 +45,6 @@ DECLARE
    str_globalid               VARCHAR;
    str_permid_joinkey         VARCHAR;
    str_nhdplus_version        VARCHAR;
-   str_known_region           VARCHAR;
    int_srid                   INTEGER;
    str_source_featureid       VARCHAR;
    
@@ -72,7 +74,8 @@ BEGIN
    ----------------------------------------------------------------------------
    IF json_feature IS NULL
    THEN
-      RETURN ARRAY[obj_rez];
+      out_cip_features := ARRAY[obj_rez];
+      RETURN;
       
    ELSIF JSONB_TYPEOF(json_feature) != 'object'
    OR json_feature->'type' IS NULL
@@ -146,34 +149,36 @@ BEGIN
          LOOP
             sdo_geometry2 := ST_GeometryN(sdo_geometry,i);
             
-            ary_rez := cipsrv_engine.featurecat(ary_rez,
-               cipsrv_engine.jsonb2feature(
-                   p_feature                := json_feature
-                  ,p_geometry_override      := sdo_geometry2
-                  ,p_source_featureid       := p_source_featureid
-                  ,p_permid_joinkey         := p_permid_joinkey
-                  ,p_nhdplus_version        := p_nhdplus_version
-                  ,p_known_region           := p_known_region
-                  ,p_int_srid               := p_int_srid
-                  
-                  ,p_point_indexing_method  := p_point_indexing_method
-                  
-                  ,p_line_indexing_method   := p_line_indexing_method
-                  ,p_line_threshold         := p_line_threshold
-                  
-                  ,p_ring_indexing_method   := p_ring_indexing_method
-                  ,p_ring_areacat_threshold := p_ring_areacat_threshold
-                  ,p_ring_areaevt_threshold := p_ring_areaevt_threshold
-                  
-                  ,p_area_indexing_method   := p_area_indexing_method
-                  ,p_areacat_threshold      := p_areacat_threshold
-                  ,p_areaevt_threshold      := p_areaevt_threshold
-               )
+            rec := cipsrv_engine.jsonb2feature(
+                p_feature                := json_feature
+               ,p_geometry_override      := sdo_geometry2
+               ,p_source_featureid       := p_source_featureid
+               ,p_permid_joinkey         := p_permid_joinkey
+               ,p_nhdplus_version        := p_nhdplus_version
+               ,p_known_region           := out_known_region
+               ,p_int_srid               := p_int_srid
+               
+               ,p_point_indexing_method  := p_point_indexing_method
+               
+               ,p_line_indexing_method   := p_line_indexing_method
+               ,p_line_threshold         := p_line_threshold
+               
+               ,p_ring_indexing_method   := p_ring_indexing_method
+               ,p_ring_areacat_threshold := p_ring_areacat_threshold
+               ,p_ring_areaevt_threshold := p_ring_areaevt_threshold
+               
+               ,p_area_indexing_method   := p_area_indexing_method
+               ,p_areacat_threshold      := p_areacat_threshold
+               ,p_areaevt_threshold      := p_areaevt_threshold
             );
+            
+            ary_rez := cipsrv_engine.featurecat(ary_rez,rec.out_cip_features);
+            out_known_region := rec.out_known_region;
             
          END LOOP;
          
-         RETURN ary_rez;
+         out_cip_features := ary_rez;
+         RETURN;
  
       END IF;
       
@@ -259,11 +264,11 @@ BEGIN
    IF has_properties
    AND json_feature->'properties'->'known_region' IS NOT NULL
    THEN
-      str_known_region := json_feature->'properties'->>'known_region';
+      out_known_region := json_feature->'properties'->>'known_region';
       
    ELSIF p_known_region IS NOT NULL
    THEN
-      str_known_region := p_known_region;
+      out_known_region := p_known_region;
       
    END IF;
 
@@ -286,18 +291,19 @@ BEGIN
    ----------------------------------------------------------------------------
    IF  int_srid IS NULL
    AND str_nhdplus_version IS NOT NULL
-   AND str_known_region IS NOT NULL
+   AND out_known_region IS NOT NULL
    THEN
       rec := cipsrv_engine.determine_grid_srid(
           p_geometry        := NULL
          ,p_nhdplus_version := str_nhdplus_version
-         ,p_known_region    := str_known_region
+         ,p_known_region    := out_known_region
       );
-      int_srid := rec.out_srid;
+      int_srid         := rec.out_srid;
+      out_known_region := int_srid::VARCHAR;
       
    ELSIF int_srid IS NULL
    AND str_nhdplus_version IS NOT NULL
-   AND str_known_region IS NULL
+   AND out_known_region IS NULL
    AND sdo_geometry IS NOT NULL
    THEN
       rec := cipsrv_engine.determine_grid_srid(
@@ -305,8 +311,8 @@ BEGIN
          ,p_nhdplus_version := str_nhdplus_version
          ,p_known_region    := NULL
       );
-      int_srid := rec.out_srid;
-      str_known_region := rec.out_srid::VARCHAR;
+      int_srid         := rec.out_srid;
+      out_known_region := rec.out_srid::VARCHAR;
    
    END IF;
    
@@ -456,7 +462,7 @@ BEGIN
       ,str_source_featureid
       ,str_permid_joinkey
       ,str_nhdplus_version
-      ,str_known_region
+      ,out_known_region
       ,int_srid
       ,NULL
       ,NULL
@@ -480,55 +486,27 @@ BEGIN
       ,NULL
    )::cipsrv_engine.cip_feature;
 
-   RETURN ARRAY[obj_rez];   
+   out_cip_features := ARRAY[obj_rez];
+   RETURN;   
 
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_engine.jsonb2feature(
-    JSONB
-   ,GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2feature(
-    JSONB
-   ,GEOMETRY
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2feature';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 

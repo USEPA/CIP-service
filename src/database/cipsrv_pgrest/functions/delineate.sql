@@ -376,7 +376,9 @@ BEGIN
    THEN
       json_delineated_area := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -405,7 +407,9 @@ BEGIN
    ELSE
       json_delineated_area := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -454,7 +458,9 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(

@@ -51,7 +51,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -150,7 +150,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -237,7 +237,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -341,7 +341,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -440,7 +440,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -527,7 +527,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -630,7 +630,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -646,7 +646,7 @@ BEGIN
    
    RETURN NEXT tap.is(
        rec.out_catchment_count
-      ,33
+      ,32
       ,'test 1 - basic catchment count'
    );
    
@@ -667,10 +667,10 @@ BEGIN
       ,'IL'
       ,'test 1 - check state code 1'
    );
-   
+   --raise warning '%',ary_nhdplusid[23];
    RETURN NEXT tap.is(
        ary_nhdplusid[23]
-      ,24000100421021::BIGINT
+      ,24000100458455::BIGINT
       ,'test 1 - check nhdplusid 2'
    );
 
@@ -682,7 +682,7 @@ BEGIN
    
    RETURN NEXT tap.is(
        ary_nhdplusid[31]
-      ,22000100008400::BIGINT
+      ,24000100569580::BIGINT
       ,'test 1 - check nhdplusid 3'
    );
 
@@ -730,7 +730,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -818,7 +818,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -921,7 +921,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1021,7 +1021,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1109,7 +1109,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1213,7 +1213,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1312,7 +1312,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1411,7 +1411,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1510,7 +1510,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1613,7 +1613,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1712,7 +1712,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1811,7 +1811,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -1910,7 +1910,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2011,7 +2011,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2098,7 +2098,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2185,7 +2185,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2273,7 +2273,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2368,7 +2368,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2469,7 +2469,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2556,7 +2556,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2643,7 +2643,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2731,7 +2731,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2826,7 +2826,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -2928,7 +2928,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3016,7 +3016,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3114,7 +3114,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3194,7 +3194,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3282,7 +3282,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3384,7 +3384,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3472,7 +3472,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3570,7 +3570,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3650,7 +3650,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3738,7 +3738,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3850,7 +3850,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3914,7 +3914,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -3978,7 +3978,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4042,7 +4042,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4106,7 +4106,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4170,7 +4170,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4265,7 +4265,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4329,7 +4329,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4393,7 +4393,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4457,7 +4457,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4521,7 +4521,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -4585,7 +4585,7 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
    );
    RETURN NEXT tap.is(
        rec.out_return_code

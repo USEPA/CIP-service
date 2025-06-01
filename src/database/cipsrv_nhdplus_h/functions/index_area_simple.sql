@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_simple(
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -30,9 +30,13 @@ DECLARE
    num_evt_threshold      NUMERIC;
    num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
@@ -50,7 +54,18 @@ BEGIN
       num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_h.determine_grid_srid(
@@ -69,6 +84,7 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
    
+   ----------------------------------------------------------------------------
    IF p_geometry_areasqkm IS NULL
    THEN
       num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
@@ -81,6 +97,7 @@ BEGIN
       
    END IF;
       
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -135,7 +152,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_5070_state aaaa
+               cipsrv_nhdplus_h.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -203,7 +220,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_3338_state aaaa
+               cipsrv_nhdplus_h.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -271,7 +288,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_26904_state aaaa
+               cipsrv_nhdplus_h.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -339,7 +356,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_32161_state aaaa
+               cipsrv_nhdplus_h.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -407,7 +424,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_32655_state aaaa
+               cipsrv_nhdplus_h.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -475,7 +492,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_32702_state aaaa
+               cipsrv_nhdplus_h.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -517,3 +534,4 @@ BEGIN
    ELSE RAISE EXCEPTION 'prob'; 
    END IF;END IF;
 END$$;
+

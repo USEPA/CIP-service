@@ -296,7 +296,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,3338)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,3338),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
@@ -504,7 +504,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,5070)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,5070),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
@@ -712,7 +712,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,26904)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,26904),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
@@ -920,7 +920,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,32161)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,32161),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
@@ -1128,7 +1128,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,32655)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,32655),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
@@ -1336,7 +1336,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,32702)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,32702),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
@@ -8769,7 +8769,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_artpath(
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -8784,9 +8784,13 @@ DECLARE
    num_evt_threshold      NUMERIC;
    num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
@@ -8804,7 +8808,18 @@ BEGIN
       num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_m.determine_grid_srid(
@@ -8823,6 +8838,7 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
    
+   ----------------------------------------------------------------------------
    IF p_geometry_areasqkm IS NULL
    THEN
       num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
@@ -8835,6 +8851,7 @@ BEGIN
       
    END IF;
       
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -9291,7 +9308,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_centroid(
    ,IN  p_evt_threshold_perc      NUMERIC   
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -9306,9 +9323,13 @@ DECLARE
    num_evt_threshold      NUMERIC;
    num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
@@ -9326,7 +9347,18 @@ BEGIN
       num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_m.determine_grid_srid(
@@ -9345,6 +9377,7 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
    
+   ----------------------------------------------------------------------------
    IF p_geometry_areasqkm IS NULL
    THEN
       num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
@@ -9357,6 +9390,7 @@ BEGIN
       
    END IF;
       
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -9789,7 +9823,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_area_simple(
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -9804,9 +9838,13 @@ DECLARE
    num_evt_threshold      NUMERIC;
    num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
@@ -9824,7 +9862,18 @@ BEGIN
       num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_m.determine_grid_srid(
@@ -9843,6 +9892,7 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
    
+   ----------------------------------------------------------------------------
    IF p_geometry_areasqkm IS NULL
    THEN
       num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
@@ -9855,6 +9905,7 @@ BEGIN
       
    END IF;
       
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -10311,7 +10362,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_levelpath(
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -10341,6 +10392,7 @@ DECLARE
    int_geom_count         INTEGER;   
    num_geometry_lengthkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
@@ -10359,12 +10411,22 @@ BEGIN
       
    END IF;
    
-   str_known_region := p_known_region;
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
    
    ----------------------------------------------------------------------------
    -- Step 20
    -- Validate the known region
    ----------------------------------------------------------------------------
+   str_known_region := p_known_region;
+   
    rec := cipsrv_nhdplus_m.determine_grid_srid(
        p_geometry       := p_geometry
       ,p_known_region   := p_known_region
@@ -11381,7 +11443,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_line_simple(
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -11396,9 +11458,13 @@ DECLARE
    int_count              INTEGER;
    num_geometry_lengthkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_line_threshold_perc IS NULL
    THEN
       num_line_threshold := 0;
@@ -11407,7 +11473,18 @@ BEGIN
       num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_m.determine_grid_srid(
@@ -11426,6 +11503,7 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
 
+   ----------------------------------------------------------------------------
    IF p_geometry_lengthkm IS NULL
    THEN
       num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
@@ -11438,6 +11516,7 @@ BEGIN
       
    END IF;
 
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -11930,7 +12009,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.index_point_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -11947,6 +12026,20 @@ DECLARE
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_m.determine_grid_srid(
@@ -11964,17 +12057,8 @@ BEGIN
    END IF;
 
    str_known_region := int_srid::VARCHAR;
-   
-   IF p_return_full_catchment IS NULL
-   OR p_return_full_catchment
-   THEN
-      int_splitselector := 2;
-      
-   ELSE
-      int_splitselector := 1;
-   
-   END IF;
 
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);

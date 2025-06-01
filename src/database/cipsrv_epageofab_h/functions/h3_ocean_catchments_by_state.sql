@@ -66,7 +66,7 @@ BEGIN
       cipsrv_nhdplus_h.snap_to_common_grid(
           a.shape
          ,$1
-         ,0.05
+         ,0.001
       ) AS shape
       FROM 
       cipsrv_support.' || str_src_state || ' a
@@ -102,7 +102,7 @@ BEGIN
           ST_INTERSECTION(
              geom_state
             ,geom_bbox
-            ,0.05
+            ,0.001
           )
          ,3
       );
@@ -129,7 +129,7 @@ BEGIN
       ,cipsrv_nhdplus_h.snap_to_common_grid(
           a.shape
          ,$1
-         ,0.05
+         ,0.001
       ) AS shape
       FROM (
          SELECT
@@ -175,7 +175,7 @@ BEGIN
          ,cipsrv_nhdplus_h.snap_to_common_grid(
              a.shape
             ,$1
-            ,0.05
+            ,0.001
          ) AS shape
          FROM
          cipsrv_nhdplus_h.' || str_src_cats || ' a

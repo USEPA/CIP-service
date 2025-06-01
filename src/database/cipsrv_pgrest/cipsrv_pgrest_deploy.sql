@@ -33,7 +33,7 @@ BEGIN
    -- Collect the state domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.*)
+   JSONB_AGG(a.* ORDER BY a.stusps)
    INTO json_states
    FROM (
       SELECT
@@ -42,8 +42,6 @@ BEGIN
       ,aa.name
       FROM
       cipsrv_support.tiger_fedstatewaters aa
-      ORDER BY
-      aa.stusps
    ) a;
    
    ----------------------------------------------------------------------------
@@ -51,7 +49,7 @@ BEGIN
    -- Collect the tribes domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.*)
+   JSONB_AGG(a.* ORDER BY a.aiannhns_stem)
    INTO json_tribes
    FROM (
       SELECT
@@ -61,8 +59,6 @@ BEGIN
       ,aa.has_trust_lands
       FROM
       cipsrv_support.tribal_crosswalk aa
-      ORDER BY
-      aa.aiannhns_stem
    ) a;
    
    ----------------------------------------------------------------------------
@@ -139,7 +135,7 @@ DECLARE
    boo_return_flowline_geometry       BOOLEAN;
    boo_return_huc12_geometry          BOOLEAN;
    boo_return_indexing_summary        BOOLEAN;
-   boo_return_full_catchment          BOOLEAN;
+   boo_return_full_catchments         BOOLEAN;
    
    int_catchment_count                INTEGER;
    num_catchment_areasqkm             NUMERIC;
@@ -449,13 +445,13 @@ BEGIN
       
    END IF;
  
-   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchment')
-   AND json_input->>'return_full_catchment' IS NOT NULL
+   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchments')
+   AND json_input->>'return_full_catchments' IS NOT NULL
    THEN
-      boo_return_full_catchment := (json_input->>'return_full_catchment')::BOOLEAN;
+      boo_return_full_catchments := (json_input->>'return_full_catchments')::BOOLEAN;
       
    ELSE
-      boo_return_full_catchment := FALSE;
+      boo_return_full_catchments := FALSE;
       
    END IF;
      
@@ -492,7 +488,7 @@ BEGIN
       ,p_return_indexed_collection      := boo_return_indexed_collection
       ,p_return_catchment_geometry      := boo_return_catchment_geometry
       ,p_return_indexing_summary        := boo_return_indexing_summary
-      ,p_return_full_catchment          := boo_return_full_catchment
+      ,p_return_full_catchments         := boo_return_full_catchments
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
@@ -558,7 +554,9 @@ BEGIN
       THEN
          json_flowlines := (
             SELECT 
-            JSONB_AGG(j.my_json) AS my_feats
+            JSONB_AGG(
+               j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+            ) AS my_feats
             FROM (
                SELECT 
                JSONB_BUILD_OBJECT(
@@ -586,8 +584,6 @@ BEGIN
                    cipsrv_nhdplus_m.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
                ) t
             ) j
          );
@@ -609,7 +605,9 @@ BEGIN
       THEN
          json_flowlines := (
             SELECT 
-            JSONB_AGG(j.my_json) AS my_feats
+            JSONB_AGG(
+               j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+            ) AS my_feats
             FROM (
                SELECT 
                JSONB_BUILD_OBJECT(
@@ -637,8 +635,6 @@ BEGIN
                    cipsrv_nhdplus_h.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
                ) t
             ) j
          );
@@ -678,7 +674,9 @@ BEGIN
    ----------------------------------------------------------------------------
    json_catchments := (
       SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
+      JSONB_AGG(
+         j.my_json ORDER BY j.my_json->'properties'->'catchmentstatecode',j.my_json->'properties'->'nhdplusid'
+      ) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(
@@ -704,9 +702,6 @@ BEGIN
              END AS geom
             FROM
             tmp_cip_out a
-            ORDER BY
-             a.catchmentstatecode
-            ,a.nhdplusid
          ) t
       ) j
    );
@@ -1361,7 +1356,9 @@ BEGIN
    THEN
       json_delineated_area := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1390,7 +1387,9 @@ BEGIN
    ELSE
       json_delineated_area := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1439,7 +1438,9 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1871,7 +1872,9 @@ BEGIN
    ----------------------------------------------------------------------------
    json_flowlines := (
       SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
+      JSONB_AGG(
+         j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+      ) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(
@@ -3053,7 +3056,9 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3090,9 +3095,6 @@ BEGIN
                ,CASE WHEN boo_return_flowline_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
                FROM
                tmp_navigation_results a
-               ORDER BY
-                a.nav_order
-               ,a.network_distancekm
             ) t
          ) j
       );
@@ -3123,7 +3125,9 @@ BEGIN
    THEN
       json_catchments := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3140,8 +3144,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_catchments a
-               ORDER BY
-               a.orderingkey
             ) t
          ) j
       );
@@ -3172,7 +3174,9 @@ BEGIN
    THEN
       json_linked_data_sfid_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.eventtype,a.nearest_cip_network_distancekm,a.nearest_rad_network_distancekm
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -3200,10 +3204,6 @@ BEGIN
             ,aa.nearest_rad_network_flowtimeday
             FROM
             tmp_sfid_found aa
-            ORDER BY
-             aa.eventtype
-            ,aa.nearest_cip_network_distancekm
-            ,aa.nearest_rad_network_distancekm
          ) a
       );
             
@@ -3227,7 +3227,9 @@ BEGIN
    THEN
       json_linked_data_cip_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.network_distancekm,a.network_flowtimeday
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -3260,9 +3262,6 @@ BEGIN
             ,aa.network_flowtimeday
             FROM
             tmp_cip_found aa
-            ORDER BY
-             aa.network_distancekm
-            ,aa.network_flowtimeday
          ) a
       );
             
@@ -3288,7 +3287,9 @@ BEGIN
    THEN
       json_linked_data_huc12_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.eventtype,a.source_joinkey,a.permid_joinkey,a.xwalk_huc12
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -3308,11 +3309,6 @@ BEGIN
             ,aa.xwalk_huc12_areasqkm
             FROM
             tmp_huc12_found aa
-            ORDER BY
-             aa.eventtype
-            ,aa.source_joinkey
-            ,aa.permid_joinkey
-            ,aa.xwalk_huc12
          ) a
       );
             
@@ -3337,7 +3333,9 @@ BEGIN
    THEN
       json_linked_data_source_points := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3362,9 +3360,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_points a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -3396,7 +3391,9 @@ BEGIN
    THEN
       json_linked_data_source_lines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3422,9 +3419,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_lines a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -3456,7 +3450,9 @@ BEGIN
    THEN
       json_linked_data_source_areas := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3482,9 +3478,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_areas a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -3516,7 +3509,9 @@ BEGIN
    THEN
       json_linked_data_reached_points := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3556,9 +3551,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_rad_points a
-               ORDER BY
-                a.eventtype
-               ,a.network_distancekm
             ) t
          ) j
       );
@@ -3590,7 +3582,9 @@ BEGIN
    THEN
       json_linked_data_attributes := (
          SELECT 
-         JSONB_AGG(j.my_json)
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'source_joinkey'
+         ) AS my_feats
          FROM (
             SELECT
             TO_JSONB(aa) -'attributes' || aa.attributes AS my_json
@@ -3609,9 +3603,6 @@ BEGIN
                ,aaa.attributes
                FROM
                tmp_attr aaa
-               ORDER BY
-                aaa.eventtype
-               ,aaa.source_joinkey
             ) aa
          ) j
       );

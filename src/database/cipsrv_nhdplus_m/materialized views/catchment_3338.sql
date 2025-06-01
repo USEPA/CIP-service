@@ -127,7 +127,7 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,3338)) AS shape
+      ,ST_UNION(ST_Transform(bbb.shape,3338),0.001) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit

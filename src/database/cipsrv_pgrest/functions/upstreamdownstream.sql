@@ -715,7 +715,9 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -752,9 +754,6 @@ BEGIN
                ,CASE WHEN boo_return_flowline_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
                FROM
                tmp_navigation_results a
-               ORDER BY
-                a.nav_order
-               ,a.network_distancekm
             ) t
          ) j
       );
@@ -785,7 +784,9 @@ BEGIN
    THEN
       json_catchments := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -802,8 +803,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_catchments a
-               ORDER BY
-               a.orderingkey
             ) t
          ) j
       );
@@ -834,7 +833,9 @@ BEGIN
    THEN
       json_linked_data_sfid_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.eventtype,a.nearest_cip_network_distancekm,a.nearest_rad_network_distancekm
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -862,10 +863,6 @@ BEGIN
             ,aa.nearest_rad_network_flowtimeday
             FROM
             tmp_sfid_found aa
-            ORDER BY
-             aa.eventtype
-            ,aa.nearest_cip_network_distancekm
-            ,aa.nearest_rad_network_distancekm
          ) a
       );
             
@@ -889,7 +886,9 @@ BEGIN
    THEN
       json_linked_data_cip_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.network_distancekm,a.network_flowtimeday
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -922,9 +921,6 @@ BEGIN
             ,aa.network_flowtimeday
             FROM
             tmp_cip_found aa
-            ORDER BY
-             aa.network_distancekm
-            ,aa.network_flowtimeday
          ) a
       );
             
@@ -950,7 +946,9 @@ BEGIN
    THEN
       json_linked_data_huc12_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.eventtype,a.source_joinkey,a.permid_joinkey,a.xwalk_huc12
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -970,11 +968,6 @@ BEGIN
             ,aa.xwalk_huc12_areasqkm
             FROM
             tmp_huc12_found aa
-            ORDER BY
-             aa.eventtype
-            ,aa.source_joinkey
-            ,aa.permid_joinkey
-            ,aa.xwalk_huc12
          ) a
       );
             
@@ -999,7 +992,9 @@ BEGIN
    THEN
       json_linked_data_source_points := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1024,9 +1019,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_points a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -1058,7 +1050,9 @@ BEGIN
    THEN
       json_linked_data_source_lines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1084,9 +1078,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_lines a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -1118,7 +1109,9 @@ BEGIN
    THEN
       json_linked_data_source_areas := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1144,9 +1137,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_areas a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -1178,7 +1168,9 @@ BEGIN
    THEN
       json_linked_data_reached_points := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1218,9 +1210,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_rad_points a
-               ORDER BY
-                a.eventtype
-               ,a.network_distancekm
             ) t
          ) j
       );
@@ -1252,7 +1241,9 @@ BEGIN
    THEN
       json_linked_data_attributes := (
          SELECT 
-         JSONB_AGG(j.my_json)
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'source_joinkey'
+         ) AS my_feats
          FROM (
             SELECT
             TO_JSONB(aa) -'attributes' || aa.attributes AS my_json
@@ -1271,9 +1262,6 @@ BEGIN
                ,aaa.attributes
                FROM
                tmp_attr aaa
-               ORDER BY
-                aaa.eventtype
-               ,aaa.source_joinkey
             ) aa
          ) j
       );

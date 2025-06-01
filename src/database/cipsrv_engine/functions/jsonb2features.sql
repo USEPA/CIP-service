@@ -25,15 +25,17 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.jsonb2features(
    ,IN  p_default_area_indexing_method   VARCHAR DEFAULT NULL
    ,IN  p_default_areacat_threshold      NUMERIC DEFAULT NULL
    ,IN  p_default_areaevt_threshold      NUMERIC DEFAULT NULL
-   
-) RETURNS cipsrv_engine.cip_feature[]
+
+   ,OUT out_cip_features                 cipsrv_engine.cip_feature[]
+   ,OUT out_known_region                 VARCHAR
+)
 VOLATILE
 AS $BODY$ 
 DECLARE
-   obj_rez cipsrv_engine.cip_feature[];
-   ary_rez cipsrv_engine.cip_feature[];
+   rec                                RECORD;
+   obj_rez                            cipsrv_engine.cip_feature[];
+   ary_rez                            cipsrv_engine.cip_feature[];
    str_nhdplus_version                VARCHAR;
-   str_known_region                   VARCHAR;
    int_srid                           INTEGER;
    
    str_default_point_indexing_method  VARCHAR;
@@ -58,12 +60,13 @@ BEGIN
    OR ( JSONB_TYPEOF(p_features) = 'array'
    AND JSONB_ARRAY_LENGTH(p_features) = 0 )
    THEN
-      RETURN ary_rez;
+      out_cip_features := ary_rez;
+      RETURN;
       
    END IF;
    
    str_nhdplus_version                := p_nhdplus_version;
-   str_known_region                   := p_known_region;
+   out_known_region                   := p_known_region;
    int_srid                           := p_int_srid;
    
    str_default_point_indexing_method  := p_default_point_indexing_method;
@@ -85,13 +88,13 @@ BEGIN
    IF JSONB_TYPEOF(p_features) = 'object'
    AND p_features->>'type' IN ('Point','LineString','Polygon','MultiPoint','MultiLineString','MultiPolygon','GeometryCollection')
    THEN
-      obj_rez := cipsrv_engine.jsonb2feature(
+      rec := cipsrv_engine.jsonb2feature(
           p_feature               := JSONB_BUILD_OBJECT(
              'type',     'Feature'
             ,'geometry', p_features
           )
          ,p_nhdplus_version        := str_nhdplus_version
-         ,p_known_region           := str_known_region
+         ,p_known_region           := out_known_region
          ,p_int_srid               := int_srid
          
          ,p_point_indexing_method  := str_default_point_indexing_method
@@ -107,16 +110,18 @@ BEGIN
          ,p_areacat_threshold      := num_default_areacat_threshold
          ,p_areaevt_threshold      := num_default_areaevt_threshold
       );
+      obj_rez          := rec.out_cip_features;
+      out_known_region := rec.out_known_region;
       
       ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
    
    ELSIF JSONB_TYPEOF(p_features) = 'object'
    AND p_features->>'type' = 'Feature'
    THEN
-      obj_rez := cipsrv_engine.jsonb2feature(
+      rec := cipsrv_engine.jsonb2feature(
           p_feature                := p_features
          ,p_nhdplus_version        := str_nhdplus_version
-         ,p_known_region           := str_known_region
+         ,p_known_region           := out_known_region
          ,p_int_srid               := int_srid
          
          ,p_point_indexing_method  := str_default_point_indexing_method
@@ -133,6 +138,8 @@ BEGIN
          ,p_areaevt_threshold      := num_default_areaevt_threshold
           
       );
+      obj_rez          := rec.out_cip_features;
+      out_known_region := rec.out_known_region;
       
       ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
    
@@ -141,10 +148,10 @@ BEGIN
    THEN
       FOR i IN 1 .. JSONB_ARRAY_LENGTH(p_features->'features')
       LOOP
-         obj_rez := cipsrv_engine.jsonb2feature(
+         rec := cipsrv_engine.jsonb2feature(
              p_feature                := p_features->'features'->i-1
             ,p_nhdplus_version        := str_nhdplus_version
-            ,p_known_region           := str_known_region
+            ,p_known_region           := out_known_region
             ,p_int_srid               := int_srid
             
             ,p_point_indexing_method  := str_default_point_indexing_method
@@ -161,6 +168,8 @@ BEGIN
             ,p_areaevt_threshold      := num_default_areaevt_threshold
             
          );
+         obj_rez          := rec.out_cip_features;
+         out_known_region := rec.out_known_region;
       
          ary_rez := cipsrv_engine.featurecat(ary_rez,obj_rez);
    
@@ -171,47 +180,27 @@ BEGIN
    
    END IF;
    
-   RETURN ary_rez;
+   out_cip_features := ary_rez;
+   RETURN;
 
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_engine.jsonb2features(
-    JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_engine.jsonb2features(
-    JSONB
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER
-   ,VARCHAR
-   
-   ,VARCHAR
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   
-   ,VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.jsonb2features';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 

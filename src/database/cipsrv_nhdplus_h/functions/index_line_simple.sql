@@ -14,7 +14,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_simple(
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -29,9 +29,13 @@ DECLARE
    int_count              INTEGER;
    num_geometry_lengthkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_line_threshold_perc IS NULL
    THEN
       num_line_threshold := 0;
@@ -40,7 +44,18 @@ BEGIN
       num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
+   ----------------------------------------------------------------------------
    str_known_region := p_known_region;
 
    rec := cipsrv_nhdplus_h.determine_grid_srid(
@@ -59,6 +74,7 @@ BEGIN
    
    str_known_region := int_srid::VARCHAR;
 
+   ----------------------------------------------------------------------------
    IF p_geometry_lengthkm IS NULL
    THEN
       num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
@@ -71,6 +87,7 @@ BEGIN
       
    END IF;
 
+   ----------------------------------------------------------------------------
    IF str_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
@@ -520,6 +537,8 @@ BEGIN
       out_status_message := 'err ' || str_known_region;
       
    END IF;
+   
+   GET DIAGNOSTICS int_count = ROW_COUNT;
 
    RETURN;
    

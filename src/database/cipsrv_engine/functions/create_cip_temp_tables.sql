@@ -51,7 +51,7 @@ BEGIN
    ELSE
       CREATE TEMPORARY TABLE tmp_cip_out(
           nhdplusid            BIGINT      NOT NULL
-         ,catchmentstatecode   VARCHAR(2)  NOT NULL
+         ,catchmentstatecode   VARCHAR(2)
          ,xwalk_huc12          VARCHAR(12)
          ,areasqkm             NUMERIC
          ,istribal             VARCHAR(1)  NOT NULL

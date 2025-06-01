@@ -45,7 +45,7 @@
                <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Test Indexing Harness</h2>
                <span style="font-family: Arial; font-size: 11px;">Sketch a geometry or paste in GeoJSON:</span>
                <br/>
-               <textarea name="dzGeometry" id="dzGeometry" type="text" class="textbox" style="width: 500px;" rows="3"></textarea>
+               <textarea name="dzGeometry" id="dzGeometry" type="text" class="textbox" style="width: 500px;" rows="3" onchange="checkready()"></textarea>
                <br/>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:</span>
@@ -93,65 +93,104 @@
                </table>
                
                <table border="0" align="center">
+               
                <tr>
-               <td valign="top" rowspan="2">
+               <td valign="top" colspan="2">
                <span style="font-family: Arial; font-size: 11px;">Default Indexing Methods:&nbsp;</span>
                </td>
+               </tr>
+               
+               <tr>
+               
                <td>
-               <span style="font-family: Arial; font-size: 11px;">Points:</span><br/>
+               <span style="font-family: Arial; font-size: 11px;">Points:</span>
                <select name="dzDefaultPointIndexingMethod" id="dzDefaultPointIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="point_simple" SELECTED>Point - Simple</option>
-               </select>
+               </select>&nbsp;&nbsp;&nbsp;
                </td>
-               <td width="150px;">
-               <span style="font-family: Arial; font-size: 11px;">Lines:</span><br/>
+               
+               <td>
+               <span style="font-family: Arial; font-size: 11px;">Lines:</span>
                <select name="dzDefaultLineIndexingMethod" id="dzDefaultLineIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="line_simple" SELECTED>Line - Simple</option>
                   <option value="line_levelpath">Line - LevelPath</option>
                </select>
                </td>
+               
                </tr>
+               
                <tr>
+               
                <td>
-               <span style="font-family: Arial; font-size: 11px;">Rings:</span><br/>
+               <span style="font-family: Arial; font-size: 11px;">Rings:</span>
                <select name="dzDefaultRingIndexingMethod" id="dzDefaultRingIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="area_simple" SELECTED>Area - Simple</option>
                   <option value="area_centroid">Area - Centroid</option>
                   <option value="area_artpath">Area - Artifical Paths</option>
                   <option value="treat_as_lines">Treat Rings as Lines</option>
-               </select>
+               </select>&nbsp;&nbsp;&nbsp;
                </td>
+               
                <td>
-               <span style="font-family: Arial; font-size: 11px;">Areas:</span><br/>
+               <span style="font-family: Arial; font-size: 11px;">Areas:</span>
                <select name="dzDefaultAreaIndexingMethod" id="dzDefaultAreaIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="area_simple" SELECTED>Area - Simple</option>
                   <option value="area_centroid">Area - Centroid</option>
                   <option value="area_artpath">Area - Artifical Paths</option>
                </select>
                </td>
+               
+               </tr>
+               
+               </table>
+               
+               <table border="0" align="center">
+               
+               <tr>
+               <td valign="top" colspan="2">
+               <span style="font-family: Arial; font-size: 11px;">Thresholds:</span>
+               </td>
+               </tr>
+               
+               <tr>
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Line:</span>
+               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               <td>&nbsp;</td>
+               </tr>
+               
+               <tr>
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Ring Area Catchment:</span>
+               <input name="dzRingCatThreasholdPerc" id="dzRingCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp;Ring Area Event:</span>
+               <input name="dzRingEvtThreasholdPerc" id="dzRingEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <td/>
+               </tr>
+               
+               <tr>
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Area Catchment:</span>
+               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Area Event:</span>
+               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               
                </tr>
                </table>
                
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
-               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Catchment Thold:</span>
-               <input name="dzRingCatThreasholdPerc" id="dzRingCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Event Thold:</span>
-               <input name="dzRingEvtThreasholdPerc" id="dzRingEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
-               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Event Thold:</span>
-               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <br/>
-               <br/>
                <span style="font-family: Arial; font-size: 11px;">Show Catchments:</span>
                <input name="dzShowCatchments" id="dzShowCatchments" type="checkbox" CHECKED>
                &nbsp;&nbsp;&nbsp;&nbsp;
@@ -160,6 +199,9 @@
                &nbsp;&nbsp;&nbsp;&nbsp;
                <span style="font-family: Arial; font-size: 11px;">Show HUC12s:</span>
                <input name="dzShowHUC12s" id="dzShowHUC12s" type="checkbox" DISABLED>
+               <br/>
+               <span style="font-family: Arial; font-size: 11px;">Return Full (not split by state) Catchments:</span>
+               <input name="dzReturnFullCatchments" id="dzReturnFullCatchments" type="checkbox">
                <br/>
                <br/>               
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
@@ -316,6 +358,13 @@
       var ringm  = document.getElementById("dzDefaultRingIndexingMethod");
       var aream  = document.getElementById("dzDefaultAreaIndexingMethod");
       
+      var catchment_filter = get_mselect_values(catfl);
+      
+      var rboo = false;
+      if (document.getElementById("dzReturnFullCatchments").checked ) {
+         rboo = true;
+      }
+      
       var geom  = JSON.parse(document.getElementById("dzGeometry").value);
 
       var data = {
@@ -323,7 +372,7 @@
           
          ,"geometry_clip":                  get_mselect_values(geomc)
          ,"geometry_clip_stage":            get_select_values(geoms)
-         ,"catchment_filter":               get_mselect_values(catfl)
+         ,"catchment_filter":               catchment_filter
          ,"nhdplus_version":                get_select_values(pnhdv)
          ,"wbd_version":                    get_select_values(pwbdv)
          
@@ -346,6 +395,7 @@
          ,"return_flowlines":               document.getElementById("dzShowFlowlines").checked
          ,"return_flowline_geometry":       true
          ,"return_huc12s":                  document.getElementById("dzShowHUC12s").checked
+         ,"return_full_catchments":         rboo
       };
       
       httpPost(
@@ -541,6 +591,7 @@
                  + '<TR>'
                  + '<TH colspan="6" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + roundNumber(response.catchment_areasqkm,2) + ' SqKm</TH>'
                  + '<TR>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">&nbsp;</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
@@ -553,11 +604,20 @@
          tbl_cnt = '';
          for (var i = 0; i < response.catchments.features.length; i++) {
             tbl_cnt += '<TR>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + (i + 1) + '</TD>'
                     +  '<TD style="font-family: Arial; font-size: 14px;">';
                     
             if (response.catchments.features[0].geometry.type !== null) {
-               tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
-               zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
+               
+               var catchmentstatecode = "ZZ";
+               if (response.catchments.features[i].properties.catchmentstatecode !== null ) {
+                  catchmentstatecode = response.catchments.features[i].properties.catchmentstatecode;
+               }
+               
+               tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
+               
+               zoom_cache[catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
+               
             } else {
                tbl_cnt += '&nbsp;';
             }
@@ -631,6 +691,18 @@
       var multiple = Math.pow(10, digits);
       var rndedNum = Math.round(number * multiple) / multiple;
       return rndedNum;
+  }
+  
+  function checkready() {
+     var gtext = document.getElementById("dzGeometry").value;
+     
+     if (gtext == null || gtext == "") {
+        null;
+        
+     } else {
+        document.getElementById("dz_run_service").disabled = false;
+     
+     }
   }
   
   function build_api() {

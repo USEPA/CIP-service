@@ -70,12 +70,12 @@ FROM (
          cipsrv_nhdplus_h.snap_to_common_grid(
              p_geometry      := bb.shape
             ,p_known_region  := '32161'
-            ,p_grid_size     := 0.05
+            ,p_grid_size     := 0.001
           )
          ,cipsrv_nhdplus_h.snap_to_common_grid(
              p_geometry      := aa.shape
             ,p_known_region  := '32161'
-            ,p_grid_size     := 0.05
+            ,p_grid_size     := 0.001
           )
        )     
       ,3

@@ -50,12 +50,12 @@ WITH
    FROM (
       SELECT
        aaa.nhdplusid
-      ,ST_UNION(aaa.tribal_shape) AS tribal_shape
+      ,ST_UNION(aaa.tribal_shape,0.001) AS tribal_shape
       FROM (
          SELECT
           aaaa.nhdplusid
          ,bbbb.geoid
-         ,ST_INTERSECTION(bbbb.shape,aaaa.shape,0.05) AS tribal_shape
+         ,ST_INTERSECTION(bbbb.shape,aaaa.shape,0.001) AS tribal_shape
          FROM 
          cipsrv_epageofab_h.catchment_fabric_5070_1 aaaa
          INNER JOIN LATERAL (

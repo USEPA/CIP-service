@@ -68,7 +68,7 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,aa.sourcedataset
-   ,ST_INTERSECTION(bb.shape,aa.shape,0.05) AS shape
+   ,ST_INTERSECTION(bb.shape,aa.shape,0.001) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_26904_2 aa
    INNER JOIN LATERAL (
