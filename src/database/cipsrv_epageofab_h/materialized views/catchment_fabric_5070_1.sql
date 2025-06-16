@@ -90,7 +90,11 @@ FROM (
    ,CAST(NULL AS VARCHAR(64)) AS h3hexagonaddr
    ,aa.vpuid
    ,CAST('nhdpluscatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(aa.shape,5070) AS shape
+   ,cipsrv_nhdplus_h.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(aa.shape,5070)
+      ,p_known_region  := '5070'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_nhdplus_h.nhdpluscatchment aa
    WHERE
@@ -107,7 +111,11 @@ FROM (
    ,bb.h3hexagonaddr
    ,bb.vpuid
    ,CAST('oceancatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(bb.shape,5070) AS shape
+   ,cipsrv_nhdplus_h.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(bb.shape,5070)
+      ,p_known_region  := '5070'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_epageofab_h.oceancatchment bb
    WHERE
@@ -124,7 +132,11 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,CAST('grid0catchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(cc.shape,5070) AS shape
+   ,cipsrv_nhdplus_h.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(cc.shape,5070)
+      ,p_known_region  := '5070'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_epageofab_h.grid0catchment cc
 ) a
