@@ -377,7 +377,7 @@ BEGIN
       THEN
          RAISE EXCEPTION 'QA distance check for % %',r.expand,r.static;
       
-      END IF:
+      END IF;
       
       BEGIN
          SELECT
