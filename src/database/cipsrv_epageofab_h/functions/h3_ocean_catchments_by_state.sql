@@ -196,7 +196,8 @@ BEGIN
          ) AS shape
          FROM (
             SELECT
-            aa.shape
+             aa.nhdplusid
+            ,aa.shape
             FROM
             cipsrv_nhdplus_h.' || str_src_cats || ' aa ';
             
@@ -205,7 +206,8 @@ BEGIN
          str_sql := str_sql ||      
            'UNION ALL
             SELECT
-            ST_TRANSFORM(bb.shape,' || p_srid || ')
+             bb.nhdplusid
+            ,ST_TRANSFORM(bb.shape,' || p_srid || ')
             FROM
             cipsrv_epageofab_h.grid0catchment bb';
             
