@@ -68,7 +68,17 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,aa.sourcedataset
-   ,ST_COLLECTIONEXTRACT(ST_INTERSECTION(bb.shape,aa.shape,0.001),3) AS shape
+   ,ST_COLLECTIONEXTRACT(
+       ST_INTERSECTION(
+           cipsrv_nhdplus_h.snap_to_common_grid(
+              p_geometry      := bb.shape
+             ,p_known_region  := '5070'
+             ,p_grid_size     := 0.001
+           )
+          ,aa.shape
+       )
+      ,3
+    ) AS shape
    FROM
    cipsrv_epageofab_h.catchment_fabric_5070_2 aa
    INNER JOIN LATERAL (
@@ -83,8 +93,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape)
-AND a.areasqkm > 0.00000005;
+AND NOT ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipsrv_epageofab_h.catchment_fabric_5070_3 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_epageofab_h.catchment_fabric_5070_3 TO public;

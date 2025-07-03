@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi_seq;
+CREATE SEQUENCE IF NOT EXISTS cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(
     objectid
    ,levelpathi
@@ -11,12 +14,12 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(
 )
 AS
 SELECT
- CAST(a.objectid AS INTEGER) AS objectid
+ NEXTVAL('cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi_seq')::INTEGER AS objectid
 ,a.levelpathi
 ,a.max_hydroseq
 ,a.min_hydroseq
-,(SELECT c.fromnode FROM cipsrv_nhdplus_h.networknhdflowline c WHERE c.hydroseq = a.max_hydroseq) AS fromnode
-,(SELECT d.tonode   FROM cipsrv_nhdplus_h.networknhdflowline d WHERE d.hydroseq = a.min_hydroseq) AS tonode
+,c.fromnode
+,d.tonode
 ,CAST(a.levelpathilengthkm AS NUMERIC) AS levelpathilengthkm 
 FROM (
    SELECT
@@ -29,7 +32,15 @@ FROM (
    cipsrv_nhdplus_h.networknhdflowline aa
    GROUP BY
    aa.levelpathi
-) a;
+) a
+LEFT JOIN
+cipsrv_nhdplus_h.networknhdflowline c
+ON
+c.hydroseq = a.max_hydroseq
+LEFT JOIN
+cipsrv_nhdplus_h.networknhdflowline d
+ON
+d.hydroseq = a.min_hydroseq;
 
 ALTER TABLE cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi TO public;
@@ -54,4 +65,4 @@ ON cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi(tonode);
 
 ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi;
 
---VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_levelpathi;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflowlinevaa_nocat;
