@@ -12,4 +12,4 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_nhdplus_h.nhdpoint `
 -t cipsrv_nhdplus_h.nhdwaterbody `
 -t cipsrv_nhdplus_h.wbdhu12 `
--f cipsrv_nhdplus_h_betab_1.dmp
+-f cipsrv_nhdplus_h_betab_2.dmp
