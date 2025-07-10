@@ -188,12 +188,14 @@ DECLARE
    avoid_objs       INTEGER[];  
    boo_check        BOOLEAN;
    int_cnt          INTEGER;
+   int_last_objid   INTEGER;
    
 BEGIN
 
    int_chunk := p_chunk;
    int_cmt := 0;
    int_anl := 0;
+   int_last_objid := 0;
    
    <<outer>>
    FOR i IN 1 .. 100000
@@ -256,7 +258,7 @@ BEGIN
                
                IF SQLERRM = 'index returned tuples in wrong order'
                THEN
-                  RAISE WARNING '   bouncing on tuple ordering for %',rec.objectid;
+                  --RAISE WARNING '   bouncing on tuple ordering for %',rec.objectid;
                   
                   BEGIN
                      INSERT INTO cipsrv_nhdplustopo_h.catchment_5070_topo(
@@ -302,6 +304,10 @@ BEGIN
                   int_cmt := int_cmt + 1;
                   int_anl := int_anl + 1;
                   
+               ELSIF SUBSTR(SQLERRM,1,34) = 'Corrupted topology: adjacent edges'
+               THEN
+                  RAISE EXCEPTION 'objectid: % %, last objectid was %',rec.objectid,SQLERRM,int_last_objid;
+               
                ELSE
                   RAISE WARNING '%',SQLERRM;
                   bad_edge := (SPLIT_PART(SQLERRM,' ',-1))::INTEGER;
@@ -327,12 +333,14 @@ BEGIN
             IF int_cmt >= p_commit
             THEN
                COMMIT;
-               RAISE WARNING '   commiting %',int_cmt;
+               --RAISE WARNING '   commiting %',int_cmt;
                int_cmt := 0;
                
             END IF;
             
-         END IF;        
+         END IF;
+
+         int_last_objid := rec.objectid;         
          
       END LOOP;
        
@@ -391,58 +399,58 @@ $BODY$;
 
 DO $$DECLARE   
 BEGIN
-   CALL cipsrv_nhdplustopo_h.load_32161('MO',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('IL',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('IN',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('OH',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('PA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NY',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('VT',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NH',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('ME',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('MA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('RI',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('CT',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NJ',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('DE',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('MD',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MO',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('IL',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('IN',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('OH',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('PA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NY',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('VT',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NH',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('ME',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('RI',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('CT',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NJ',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('DE',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MD',p_commit := 10000);
    
-   CALL cipsrv_nhdplustopo_h.load_32161('IA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('WI',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('MN',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('ND',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('SD',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NE',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('KS',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('OK',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('TX',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NM',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('AZ',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('CA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NV',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('UT',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('CO',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('IA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('WI',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MN',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('ND',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('SD',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NE',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('KS',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('OK',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('TX',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NM',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('AZ',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('CA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NV',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('UT',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('CO',p_commit := 10000);
    
-   CALL cipsrv_nhdplustopo_h.load_32161('WY',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('MT',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('ID',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('WA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('OR',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('KY',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('TN',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('AR',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('LA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('MS',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('AL',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('GA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('FL',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('SC',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('NC',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('WY',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MT',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('ID',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('WA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('OR',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('KY',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('TN',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('AR',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('LA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MS',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('AL',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('GA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('FL',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('SC',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('NC',p_commit := 10000);
    
-   CALL cipsrv_nhdplustopo_h.load_32161('VA',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('DC',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('WV',p_commit := 10000);
-   CALL cipsrv_nhdplustopo_h.load_32161('MI',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('VA',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('DC',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('WV',p_commit := 10000);
+   CALL cipsrv_nhdplustopo_h.load_5070('MI',p_commit := 10000);
    
 END$$;
 

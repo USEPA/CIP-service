@@ -26,16 +26,16 @@ except:
 
 print("database is ready");
 
-with open('nhdplus_usgs_r1.txt', 'r') as file:
+with open('nhdplus_usgs_r2.txt', 'r') as file:
     for line in file:
         if line[0] != '#':
             (vpuid,url) = line.strip().split(',');
 
-            if os.path.exists('r1_vpu' + vpuid + '.zip'):
-                os.remove('r1_vpu' + vpuid + '.zip');
+            if os.path.exists('vpu' + vpuid + '.zip'):
+                os.remove('vpu' + vpuid + '.zip');
 
-            if os.path.exists('r1_vpu' + vpuid):
-                shutil.rmtree('r1_vpu' + vpuid);
+            if os.path.exists('vpu' + vpuid):
+                shutil.rmtree('vpu' + vpuid);
                 
             r = requests.get(url);
 
@@ -56,26 +56,26 @@ with open('nhdplus_usgs_r1.txt', 'r') as file:
                 print(e)
 
             
-            with open('r1_vpu' + vpuid + '.zip',"wb") as f:
+            with open('vpu' + vpuid + '.zip',"wb") as f:
                 f.write(r.content);
 
-            with zipfile.ZipFile('r1_vpu' + vpuid + '.zip','r') as zip_ref:
-                zip_ref.extractall('r1_vpu' + vpuid);
+            with zipfile.ZipFile('vpu' + vpuid + '.zip','r') as zip_ref:
+                zip_ref.extractall('vpu' + vpuid);
 
             gdb = None;
-            for item in os.listdir('r1_vpu' + vpuid):
+            for item in os.listdir('vpu' + vpuid):
                 
                 if '.gdb' in item:
                     gdb = item;
                 
-            ogrgdb = ogr.Open(os.path.join('r1_vpu' + vpuid,gdb));
+            ogrgdb = ogr.Open(os.path.join('vpu' + vpuid,gdb));
             for item in ogrgdb:
                 lyr = item.GetName();
                 
                 if 'NHDPlusIncr' in lyr:
 
-                    cmd = 'ogr2ogr -f "PostgreSQL" PG:"' + cs + '" r1_vpu' + vpuid + os.sep + gdb + ' ' + lyr + ' '\
-                        + '-nln ' + 'cipsrv_upload.r1_vpu' + vpuid + '_' + lyr.lower();
+                    cmd = 'ogr2ogr -f "PostgreSQL" PG:"' + cs + '" vpu' + vpuid + os.sep + gdb + ' ' + lyr + ' '\
+                        + '-nln ' + 'cipsrv_upload.vpu' + vpuid + '_' + lyr.lower();
                     cmd = shlex.split(cmd);
                     
                     output, error = subprocess.Popen(
@@ -86,5 +86,4 @@ with open('nhdplus_usgs_r1.txt', 'r') as file:
                         ,stderr = subprocess.PIPE
                     ).communicate();
 
-            print('r1_vpu' + vpuid);
-            
+            print('vpu' + vpuid);

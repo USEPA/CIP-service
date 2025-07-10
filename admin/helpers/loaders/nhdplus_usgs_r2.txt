@@ -1,27 +1,27 @@
-# Release 1 by VPU
-# 01 is archived and does not match R2
-0101,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0101_HU4_GDB.zip
-0102,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0102_HU4_GDB.zip
-0103,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0103_HU4_GDB.zip
-0104,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0104_HU4_GDB.zip
-0105,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0105_HU4_GDB.zip
-0106,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0106_HU4_GDB.zip
-0107,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0107_HU4_GDB.zip
-0108,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0108_HU4_GDB.zip
-0109,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0109_HU4_GDB.zip
-0110,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0110_HU4_GDB.zip
+# Release 2 by VPU
+# 01 is new with R2
+0101,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0101_HU4_20220901_GDB.zip
+0102,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0102_HU4_20230713_GDB.zip
+0103,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0103_HU4_20230713_GDB.zip
+0104,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0104_HU4_20230713_GDB.zip
+0105,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0105_HU4_20230713_GDB.zip
+0106,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0106_HU4_20230713_GDB.zip
+0107,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0107_HU4_20230713_GDB.zip
+0108,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0108_HU4_20220324_GDB.zip
+0109,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0109_HU4_20230713_GDB.zip
+0110,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0110_HU4_20220323_GDB.zip
 #
-# 02 is archived and does not match R2
+# 02 is new with R2
 # Note there is no 0201
-0202,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0202_HU4_GDB.zip
-0203,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0203_HU4_GDB.zip
-0204,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0204_HU4_GDB.zip
-0205,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0205_HU4_GDB.zip
-0206,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0206_HU4_GDB.zip
-0207,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0207_HU4_GDB.zip
-0208,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0208_HU4_GDB.zip
+0202,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0202_HU4_20220324_GDB.zip
+0203,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0203_HU4_20220323_GDB.zip
+0204,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0204_HU4_20220324_GDB.zip
+0205,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0205_HU4_20220323_GDB.zip
+0206,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0206_HU4_20220324_GDB.zip
+0207,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0207_HU4_20220324_GDB.zip
+0208,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0208_HU4_20220324_GDB.zip
 #
-# 03 is the same as R2
+# 03 is the same as R1
 0301,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0301_HU4_GDB.zip
 0302,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0302_HU4_GDB.zip
 0303,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0303_HU4_GDB.zip
@@ -41,7 +41,7 @@
 0317,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0317_HU4_GDB.zip
 0318,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0318_HU4_GDB.zip
 #
-# 04 is the same as R2
+# 04 is the same as R1
 0401,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0401_HU4_GDB.zip
 0402,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0402_HU4_GDB.zip
 0403,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0403_HU4_GDB.zip
@@ -81,7 +81,7 @@
 0432,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0432_HU4_GDB.zip
 0433,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0433_HU4_GDB.zip
 #
-# 05 is the same as R2
+# 05 is the same as R1
 0501,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0501_HU4_GDB.zip
 0502,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0502_HU4_GDB.zip
 0503,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0503_HU4_GDB.zip
@@ -97,13 +97,13 @@
 0513,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0513_HU4_GDB.zip
 0514,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0514_HU4_GDB.zip
 #
-# 06 is archived and does not match R2
-0601,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0601_HU4_GDB.zip
-0602,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0602_HU4_GDB.zip
-0603,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0603_HU4_GDB.zip
-0604,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_0604_HU4_GDB.zip
+# 06 is new with R2
+0601,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0601_HU4_20220418_GDB.zip
+0602,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0602_HU4_20220418_GDB.zip
+0603,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0603_HU4_20220418_GDB.zip
+0604,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0604_HU4_20220418_GDB.zip
 #
-# 07 is the same as R2
+# 07 is the same as R1
 0701,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0701_HU4_GDB.zip
 0702,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0702_HU4_GDB.zip
 0703,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0703_HU4_GDB.zip
@@ -119,7 +119,7 @@
 0713,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0713_HU4_GDB.zip
 0714,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0714_HU4_GDB.zip
 #
-# 08 is the same as R2
+# 08 is the same as R1
 0801,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0801_HU4_GDB.zip
 0802,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0802_HU4_GDB.zip
 0803,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0803_HU4_GDB.zip
@@ -130,13 +130,13 @@
 0808,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0808_HU4_GDB.zip
 0809,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0809_HU4_GDB.zip
 #
-# 09 is the same as R2
+# 09 is the same as R1
 0901,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0901_HU4_GDB.zip
 0902,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0902_HU4_GDB.zip
 0903,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0903_HU4_GDB.zip
 0904,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_0904_HU4_GDB.zip
 #
-# 10 is the same as R2
+# 10
 # Note there is no 1001
 1002,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1002_HU4_GDB.zip
 1003,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1003_HU4_GDB.zip
@@ -168,7 +168,7 @@
 1029,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1029_HU4_GDB.zip
 1030,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1030_HU4_GDB.zip
 #
-# 11 is the same as R2
+# 11 is the same as R1
 1101,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1101_HU4_GDB.zip
 1102,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1102_HU4_GDB.zip
 1103,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1103_HU4_GDB.zip
@@ -184,7 +184,7 @@
 1113,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1113_HU4_GDB.zip
 1114,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1114_HU4_GDB.zip
 #
-# 12 is the same as R2
+# 12 is the same as R1
 1201,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1201_HU4_GDB.zip
 1202,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1202_HU4_GDB.zip
 1203,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1203_HU4_GDB.zip
@@ -197,7 +197,7 @@
 1210,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1210_HU4_GDB.zip
 1211,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1211_HU4_GDB.zip
 #
-# 13 is the same as R2
+# 13 is the same as R1
 1301,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1301_HU4_GDB.zip
 1302,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1302_HU4_GDB.zip
 1303,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1303_HU4_GDB.zip
@@ -208,35 +208,35 @@
 1308,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1308_HU4_GDB.zip
 1309,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1309_HU4_GDB.zip
 #
-# 14 is archived and does not match R2
-1401,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1401_HU4_GDB.zip
-1402,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1402_HU4_GDB.zip
-1403,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1403_HU4_GDB.zip
-1404,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1404_HU4_GDB.zip
-1405,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1405_HU4_GDB.zip
-1406,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1406_HU4_GDB.zip
-1407,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1407_HU4_GDB.zip
-1408,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1408_HU4_GDB.zip
+# 14 is new with R2
+1401,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1401_HU4_20220414_GDB.zip
+1402,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1402_HU4_20220414_GDB.zip
+1403,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1403_HU4_20220414_GDB.zip
+1404,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1404_HU4_20220414_GDB.zip
+1405,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1405_HU4_20220414_GDB.zip
+1406,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1406_HU4_20220414_GDB.zip
+1407,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1407_HU4_20220414_GDB.zip
+1408,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1408_HU4_20220414_GDB.zip
 #
-# 15 is archived and does not match R2
-1501,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1501_HU4_GDB.zip
-1502,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1502_HU4_GDB.zip
-1503,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1503_HU4_GDB.zip
-1504,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1504_HU4_GDB.zip
-1505,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1505_HU4_GDB.zip
-1506,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1506_HU4_GDB.zip
-1507,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1507_HU4_GDB.zip
-1508,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1508_HU4_GDB.zip
+# 15 is new with R2
+1501,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1501_HU4_20220901_GDB.zip
+1502,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1502_HU4_20220901_GDB.zip
+1503,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1503_HU4_20220901_GDB.zip
+1504,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1504_HU4_20220901_GDB.zip
+1505,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1505_HU4_20220901_GDB.zip
+1506,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1506_HU4_20220901_GDB.zip
+1507,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1507_HU4_20220901_GDB.zip
+1508,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1508_HU4_20220826_GDB.zip
 #
-# 16 is archived and does not match R2
-1601,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1601_HU4_GDB.zip
-1602,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1602_HU4_GDB.zip
-1603,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1603_HU4_GDB.zip
-1604,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1604_HU4_GDB.zip
-1605,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1605_HU4_GDB.zip
-1606,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Archive/GDB/NHDPLUS_H_1606_HU4_GDB.zip
+# 16 is new with R2
+1601,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1601_HU4_20220412_GDB.zip
+1602,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1602_HU4_20220412_GDB.zip
+1603,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1603_HU4_20220412_GDB.zip
+1604,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1604_HU4_20220418_GDB.zip
+1605,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1605_HU4_20220418_GDB.zip
+1606,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1606_HU4_20220418_GDB.zip
 #
-# 17 is the same as R2
+# 17 is the same as R1
 1701,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1701_HU4_GDB.zip
 1702,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1702_HU4_GDB.zip
 1703,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1703_HU4_GDB.zip
@@ -250,7 +250,7 @@
 1711,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1711_HU4_GDB.zip
 1712,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1712_HU4_GDB.zip
 #
-# 18 is the same as R2
+# 18 is the same as R1
 1801,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1801_HU4_GDB.zip
 1802,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1802_HU4_GDB.zip
 1803,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1803_HU4_GDB.zip
@@ -262,7 +262,7 @@
 1809,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1809_HU4_GDB.zip
 1810,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_1810_HU4_GDB.zip
 #
-# 19 is the same as R2
+# 19 is a mixed bag
 19020101,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19020101_HU8_GDB.zip
 19020102,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19020102_HU8_GDB.zip
 19020103,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19020103_HU8_GDB.zip
@@ -287,12 +287,12 @@
 19060501,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19060501_HU8_20220712_GDB.zip
 19060502,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19060502_HU8_20220713_GDB.zip
 19060504,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19060504_HU8_20220826_GDB.zip
-# 19060505 is not part of R1
+19060505,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19060505_HU8_20220927_GDB.zip
 19070402,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19070402_HU8_GDB.zip
 19080301,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19080301_HU8_GDB.zip
 19080305,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_19080305_HU8_GDB.zip
 #
-# 20 is the same as R2
+# 20 is the same as R1
 2001,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2001_HU4_GDB.zip
 2002,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2002_HU4_GDB.zip
 2003,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2003_HU4_GDB.zip
@@ -302,11 +302,11 @@
 2007,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2007_HU4_GDB.zip
 2008,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2008_HU4_GDB.zip
 #
-# 21 is the same as R2
+# 21 is the same as R1
 2101,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2101_HU4_GDB.zip
 2102,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2102_HU4_GDB.zip
 #
-# 22 is the same as R2
+# 22 is the same as R1
 2201,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2201_HU4_GDB.zip
 2202,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2202_HU4_GDB.zip
 2203,https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHDPlusHR/VPU/Current/GDB/NHDPLUS_H_2203_HU4_GDB.zip
