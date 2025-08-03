@@ -31,7 +31,7 @@ Please review additional notes on [security](docs/security.md).
 ### Getting Help
 
 * Open a GitHub issue.
-* Email WATERS Support at WATERS_SUPPORT@epa.gov.
+* Submit a [contact request](https://www.epa.gov/aboutepa/forms/contact-epas-office-water).
 
 ### Current Capabilities
 
