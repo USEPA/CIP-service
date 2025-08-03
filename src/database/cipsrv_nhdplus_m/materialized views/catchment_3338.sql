@@ -36,6 +36,18 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
    ,statesplit
 )
 AS
+WITH subselect AS (
+   SELECT
+   s.*
+   FROM
+   cipsrv_epageofab_m.catchment_fabric s
+   WHERE
+      s.catchmentstatecode IN ('AK')
+   OR (
+          s.shape && cipsrv_nhdplus_m.generic_common_mbr('3338')
+      AND cipsrv_nhdplus_m.determine_grid_srid_f(s.shape) = 3338
+   )
+)
 SELECT
  NEXTVAL('cipsrv_nhdplus_m.catchment_3338_seq') AS objectid
 ,a.nhdplusid
@@ -69,7 +81,7 @@ SELECT
 ,a.statesplit
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT AS nhdplusid
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
    ,aa.istribal
    ,aa.istribal_areasqkm
    ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
@@ -87,14 +99,12 @@ FROM (
    ,CASE
     WHEN aa.state_count = 1
     THEN
-      0::INTEGER 
+      CAST(0 AS INTEGER)
     ELSE
-      1::INTEGER
+      CAST(1 AS INTEGER) 
     END AS statesplit
    FROM
-   cipsrv_epageofab_m.catchment_fabric aa
-   WHERE
-   aa.catchmentstatecode IN ('AK')
+   subselect aa
    UNION ALL 
    SELECT
     bb.nhdplusid
@@ -132,10 +142,9 @@ FROM (
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_epageofab_m.catchment_fabric bbb
+      subselect bbb
       WHERE
-          bbb.catchmentstatecode IN ('AK')
-      AND bbb.state_count > 1
+      bbb.state_count > 1
       GROUP BY
       bbb.nhdplusid::BIGINT
    ) bb
