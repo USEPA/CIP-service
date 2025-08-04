@@ -68,23 +68,43 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,aa.sourcedataset
-   ,ST_COLLECTIONEXTRACT(ST_INTERSECTION(bb.shape,aa.shape,0.001),3) AS shape
+   ,ST_COLLECTIONEXTRACT(
+       ST_INTERSECTION(
+           cipsrv_nhdplus_m.snap_to_common_grid(
+              p_geometry      := bb.shape
+             ,p_known_region  := '32161'
+             ,p_grid_size     := 0.001
+           )
+          ,aa.shape
+       )     
+      ,3
+    ) AS shape
    FROM
    cipsrv_epageofab_m.catchment_fabric_32161_2 aa
    INNER JOIN LATERAL (
       SELECT
        bbb.stusps
       ,bbb.shape
-      FROM
-      cipsrv_support.tiger_fedstatewaters_32161 bbb
+      FROM (
+         SELECT
+          bbbb.stusps
+         ,bbbb.shape
+         FROM
+         cipsrv_support.tiger_fedstatewaters_32161 bbbb
+         UNION ALL
+         SELECT
+          cccc.itemcode
+         ,cccc.shape
+         FROM
+         cipsrv_support.outerwaters_32161 cccc
+      ) bbb
    ) AS bb
    ON
    ST_INTERSECTS(bb.shape,aa.shape)
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape)
-AND a.areasqkm > 0.00000005;
+AND NOT ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipsrv_epageofab_m.catchment_fabric_32161_3 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_epageofab_m.catchment_fabric_32161_3 TO public;

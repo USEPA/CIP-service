@@ -36,6 +36,18 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_h.catchment_26904(
    ,statesplit
 )
 AS
+WITH subselect AS (
+   SELECT
+   s.*
+   FROM
+   cipsrv_epageofab_h.catchment_fabric s
+   WHERE
+      s.catchmentstatecode IN ('HI')
+   OR (
+          s.shape && cipsrv_nhdplus_h.generic_common_mbr('26904')
+      AND cipsrv_nhdplus_h.determine_grid_srid_f(s.shape) = 26904
+   )
+)
 SELECT
  NEXTVAL('cipsrv_nhdplus_h.catchment_26904_seq') AS objectid
 ,a.nhdplusid
@@ -69,7 +81,7 @@ SELECT
 ,a.statesplit
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT AS nhdplusid
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
    ,aa.istribal
    ,aa.istribal_areasqkm
    ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
@@ -87,14 +99,12 @@ FROM (
    ,CASE
     WHEN aa.state_count = 1
     THEN
-      0::INTEGER 
+      CAST(0 AS INTEGER) 
     ELSE
-      1::INTEGER
+      CAST(1 AS INTEGER) 
     END AS statesplit
    FROM
-   cipsrv_epageofab_h.catchment_fabric aa
-   WHERE
-   aa.catchmentstatecode IN ('HI')
+   subselect aa
    UNION ALL 
    SELECT
     bb.nhdplusid
@@ -132,10 +142,9 @@ FROM (
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
       FROM
-      cipsrv_epageofab_h.catchment_fabric bbb
+      subselect bbb
       WHERE
-          bbb.catchmentstatecode IN ('HI')
-      AND bbb.state_count > 1
+      bbb.state_count > 1
       GROUP BY
       bbb.nhdplusid::BIGINT
    ) bb
@@ -149,10 +158,10 @@ ALTER TABLE cipsrv_nhdplus_h.catchment_26904 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_h.catchment_26904 TO public;
 
 CREATE UNIQUE INDEX catchment_26904_01u
-ON cipsrv_nhdplus_h.catchment_26904(nhdplusid,statesplit);
+ON cipsrv_nhdplus_h.catchment_26904(catchmentstatecodes,nhdplusid);
 
 CREATE UNIQUE INDEX catchment_26904_02u
-ON cipsrv_nhdplus_h.catchment_26904(hydroseq,statesplit);
+ON cipsrv_nhdplus_h.catchment_26904(catchmentstatecodes,hydroseq);
 
 CREATE UNIQUE INDEX catchment_26904_03u
 ON cipsrv_nhdplus_h.catchment_26904(objectid);

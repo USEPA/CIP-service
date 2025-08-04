@@ -50,12 +50,26 @@ WITH
    FROM (
       SELECT
        aaa.nhdplusid
-      ,ST_UNION(aaa.tribal_shape,0.001) AS tribal_shape
+      ,ST_COLLECTIONEXTRACT(
+          ST_UNION(
+             aaa.tribal_shape
+          )
+       ) AS tribal_shape
       FROM (
          SELECT
           aaaa.nhdplusid
          ,bbbb.geoid
-         ,ST_INTERSECTION(bbbb.shape,aaaa.shape,0.001) AS tribal_shape
+         ,ST_COLLECTIONEXTRACT(
+             ST_INTERSECTION(
+                 cipsrv_nhdplus_h.snap_to_common_grid(
+                   p_geometry      := bbbb.shape
+                  ,p_known_region  := '32655'
+                  ,p_grid_size     := 0.001
+                 )
+                ,aaaa.shape
+             )
+            ,3
+          ) AS tribal_shape
          FROM 
          cipsrv_epageofab_m.catchment_fabric_32655_1 aaaa
          INNER JOIN LATERAL (

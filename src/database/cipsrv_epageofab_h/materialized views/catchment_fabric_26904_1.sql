@@ -30,7 +30,7 @@ AS
 SELECT
  NEXTVAL('cipsrv_epageofab_h.catchment_fabric_26904_1_seq')::INTEGER AS objectid
 ,CAST(NULL AS VARCHAR(2))             AS catchmentstatecode
-,a.nhdplusid::BIGINT                  AS nhdplusid
+,CAST(a.nhdplusid AS BIGINT)          AS nhdplusid
 ,CAST(NULL AS VARCHAR(1))             AS istribal
 ,CAST(NULL AS NUMERIC)                AS istribal_areasqkm
 ,a.sourcefc

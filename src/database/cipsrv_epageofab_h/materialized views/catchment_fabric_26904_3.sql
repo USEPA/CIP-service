@@ -51,7 +51,7 @@ SELECT
 ,a.shape
 FROM (
    SELECT
-    bb.stusps                             AS catchmentstatecode
+    bb.stusps                         AS catchmentstatecode
    ,aa.nhdplusid
    ,aa.istribal
    ,aa.istribal_areasqkm
@@ -85,8 +85,19 @@ FROM (
       SELECT
        bbb.stusps
       ,bbb.shape
-      FROM
-      cipsrv_support.tiger_fedstatewaters_26904 bbb
+      FROM (
+         SELECT
+          bbbb.stusps
+         ,bbbb.shape
+         FROM
+         cipsrv_support.tiger_fedstatewaters_26904 bbbb
+         UNION ALL
+         SELECT
+          cccc.itemcode
+         ,cccc.shape
+         FROM
+         cipsrv_support.outerwaters_26904 cccc
+      ) bbb
    ) AS bb
    ON
    ST_INTERSECTS(bb.shape,aa.shape)

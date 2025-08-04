@@ -85,8 +85,19 @@ FROM (
       SELECT
        bbb.stusps
       ,bbb.shape
-      FROM
-      cipsrv_support.tiger_fedstatewaters_32655 bbb
+      FROM (
+         SELECT
+          bbbb.stusps
+         ,bbbb.shape
+         FROM
+         cipsrv_support.tiger_fedstatewaters_32655 bbbb
+         UNION ALL
+         SELECT
+          cccc.itemcode
+         ,cccc.shape
+         FROM
+         cipsrv_support.outerwaters_32655 cccc
+      ) bbb
    ) AS bb
    ON
    ST_INTERSECTS(bb.shape,aa.shape)

@@ -30,7 +30,7 @@ AS
 SELECT
  NEXTVAL('cipsrv_epageofab_m.catchment_fabric_32655_1_seq')::INTEGER AS objectid
 ,CAST(NULL AS VARCHAR(2))             AS catchmentstatecode
-,a.nhdplusid::BIGINT                  AS nhdplusid
+,CAST(a.nhdplusid AS BIGINT)          AS nhdplusid
 ,CAST(NULL AS VARCHAR(1))             AS istribal
 ,CAST(NULL AS NUMERIC)                AS istribal_areasqkm
 ,a.sourcefc
@@ -90,7 +90,11 @@ FROM (
    ,CAST(NULL AS VARCHAR(64)) AS h3hexagonaddr
    ,aa.vpuid
    ,CAST('nhdpluscatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(aa.shape,32655) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(aa.shape,32655)
+      ,p_known_region  := '32655'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_nhdplus_m.nhdpluscatchment aa
    WHERE
@@ -107,7 +111,11 @@ FROM (
    ,bb.h3hexagonaddr
    ,bb.vpuid
    ,CAST('oceancatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(bb.shape,32655) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(bb.shape,32655)
+      ,p_known_region  := '32655'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_epageofab_m.oceancatchment bb
    WHERE

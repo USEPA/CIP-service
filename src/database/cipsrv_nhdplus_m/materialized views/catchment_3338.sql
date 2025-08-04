@@ -126,7 +126,7 @@ FROM (
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
-      ,(array_agg(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
+      ,(ARRAY_AGG(bbb.istribal ORDER BY CASE WHEN bbb.istribal = 'P' THEN 1 WHEN bbb.istribal = 'F' THEN 2 WHEN bbb.istribal = 'N' THEN 3 ELSE 4 END ASC))[1] AS istribal
       ,SUM(bbb.istribal_areasqkm) AS istribal_areasqkm
       ,bool_or(CASE WHEN bbb.isnavigable = 'Y' THEN TRUE ELSE FALSE END) AS isnavigable
       ,bool_or(CASE WHEN bbb.hasvaa      = 'Y' THEN TRUE ELSE FALSE END) AS hasvaa
@@ -137,10 +137,19 @@ FROM (
       ,bool_or(CASE WHEN bbb.isalaskan   = 'Y' THEN TRUE ELSE FALSE END) AS isalaskan
       ,MAX(bbb.h3hexagonaddr) AS h3hexagonaddr
       ,SUM(bbb.areasqkm) AS areasqkm
-      ,ST_UNION(ST_Transform(bbb.shape,3338),0.001) AS shape
+      ,ST_COLLECTIONEXTRACT(
+          ST_UNION(
+              cipsrv_nhdplus_m.snap_to_common_grid(
+                 p_geometry      := ST_Transform(bbb.shape,3338)
+                ,p_known_region  := '3338'
+                ,p_grid_size     := 0.001
+              )
+          )     
+         ,3
+       ) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
-      ,2::INTEGER AS statesplit
+      ,CAST(2 AS INTEGER) AS statesplit
       FROM
       subselect bbb
       WHERE
