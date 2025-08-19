@@ -593,6 +593,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_3338(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
 WITH subselect AS (
@@ -638,6 +639,7 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
@@ -662,6 +664,7 @@ FROM (
     ELSE
       CAST(1 AS INTEGER) 
     END AS statesplit
+   ,aa.border_status
    FROM
    subselect aa
    UNION ALL 
@@ -682,6 +685,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -709,6 +713,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,CAST(2 AS INTEGER) AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
       subselect bbb
       WHERE
@@ -763,6 +768,9 @@ ON cipsrv_nhdplus_m.catchment_3338(statesplit);
 
 CREATE INDEX catchment_3338_10i
 ON cipsrv_nhdplus_m.catchment_3338(vpuid);
+
+CREATE INDEX catchment_3338_11i
+ON cipsrv_nhdplus_m.catchment_3338(border_status);
 
 CREATE INDEX catchment_3338_01f
 ON cipsrv_nhdplus_m.catchment_3338(SUBSTR(vpuid,1,2));
@@ -819,6 +827,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_5070(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
 WITH subselect AS (
@@ -864,6 +873,7 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
@@ -888,6 +898,7 @@ FROM (
     ELSE
       CAST(1 AS INTEGER)
     END AS statesplit
+   ,aa.border_status
    FROM
    subselect aa
    UNION ALL 
@@ -908,6 +919,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -935,6 +947,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,CAST(2 AS INTEGER) AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
       subselect bbb
       WHERE
@@ -989,6 +1002,9 @@ ON cipsrv_nhdplus_m.catchment_5070(statesplit);
 
 CREATE INDEX catchment_5070_10i
 ON cipsrv_nhdplus_m.catchment_5070(vpuid);
+
+CREATE INDEX catchment_5070_11i
+ON cipsrv_nhdplus_m.catchment_5070(border_status);
 
 CREATE INDEX catchment_5070_01f
 ON cipsrv_nhdplus_m.catchment_5070(SUBSTR(vpuid,1,2));
@@ -1045,6 +1061,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_26904(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
 WITH subselect AS (
@@ -1090,6 +1107,7 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
@@ -1114,6 +1132,7 @@ FROM (
     ELSE
       CAST(1 AS INTEGER) 
     END AS statesplit
+   ,aa.border_status
    FROM
    subselect aa
    UNION ALL 
@@ -1134,6 +1153,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -1152,6 +1172,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,2::INTEGER AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
       subselect bbb
       WHERE
@@ -1206,6 +1227,9 @@ ON cipsrv_nhdplus_m.catchment_26904(statesplit);
 
 CREATE INDEX catchment_26904_10i
 ON cipsrv_nhdplus_m.catchment_26904(vpuid);
+
+CREATE INDEX catchment_26904_11i
+ON cipsrv_nhdplus_m.catchment_26904(border_status);
 
 CREATE INDEX catchment_26904_01f
 ON cipsrv_nhdplus_m.catchment_26904(SUBSTR(vpuid,1,2));
@@ -1262,6 +1286,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32161(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
 WITH subselect AS (
@@ -1307,6 +1332,7 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
@@ -1331,6 +1357,7 @@ FROM (
     ELSE
       CAST(1 AS INTEGER) 
     END AS statesplit
+   ,aa.border_status
    FROM
    subselect aa
    UNION ALL 
@@ -1351,6 +1378,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -1369,6 +1397,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,CAST(2 AS INTEGER) AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
       subselect bbb
       WHERE
@@ -1423,6 +1452,9 @@ ON cipsrv_nhdplus_m.catchment_32161(statesplit);
 
 CREATE INDEX catchment_32161_10i
 ON cipsrv_nhdplus_m.catchment_32161(vpuid);
+
+CREATE INDEX catchment_32161_11i
+ON cipsrv_nhdplus_m.catchment_32161(border_status);
 
 CREATE INDEX catchment_32161_01f
 ON cipsrv_nhdplus_m.catchment_32161(SUBSTR(vpuid,1,2));
@@ -1479,6 +1511,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32655(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
 WITH subselect AS (
@@ -1524,6 +1557,7 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
@@ -1548,6 +1582,7 @@ FROM (
     ELSE
       CAST(1 AS INTEGER)
     END AS statesplit
+   ,aa.border_status
    FROM
    subselect aa
    UNION ALL 
@@ -1568,6 +1603,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -1586,6 +1622,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,CAST(2 AS INTEGER) AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
       subselect bbb
       WHERE
@@ -1640,6 +1677,9 @@ ON cipsrv_nhdplus_m.catchment_32655(statesplit);
 
 CREATE INDEX catchment_32655_10i
 ON cipsrv_nhdplus_m.catchment_32655(vpuid);
+
+CREATE INDEX catchment_32655_11i
+ON cipsrv_nhdplus_m.catchment_32655(border_status);
 
 CREATE INDEX catchment_32655_01f
 ON cipsrv_nhdplus_m.catchment_32655(SUBSTR(vpuid,1,2));
@@ -1696,6 +1736,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
 WITH subselect AS (
@@ -1741,6 +1782,7 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
     CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
@@ -1765,6 +1807,7 @@ FROM (
     ELSE
       CAST(1 AS INTEGER)
     END AS statesplit
+   ,aa.border_status
    FROM
    subselect aa
    UNION ALL 
@@ -1785,6 +1828,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -1803,6 +1847,7 @@ FROM (
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
       ,CAST(2 AS INTEGER) AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
       subselect bbb
       WHERE
@@ -1857,6 +1902,9 @@ ON cipsrv_nhdplus_m.catchment_32702(statesplit);
 
 CREATE INDEX catchment_32702_10i
 ON cipsrv_nhdplus_m.catchment_32702(vpuid);
+
+CREATE INDEX catchment_32702_11i
+ON cipsrv_nhdplus_m.catchment_32702(border_status);
 
 CREATE INDEX catchment_32702_01f
 ON cipsrv_nhdplus_m.catchment_32702(SUBSTR(vpuid,1,2));
@@ -4224,7 +4272,6 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.delineate(
    ,IN  p_return_flowlines               BOOLEAN   
    ,IN  p_return_flowline_details        BOOLEAN
    ,IN  p_return_flowline_geometry       BOOLEAN
-   ,IN  p_return_full_catchments         BOOLEAN
    ,IN  p_known_region                   VARCHAR DEFAULT NULL
    
    ,OUT out_aggregation_used             VARCHAR
@@ -4264,7 +4311,6 @@ DECLARE
    boo_return_delineation_geometry BOOLEAN;
    boo_return_flowline_details     BOOLEAN;
    boo_return_flowline_geometry    BOOLEAN;
-   boo_return_full_catchments      BOOLEAN;
    boo_zero_length_delin           BOOLEAN;   
    boo_force_no_cache              BOOLEAN;
    boo_cached_watershed            BOOLEAN;
@@ -4402,13 +4448,6 @@ BEGIN
    IF boo_return_flowline_geometry IS NULL
    THEN
       boo_return_flowline_geometry := TRUE;
-      
-   END IF;
-   
-   boo_return_full_catchments := p_return_full_catchments;
-   IF boo_return_full_catchments IS NULL
-   THEN
-      boo_return_full_catchments := FALSE;
       
    END IF;
    

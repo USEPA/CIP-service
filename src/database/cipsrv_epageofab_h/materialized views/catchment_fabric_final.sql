@@ -21,6 +21,7 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_final(
    ,isalaskan
    ,h3hexagonaddr
    ,state_count
+   ,border_status
    ,vpuid
    ,sourcedataset
    ,globalid
@@ -45,6 +46,16 @@ SELECT
 ,a.isalaskan
 ,a.h3hexagonaddr
 ,a.state_count
+,CASE
+ WHEN a.outside_count = 0
+ THEN
+    CAST('I' AS VARCHAR(1))
+ WHEN a.outside_count = a.state_count
+ THEN
+    CAST('O' AS VARCHAR(1))
+ ELSE
+    CAST('B' AS VARCHAR(1))
+ END AS border_status
 ,a.vpuid
 ,a.sourcedataset
 ,a.globalid
@@ -66,14 +77,15 @@ FROM (
    ,aa.isocean
    ,aa.isalaskan
    ,aa.h3hexagonaddr
-   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_5070_3 aaa WHERE aaa.nhdplusid = aa.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_5070_3alt4 aaa WHERE aaa.nhdplusid = aa.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_5070_3alt4 aaa WHERE aaa.nhdplusid = aa.nhdplusid AND aaa.catchmentstatecode IN ('CN','MX','OW')) AS outside_count
    ,aa.vpuid
    ,aa.sourcedataset
    ,aa.globalid
    ,ST_TRANSFORM(aa.shape,4269) AS shape
    FROM
-   cipsrv_epageofab_h.catchment_fabric_5070_3 aa
-   /* cipsrv_epageofab_h.catchment_fabric_5070_3alt4 aa */
+   /* cipsrv_epageofab_h.catchment_fabric_5070_3 aa*/
+   cipsrv_epageofab_h.catchment_fabric_5070_3alt4 aa
    UNION ALL
    SELECT
     bb.catchmentstatecode
@@ -92,6 +104,7 @@ FROM (
    ,bb.isalaskan
    ,bb.h3hexagonaddr
    ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_3338_3 bbb WHERE bbb.nhdplusid = bb.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_3338_3 bbb WHERE bbb.nhdplusid = bb.nhdplusid AND bbb.catchmentstatecode IN ('CN','MX','OW')) AS outside_count
    ,bb.vpuid
    ,bb.sourcedataset
    ,bb.globalid
@@ -116,6 +129,7 @@ FROM (
    ,cc.isalaskan
    ,cc.h3hexagonaddr
    ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_26904_3 ccc WHERE ccc.nhdplusid = cc.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_26904_3 ccc WHERE ccc.nhdplusid = cc.nhdplusid AND ccc.catchmentstatecode IN ('CN','MX','OW')) AS outside_count
    ,cc.vpuid
    ,cc.sourcedataset
    ,cc.globalid
@@ -140,6 +154,7 @@ FROM (
    ,dd.isalaskan
    ,dd.h3hexagonaddr
    ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_32161_3 ddd WHERE ddd.nhdplusid = dd.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_32161_3 ddd WHERE ddd.nhdplusid = dd.nhdplusid AND ddd.catchmentstatecode IN ('CN','MX','OW')) AS outside_count
    ,dd.vpuid
    ,dd.sourcedataset
    ,dd.globalid
@@ -164,6 +179,7 @@ FROM (
    ,ee.isalaskan
    ,ee.h3hexagonaddr
    ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_32655_3 eee WHERE eee.nhdplusid = ee.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_32655_3 eee WHERE eee.nhdplusid = ee.nhdplusid AND eee.catchmentstatecode IN ('CN','MX','OW')) AS outside_count
    ,ee.vpuid
    ,ee.sourcedataset
    ,ee.globalid
@@ -188,6 +204,7 @@ FROM (
    ,ff.isalaskan
    ,ff.h3hexagonaddr
    ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_32702_3 fff WHERE fff.nhdplusid = ff.nhdplusid) AS state_count
+   ,(SELECT COUNT(*) FROM cipsrv_epageofab_h.catchment_fabric_32702_3 fff WHERE fff.nhdplusid = ff.nhdplusid AND fff.catchmentstatecode IN ('CN','MX','OW')) AS outside_count
    ,ff.vpuid
    ,ff.sourcedataset
    ,ff.globalid

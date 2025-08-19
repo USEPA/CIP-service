@@ -159,6 +159,7 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.cipsrv_index(
    ,IN  p_return_catchment_geometry      BOOLEAN
    ,IN  p_return_indexing_summary        BOOLEAN
    ,IN  p_return_full_catchments         BOOLEAN
+   ,IN  p_limit_to_us_catchments         BOOLEAN
    
    ,OUT out_indexed_points               JSONB
    ,OUT out_indexed_lines                JSONB
@@ -199,10 +200,13 @@ DECLARE
    ary_state_filters                  VARCHAR[];
    boo_filter_by_tribal               BOOLEAN;
    boo_filter_by_notribal             BOOLEAN;
+   boo_limit_to_us_catchments         BOOLEAN;
    
    str_nhdplus_version                VARCHAR;
    str_wbd_version                    VARCHAR;
    int_splitselector                  INTEGER;
+   str_schema                         VARCHAR;
+   str_sql                            VARCHAR;
    
 BEGIN
 
@@ -243,6 +247,16 @@ BEGIN
       -- Will return full catchments
       int_splitselector := 2;
       
+   END IF;
+   
+   IF p_limit_to_us_catchments IS NULL
+   OR p_limit_to_us_catchments
+   THEN
+      boo_limit_to_us_catchments := TRUE;
+      
+   ELSE
+      boo_limit_to_us_catchments := FALSE;
+   
    END IF;
    
    ----------------------------------------------------------------------------
@@ -323,7 +337,7 @@ BEGIN
       num_default_line_threshold := 10;
       
    END IF;
-   
+
    --########################################################################--
    
    str_default_ring_indexing_method  := p_default_ring_indexing_method;
@@ -404,7 +418,7 @@ BEGIN
       boo_return_geometry := FALSE;
       
    END IF;
-   
+
    ----------------------------------------------------------------------------
    ----------------------------------------------------------------------------
    str_known_region := p_known_region;
@@ -752,1332 +766,129 @@ BEGIN
    -- Step 70
    -- Return catchment results
    ----------------------------------------------------------------------------
-   IF str_nhdplus_version = 'nhdplus_m'
+   IF str_nhdplus_version = 'nhdplus_h'
    THEN
-      -- Avoid join to WBD for performance if not needed
-      IF str_wbd_version IS NULL
-      THEN
-         IF str_known_region = '5070'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_5070 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '3338'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_3338 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '26904'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_26904 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32161'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_32161 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32655'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_32655 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32702'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_32702 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSE
-            RAISE EXCEPTION 'err %',str_known_region;
-         
-         END IF;
-         
-      -- Join to WBD to get desired HUC12 details
-      ELSE
-         IF str_known_region = '5070'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_5070 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_m.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '3338'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_3338 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_m.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '26904'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_26904 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_m.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32161'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_32161 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_m.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32655'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_32655 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_m.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32702'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_m.catchment_32702 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_m.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSE
-            RAISE EXCEPTION 'err known_region %',str_known_region;
-         
-         END IF;
+      str_schema := 'h';
       
-      END IF;
-   
-   ELSIF str_nhdplus_version = 'nhdplus_h'
+   ELSIF str_nhdplus_version = 'nhdplus_m'
    THEN
-      -- Avoid join to WBD for performance if not needed
-      IF str_wbd_version IS NULL
-      THEN
-         IF str_known_region = '5070'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_5070 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '3338'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_3338 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '26904'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_26904 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32161'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_32161 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32655'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_32655 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32702'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,CAST(NULL AS VARCHAR(12)) AS xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_32702 a
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector) 
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSE
-            RAISE EXCEPTION 'err %',str_known_region;
-         
-         END IF;
-         
-      -- Join to WBD to get desired HUC12 details
-      ELSE
-         IF str_known_region = '5070'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_5070 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_h.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '3338'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_3338 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_h.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '26904'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_26904 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_h.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32161'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_32161 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_h.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32655'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_32655 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_h.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSIF str_known_region = '32702'
-         THEN
-            INSERT INTO tmp_cip_out(
-                nhdplusid
-               ,catchmentstatecode
-               ,xwalk_huc12
-               ,areasqkm
-               ,istribal
-               ,istribal_areasqkm
-               ,isnavigable
-               ,shape
-            )
-            SELECT
-             a.nhdplusid
-            ,CASE 
-             WHEN int_splitselector = 2
-             THEN
-               NULL
-             ELSE
-               a.catchmentstatecodes[1]
-             END AS catchmentstatecode
-            ,b.xwalk_huc12
-            ,a.areasqkm
-            ,a.istribal
-            ,a.istribal_areasqkm
-            ,CASE
-             WHEN a.isnavigable
-             THEN
-               'Y'
-             ELSE
-               'N'
-             END AS isnavigable
-            ,CASE
-             WHEN boo_return_geometry
-             THEN
-               ST_TRANSFORM(a.shape,4269)
-             ELSE
-               CAST(NULL AS GEOMETRY)       
-             END AS shape
-            FROM
-            cipsrv_nhdplus_h.catchment_32702 a
-            LEFT JOIN (
-               SELECT
-                bb.nhdplusid
-               ,bb.xwalk_huc12
-               FROM
-               cipsrv_epageofab_h.catchment_fabric_xwalk bb
-               WHERE
-               bb.xwalk_huc12_version = str_wbd_version
-            ) b
-            ON
-            a.nhdplusid = b.nhdplusid         
-            WHERE
-                EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-            AND a.statesplit IN (0,int_splitselector)
-            AND (NOT boo_filter_by_state    OR a.catchmentstatecodes && ary_state_filters)
-            AND (NOT boo_filter_by_tribal   OR a.istribal IN ('F','P'))
-            AND (NOT boo_filter_by_notribal OR a.istribal = 'N');
-            
-         ELSE
-            RAISE EXCEPTION 'err known_region %',str_known_region;
-         
-         END IF;
+      str_schema := 'm';
       
-      END IF;
-   
-   ELSE
-      RAISE EXCEPTION 'err nhdplus_version %',str_nhdplus_version;
-   
    END IF;
+   
+   str_sql := '
+      INSERT INTO tmp_cip_out(
+          nhdplusid
+         ,catchmentstatecode
+         ,xwalk_huc12
+         ,areasqkm
+         ,istribal
+         ,istribal_areasqkm
+         ,isnavigable
+         ,shape
+      )
+      SELECT
+       a.nhdplusid
+      ,CASE 
+       WHEN $1 = 2
+       THEN
+         NULL
+       ELSE
+         a.catchmentstatecodes[1]
+       END AS catchmentstatecode 
+    ';
+       
+    IF str_wbd_version IS NOT NULL
+    THEN
+       str_sql := str_sql || ',b.xwalk_huc12 ';
+       
+    ELSE
+       str_sql := str_sql || ',CAST(NULL AS VARCHAR(12)) AS xwalk_huc12 ';
+    
+    END IF;
+    
+    str_sql := str_sql || '
+      ,a.areasqkm
+      ,a.istribal
+      ,a.istribal_areasqkm
+      ,CASE
+       WHEN a.isnavigable
+       THEN
+         ''Y''
+       ELSE
+         ''N''
+       END AS isnavigable
+      ,CASE
+       WHEN $2
+       THEN
+         ST_TRANSFORM(a.shape,4269)
+       ELSE
+         CAST(NULL AS GEOMETRY)       
+       END AS shape
+      FROM
+      cipsrv_nhdplus_' || str_schema || '.catchment_' || str_known_region || ' a ';
+
+   IF str_wbd_version IS NOT NULL
+   THEN
+      str_sql := str_sql || '
+      LEFT JOIN (
+         SELECT
+          bb.nhdplusid
+         ,bb.xwalk_huc12
+         FROM
+         cipsrv_epageofab_' || str_schema || '.catchment_fabric_xwalk bb
+         WHERE
+         bb.xwalk_huc12_version = ''' || str_wbd_version || '''
+      ) b
+      ON
+      a.nhdplusid = b.nhdplusid 
+      ';
+
+   END IF;
+   
+   str_sql := str_sql || '
+      WHERE
+          EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+      AND a.statesplit IN (0,$3) 
+   ';
+   
+   IF boo_filter_by_state
+   THEN
+      str_sql := str_sql || ' AND a.catchmentstatecodes && ary_state_filters ';
+      
+   END IF;
+   
+   IF boo_filter_by_tribal
+   THEN
+      str_sql := str_sql || ' AND a.istribal IN (''F'',''P'') ';
+      
+   END IF;
+   
+   IF boo_filter_by_notribal
+   THEN
+      str_sql := str_sql || ' AND a.istribal = ''N'' ';
+      
+   END IF;
+   
+   IF boo_limit_to_us_catchments
+   THEN
+      str_sql := str_sql || ' AND a.border_status IN (''I'',''B'') ';
+      
+      IF int_splitselector = 1
+      THEN
+         str_sql := str_sql || ' AND a.catchmentstatecodes[1] NOT IN (''MX'',''CN'',''OW'') ';
+         
+      END IF;
+      
+   END IF;
+   
+   --RAISE WARNING 'check %',str_sql;
+   
+   EXECUTE str_sql
+   USING 
+    int_splitselector
+   ,boo_return_geometry
+   ,int_splitselector;
    
    SELECT
     COUNT(*)
