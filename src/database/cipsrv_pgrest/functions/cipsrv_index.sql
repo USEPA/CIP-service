@@ -51,6 +51,7 @@ DECLARE
    boo_return_huc12_geometry          BOOLEAN;
    boo_return_indexing_summary        BOOLEAN;
    boo_return_full_catchments         BOOLEAN;
+   boo_limit_to_us_catchments         BOOLEAN; 
    
    int_catchment_count                INTEGER;
    num_catchment_areasqkm             NUMERIC;
@@ -369,6 +370,16 @@ BEGIN
       boo_return_full_catchments := FALSE;
       
    END IF;
+ 
+   IF JSONB_PATH_EXISTS(json_input,'$.limit_to_us_catchments')
+   AND json_input->>'limit_to_us_catchments' IS NOT NULL
+   THEN
+      boo_limit_to_us_catchments := (json_input->>'limit_to_us_catchments')::BOOLEAN;
+      
+   ELSE
+      boo_limit_to_us_catchments := FALSE;
+      
+   END IF;
      
    ----------------------------------------------------------------------------
    -- Step 20
@@ -404,6 +415,7 @@ BEGIN
       ,p_return_catchment_geometry      := boo_return_catchment_geometry
       ,p_return_indexing_summary        := boo_return_indexing_summary
       ,p_return_full_catchments         := boo_return_full_catchments
+      ,p_limit_to_us_catchments         := boo_limit_to_us_catchments
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
