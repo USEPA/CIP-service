@@ -1,0 +1,10 @@
+pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
+-d $env:POSTGRSQL_DB -U cipsrv -Fc -v `
+-n cipsrv_nhdplustopo_m_catchment_fabric_3338 `
+-n cipsrv_nhdplustopo_m_catchment_fabric_5070 `
+-n cipsrv_nhdplustopo_m_catchment_fabric_26904 `
+-n cipsrv_nhdplustopo_m_catchment_fabric_32161 `
+-n cipsrv_nhdplustopo_m_catchment_fabric_32655 `
+-n cipsrv_nhdplustopo_m_catchment_fabric_32702 `
+-n cipsrv_nhdplustopo_m `
+-f cipsrv_nhdplustopo_m_v21_1.dmp
