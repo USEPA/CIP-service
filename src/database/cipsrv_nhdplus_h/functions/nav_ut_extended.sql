@@ -348,7 +348,7 @@ BEGIN
          GET DIAGNOSTICS int_check = row_count;
          IF int_check > 10000
          THEN
-            RAISE WARNING '% %',rec.nhdplusid,int_check;
+            RAISE WARNING '% %',rec.hydroseq,int_check;
             
          END IF;              
          
