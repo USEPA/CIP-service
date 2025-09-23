@@ -56,7 +56,7 @@ BEGIN
    THEN
       RETURN NULL;
       
-   ELSIF ST_GeometryType(sdo_intersection) = 'ST_MultiPoint'
+   ELSIF ST_GeometryType(sdo_intersection) IN ('ST_Point','ST_MultiPoint')
    THEN
       RETURN NULL;
       

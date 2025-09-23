@@ -168,12 +168,14 @@ BEGIN
 END 
 $BODY$;
 
-CREATE OR REPLACE PROCEDURE cipsrv_nhdplustopo_h.load_5070(
-    p_state   VARCHAR
-   ,p_chunk   INTEGER  DEFAULT 10000
-   ,p_commit  INTEGER  DEFAULT 1000
-   ,p_analyze INTEGER  DEFAULT 5000
-   ,p_focus   GEOMETRY DEFAULT NULL
+CREATE OR REPLACE PROCEDURE cipsrv_nhdplustopo_h.load_5070stat(
+    p_state    VARCHAR
+   ,p_chunk    INTEGER  DEFAULT 1000
+   ,p_commit   INTEGER  DEFAULT 5000
+   ,p_analyze  INTEGER  DEFAULT 20000
+   ,p_looper   INTEGER  DEFAULT 10000
+   ,p_focus    GEOMETRY DEFAULT NULL
+   ,p_docommit BOOLEAN  DEFAULT TRUE
 )
 LANGUAGE 'plpgsql'
 AS $BODY$
@@ -189,6 +191,10 @@ DECLARE
    boo_check        BOOLEAN;
    int_cnt          INTEGER;
    int_last_objid   INTEGER;
+   int_objectid     INTEGER;
+   time_before      TIMESTAMP;
+   time_after       TIMESTAMP;
+   time_interval    INTERVAL;
    
 BEGIN
 
@@ -198,37 +204,47 @@ BEGIN
    int_last_objid := 0;
    
    <<outer>>
-   FOR i IN 1 .. 100000
+   FOR i IN 1 .. p_looper
    LOOP
       boo_check := FALSE;
       
       <<inner>>
       FOR rec IN 
       SELECT
-      DISTINCT a.objectid
-      FROM
-      cipsrv_epageofab_h.catchment_fabric_5070_3 a
-      JOIN
-      cipsrv_nhdplustopo_h_catchment_fabric_5070.edge_data b
-      ON ST_INTERSECTS(a.shape,b.geom)
-      WHERE
-          a.catchmentstatecode = p_state
-      AND NOT EXISTS (SELECT 1 FROM cipsrv_nhdplustopo_h.catchment_5070_topo c WHERE c.objectid = a.objectid)
-      AND ( b.left_face != 0 OR b.right_face != 0  ) 
-      AND a.objectid != ALL(COALESCE(avoid_objs,ARRAY[]::INT[]))
-      AND (
-         p_focus IS NULL
-         OR
-         ST_INTERSECTS(
-             a.shape
-            ,ST_TRANSFORM(p_focus,5070)
-         )
-      )
-      LIMIT int_chunk
+      x.objectid
+      FROM (
+         SELECT
+         a.objectid
+         FROM
+         cipsrv_epageofab_h.catchment_fabric_5070_3 a
+         JOIN
+         cipsrv_nhdplustopo_h_catchment_fabric_5070.edge_data b
+         ON
+         a.shape && b.geom      
+         --ST_INTERSECTS(a.shape,b.geom) 
+         WHERE
+             a.catchmentstatecode = p_state
+         AND NOT EXISTS (SELECT 1 FROM cipsrv_nhdplustopo_h.catchment_5070_topo c WHERE c.objectid = a.objectid)
+         AND ( b.left_face != 0 OR b.right_face != 0  ) 
+         AND a.objectid != ALL(COALESCE(avoid_objs,ARRAY[]::INT[]))
+         --AND (
+         --   p_focus IS NULL
+         --   OR
+         --   ST_INTERSECTS(
+         --       a.shape
+         --      ,ST_TRANSFORM(p_focus,5070)
+         --   )
+         --)
+         LIMIT int_chunk
+      ) x
+      GROUP BY
+      x.objectid
       LOOP
          boo_check := TRUE;
          
          BEGIN
+            --time_before := CURRENT_TIMESTAMP;
+            
             INSERT INTO cipsrv_nhdplustopo_h.catchment_5070_topo(
                objectid, catchmentstatecode, nhdplusid, areasqkm, state_count, topo_geom)
             SELECT
@@ -248,13 +264,19 @@ BEGIN
             WHERE 
             aa.objectid = rec.objectid;
             
+            --time_interval := CURRENT_TIMESTAMP - time_before;
+            --RAISE WARNING '%',time_interval;
+            
             int_cmt := int_cmt + 1;
             int_anl := int_anl + 1;
             
          EXCEPTION
             WHEN OTHERS 
             THEN
-               ROLLBACK;
+               IF p_docommit 
+               THEN 
+                  ROLLBACK;
+               END IF;
                
                IF SQLERRM = 'index returned tuples in wrong order'
                THEN
@@ -286,7 +308,10 @@ BEGIN
                   EXCEPTION
                      WHEN OTHERS 
                      THEN
-                        ROLLBACK;
+                        IF p_docommit 
+                        THEN 
+                           ROLLBACK;
+                        END IF;
                         
                         RAISE WARNING '   unable to bounce, will skip %',rec.objectid;
                         avoid_objs := ARRAY_APPEND(avoid_objs,rec.objectid);
@@ -298,7 +323,7 @@ BEGIN
                   
                ELSIF SQLERRM = 'Second line start point too far from first line end point'
                THEN
-                  RAISE WARNING '   point distance issue with objectid %, will avoid', rec.objectid;
+                  --RAISE WARNING '   point distance issue with objectid %, will avoid', rec.objectid;
                   avoid_objs := ARRAY_APPEND(avoid_objs,rec.objectid);
                   
                   int_cmt := int_cmt + 1;
@@ -322,17 +347,27 @@ BEGIN
          
          IF int_anl >= p_analyze
          THEN
-            COMMIT;
+            IF p_docommit 
+            THEN 
+               COMMIT;
+            END IF;
+            
             RAISE WARNING '   committing and analyzing %', int_anl;
             EXECUTE 'ANALYZE cipsrv_nhdplustopo_h_catchment_fabric_5070.edge_data';
             EXECUTE 'ANALYZE cipsrv_nhdplustopo_h_catchment_fabric_5070.face';
+            EXECUTE 'ANALYZE cipsrv_nhdplustopo_h_catchment_fabric_5070.node';
+            EXECUTE 'ANALYZE cipsrv_nhdplustopo_h_catchment_fabric_5070.relation';
             int_cmt := 0;
             int_anl := 0;
             
          ELSE         
             IF int_cmt >= p_commit
             THEN
-               COMMIT;
+               IF p_docommit 
+               THEN 
+                  COMMIT;
+               END IF;
+               
                --RAISE WARNING '   commiting %',int_cmt;
                int_cmt := 0;
                
@@ -345,54 +380,105 @@ BEGIN
       END LOOP;
        
       IF NOT boo_check
-      THEN
-         INSERT INTO cipsrv_nhdplustopo_h.catchment_5070_topo(
-            objectid, catchmentstatecode, nhdplusid, areasqkm, state_count, topo_geom)
+      THEN                  
+         int_objectid := NULL;
+         
          SELECT
-          aa.objectid
-         ,aa.catchmentstatecode
-         ,aa.nhdplusid
-         ,aa.areasqkm
-         ,aa.state_count
-         ,topology.toTopoGeom(
-             aa.shape
-            ,'cipsrv_nhdplustopo_h_catchment_fabric_5070'
-            ,1
-            ,0.001
-          )
+         a.objectid
+         INTO
+         int_objectid
          FROM
-         cipsrv_epageofab_h.catchment_fabric_5070_3 aa
+         cipsrv_epageofab_h.catchment_fabric_5070_3 a
          WHERE
-             aa.catchmentstatecode = p_state
-         AND NOT EXISTS (SELECT 1 FROM cipsrv_nhdplustopo_h.catchment_5070_topo cc WHERE cc.objectid = aa.objectid)
-         AND aa.objectid != ALL(COALESCE(avoid_objs,ARRAY[]::INT[]))
+             a.catchmentstatecode = p_state
+         AND NOT EXISTS (SELECT 1 FROM cipsrv_nhdplustopo_h.catchment_5070_topo cc WHERE cc.objectid = a.objectid)
+         AND a.objectid != ALL(COALESCE(avoid_objs,ARRAY[]::INT[]))
          AND (
             p_focus IS NULL
             OR
             ST_INTERSECTS(
-                aa.shape
+                a.shape
                ,ST_TRANSFORM(p_focus,5070)
             )
          )
+         ORDER BY RANDOM()
          LIMIT 1;
-         
-         GET DIAGNOSTICS int_cnt = ROW_COUNT;
-         RAISE WARNING '   adding % new seed',int_cnt;
-         
-         IF int_cnt = 0
+
+         IF int_objectid IS NULL
          THEN
             RAISE WARNING '   % seems done',p_state;
             EXIT outer;
             
-         END IF;
+         END IF;     
+         
+         BEGIN         
+            INSERT INTO cipsrv_nhdplustopo_h.catchment_5070_topo(
+                objectid
+               ,catchmentstatecode
+               ,nhdplusid
+               ,areasqkm
+               ,state_count
+               ,topo_geom
+            )
+            SELECT
+             a.objectid
+            ,a.catchmentstatecode
+            ,a.nhdplusid
+            ,a.areasqkm
+            ,a.state_count
+            ,topology.toTopoGeom(
+                a.shape
+               ,'cipsrv_nhdplustopo_h_catchment_fabric_5070'
+               ,1
+               ,0.001
+             )
+            FROM
+            cipsrv_epageofab_h.catchment_fabric_5070_3 a
+            WHERE
+            a.objectid = int_objectid;
+            
+            GET DIAGNOSTICS int_cnt = ROW_COUNT;
+            RAISE WARNING '   adding % new seed',int_cnt;
+            
+            IF int_cnt = 0
+            THEN
+               RAISE WARNING '   % seems done',p_state;
+               EXIT outer;
+               
+            END IF;
+            
+         EXCEPTION
+            WHEN OTHERS 
+            THEN
+               IF p_docommit 
+               THEN 
+                  ROLLBACK;
+               END IF;
+               
+               IF SQLERRM = 'index returned tuples in wrong order'
+               THEN
+                  RAISE WARNING '   unable to bounce, will skip %',int_objectid;
+                  avoid_objs := ARRAY_APPEND(avoid_objs,int_objectid);
+                  
+               ELSE
+                  RAISE EXCEPTION '% %',SQLERMM,int_objectid;
+               
+               END IF;
+         END;
          
       END IF;
       
-      COMMIT;
+      IF p_docommit 
+      THEN 
+         COMMIT;
+      END IF;
 
    END LOOP;
 
-   COMMIT;   
+   IF p_docommit 
+   THEN 
+      COMMIT;
+   END IF;   
    
 END 
 $BODY$;
