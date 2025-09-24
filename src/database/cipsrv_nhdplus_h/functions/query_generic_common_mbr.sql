@@ -27,7 +27,7 @@ BEGIN
    sdo_point := public.ST_Transform(
        public.ST_PointOnSurface(p_input)
       ,4326
-   )::GEOGRAPHY;
+   )::public.GEOGRAPHY;
    
    IF public.ST_Intersects(
        sdo_point
