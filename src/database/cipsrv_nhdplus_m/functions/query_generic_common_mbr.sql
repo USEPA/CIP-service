@@ -14,7 +14,7 @@ IMMUTABLE
 AS
 $BODY$ 
 DECLARE
-   sdo_point GEOGRAPHY;
+   sdo_point public.GEOGRAPHY;
    
 BEGIN
 
@@ -24,47 +24,47 @@ BEGIN
       
    END IF;
    
-   sdo_point := ST_Transform(
-       ST_PointOnSurface(p_input)
+   sdo_point := public.ST_Transform(
+       public.ST_PointOnSurface(p_input)
       ,4326
-   )::GEOGRAPHY;
+   )::public.GEOGRAPHY;
    
-   IF ST_Intersects(
+   IF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_m.generic_common_mbr('CONUS')
    )
    THEN
       RETURN 'CONUS';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_m.generic_common_mbr('HI')
    )
    THEN
       RETURN 'HI';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_m.generic_common_mbr('PRVI')
    )
    THEN
       RETURN 'PRVI';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_m.generic_common_mbr('AK')
    )
    THEN
       RETURN 'AK';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_m.generic_common_mbr('GUMP')
    )
    THEN
       RETURN 'GUMP';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_m.generic_common_mbr('SAMOA')
    )

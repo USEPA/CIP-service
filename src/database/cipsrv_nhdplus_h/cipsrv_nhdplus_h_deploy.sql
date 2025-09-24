@@ -30,27 +30,27 @@ BEGIN
    'NM','NV','NY','OH','OK','OR','PA','RI','SC','SD',
    'TN','TX','UT','VA','VT','WA','WI','WV','WY')
    THEN
-      RETURN ST_PolygonFromText('POLYGON((-128.0 20.2,-64.0 20.2,-64.0 52.0,-128.0 52.0,-128.0 20.2))',4326)::geography;
+      RETURN public.ST_PolygonFromText('POLYGON((-128.0 20.2,-64.0 20.2,-64.0 52.0,-128.0 52.0,-128.0 20.2))',4326)::public.GEOGRAPHY;
       
    ELSIF str_input IN ('3338','AK','ALASKA')
    THEN
-      RETURN ST_MPolyFromText('MULTIPOLYGON(((-180 48,-128 48,-128 90,-180 90,-180 48)),((168 48,180 48,180 90,168 90,168 48)))',4326)::geography;
+      RETURN public.ST_MPolyFromText('MULTIPOLYGON(((-180 48,-128 48,-128 90,-180 90,-180 48)),((168 48,180 48,180 90,168 90,168 48)))',4326)::public.GEOGRAPHY;
       
    ELSIF str_input IN ('26904','HI','HAWAII')
    THEN
-      RETURN ST_PolygonFromText('POLYGON((-180.0 10.0,-146.0 10.0,-146.0 35.0,-180.0 35.0,-180.0 10.0))',4326)::geography;
+      RETURN public.ST_PolygonFromText('POLYGON((-180.0 10.0,-146.0 10.0,-146.0 35.0,-180.0 35.0,-180.0 10.0))',4326)::public.GEOGRAPHY;
       
    ELSIF str_input IN ('32161','PR','VI','PR/VI','PRVI')
    THEN
-      RETURN ST_PolygonFromText('POLYGON((-69.0 16.0,-63.0 16.0,-63.0 20.0,-69.0 20.0,-69.0 16.0))',4326)::geography;
+      RETURN public.ST_PolygonFromText('POLYGON((-69.0 16.0,-63.0 16.0,-63.0 20.0,-69.0 20.0,-69.0 16.0))',4326)::public.GEOGRAPHY;
    
    ELSIF str_input IN ('32655','GUMP','GUAM','MP','GU')
    THEN
-      RETURN ST_PolyFromText('POLYGON((136.0 8.0,154.0 8.0,154.0 25.0,136.0 25.0,136.0 8.0))',4326)::geography;
+      RETURN public.ST_PolyFromText('POLYGON((136.0 8.0,154.0 8.0,154.0 25.0,136.0 25.0,136.0 8.0))',4326)::public.GEOGRAPHY;
          
    ELSIF str_input IN ('32702','SAMOA','AS')
    THEN
-      RETURN ST_PolyFromText('POLYGON((-178.0 -20.0, -163.0 -20.0, -163.0 -5.0, -178.0 -5.0, -178.0 -20.0))',4326)::geography;
+      RETURN public.ST_PolyFromText('POLYGON((-178.0 -20.0, -163.0 -20.0, -163.0 -5.0, -178.0 -5.0, -178.0 -20.0))',4326)::public.GEOGRAPHY;
         
    ELSE
       RAISE EXCEPTION 'unknown generic mbr code';
@@ -103,7 +103,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.determine_grid_srid(
 STABLE
 AS $BODY$ 
 DECLARE
-   sdo_results        GEOMETRY;
+   sdo_results        public.GEOMETRY;
    str_region         VARCHAR(255) := p_known_region;
    
 BEGIN
@@ -281,11 +281,11 @@ IMMUTABLE
 AS $BODY$ 
 DECLARE
    rec                RECORD;
-   sdo_incoming       GEOMETRY;
+   sdo_incoming       public.GEOMETRY;
    int_raster_srid    INTEGER;
    int_return_code    INTEGER;
    str_status_message VARCHAR;
-   geom_grid          GEOMETRY;
+   geom_grid          public.GEOMETRY;
    num_lower_x        NUMERIC;
    num_lower_y        NUMERIC;
    incoming_srid      INTEGER;
@@ -297,13 +297,13 @@ BEGIN
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
    IF  p_geometry IS NULL
-   OR  ST_ISEMPTY(p_geometry)
+   OR  public.ST_ISEMPTY(p_geometry)
    THEN
       RETURN NULL;
       
    END IF;
    
-   incoming_srid := ST_SRID(p_geometry);
+   incoming_srid := public.ST_SRID(p_geometry);
    
    --------------------------------------------------------------------------
    -- Step 20
@@ -327,12 +327,12 @@ BEGIN
    -- Step 30
    -- Project input geometry if required
    --------------------------------------------------------------------------
-   IF ST_SRID(p_geometry) = int_raster_srid
+   IF public.ST_SRID(p_geometry) = int_raster_srid
    THEN
       sdo_incoming := p_geometry;
       
    ELSE
-      sdo_incoming := ST_Transform(p_geometry,int_raster_srid);
+      sdo_incoming := public.ST_Transform(p_geometry,int_raster_srid);
       
    END IF;
    
@@ -341,14 +341,14 @@ BEGIN
    -- Get the lower point of the common grid space
    ----------------------------------------------------------------------------
    geom_grid   := cipsrv_nhdplus_h.generic_common_mbr(int_raster_srid::VARCHAR);
-   num_lower_x := ST_XMIN(geom_grid);
-   num_lower_y := ST_YMIN(geom_grid);
+   num_lower_x := public.ST_XMIN(geom_grid);
+   num_lower_y := public.ST_YMIN(geom_grid);
    
    ----------------------------------------------------------------------------
    -- Step 30
    -- Return results
    ----------------------------------------------------------------------------
-   RETURN ST_SNAPTOGRID(
+   RETURN public.ST_SNAPTOGRID(
        sdo_incoming
       ,num_lower_x
       ,num_lower_y
@@ -396,7 +396,7 @@ IMMUTABLE
 AS
 $BODY$ 
 DECLARE
-   sdo_point GEOGRAPHY;
+   sdo_point public.GEOGRAPHY;
    
 BEGIN
 
@@ -406,47 +406,47 @@ BEGIN
       
    END IF;
    
-   sdo_point := ST_Transform(
-       ST_PointOnSurface(p_input)
+   sdo_point := public.ST_Transform(
+       public.ST_PointOnSurface(p_input)
       ,4326
    )::GEOGRAPHY;
    
-   IF ST_Intersects(
+   IF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_h.generic_common_mbr('CONUS')
    )
    THEN
       RETURN 'CONUS';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_h.generic_common_mbr('HI')
    )
    THEN
       RETURN 'HI';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_h.generic_common_mbr('PRVI')
    )
    THEN
       RETURN 'PRVI';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_h.generic_common_mbr('AK')
    )
    THEN
       RETURN 'AK';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_h.generic_common_mbr('GUMP')
    )
    THEN
       RETURN 'GUMP';
       
-   ELSIF ST_Intersects(
+   ELSIF public.ST_Intersects(
        sdo_point
       ,cipsrv_nhdplus_h.generic_common_mbr('SAMOA')
    )

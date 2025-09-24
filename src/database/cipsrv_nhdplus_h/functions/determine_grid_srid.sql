@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.determine_grid_srid(
 STABLE
 AS $BODY$ 
 DECLARE
-   sdo_results        GEOMETRY;
+   sdo_results        public.GEOMETRY;
    str_region         VARCHAR(255) := p_known_region;
    
 BEGIN
