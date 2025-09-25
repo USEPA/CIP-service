@@ -3,7 +3,7 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_wbd.wbd_hu12_f3 `
 -t cipsrv_wbd.wbd_hu12sp_f3 `
 -t cipsrv_wbd.wbd_hu12_nphr `
--t cipsrv_wbd.wbd_hu12sp_np21 `
+-t cipsrv_wbd.wbd_hu12sp_nphr `
 -t cipsrv_wbd.wbd_hu12_np21 `
 -t cipsrv_wbd.wbd_hu12sp_np21 `
 -f cipsrv_wbd_1.dmp
