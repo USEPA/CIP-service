@@ -381,7 +381,14 @@
          luscat = true;
       }
 
-      var geom  = JSON.parse(document.getElementById("dzGeometry").value);
+      var geom
+      try {
+         geom = JSON.parse(document.getElementById("dzGeometry").value);
+      } catch(e) {
+         document.getElementById("output").innerHTML = "<P>" + e + "</P>";
+         busy_off();
+         return true;
+      }
 
       var data = {
           "geometry":                       geom

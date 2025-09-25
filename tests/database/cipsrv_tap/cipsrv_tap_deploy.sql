@@ -347,6 +347,8 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   -- 1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
@@ -359,48 +361,56 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,26
       ,'test 1 - basic catchment count'
    );
    
+   -- 3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-119.16218
       ,'test 1 - check longitude passthrough of first ordinate'
    );
    
+   -- 4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,17573033::BIGINT
       ,'test 1 - check nhdplusid 1'
    );
 
+   -- 5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'CA'
       ,'test 1 - check state code 1'
    );
    
+   -- 6
    RETURN NEXT tap.is(
        ary_nhdplusid[2]
       ,17573055::BIGINT
       ,'test 1 - check nhdplusid 1'
    );
 
+   -- 7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[2]
       ,'CA'
       ,'test 1 - check state code 1'
    );
    
+   -- 8
    RETURN NEXT tap.is(
        ary_nhdplusid[20]
       ,17573739::BIGINT
       ,'test 1 - check nhdplusid 2'
    );
 
+   -- 9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[20]
       ,'CA'
@@ -594,29 +604,34 @@ AS $$DECLARE
    rec           RECORD;
    ary_nhdplusid BIGINT[];
    ary_catchmentstatecode VARCHAR[];
+   json_input    JSONB;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   -- test 1
+   ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Polygon'
+         ,'coordinates',JSONB_BUILD_ARRAY(JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-89.213104,37.050245)
+            ,JSONB_BUILD_ARRAY(-89.202118,37.01626)
+            ,JSONB_BUILD_ARRAY(-89.175682,36.96937)
+            ,JSONB_BUILD_ARRAY(-89.124184,36.981164)
+            ,JSONB_BUILD_ARRAY(-89.160576,37.034625)
+            ,JSONB_BUILD_ARRAY(-89.194565,37.052985)
+            ,JSONB_BUILD_ARRAY(-89.213104,37.050245)
+          ))
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Polygon'
-            ,'coordinates',JSONB_BUILD_ARRAY(JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-89.213104,37.050245)
-               ,JSONB_BUILD_ARRAY(-89.202118,37.01626)
-               ,JSONB_BUILD_ARRAY(-89.175682,36.96937)
-               ,JSONB_BUILD_ARRAY(-89.124184,36.981164)
-               ,JSONB_BUILD_ARRAY(-89.160576,37.034625)
-               ,JSONB_BUILD_ARRAY(-89.194565,37.052985)
-               ,JSONB_BUILD_ARRAY(-89.213104,37.050245)
-             ))
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -639,9 +654,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -651,73 +671,86 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
-      ,32
-      ,'test 1 - basic catchment count'
+      ,31
+      ,'test 1.2 - basic catchment count: ' || rec.out_catchment_count || ' = 31 '
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-89.21310
-      ,'test 1 - check longitude passthrough of first ordinate'
+      ,'test 1.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,22000100008208::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.4 - check nhdplusid 1'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'IL'
-      ,'test 1 - check state code 1'
+      ,'test 1.5 - check state code 1'
    );
+   
+   -- 1.6
    --raise warning '%',ary_nhdplusid[23];
    RETURN NEXT tap.is(
        ary_nhdplusid[23]
       ,24000100458455::BIGINT
-      ,'test 1 - check nhdplusid 2'
+      ,'test 1.6 - check nhdplusid 2'
    );
 
+   -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[23]
       ,'KY'
-      ,'test 1 - check state code 2'
+      ,'test 1.7 - check state code 2'
    );
    
+   -- 1.8
    RETURN NEXT tap.is(
        ary_nhdplusid[31]
       ,24000100569580::BIGINT
-      ,'test 1 - check nhdplusid 3'
+      ,'test 1.8 - check nhdplusid 3'
    );
 
+   -- 1.9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[31]
       ,'MO'
-      ,'test 1 - check state code 3'
+      ,'test 1.9 - check state code 3'
    );
    
    ----------------------------------------------------------------------------
+   -- 2
+   ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Polygon'
+         ,'coordinates',JSONB_BUILD_ARRAY(JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-67.17144,18.4047)
+            ,JSONB_BUILD_ARRAY(-67.175903,18.393624)
+            ,JSONB_BUILD_ARRAY(-67.156677,18.384176)
+            ,JSONB_BUILD_ARRAY(-67.145004,18.398185)
+            ,JSONB_BUILD_ARRAY(-67.156334,18.408609)
+            ,JSONB_BUILD_ARRAY(-67.17144,18.4047)
+          ))
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Polygon'
-            ,'coordinates',JSONB_BUILD_ARRAY(JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-67.17144,18.4047)
-               ,JSONB_BUILD_ARRAY(-67.175903,18.393624)
-               ,JSONB_BUILD_ARRAY(-67.156677,18.384176)
-               ,JSONB_BUILD_ARRAY(-67.145004,18.398185)
-               ,JSONB_BUILD_ARRAY(-67.156334,18.408609)
-               ,JSONB_BUILD_ARRAY(-67.17144,18.4047)
-             ))
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -740,9 +773,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -752,61 +790,71 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,15
-      ,'test 2 - basic catchment count'
+      ,'test 2.2 - basic catchment count'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-67.17144
-      ,'test 2 - check longitude passthrough of first ordinate'
+      ,'test 2.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,85000100000447::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.4 - check nhdplusid 1'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'PR'
-      ,'test 2 - check state code 1'
+      ,'test 2.5 - check state code 1'
    );
    
+   -- 2.6
    RETURN NEXT tap.is(
        ary_nhdplusid[12]
       ,85000100013695::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.6 - check nhdplusid 1'
    );
 
+   -- 2.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[12]
       ,'PR'
-      ,'test 2 - check state code 1'
+      ,'test 2.7 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   -- 3
+   ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Polygon'
+         ,'coordinates',JSONB_BUILD_ARRAY(JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-109.037762,37.011874)
+            ,JSONB_BUILD_ARRAY(-109.053555,36.995698)
+            ,JSONB_BUILD_ARRAY(-109.049606,36.99227)
+            ,JSONB_BUILD_ARRAY(-109.03965,36.991036)
+            ,JSONB_BUILD_ARRAY(-109.03038,37.002827)
+            ,JSONB_BUILD_ARRAY(-109.037762,37.011874)
+          ))
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Polygon'
-            ,'coordinates',JSONB_BUILD_ARRAY(JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-109.037762,37.011874)
-               ,JSONB_BUILD_ARRAY(-109.053555,36.995698)
-               ,JSONB_BUILD_ARRAY(-109.049606,36.99227)
-               ,JSONB_BUILD_ARRAY(-109.03965,36.991036)
-               ,JSONB_BUILD_ARRAY(-109.03038,37.002827)
-               ,JSONB_BUILD_ARRAY(-109.037762,37.011874)
-             ))
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -829,9 +877,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -841,40 +894,46 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,29
-      ,'test 3 - basic catchment count'
+      ,'test 3.2 - basic catchment count'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-109.03776
-      ,'test 3 - check longitude passthrough of first ordinate'
+      ,'test 3.4 - check longitude passthrough of first ordinate'
    );
    
+   -- 3.5
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,41000600049938::BIGINT
-      ,'test 3 - check nhdplusid 1'
+      ,'test 3.5 - check nhdplusid 1'
    );
 
+   -- 3.6
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'AZ'
-      ,'test 3 - check state code 1'
+      ,'test 3.6 - check state code 1'
    );
    
+   -- 3.7
    RETURN NEXT tap.is(
        ary_nhdplusid[5]
       ,41000600005775::BIGINT
-      ,'test 3 - check nhdplusid 1'
+      ,'test 3.7 - check nhdplusid 1'
    );
 
+   -- 3.8
    RETURN NEXT tap.is(
        ary_catchmentstatecode[5]
       ,'CO'
-      ,'test 3 - check state code 1'
+      ,'test 3.8 - check state code 1'
    );
 
 END;$$;
@@ -1991,27 +2050,30 @@ AS $$DECLARE
    rec           RECORD;
    ary_nhdplusid BIGINT[];
    ary_catchmentstatecode VARCHAR[];
+   json_input    JSONB;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-91.106186,42.886782)
+            ,JSONB_BUILD_ARRAY(-91.099319,42.876467)
+            ,JSONB_BUILD_ARRAY(-91.099319,42.86137)
+            ,JSONB_BUILD_ARRAY(-91.093483,42.847779)
+            ,JSONB_BUILD_ARRAY(-91.08181,42.836954)
+          )
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-91.106186,42.886782)
-               ,JSONB_BUILD_ARRAY(-91.099319,42.876467)
-               ,JSONB_BUILD_ARRAY(-91.099319,42.86137)
-               ,JSONB_BUILD_ARRAY(-91.093483,42.847779)
-               ,JSONB_BUILD_ARRAY(-91.08181,42.836954)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2034,9 +2096,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2046,60 +2113,68 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,10
-      ,'test 1 - basic catchment count'
+      ,'test 1.2 - basic catchment count'
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-91.10619
-      ,'test 1 - check longitude passthrough of first ordinate'
+      ,'test 1.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,22000400002754::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.4 - check nhdplusid 1'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'IA'
-      ,'test 1 - check state code 1'
+      ,'test 1.5 - check state code 1'
    );
    
+   -- 1.6
    RETURN NEXT tap.is(
        ary_nhdplusid[10]
       ,22000400022592::BIGINT
-      ,'test 1 - check nhdplusid 2'
+      ,'test 1.6 - check nhdplusid 2'
    );
 
+   -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[10]
       ,'WI'
-      ,'test 1 - check state code 2'
+      ,'test 1.7 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-82.592983,34.010693)
+            ,JSONB_BUILD_ARRAY(-82.58955,34.001443)
+            ,JSONB_BUILD_ARRAY(-82.584229,33.995466)
+            ,JSONB_BUILD_ARRAY(-82.573071,34.000304)
+            ,JSONB_BUILD_ARRAY(-82.575817,33.991907)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-82.592983,34.010693)
-               ,JSONB_BUILD_ARRAY(-82.58955,34.001443)
-               ,JSONB_BUILD_ARRAY(-82.584229,33.995466)
-               ,JSONB_BUILD_ARRAY(-82.573071,34.000304)
-               ,JSONB_BUILD_ARRAY(-82.575817,33.991907)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2122,9 +2197,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2134,60 +2214,68 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,4
-      ,'test 2 - basic catchment count'
+      ,'test 2.2 - basic catchment count'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-82.59298
-      ,'test 2 - check longitude passthrough of first ordinate'
+      ,'test 2.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,15000600198758::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.4 - check nhdplusid 1'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'GA'
-      ,'test 2 - check state code 1'
+      ,'test 2.5 - check state code 1'
    );
    
+   -- 2.6
    RETURN NEXT tap.is(
        ary_nhdplusid[4]
       ,15000600257623::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.6 - check nhdplusid 1'
    );
 
+   -- 2.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[4]
       ,'SC'
-      ,'test 2 - check state code 1'
+      ,'test 2.7 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-91.869049,44.710634)
+            ,JSONB_BUILD_ARRAY(-91.864929,44.712952)
+            ,JSONB_BUILD_ARRAY(-91.855831,44.709048)
+            ,JSONB_BUILD_ARRAY(-91.846561,44.711366)
+            ,JSONB_BUILD_ARRAY(-91.841583,44.718197)
+          )
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-91.869049,44.710634)
-               ,JSONB_BUILD_ARRAY(-91.864929,44.712952)
-               ,JSONB_BUILD_ARRAY(-91.855831,44.709048)
-               ,JSONB_BUILD_ARRAY(-91.846561,44.711366)
-               ,JSONB_BUILD_ARRAY(-91.841583,44.718197)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2210,9 +2298,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2222,61 +2315,69 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 3.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,4
-      ,'test 3 - basic catchment count'
+      ,'test 3.2 - basic catchment count'
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-91.86905
-      ,'test 3 - check longitude passthrough of first ordinate'
+      ,'test 3.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,22001300007596::BIGINT
-      ,'test 3 - check nhdplusid 1'
+      ,'test 3.4 - check nhdplusid 1'
    );
 
+   -- 3.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'WI'
-      ,'test 3 - check state code 1'
+      ,'test 3.5 - check state code 1'
    );
    
+   -- 3.6
    RETURN NEXT tap.is(
        ary_nhdplusid[3]
       ,22001300011102::BIGINT
-      ,'test 3 - check nhdplusid 2'
+      ,'test 3.6 - check nhdplusid 2'
    );
 
+   -- 3.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[3]
       ,'WI'
-      ,'test 3 - check state code 2'
+      ,'test 3.7 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-65.728369,18.185486)
+            ,JSONB_BUILD_ARRAY(-65.731716,18.187362)
+            ,JSONB_BUILD_ARRAY(-65.733175,18.183529)
+            ,JSONB_BUILD_ARRAY(-65.737982,18.18728)
+            ,JSONB_BUILD_ARRAY(-65.737896,18.192988)
+            ,JSONB_BUILD_ARRAY(-65.743904,18.196494)
+          )
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-65.728369,18.185486)
-               ,JSONB_BUILD_ARRAY(-65.731716,18.187362)
-               ,JSONB_BUILD_ARRAY(-65.733175,18.183529)
-               ,JSONB_BUILD_ARRAY(-65.737982,18.18728)
-               ,JSONB_BUILD_ARRAY(-65.737896,18.192988)
-               ,JSONB_BUILD_ARRAY(-65.743904,18.196494)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2299,9 +2400,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 4.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2311,68 +2417,76 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 4.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,4
-      ,'test 4 - basic catchment count'
+      ,'test 4.2 - basic catchment count'
    );
    
+   -- 4.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-65.72837
-      ,'test 4 - check longitude passthrough of first ordinate'
+      ,'test 4.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 4.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,85000100010380::BIGINT
-      ,'test 4 - check nhdplusid 1'
+      ,'test 4.4 - check nhdplusid 1'
    );
 
+   -- 4.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'PR'
-      ,'test 4 - check state code 1'
+      ,'test 4.5 - check state code 1'
    );
    
+   -- 4.6
    RETURN NEXT tap.is(
        ary_nhdplusid[4]
       ,85000100016890::BIGINT
-      ,'test 4 - check nhdplusid 2'
+      ,'test 4.6 - check nhdplusid 2'
    );
 
+   -- 4.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[4]
       ,'PR'
-      ,'test 4 - check state code 2'
+      ,'test 4.7 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'MultiLineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(
+                JSONB_BUILD_ARRAY(-116.006012,48.085419)
+               ,JSONB_BUILD_ARRAY(-115.979233,48.085419)
+               ,JSONB_BUILD_ARRAY(-115.97683,48.072115)
+               ,JSONB_BUILD_ARRAY(-115.961723,48.066609)
+             )
+            ,JSONB_BUILD_ARRAY(
+                JSONB_BUILD_ARRAY(-115.84877,48.092299)
+               ,JSONB_BUILD_ARRAY(-115.922928,48.044579)
+               ,JSONB_BUILD_ARRAY(-115.86731,47.979811)
+               ,JSONB_BUILD_ARRAY(-115.701141,48.014731)
+               ,JSONB_BUILD_ARRAY(-115.84877,48.092299)
+             )
+          )
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'MultiLineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(
-                   JSONB_BUILD_ARRAY(-116.006012,48.085419)
-                  ,JSONB_BUILD_ARRAY(-115.979233,48.085419)
-                  ,JSONB_BUILD_ARRAY(-115.97683,48.072115)
-                  ,JSONB_BUILD_ARRAY(-115.961723,48.066609)
-                )
-               ,JSONB_BUILD_ARRAY(
-                   JSONB_BUILD_ARRAY(-115.84877,48.092299)
-                  ,JSONB_BUILD_ARRAY(-115.922928,48.044579)
-                  ,JSONB_BUILD_ARRAY(-115.86731,47.979811)
-                  ,JSONB_BUILD_ARRAY(-115.701141,48.014731)
-                  ,JSONB_BUILD_ARRAY(-115.84877,48.092299)
-                )
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2395,9 +2509,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 5.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 5.1 - return_code '
    );
    
    ary_nhdplusid := ARRAY(
@@ -2407,40 +2526,46 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 5.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,129
-      ,'test 5 - basic catchment count'
+      ,'test 5.2 - basic catchment count'
    );
    
+   -- 5.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-115.84877
-      ,'test 5 - check longitude passthrough of first ordinate'
+      ,'test 5.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 5.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,55001100000045::BIGINT
-      ,'test 5 - check nhdplusid 1'
+      ,'test 5.4 - check nhdplusid 1'
    );
 
+   -- 5.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'MT'
-      ,'test 5 - check state code 1'
+      ,'test 5.5 - check state code 1'
    );
    
+   -- 5.6
    RETURN NEXT tap.is(
        ary_nhdplusid[46]
       ,55001100106215::BIGINT
-      ,'test 5 - check nhdplusid 2'
+      ,'test 5.6 - check nhdplusid 2'
    );
 
+   -- 5.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[46]
       ,'MT'
-      ,'test 5 - check state code 2'
+      ,'test 5.7 - check state code 2'
    );
 
 END;$$;
@@ -2454,27 +2579,30 @@ AS $$DECLARE
    rec           RECORD;
    ary_nhdplusid BIGINT[];
    ary_catchmentstatecode VARCHAR[];
+   json_input    JSONB;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-91.106186,42.886782)
+            ,JSONB_BUILD_ARRAY(-91.099319,42.876467)
+            ,JSONB_BUILD_ARRAY(-91.099319,42.86137)
+            ,JSONB_BUILD_ARRAY(-91.093483,42.847779)
+            ,JSONB_BUILD_ARRAY(-91.08181,42.836954)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-91.106186,42.886782)
-               ,JSONB_BUILD_ARRAY(-91.099319,42.876467)
-               ,JSONB_BUILD_ARRAY(-91.099319,42.86137)
-               ,JSONB_BUILD_ARRAY(-91.093483,42.847779)
-               ,JSONB_BUILD_ARRAY(-91.08181,42.836954)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2497,9 +2625,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2509,60 +2642,68 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,13
-      ,'test 1 - basic catchment count'
+      ,'test 1.2 - basic catchment count'
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-91.10619
-      ,'test 1 - check longitude passthrough of first ordinate'
+      ,'test 1.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,13326724::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.4 - check nhdplusid 1'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'IA'
-      ,'test 1 - check state code 1'
+      ,'test 1.5 - check state code 1'
    );
    
+   -- 1.6
    RETURN NEXT tap.is(
        ary_nhdplusid[12]
       ,13327004::BIGINT
-      ,'test 1 - check nhdplusid 2'
+      ,'test 1.6 - check nhdplusid 2'
    );
 
+   -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[12]
       ,'WI'
-      ,'test 1 - check state code 2'
+      ,'test 1.7 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-82.592983,34.010693)
+            ,JSONB_BUILD_ARRAY(-82.58955,34.001443)
+            ,JSONB_BUILD_ARRAY(-82.584229,33.995466)
+            ,JSONB_BUILD_ARRAY(-82.573071,34.000304)
+            ,JSONB_BUILD_ARRAY(-82.575817,33.991907)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-82.592983,34.010693)
-               ,JSONB_BUILD_ARRAY(-82.58955,34.001443)
-               ,JSONB_BUILD_ARRAY(-82.584229,33.995466)
-               ,JSONB_BUILD_ARRAY(-82.573071,34.000304)
-               ,JSONB_BUILD_ARRAY(-82.575817,33.991907)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2585,9 +2726,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2597,60 +2743,68 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,4
-      ,'test 2 - basic catchment count'
+      ,'test 2.2 - basic catchment count'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-82.59298
-      ,'test 2 - check longitude passthrough of first ordinate'
+      ,'test 2.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,11737871::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.4 - check nhdplusid 1'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'GA'
-      ,'test 2 - check state code 1'
+      ,'test 2.5 - check state code 1'
    );
    
+   -- 2.6
    RETURN NEXT tap.is(
        ary_nhdplusid[4]
       ,11738899::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.6 - check nhdplusid 1'
    );
 
+   -- 2.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[4]
       ,'SC'
-      ,'test 2 - check state code 1'
+      ,'test 2.7 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-91.869049,44.710634)
+            ,JSONB_BUILD_ARRAY(-91.864929,44.712952)
+            ,JSONB_BUILD_ARRAY(-91.855831,44.709048)
+            ,JSONB_BUILD_ARRAY(-91.846561,44.711366)
+            ,JSONB_BUILD_ARRAY(-91.841583,44.718197)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-91.869049,44.710634)
-               ,JSONB_BUILD_ARRAY(-91.864929,44.712952)
-               ,JSONB_BUILD_ARRAY(-91.855831,44.709048)
-               ,JSONB_BUILD_ARRAY(-91.846561,44.711366)
-               ,JSONB_BUILD_ARRAY(-91.841583,44.718197)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2673,9 +2827,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1- return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2685,36 +2844,42 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 3.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,3
       ,'test 3 - basic catchment count'
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-91.86905
       ,'test 3 - check longitude passthrough of first ordinate'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,13107309::BIGINT
       ,'test 3 - check nhdplusid 1'
    );
 
+   -- 3.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'WI'
       ,'test 3 - check state code 1'
    );
    
+   -- 3.6
    RETURN NEXT tap.is(
        ary_nhdplusid[3]
       ,13107317::BIGINT
       ,'test 3 - check nhdplusid 2'
    );
 
+   -- 3.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[3]
       ,'WI'
@@ -2722,24 +2887,26 @@ BEGIN
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-65.728369,18.185486)
+            ,JSONB_BUILD_ARRAY(-65.731716,18.187362)
+            ,JSONB_BUILD_ARRAY(-65.733175,18.183529)
+            ,JSONB_BUILD_ARRAY(-65.737982,18.18728)
+            ,JSONB_BUILD_ARRAY(-65.737896,18.192988)
+            ,JSONB_BUILD_ARRAY(-65.743904,18.196494)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-65.728369,18.185486)
-               ,JSONB_BUILD_ARRAY(-65.731716,18.187362)
-               ,JSONB_BUILD_ARRAY(-65.733175,18.183529)
-               ,JSONB_BUILD_ARRAY(-65.737982,18.18728)
-               ,JSONB_BUILD_ARRAY(-65.737896,18.192988)
-               ,JSONB_BUILD_ARRAY(-65.743904,18.196494)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2762,9 +2929,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 4.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2774,68 +2946,76 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 4.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,5
-      ,'test 4 - basic catchment count'
+      ,'test 4.2 - basic catchment count'
    );
    
+   -- 4.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-65.72837
-      ,'test 4 - check longitude passthrough of first ordinate'
+      ,'test 4.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 4.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,800030108::BIGINT
-      ,'test 4 - check nhdplusid 1'
+      ,'test 4.4 - check nhdplusid 1'
    );
 
+   -- 4.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'PR'
-      ,'test 4 - check state code 1'
+      ,'test 4.5 - check state code 1'
    );
    
+   -- 4.6
    RETURN NEXT tap.is(
        ary_nhdplusid[5]
       ,800036551::BIGINT
-      ,'test 4 - check nhdplusid 2'
+      ,'test 4.6 - check nhdplusid 2'
    );
 
+   -- 4.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[5]
       ,'PR'
-      ,'test 4 - check state code 2'
+      ,'test 4.7 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'MultiLineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(
+                JSONB_BUILD_ARRAY(-116.006012,48.085419)
+               ,JSONB_BUILD_ARRAY(-115.979233,48.085419)
+               ,JSONB_BUILD_ARRAY(-115.97683,48.072115)
+               ,JSONB_BUILD_ARRAY(-115.961723,48.066609)
+             )
+            ,JSONB_BUILD_ARRAY(
+                JSONB_BUILD_ARRAY(-115.84877,48.092299)
+               ,JSONB_BUILD_ARRAY(-115.922928,48.044579)
+               ,JSONB_BUILD_ARRAY(-115.86731,47.979811)
+               ,JSONB_BUILD_ARRAY(-115.701141,48.014731)
+               ,JSONB_BUILD_ARRAY(-115.84877,48.092299)
+             )
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'MultiLineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(
-                   JSONB_BUILD_ARRAY(-116.006012,48.085419)
-                  ,JSONB_BUILD_ARRAY(-115.979233,48.085419)
-                  ,JSONB_BUILD_ARRAY(-115.97683,48.072115)
-                  ,JSONB_BUILD_ARRAY(-115.961723,48.066609)
-                )
-               ,JSONB_BUILD_ARRAY(
-                   JSONB_BUILD_ARRAY(-115.84877,48.092299)
-                  ,JSONB_BUILD_ARRAY(-115.922928,48.044579)
-                  ,JSONB_BUILD_ARRAY(-115.86731,47.979811)
-                  ,JSONB_BUILD_ARRAY(-115.701141,48.014731)
-                  ,JSONB_BUILD_ARRAY(-115.84877,48.092299)
-                )
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2858,9 +3038,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 5.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 5.1 - return_code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2870,40 +3055,46 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 5.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,49
-      ,'test 5 - basic catchment count'
+      ,'test 5.2 - basic catchment count'
    );
    
+   -- 5.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-115.84877
-      ,'test 5 - check longitude passthrough of first ordinate'
+      ,'test 5.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 5.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,22975990::BIGINT
-      ,'test 5 - check nhdplusid 1'
+      ,'test 5.4 - check nhdplusid 1'
    );
 
+   -- 5.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'MT'
-      ,'test 5 - check state code 1'
+      ,'test 5.5 - check state code 1'
    );
    
+   -- 5.6
    RETURN NEXT tap.is(
        ary_nhdplusid[46]
       ,25073170::BIGINT
-      ,'test 5 - check nhdplusid 2'
+      ,'test 5.6 - check nhdplusid 2'
    );
 
+   -- 5.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[46]
       ,'MT'
-      ,'test 5 - check state code 2'
+      ,'test 5.7 - check state code 2'
    );
 
 END;$$;
@@ -2917,28 +3108,31 @@ AS $$DECLARE
    rec           RECORD;
    ary_nhdplusid BIGINT[];
    ary_catchmentstatecode VARCHAR[];
+   json_input    JSONB;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-108.75761,36.99131)
+            ,JSONB_BUILD_ARRAY(-108.753147,36.979518)
+            ,JSONB_BUILD_ARRAY(-108.740788,36.98706)
+            ,JSONB_BUILD_ARRAY(-108.734779,36.981986)
+            ,JSONB_BUILD_ARRAY(-108.723621,36.977598)
+            ,JSONB_BUILD_ARRAY(-108.717442,36.982398)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-108.75761,36.99131)
-               ,JSONB_BUILD_ARRAY(-108.753147,36.979518)
-               ,JSONB_BUILD_ARRAY(-108.740788,36.98706)
-               ,JSONB_BUILD_ARRAY(-108.734779,36.981986)
-               ,JSONB_BUILD_ARRAY(-108.723621,36.977598)
-               ,JSONB_BUILD_ARRAY(-108.717442,36.982398)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -2961,9 +3155,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -2973,61 +3172,69 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,11
-      ,'test 1 - basic catchment count'
+      ,'test 1.2 - basic catchment count ' || rec.out_catchment_count || ' = 11'
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-108.75761
-      ,'test 1 - check longitude passthrough of first ordinate'
+      ,'test 1.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,41000600117044::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.4 - check nhdplusid 1'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'CO'
-      ,'test 1 - check state code 1'
+      ,'test 1.5 - check state code 1'
    );
    
+   -- 1.6
    RETURN NEXT tap.is(
        ary_nhdplusid[6]
       ,41000600095221::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.6 - check nhdplusid 1'
    );
 
+   -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[6]
       ,'NM'
-      ,'test 1 - check state code 1'
+      ,'test 1.7 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-83.085651,42.312862)
+            ,JSONB_BUILD_ARRAY(-83.096809,42.299024)
+            ,JSONB_BUILD_ARRAY(-83.084965,42.289247)
+            ,JSONB_BUILD_ARRAY(-83.097839,42.265369)
+            ,JSONB_BUILD_ARRAY(-83.117752,42.267274)
+            ,JSONB_BUILD_ARRAY(-83.12273,42.277944)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-83.085651,42.312862)
-               ,JSONB_BUILD_ARRAY(-83.096809,42.299024)
-               ,JSONB_BUILD_ARRAY(-83.084965,42.289247)
-               ,JSONB_BUILD_ARRAY(-83.097839,42.265369)
-               ,JSONB_BUILD_ARRAY(-83.117752,42.267274)
-               ,JSONB_BUILD_ARRAY(-83.12273,42.277944)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3050,9 +3257,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3062,71 +3274,81 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
-      ,4
-      ,'test 2 - basic catchment count'
+      ,5
+      ,'test 2.2 - basic catchment count ' || rec.out_catchment_count || ' = 5'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-83.08565
-      ,'test 2 - check longitude passthrough of first ordinate'
+      ,'test 2.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,60001500030443::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.4 - check nhdplusid 1'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'MI'
-      ,'test 2 - check state code 1'
+      ,'test 2.5 - check state code 1'
    );
    
+   -- 2.6
    RETURN NEXT tap.is(
        ary_nhdplusid[2]
       ,60001500030695::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.6 - check nhdplusid 1'
    );
 
+   -- 2.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[2]
       ,'MI'
-      ,'test 2 - check state code 1'
+      ,'test 2.7 - check state code 1'
    );
    
+   -- 2.8
    RETURN NEXT tap.is(
        ary_nhdplusid[3]
       ,60001500030697::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.8 - check nhdplusid 1'
    );
 
+   -- 2.9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[3]
       ,'MI'
-      ,'test 2 - check state code 1'
+      ,'test 2.9 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-156.177092,20.628768)
+            ,JSONB_BUILD_ARRAY(-156.173573,20.628607)
+            ,JSONB_BUILD_ARRAY(-156.170998,20.630615)
+            ,JSONB_BUILD_ARRAY(-156.168337,20.629009)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-156.177092,20.628768)
-               ,JSONB_BUILD_ARRAY(-156.173573,20.628607)
-               ,JSONB_BUILD_ARRAY(-156.170998,20.630615)
-               ,JSONB_BUILD_ARRAY(-156.168337,20.629009)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3149,9 +3371,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3161,53 +3388,59 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 3.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 3 - basic catchment count'
+      ,'test 3.2 - basic catchment count ' || rec.out_catchment_count || ' = 1'
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-156.17709
-      ,'test 3 - check longitude passthrough of first ordinate'
+      ,'test 3.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,80000200001830::BIGINT
-      ,'test 3 - check nhdplusid 1'
+      ,'test 3.4 - check nhdplusid 1'
    );
 
+   -- 3.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'HI'
-      ,'test 3 - check state code 1'
+      ,'test 3.5 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-84.02936,33.710454)
+            ,JSONB_BUILD_ARRAY(-84.026184,33.710811)
+            ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
+            ,JSONB_BUILD_ARRAY(-84.025712,33.70642)
+            ,JSONB_BUILD_ARRAY(-84.024425,33.704635)
+            ,JSONB_BUILD_ARRAY(-84.022579,33.703028)
+            ,JSONB_BUILD_ARRAY(-84.019275,33.704742)
+            ,JSONB_BUILD_ARRAY(-84.019318,33.708276)
+            ,JSONB_BUILD_ARRAY(-84.019532,33.711203)
+            ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-84.02936,33.710454)
-               ,JSONB_BUILD_ARRAY(-84.026184,33.710811)
-               ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
-               ,JSONB_BUILD_ARRAY(-84.025712,33.70642)
-               ,JSONB_BUILD_ARRAY(-84.024425,33.704635)
-               ,JSONB_BUILD_ARRAY(-84.022579,33.703028)
-               ,JSONB_BUILD_ARRAY(-84.019275,33.704742)
-               ,JSONB_BUILD_ARRAY(-84.019318,33.708276)
-               ,JSONB_BUILD_ARRAY(-84.019532,33.711203)
-               ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3230,9 +3463,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 4.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3242,61 +3480,69 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,2
-      ,'test 4 - basic catchment count'
+      ,'test 4.1 - basic catchment count ' || rec.out_catchment_count || ' = 2'
    );
    
+   -- 4.2
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-84.02936
-      ,'test 4 - check longitude passthrough of first ordinate'
+      ,'test 4.2 - check longitude passthrough of first ordinate'
    );
    
+   -- 4.3
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,15001600047400::BIGINT
-      ,'test 4 - check nhdplusid 1'
+      ,'test 4.3 - check nhdplusid 1'
    );
 
+   -- 4.4
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'GA'
-      ,'test 4 - check state code 1'
+      ,'test 4.4 - check state code 1'
    );
    
+   -- 4.5
    RETURN NEXT tap.is(
        ary_nhdplusid[2]
       ,15001600124060::BIGINT
-      ,'test 4 - check nhdplusid 2'
+      ,'test 4.5 - check nhdplusid 2'
    );
 
+   -- 4.6
    RETURN NEXT tap.is(
        ary_catchmentstatecode[2]
       ,'GA'
-      ,'test 4 - check state code 2'
+      ,'test 4.6 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-95.690918,48.821333)
+            ,JSONB_BUILD_ARRAY(-95.96283,48.713619)
+            ,JSONB_BUILD_ARRAY(-95.722504,48.544796)
+            ,JSONB_BUILD_ARRAY(-95.458832,48.649242)
+            ,JSONB_BUILD_ARRAY(-95.377808,48.793295)
+            ,JSONB_BUILD_ARRAY(-95.690918,48.821333)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-95.690918,48.821333)
-               ,JSONB_BUILD_ARRAY(-95.96283,48.713619)
-               ,JSONB_BUILD_ARRAY(-95.722504,48.544796)
-               ,JSONB_BUILD_ARRAY(-95.458832,48.649242)
-               ,JSONB_BUILD_ARRAY(-95.377808,48.793295)
-               ,JSONB_BUILD_ARRAY(-95.690918,48.821333)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3319,9 +3565,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 5.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 5.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3331,40 +3582,46 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 5.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,930
-      ,'test 5 - basic catchment count'
+      ,'test 5.2 - basic catchment count ' || rec.out_catchment_count || ' = 930' 
    );
    
+   -- 5.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-95.69092
-      ,'test 5 - check longitude passthrough of first ordinate'
+      ,'test 5.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 5.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,65000200000196::BIGINT
-      ,'test 5 - check nhdplusid 1'
+      ,'test 5.4 - check nhdplusid 1'
    );
 
+   -- 5.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'MN'
-      ,'test 5 - check state code 1'
+      ,'test 5.5 - check state code 1'
    );
    
+   -- 5.6
    RETURN NEXT tap.is(
        ary_nhdplusid[236]
       ,65000200034219::BIGINT
-      ,'test 5 - check nhdplusid 2'
+      ,'test 5.6 - check nhdplusid 2'
    );
 
+   -- 5.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[236]
       ,'MN'
-      ,'test 5 - check state code 2'
+      ,'test 5.7 - check state code 2'
    );
 
 END;$$;
@@ -3378,28 +3635,31 @@ AS $$DECLARE
    rec           RECORD;
    ary_nhdplusid BIGINT[];
    ary_catchmentstatecode VARCHAR[];
+   json_input    JSONB;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-108.75761,36.99131)
+            ,JSONB_BUILD_ARRAY(-108.753147,36.979518)
+            ,JSONB_BUILD_ARRAY(-108.740788,36.98706)
+            ,JSONB_BUILD_ARRAY(-108.734779,36.981986)
+            ,JSONB_BUILD_ARRAY(-108.723621,36.977598)
+            ,JSONB_BUILD_ARRAY(-108.717442,36.982398)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-108.75761,36.99131)
-               ,JSONB_BUILD_ARRAY(-108.753147,36.979518)
-               ,JSONB_BUILD_ARRAY(-108.740788,36.98706)
-               ,JSONB_BUILD_ARRAY(-108.734779,36.981986)
-               ,JSONB_BUILD_ARRAY(-108.723621,36.977598)
-               ,JSONB_BUILD_ARRAY(-108.717442,36.982398)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3422,9 +3682,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return code ' || rec.out_return_code
    );
    
    ary_nhdplusid := ARRAY(
@@ -3434,61 +3699,69 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,7
-      ,'test 1 - basic catchment count'
+      ,'test 1.2 - basic catchment count ' || rec.out_catchment_count || ' = 7'
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-108.75761
-      ,'test 1 - check longitude passthrough of first ordinate'
+      ,'test 1.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,16964227::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.4 - check nhdplusid 1: ' || ary_nhdplusid[1] || ' = 16964227'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'CO'
-      ,'test 1 - check state code 1'
+      ,'test 1.5 - check state code 1'
    );
    
+   -- 1.6
    RETURN NEXT tap.is(
        ary_nhdplusid[6]
       ,16964235::BIGINT
-      ,'test 1 - check nhdplusid 1'
+      ,'test 1.6 - check nhdplusid 6: ' || ary_nhdplusid[6] || ' = 16964235'
    );
 
+   -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[6]
       ,'NM'
-      ,'test 1 - check state code 1'
+      ,'test 1.7 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-83.085651,42.312862)
+            ,JSONB_BUILD_ARRAY(-83.096809,42.299024)
+            ,JSONB_BUILD_ARRAY(-83.084965,42.289247)
+            ,JSONB_BUILD_ARRAY(-83.097839,42.265369)
+            ,JSONB_BUILD_ARRAY(-83.117752,42.267274)
+            ,JSONB_BUILD_ARRAY(-83.12273,42.277944)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-83.085651,42.312862)
-               ,JSONB_BUILD_ARRAY(-83.096809,42.299024)
-               ,JSONB_BUILD_ARRAY(-83.084965,42.289247)
-               ,JSONB_BUILD_ARRAY(-83.097839,42.265369)
-               ,JSONB_BUILD_ARRAY(-83.117752,42.267274)
-               ,JSONB_BUILD_ARRAY(-83.12273,42.277944)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3511,9 +3784,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return code ' || rec.out_return_code
    );
    
    ary_nhdplusid := ARRAY(
@@ -3523,71 +3801,81 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
-      ,3
-      ,'test 2 - basic catchment count'
+      ,4
+      ,'test 2.2 - basic catchment count ' || rec.out_catchment_count || ' = 4'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-83.08565
-      ,'test 2 - check longitude passthrough of first ordinate'
+      ,'test 2.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,10850238::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,'test 2.4 - check nhdplusid 1: ' || ary_nhdplusid[1] || ' = 10850238'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'MI'
-      ,'test 2 - check state code 1'
+      ,'test 2.5 - check state code 1'
    );
    
+   -- 2.6
    RETURN NEXT tap.is(
        ary_nhdplusid[2]
-      ,10850250::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,10850242::BIGINT
+      ,'test 2.6 - check nhdplusid 2: ' || ary_nhdplusid[2] || ' = 10850242'
    );
 
+   -- 2.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[2]
       ,'MI'
-      ,'test 2 - check state code 1'
+      ,'test 2.7 - check state code 2'
    );
    
+   -- 2.8
    RETURN NEXT tap.is(
        ary_nhdplusid[3]
-      ,10850310::BIGINT
-      ,'test 2 - check nhdplusid 1'
+      ,10850250::BIGINT
+      ,'test 2.8 - check nhdplusid 3: ' || ary_nhdplusid[3] || ' = 10850250'
    );
 
+   -- 2.9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[3]
       ,'MI'
-      ,'test 2 - check state code 1'
+      ,'test 2.9 - check state code 3'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-156.177092,20.628768)
+            ,JSONB_BUILD_ARRAY(-156.173573,20.628607)
+            ,JSONB_BUILD_ARRAY(-156.170998,20.630615)
+            ,JSONB_BUILD_ARRAY(-156.168337,20.629009)
+          )
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-156.177092,20.628768)
-               ,JSONB_BUILD_ARRAY(-156.173573,20.628607)
-               ,JSONB_BUILD_ARRAY(-156.170998,20.630615)
-               ,JSONB_BUILD_ARRAY(-156.168337,20.629009)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3610,9 +3898,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3622,53 +3915,59 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 3.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 3 - basic catchment count'
+      ,'test 3.2 - basic catchment count ' || rec.out_catchment_count || ' = 1'
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-156.17709
-      ,'test 3 - check longitude passthrough of first ordinate'
+      ,'test 3.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,800001779::BIGINT
-      ,'test 3 - check nhdplusid 1'
+      ,'test 3.4 - check nhdplusid 1'
    );
 
+   -- 3.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'HI'
-      ,'test 3 - check state code 1'
+      ,'test 3.5 - check state code 1'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-84.02936,33.710454)
+            ,JSONB_BUILD_ARRAY(-84.026184,33.710811)
+            ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
+            ,JSONB_BUILD_ARRAY(-84.025712,33.70642)
+            ,JSONB_BUILD_ARRAY(-84.024425,33.704635)
+            ,JSONB_BUILD_ARRAY(-84.022579,33.703028)
+            ,JSONB_BUILD_ARRAY(-84.019275,33.704742)
+            ,JSONB_BUILD_ARRAY(-84.019318,33.708276)
+            ,JSONB_BUILD_ARRAY(-84.019532,33.711203)
+            ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-84.02936,33.710454)
-               ,JSONB_BUILD_ARRAY(-84.026184,33.710811)
-               ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
-               ,JSONB_BUILD_ARRAY(-84.025712,33.70642)
-               ,JSONB_BUILD_ARRAY(-84.024425,33.704635)
-               ,JSONB_BUILD_ARRAY(-84.022579,33.703028)
-               ,JSONB_BUILD_ARRAY(-84.019275,33.704742)
-               ,JSONB_BUILD_ARRAY(-84.019318,33.708276)
-               ,JSONB_BUILD_ARRAY(-84.019532,33.711203)
-               ,JSONB_BUILD_ARRAY(-84.024982,33.708776)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3691,9 +3990,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 4.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3703,61 +4007,69 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,2
-      ,'test 4 - basic catchment count'
+      ,'test 4.1 - basic catchment count ' || rec.out_catchment_count || ' = 2'
    );
    
+   -- 4.2
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_lines->'features'->0->'geometry'->'coordinates'->0->0)::NUMERIC,5)
       ,-84.02936
-      ,'test 4 - check longitude passthrough of first ordinate'
+      ,'test 4.2 - check longitude passthrough of first ordinate'
    );
    
+   -- 4.3
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,6333652::BIGINT
-      ,'test 4 - check nhdplusid 1'
+      ,'test 4.3 - check nhdplusid 1'
    );
 
+   -- 4.4
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'GA'
-      ,'test 4 - check state code 1'
+      ,'test 4.4 - check state code 1'
    );
    
+   -- 4.5
    RETURN NEXT tap.is(
        ary_nhdplusid[2]
       ,6333654::BIGINT
-      ,'test 4 - check nhdplusid 2'
+      ,'test 4.5 - check nhdplusid 2'
    );
 
+   -- 4.6
    RETURN NEXT tap.is(
        ary_catchmentstatecode[2]
       ,'GA'
-      ,'test 4 - check state code 2'
+      ,'test 4.6 - check state code 2'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'LineString'
+         ,'coordinates',JSONB_BUILD_ARRAY(
+             JSONB_BUILD_ARRAY(-95.690918,48.821333)
+            ,JSONB_BUILD_ARRAY(-95.96283,48.713619)
+            ,JSONB_BUILD_ARRAY(-95.722504,48.544796)
+            ,JSONB_BUILD_ARRAY(-95.458832,48.649242)
+            ,JSONB_BUILD_ARRAY(-95.377808,48.793295)
+            ,JSONB_BUILD_ARRAY(-95.690918,48.821333)
+          )
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'LineString'
-            ,'coordinates',JSONB_BUILD_ARRAY(
-                JSONB_BUILD_ARRAY(-95.690918,48.821333)
-               ,JSONB_BUILD_ARRAY(-95.96283,48.713619)
-               ,JSONB_BUILD_ARRAY(-95.722504,48.544796)
-               ,JSONB_BUILD_ARRAY(-95.458832,48.649242)
-               ,JSONB_BUILD_ARRAY(-95.377808,48.793295)
-               ,JSONB_BUILD_ARRAY(-95.690918,48.821333)
-             )
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3780,9 +4092,14 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 5.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 5.1 - return code'
    );
    
    ary_nhdplusid := ARRAY(
@@ -3792,40 +4109,46 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 5.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,239
-      ,'test 5 - basic catchment count'
+      ,'test 5.2 - basic catchment count ' || rec.out_catchment_count || ' = 239'
    );
    
+   -- 5.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-95.69092
-      ,'test 5 - check longitude passthrough of first ordinate'
+      ,'test 5.3 - check longitude passthrough of first ordinate'
    );
    
+   -- 5.4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,7082708::BIGINT
-      ,'test 5 - check nhdplusid 1'
+      ,'test 5.4 - check nhdplusid 1'
    );
 
+   -- 5.5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'MN'
-      ,'test 5 - check state code 1'
+      ,'test 5.5 - check state code 1'
    );
    
+   -- 5.6
    RETURN NEXT tap.is(
        ary_nhdplusid[236]
       ,7090729::BIGINT
-      ,'test 5 - check nhdplusid 2'
+      ,'test 5.6 - check nhdplusid 2'
    );
 
+   -- 5.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[236]
       ,'MN'
-      ,'test 5 - check state code 2'
+      ,'test 5.7 - check state code 2'
    );
 
 END;$$;
@@ -3839,6 +4162,7 @@ AS $$DECLARE
    rec           RECORD;
    int_nhdplusid BIGINT;
    str_catchmentstatecode VARCHAR;
+   json_input    JSONB;
    
 BEGIN
 
@@ -3860,17 +4184,19 @@ BEGIN
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-76.98669433593751,38.88595542095899)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-76.98669433593751,38.88595542095899)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := ARRAY['DC']
@@ -3893,49 +4219,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return_code' 
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 1 - basic catchment count'
+      ,'test 1.2 - basic catchment count ' || rec.out_catchment_count || ' = 1'
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-76.98669
-      ,'test 1 - check longitude passthrough'
+      ,'test 1.3 - check longitude passthrough'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,10000500005418::BIGINT
-      ,'test 1 - check nhdplusid'
+      ,'test 1.4 - check nhdplusid'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'DC'
-      ,'test 1 - check state code'
+      ,'test 1.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-91.58889770507812,31.05646337884346)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-91.58889770507812,31.05646337884346)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -3958,49 +4295,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 2 - basic catchment count'
+      ,'test 2.2 - basic catchment count'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->1)::NUMERIC,5)
       ,31.05646
-      ,'test 2 - check latitude passthrough'
+      ,'test 2.3 - check latitude passthrough'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,20000800014723::BIGINT
-      ,'test 2 - check nhdplusid'
+      ,'test 2.4 - check nhdplusid'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'LA'
-      ,'test 2 - check state code'
+      ,'test 2.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-117.05795288085939,42.07580094787546)
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-117.05795288085939,42.07580094787546)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := ARRAY['OR']
@@ -4023,49 +4371,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1 - return code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 3.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 3 - basic catchment count'
+      ,'test 3.2 - basic catchment count'
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-117.05795
-      ,'test 3 - check longitude passthrough'
+      ,'test 3.3 - check longitude passthrough'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,55000700291103::BIGINT
-      ,'test 3 - check nhdplusid'
+      ,'test 3.4 - check nhdplusid'
    );
 
+   -- 3.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'OR'
-      ,'test 3 - check state code'
+      ,'test 3.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-157.80349731445315,21.414719215736195)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-157.80349731445315,21.414719215736195)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4088,49 +4447,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 4.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 4.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 4 - basic catchment count'
+      ,'test 4.2 - basic catchment count'
    );
    
+   -- 4.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-157.80350
-      ,'test 4 - check longitude passthrough'
+      ,'test 4.3 - check longitude passthrough'
    );
    
+   -- 4.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,80000600000634::BIGINT
-      ,'test 4 - check nhdplusid'
+      ,'test 4.4 - check nhdplusid'
    );
 
+   -- 4.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'HI'
-      ,'test 4 - check state code'
+      ,'test 4.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-64.95057106018068,18.342631352511194)
+       )
+   );   
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-64.95057106018068,18.342631352511194)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4153,49 +4523,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 5.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 5.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 5.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 5 - basic catchment count'
+      ,'test 5.2 - basic catchment count'
    );
    
+   -- 5.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-64.95057
-      ,'test 5 - check longitude passthrough'
+      ,'test 5.3 - check longitude passthrough'
    );
    
+   -- 5.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,85000200000517::BIGINT
-      ,'test 5 - check nhdplusid'
+      ,'test 5.4 - check nhdplusid'
    );
 
+   -- 5.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'VI'
-      ,'test 5 - check state code'
+      ,'test 5.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-170.72050094604495,-14.32842599932282)
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-170.72050094604495,-14.32842599932282)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4218,35 +4599,44 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 6.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 6.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 6.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 6 - basic catchment count'
+      ,'test 6.2 - basic catchment count'
    );
    
+   -- 6.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-170.72050
-      ,'test 6 - check longitude passthrough'
+      ,'test 6.3 - check longitude passthrough'
    );
    
+   -- 6.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,90000300000563::BIGINT
-      ,'test 6 - check nhdplusid'
+      ,'test 6.4 - check nhdplusid'
    );
 
+   -- 6.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'AS'
-      ,'test 6 - check state code'
+      ,'test 6.5 - check state code'
    );
 
 END;$$;
@@ -4260,6 +4650,7 @@ AS $$DECLARE
    rec           RECORD;
    int_nhdplusid BIGINT;
    str_catchmentstatecode VARCHAR;
+   json_input    JSONB;
    
 BEGIN
 
@@ -4281,17 +4672,19 @@ BEGIN
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-76.98669433593751,38.88595542095899)
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-76.98669433593751,38.88595542095899)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := ARRAY['DC']
@@ -4314,49 +4707,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 1.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 1.1 - return code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 1 - basic catchment count'
+      ,'test 1.2 - basic catchment count'
    );
    
+   -- 1.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-76.98669
-      ,'test 1 - check longitude passthrough'
+      ,'test 1.3 - check longitude passthrough'
    );
    
+   -- 1.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,22338109::BIGINT
-      ,'test 1 - check nhdplusid'
+      ,'test 1.4 - check nhdplusid'
    );
 
+   -- 1.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'DC'
-      ,'test 1 - check state code'
+      ,'test 1.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-91.58889770507812,31.05646337884346)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-91.58889770507812,31.05646337884346)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4379,49 +4783,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 2.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 2.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 2.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
       ,'test 2 - basic catchment count'
    );
    
+   -- 2.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->1)::NUMERIC,5)
       ,31.05646
-      ,'test 2 - check latitude passthrough'
+      ,'test 2.3 - check latitude passthrough'
    );
    
+   -- 2.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,19406818::BIGINT
-      ,'test 2 - check nhdplusid'
+      ,'test 2.4 - check nhdplusid'
    );
 
+   -- 2.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'LA'
-      ,'test 2 - check state code'
+      ,'test 2.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-117.05795288085939,42.07580094787546)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-117.05795288085939,42.07580094787546)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := ARRAY['OR']
@@ -4444,49 +4859,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 3.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 3.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 3.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 3 - basic catchment count'
+      ,'test 3.2 - basic catchment count'
    );
    
+   -- 3.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-117.05795
-      ,'test 3 - check longitude passthrough'
+      ,'test 3.3 - check longitude passthrough'
    );
    
+   -- 3.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,23344282::BIGINT
-      ,'test 3 - check nhdplusid'
+      ,'test 3.4 - check nhdplusid'
    );
 
+   -- 3.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'OR'
-      ,'test 3 - check state code'
+      ,'test 3.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-157.80349731445315,21.414719215736195)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-157.80349731445315,21.414719215736195)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4509,49 +4935,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 4.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 4.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 4.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 4 - basic catchment count'
+      ,'test 4.2 - basic catchment count'
    );
    
+   -- 4.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-157.80350
-      ,'test 4 - check longitude passthrough'
+      ,'test 4.3 - check longitude passthrough'
    );
    
+   -- 4.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,800016810::BIGINT
-      ,'test 4 - check nhdplusid'
+      ,'test 4.4 - check nhdplusid'
    );
 
+   -- 4.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'HI'
-      ,'test 4 - check state code'
+      ,'test 4.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-64.95057106018068,18.342631352511194)
+       )
+   );
+       
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-64.95057106018068,18.342631352511194)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4574,49 +5011,60 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 5.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 5.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 5.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 5 - basic catchment count'
+      ,'test 5.2 - basic catchment count'
    );
    
+   -- 5.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-64.95057
-      ,'test 5 - check longitude passthrough'
+      ,'test 5.3 - check longitude passthrough'
    );
    
+   -- 5.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,800041667::BIGINT
-      ,'test 5 - check nhdplusid'
+      ,'test 5.4 - check nhdplusid'
    );
 
+   -- 5.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'VI'
-      ,'test 5 - check state code'
+      ,'test 5.5 - check state code'
    );
    
    ----------------------------------------------------------------------------
+   json_input := JSONB_BUILD_OBJECT(
+       'type'    ,'Feature'
+      ,'geometry',JSONB_BUILD_OBJECT(
+          'type'       ,'Point'
+         ,'coordinates',JSONB_BUILD_ARRAY(-170.72050094604495,-14.32842599932282)
+       )
+   );
+   
    rec := cipsrv_engine.cipsrv_index(
        p_points                         := NULL
       ,p_lines                          := NULL
       ,p_areas                          := NULL
-      ,p_geometry                       := JSONB_BUILD_OBJECT(
-          'type'    ,'Feature'
-         ,'geometry',JSONB_BUILD_OBJECT(
-             'type'       ,'Point'
-            ,'coordinates',JSONB_BUILD_ARRAY(-170.72050094604495,-14.32842599932282)
-          )
-       )
+      ,p_geometry                       := json_input
       ,p_geometry_clip                  := NULL
       ,p_geometry_clip_stage            := NULL
       ,p_catchment_filter               := NULL
@@ -4639,35 +5087,44 @@ BEGIN
       ,p_return_full_catchments         := FALSE
       ,p_limit_to_us_catchments         := TRUE
    );
+   
+   RETURN NEXT tap.diag(json_input::TEXT);
+   
+   -- 6.1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
+      ,'test 6.1 - return_code'
    );
    
    SELECT a.nhdplusid,a.catchmentstatecode INTO int_nhdplusid,str_catchmentstatecode FROM tmp_cip_out a LIMIT 1;
    
+   -- 6.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,1
-      ,'test 6 - basic catchment count'
+      ,'test 6.2 - basic catchment count'
    );
    
+   -- 6.3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_points->'features'->0->'geometry'->'coordinates'->0)::NUMERIC,5)
       ,-170.72050
-      ,'test 6 - check longitude passthrough'
+      ,'test 6.3 - check longitude passthrough'
    );
    
+   -- 6.4
    RETURN NEXT tap.is(
        int_nhdplusid
       ,810113492::BIGINT
-      ,'test 6 - check nhdplusid'
+      ,'test 6.4 - check nhdplusid'
    );
 
+   -- 6.5
    RETURN NEXT tap.is(
        str_catchmentstatecode
       ,'AS'
-      ,'test 6 - check state code'
+      ,'test 6.5 - check state code'
    );
 
 END;$$;
@@ -4958,28 +5415,37 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_dd_350()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 19085559;
+   num_start_measure   := 22.81061;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'DD'
-      ,p_start_nhdplusid            := 19085559
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 22.81061
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
+   
+   RETURN NEXT tap.diag('MR DD ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
@@ -4992,6 +5458,10 @@ BEGIN
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 2000030001763;
+   num_start_measure   := 19.18331;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'DD'
       ,p_start_nhdplusid            := 20000300017631
@@ -5009,6 +5479,8 @@ BEGIN
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
+   
+   RETURN NEXT tap.diag('HR DD ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT

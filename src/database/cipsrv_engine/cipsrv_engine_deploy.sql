@@ -513,6 +513,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                         
@@ -525,6 +526,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -546,6 +548,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -560,6 +563,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -583,6 +587,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -597,6 +602,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -621,6 +627,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
             
@@ -636,6 +643,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -661,6 +669,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
 
@@ -676,6 +685,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -701,6 +711,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -716,6 +727,7 @@ BEGIN
                   ,p_permid_geometry        := (ary_features[i]).geometry
                   ,p_statesplit             := int_splitselector
                );
+               str_known_region   := rec.out_known_region;
                out_return_code    := rec.out_return_code;
                out_status_message := rec.out_status_message;
                
@@ -765,139 +777,148 @@ BEGIN
    ----------------------------------------------------------------------------
    -- Step 70
    -- Return catchment results
-   ----------------------------------------------------------------------------
-   IF str_nhdplus_version = 'nhdplus_h'
+   ----------------------------------------------------------------------------\
+   IF str_known_region IS NOT NULL
    THEN
-      str_schema := 'h';
       
-   ELSIF str_nhdplus_version = 'nhdplus_m'
-   THEN
-      str_schema := 'm';
-      
-   END IF;
-   
-   str_sql := '
-      INSERT INTO tmp_cip_out(
-          nhdplusid
-         ,catchmentstatecode
-         ,xwalk_huc12
-         ,areasqkm
-         ,istribal
-         ,istribal_areasqkm
-         ,isnavigable
-         ,shape
-      )
-      SELECT
-       a.nhdplusid
-      ,CASE 
-       WHEN $1 = 2
-       THEN
-         NULL
-       ELSE
-         a.catchmentstatecodes[1]
-       END AS catchmentstatecode 
-    ';
-       
-    IF str_wbd_version IS NOT NULL
-    THEN
-       str_sql := str_sql || ',b.xwalk_huc12 ';
-       
-    ELSE
-       str_sql := str_sql || ',CAST(NULL AS VARCHAR(12)) AS xwalk_huc12 ';
-    
-    END IF;
-    
-    str_sql := str_sql || '
-      ,a.areasqkm
-      ,a.istribal
-      ,a.istribal_areasqkm
-      ,CASE
-       WHEN a.isnavigable
-       THEN
-         ''Y''
-       ELSE
-         ''N''
-       END AS isnavigable
-      ,CASE
-       WHEN $2
-       THEN
-         ST_TRANSFORM(a.shape,4269)
-       ELSE
-         CAST(NULL AS GEOMETRY)       
-       END AS shape
-      FROM
-      cipsrv_nhdplus_' || str_schema || '.catchment_' || str_known_region || ' a ';
-
-   IF str_wbd_version IS NOT NULL
-   THEN
-      str_sql := str_sql || '
-      LEFT JOIN (
-         SELECT
-          bb.nhdplusid
-         ,bb.xwalk_huc12
-         FROM
-         cipsrv_epageofab_' || str_schema || '.catchment_fabric_xwalk bb
-         WHERE
-         bb.xwalk_huc12_version = ''' || str_wbd_version || '''
-      ) b
-      ON
-      a.nhdplusid = b.nhdplusid 
-      ';
-
-   END IF;
-   
-   str_sql := str_sql || '
-      WHERE
-          EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
-      AND a.statesplit IN (0,$3) 
-   ';
-   
-   IF boo_filter_by_state
-   THEN
-      str_sql := str_sql || ' AND a.catchmentstatecodes && ary_state_filters ';
-      
-   END IF;
-   
-   IF boo_filter_by_tribal
-   THEN
-      str_sql := str_sql || ' AND a.istribal IN (''F'',''P'') ';
-      
-   END IF;
-   
-   IF boo_filter_by_notribal
-   THEN
-      str_sql := str_sql || ' AND a.istribal = ''N'' ';
-      
-   END IF;
-   
-   IF boo_limit_to_us_catchments
-   THEN
-      str_sql := str_sql || ' AND a.border_status IN (''I'',''B'') ';
-      
-      IF int_splitselector = 1
+      IF str_nhdplus_version = 'nhdplus_h'
       THEN
-         str_sql := str_sql || ' AND a.catchmentstatecodes[1] NOT IN (''MX'',''CN'',''OW'') ';
+         str_schema := 'h';
+         
+      ELSIF str_nhdplus_version = 'nhdplus_m'
+      THEN
+         str_schema := 'm';
          
       END IF;
       
+      str_sql := '
+         INSERT INTO tmp_cip_out(
+             nhdplusid
+            ,catchmentstatecode
+            ,xwalk_huc12
+            ,areasqkm
+            ,istribal
+            ,istribal_areasqkm
+            ,isnavigable
+            ,shape
+         )
+         SELECT
+          a.nhdplusid
+         ,CASE 
+          WHEN $1 = 2
+          THEN
+            NULL
+          ELSE
+            a.catchmentstatecodes[1]
+          END AS catchmentstatecode 
+       ';
+
+       IF str_wbd_version IS NOT NULL
+       THEN
+          str_sql := str_sql || ',b.xwalk_huc12 ';
+          
+       ELSE
+          str_sql := str_sql || ',CAST(NULL AS VARCHAR(12)) AS xwalk_huc12 ';
+       
+       END IF;
+
+       str_sql := str_sql || '
+         ,a.areasqkm
+         ,a.istribal
+         ,a.istribal_areasqkm
+         ,CASE
+          WHEN a.isnavigable
+          THEN
+            ''Y''
+          ELSE
+            ''N''
+          END AS isnavigable
+         ,CASE
+          WHEN $2
+          THEN
+            ST_TRANSFORM(a.shape,4269)
+          ELSE
+            CAST(NULL AS GEOMETRY)       
+          END AS shape
+         FROM
+         cipsrv_nhdplus_' || str_schema || '.catchment_' || str_known_region || ' a ';
+    
+      IF str_wbd_version IS NOT NULL
+      THEN
+         str_sql := str_sql || '
+         LEFT JOIN (
+            SELECT
+             bb.nhdplusid
+            ,bb.xwalk_huc12
+            FROM
+            cipsrv_epageofab_' || str_schema || '.catchment_fabric_xwalk bb
+            WHERE
+            bb.xwalk_huc12_version = ''' || str_wbd_version || '''
+         ) b
+         ON
+         a.nhdplusid = b.nhdplusid 
+         ';
+
+      END IF;
+      
+      str_sql := str_sql || '
+         WHERE
+             EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid)
+         AND a.statesplit IN (0,$3) 
+      ';
+      
+      IF boo_filter_by_state
+      THEN
+         str_sql := str_sql || ' AND a.catchmentstatecodes && $4 ';
+         
+      ELSE
+         str_sql := str_sql || ' AND ( 1=1 OR $4 IS NOT NULL) ';     
+      
+      END IF;
+      
+      IF boo_filter_by_tribal
+      THEN
+         str_sql := str_sql || ' AND a.istribal IN (''F'',''P'') ';
+         
+      END IF;
+      
+      IF boo_filter_by_notribal
+      THEN
+         str_sql := str_sql || ' AND a.istribal = ''N'' ';
+         
+      END IF;
+      
+      IF boo_limit_to_us_catchments
+      THEN
+         str_sql := str_sql || ' AND a.border_status IN (''I'',''B'') ';
+         
+         IF int_splitselector = 1
+         THEN
+            str_sql := str_sql || ' AND a.catchmentstatecodes[1] NOT IN (''MX'',''CN'',''OW'') ';
+            
+         END IF;
+         
+      END IF;
+      
+      --RAISE WARNING 'check %',str_sql;
+      
+      EXECUTE str_sql
+      USING 
+       int_splitselector
+      ,boo_return_geometry
+      ,int_splitselector
+      ,ary_state_filters;
+      
+      SELECT
+       COUNT(*)
+      ,SUM(a.areasqkm)
+      INTO
+       out_catchment_count
+      ,out_catchment_areasqkm
+      FROM
+      tmp_cip_out a;
+      
    END IF;
-   
-   --RAISE WARNING 'check %',str_sql;
-   
-   EXECUTE str_sql
-   USING 
-    int_splitselector
-   ,boo_return_geometry
-   ,int_splitselector;
-   
-   SELECT
-    COUNT(*)
-   ,SUM(a.areasqkm)
-   INTO
-    out_catchment_count
-   ,out_catchment_areasqkm
-   FROM
-   tmp_cip_out a;
 
    ----------------------------------------------------------------------------
    -- Step 80
