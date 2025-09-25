@@ -49,6 +49,7 @@ BEGIN
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
       ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -148,6 +149,7 @@ BEGIN
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
       ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -247,6 +249,7 @@ BEGIN
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
       ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -346,6 +349,7 @@ BEGIN
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
       ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
