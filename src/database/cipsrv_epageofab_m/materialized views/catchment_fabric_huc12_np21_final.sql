@@ -29,7 +29,7 @@ FROM (
       SELECT
        xxa.xwalk_huc12
       ,cipsrv_engine.remove_holes(
-          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(aaa.shape),3)
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(aaa.shape,0.001),3)
          ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
@@ -53,7 +53,7 @@ FROM (
       SELECT
        xxb.xwalk_huc12
       ,cipsrv_engine.remove_holes(
-          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(bbb.shape),3)
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(bbb.shape,0.001),3)
          ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
@@ -77,7 +77,7 @@ FROM (
       SELECT
        xxc.xwalk_huc12
       ,cipsrv_engine.remove_holes(
-          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ccc.shape),3)
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ccc.shape,0.001),3)
          ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
@@ -101,7 +101,7 @@ FROM (
       SELECT
        xxd.xwalk_huc12
       ,cipsrv_engine.remove_holes(
-          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ddd.shape),3)
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(ddd.shape,0.001),3)
          ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
@@ -125,7 +125,7 @@ FROM (
       SELECT
        xxe.xwalk_huc12
       ,cipsrv_engine.remove_holes(
-          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(eee.shape),3)
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(eee.shape,0.001),3)
          ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM
@@ -149,7 +149,7 @@ FROM (
       SELECT
        xxf.xwalk_huc12
       ,cipsrv_engine.remove_holes(
-          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(fff.shape),3)
+          p_input          := ST_COLLECTIONEXTRACT(ST_UNION(fff.shape,0.001),3)
          ,p_threshold_sqkm := 0.00009973
        ) AS shape
       FROM

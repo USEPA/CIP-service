@@ -15,7 +15,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_area_simple(
    ,IN  p_evt_threshold_perc      NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
+   ,OUT out_known_region          VARCHAR
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -23,16 +24,19 @@ VOLATILE
 AS $BODY$
 DECLARE
    rec                    RECORD;
-   str_known_region       VARCHAR;
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    num_cat_threshold      NUMERIC;
    num_evt_threshold      NUMERIC;
    num_geometry_areasqkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_cat_threshold_perc IS NULL
    THEN
       num_cat_threshold := 0;
@@ -50,14 +54,24 @@ BEGIN
       num_evt_threshold := p_evt_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
-   str_known_region := p_known_region;
-
+   ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.determine_grid_srid(
        p_geometry       := p_geometry
       ,p_known_region   := p_known_region
    );
    int_srid           := rec.out_srid;
+   out_known_region   := int_srid::VARCHAR;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
    
@@ -67,8 +81,7 @@ BEGIN
       
    END IF;
    
-   str_known_region := int_srid::VARCHAR;
-   
+   ----------------------------------------------------------------------------
    IF p_geometry_areasqkm IS NULL
    THEN
       num_geometry_areasqkm := ROUND(ST_Area(ST_Transform(
@@ -81,7 +94,8 @@ BEGIN
       
    END IF;
       
-   IF str_known_region = '5070'
+   ----------------------------------------------------------------------------
+   IF out_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
       permid_geometry := ST_Transform(p_permid_geometry,5070);
@@ -135,7 +149,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_5070_state aaaa
+               cipsrv_nhdplus_h.catchment_5070_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -149,7 +163,7 @@ BEGIN
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
-   ELSIF str_known_region = '3338'
+   ELSIF out_known_region = '3338'
    THEN
       geom_input      := ST_Transform(p_geometry,3338);
       permid_geometry := ST_Transform(p_permid_geometry,3338);
@@ -203,7 +217,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_3338_state aaaa
+               cipsrv_nhdplus_h.catchment_3338_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -217,7 +231,7 @@ BEGIN
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
    
-   ELSIF str_known_region = '26904'
+   ELSIF out_known_region = '26904'
    THEN
       geom_input      := ST_Transform(p_geometry,26904);
       permid_geometry := ST_Transform(p_permid_geometry,26904);
@@ -271,7 +285,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_26904_state aaaa
+               cipsrv_nhdplus_h.catchment_26904_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -285,7 +299,7 @@ BEGIN
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
-   ELSIF str_known_region = '32161'
+   ELSIF out_known_region = '32161'
    THEN
       geom_input      := ST_Transform(p_geometry,32161);
       permid_geometry := ST_Transform(p_permid_geometry,32161);
@@ -339,7 +353,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_32161_state aaaa
+               cipsrv_nhdplus_h.catchment_32161_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -353,7 +367,7 @@ BEGIN
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
-   ELSIF str_known_region = '32655'
+   ELSIF out_known_region = '32655'
    THEN
       geom_input      := ST_Transform(p_geometry,32655);
       permid_geometry := ST_Transform(p_permid_geometry,32655);
@@ -407,7 +421,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_32655_state aaaa
+               cipsrv_nhdplus_h.catchment_32655_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -421,7 +435,7 @@ BEGIN
       OR (num_evt_threshold IS NULL OR a.eventpercentage >= num_evt_threshold)
       ON CONFLICT DO NOTHING;
       
-   ELSIF str_known_region = '32702'
+   ELSIF out_known_region = '32702'
    THEN
       geom_input      := ST_Transform(p_geometry,32702);
       permid_geometry := ST_Transform(p_permid_geometry,32702);
@@ -475,7 +489,7 @@ BEGIN
                   ,3
                 ) AS geom_overlap
                FROM
-               cipsrv_nhdplus_h.catchment_32702_state aaaa
+               cipsrv_nhdplus_h.catchment_32702_full aaaa
                WHERE
                ST_Intersects(
                    aaaa.shape
@@ -491,7 +505,7 @@ BEGIN
    
    ELSE
       out_return_code    := -10;
-      out_status_message := 'err ' || str_known_region;
+      out_status_message := 'err ' || out_known_region;
       
    END IF;
    
@@ -517,3 +531,4 @@ BEGIN
    ELSE RAISE EXCEPTION 'prob'; 
    END IF;END IF;
 END$$;
+

@@ -14,7 +14,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_line_simple(
    ,IN  p_line_threshold_perc     NUMERIC
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
+   ,OUT out_known_region          VARCHAR
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -22,16 +23,19 @@ VOLATILE
 AS $BODY$
 DECLARE
    rec                    RECORD;
-   str_known_region       VARCHAR;
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    num_line_threshold     NUMERIC;
    int_count              INTEGER;
    num_geometry_lengthkm  NUMERIC;
    permid_geometry        GEOMETRY;
+   int_splitselector      INTEGER;
 
 BEGIN
 
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
    IF p_line_threshold_perc IS NULL
    THEN
       num_line_threshold := 0;
@@ -40,14 +44,24 @@ BEGIN
       num_line_threshold := p_line_threshold_perc / 100;
       
    END IF;
+   
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
 
-   str_known_region := p_known_region;
-
+   ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.determine_grid_srid(
        p_geometry       := p_geometry
       ,p_known_region   := p_known_region
    );
    int_srid           := rec.out_srid;
+   out_known_region   := int_srid::VARCHAR;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
    
@@ -56,9 +70,8 @@ BEGIN
       RETURN;
       
    END IF;
-   
-   str_known_region := int_srid::VARCHAR;
 
+   ----------------------------------------------------------------------------
    IF p_geometry_lengthkm IS NULL
    THEN
       num_geometry_lengthkm := ROUND(ST_Length(ST_Transform(
@@ -71,7 +84,8 @@ BEGIN
       
    END IF;
 
-   IF str_known_region = '5070'
+   ----------------------------------------------------------------------------
+   IF out_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
       permid_geometry := ST_Transform(p_permid_geometry,5070);
@@ -145,7 +159,7 @@ BEGIN
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
 
-   ELSIF str_known_region = '3338'
+   ELSIF out_known_region = '3338'
    THEN
       geom_input      := ST_Transform(p_geometry,3338);
       permid_geometry := ST_Transform(p_permid_geometry,3338);
@@ -219,7 +233,7 @@ BEGIN
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
    
-   ELSIF str_known_region = '26904'
+   ELSIF out_known_region = '26904'
    THEN
       geom_input      := ST_Transform(p_geometry,26904);
       permid_geometry := ST_Transform(p_permid_geometry,26904);
@@ -293,7 +307,7 @@ BEGIN
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
-   ELSIF str_known_region = '32161'
+   ELSIF out_known_region = '32161'
    THEN
       geom_input      := ST_Transform(p_geometry,32161);
       permid_geometry := ST_Transform(p_permid_geometry,32161);
@@ -367,7 +381,7 @@ BEGIN
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
-   ELSIF str_known_region = '32655'
+   ELSIF out_known_region = '32655'
    THEN
       geom_input      := ST_Transform(p_geometry,32655);
       permid_geometry := ST_Transform(p_permid_geometry,32655);
@@ -441,7 +455,7 @@ BEGIN
       OR a.overlapmeasure = num_geometry_lengthkm
       ON CONFLICT DO NOTHING;
       
-   ELSIF str_known_region = '32702'
+   ELSIF out_known_region = '32702'
    THEN
       geom_input      := ST_Transform(p_geometry,32702);
       permid_geometry := ST_Transform(p_permid_geometry,32702);
@@ -517,9 +531,11 @@ BEGIN
    
    ELSE
       out_return_code    := -10;
-      out_status_message := 'err ' || str_known_region;
+      out_status_message := 'err ' || out_known_region;
       
    END IF;
+   
+   GET DIAGNOSTICS int_count = ROW_COUNT;
 
    RETURN;
    

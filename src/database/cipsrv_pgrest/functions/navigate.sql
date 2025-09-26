@@ -303,7 +303,9 @@ BEGIN
    ----------------------------------------------------------------------------
    json_flowlines := (
       SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
+      JSONB_AGG(
+         j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+      ) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(

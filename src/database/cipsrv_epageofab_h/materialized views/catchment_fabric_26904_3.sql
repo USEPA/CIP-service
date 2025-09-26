@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_26904_3 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_26904_3_seq;
+CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_26904_3_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_26904_3(
     objectid
    ,catchmentstatecode
@@ -25,7 +28,7 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_26904_3(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                  AS objectid
+ NEXTVAL('cipsrv_epageofab_h.catchment_fabric_26904_3_seq')::INTEGER AS objectid
 ,a.catchmentstatecode
 ,a.nhdplusid
 ,a.istribal
@@ -48,7 +51,7 @@ SELECT
 ,a.shape
 FROM (
    SELECT
-    bb.stusps                             AS catchmentstatecode
+    bb.stusps                         AS catchmentstatecode
    ,aa.nhdplusid
    ,aa.istribal
    ,aa.istribal_areasqkm
@@ -65,23 +68,43 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,aa.sourcedataset
-   ,ST_COLLECTIONEXTRACT(ST_INTERSECTION(bb.shape,aa.shape,0.05),3) AS shape
+   ,ST_COLLECTIONEXTRACT(
+       ST_INTERSECTION(
+           cipsrv_nhdplus_h.snap_to_common_grid(
+              p_geometry      := bb.shape
+             ,p_known_region  := '26904'
+             ,p_grid_size     := 0.001
+           )
+          ,aa.shape
+       )     
+      ,3
+    ) AS shape
    FROM
    cipsrv_epageofab_h.catchment_fabric_26904_2 aa
    INNER JOIN LATERAL (
       SELECT
        bbb.stusps
       ,bbb.shape
-      FROM
-      cipsrv_support.tiger_fedstatewaters_26904 bbb
+      FROM (
+         SELECT
+          bbbb.stusps
+         ,bbbb.shape
+         FROM
+         cipsrv_support.tiger_fedstatewaters_26904 bbbb
+         UNION ALL
+         SELECT
+          cccc.itemcode
+         ,cccc.shape
+         FROM
+         cipsrv_support.outerwaters_26904 cccc
+      ) bbb
    ) AS bb
    ON
    ST_INTERSECTS(bb.shape,aa.shape)
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape)
-AND a.areasqkm > 0.00000005;
+AND NOT ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipsrv_epageofab_h.catchment_fabric_26904_3 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_epageofab_h.catchment_fabric_26904_3 TO public;

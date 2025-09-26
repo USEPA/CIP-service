@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_32161_3 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_32161_3_seq;
+CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_32161_3_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_32161_3(
     objectid
    ,catchmentstatecode
@@ -25,7 +28,7 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_32161_3(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                  AS objectid
+ NEXTVAL('cipsrv_epageofab_h.catchment_fabric_32161_3_seq')::INTEGER AS objectid
 ,a.catchmentstatecode
 ,a.nhdplusid
 ,a.istribal
@@ -67,35 +70,41 @@ FROM (
    ,aa.sourcedataset
    ,ST_COLLECTIONEXTRACT(
        ST_INTERSECTION(
-         cipsrv_nhdplus_h.snap_to_common_grid(
-             p_geometry      := bb.shape
-            ,p_known_region  := '32161'
-            ,p_grid_size     := 0.05
-          )
-         ,cipsrv_nhdplus_h.snap_to_common_grid(
-             p_geometry      := aa.shape
-            ,p_known_region  := '32161'
-            ,p_grid_size     := 0.05
-          )
+           cipsrv_nhdplus_h.snap_to_common_grid(
+              p_geometry      := bb.shape
+             ,p_known_region  := '32161'
+             ,p_grid_size     := 0.001
+           )
+          ,aa.shape
        )     
       ,3
-   ) AS shape
+    ) AS shape
    FROM
    cipsrv_epageofab_h.catchment_fabric_32161_2 aa
    INNER JOIN LATERAL (
       SELECT
        bbb.stusps
       ,bbb.shape
-      FROM
-      cipsrv_support.tiger_fedstatewaters_32161 bbb
+      FROM (
+         SELECT
+          bbbb.stusps
+         ,bbbb.shape
+         FROM
+         cipsrv_support.tiger_fedstatewaters_32161 bbbb
+         UNION ALL
+         SELECT
+          cccc.itemcode
+         ,cccc.shape
+         FROM
+         cipsrv_support.outerwaters_32161 cccc
+      ) bbb
    ) AS bb
    ON
    ST_INTERSECTS(bb.shape,aa.shape)
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape)
-AND a.areasqkm > 0.00000005;
+AND NOT ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipsrv_epageofab_h.catchment_fabric_32161_3 OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_epageofab_h.catchment_fabric_32161_3 TO public;

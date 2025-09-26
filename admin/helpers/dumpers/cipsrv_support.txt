@@ -5,6 +5,13 @@ pg_dump.exe -h $env:POSTGRSQL_HOST -p $env:POSTGRSQL_PORT`
 -t cipsrv_support.ecoregions_iii `
 -t cipsrv_support.ecoregions_iv `
 -t cipsrv_support.epa_regions_2023 `
+-t cipsrv_support.outerwaters `
+-t cipsrv_support.outerwaters_3338 `
+-t cipsrv_support.outerwaters_5070 `
+-t cipsrv_support.outerwaters_26904 `
+-t cipsrv_support.outerwaters_32161 `
+-t cipsrv_support.outerwaters_32655 `
+-t cipsrv_support.outerwaters_32702 `
 -t cipsrv_support.tiger_aiannha `
 -t cipsrv_support.tiger_aiannha_3338 `
 -t cipsrv_support.tiger_aiannha_5070 `

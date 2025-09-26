@@ -30,7 +30,7 @@ BEGIN
    -- Collect the state domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.*)
+   JSONB_AGG(a.* ORDER BY a.stusps)
    INTO json_states
    FROM (
       SELECT
@@ -39,8 +39,6 @@ BEGIN
       ,aa.name
       FROM
       cipsrv_support.tiger_fedstatewaters aa
-      ORDER BY
-      aa.stusps
    ) a;
    
    ----------------------------------------------------------------------------
@@ -48,7 +46,7 @@ BEGIN
    -- Collect the tribes domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.*)
+   JSONB_AGG(a.* ORDER BY a.aiannhns_stem)
    INTO json_tribes
    FROM (
       SELECT
@@ -58,8 +56,6 @@ BEGIN
       ,aa.has_trust_lands
       FROM
       cipsrv_support.tribal_crosswalk aa
-      ORDER BY
-      aa.aiannhns_stem
    ) a;
    
    ----------------------------------------------------------------------------

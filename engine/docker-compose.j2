@@ -78,9 +78,11 @@ services:
 {%-      if components.cip_pg.su_user == "env.POSTGRESQL_SU_USER" %}
          POSTGRESQL_SU_USER:      ${POSTGRESQL_SU_USER}
          POSTGRES_USER:           ${POSTGRESQL_SU_USER}
+         PGUSER:                  ${POSTGRESQL_SU_USER}
 {%-      else %}
          POSTGRESQL_SU_USER:      {{ components.cip_pg.su_user }}
          POSTGRES_USER:           {{ components.cip_pg.su_user }}
+         PGUSER:                  {{ components.cip_pg.su_user }}
 {%-      endif %}
 {%-   endif %}
 {%-   if 'su_pass' in components.cip_pg %}

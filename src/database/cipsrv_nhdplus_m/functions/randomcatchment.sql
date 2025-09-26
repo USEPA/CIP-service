@@ -24,10 +24,12 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomcatchment(
 STABLE
 AS $BODY$
 DECLARE
-   boo_search      BOOLEAN;
-   int_sanity      INTEGER;
-   num_big_samp    NUMERIC := 0.001;
-   str_statecode   VARCHAR;
+   boo_search           BOOLEAN;
+   int_sanity           INTEGER;
+   num_big_samp         NUMERIC := 0.001;
+   str_statecode        VARCHAR;
+   boo_include_extended BOOLEAN := p_include_extended;
+   boo_return_geometry  BOOLEAN := p_return_geometry;
    
 BEGIN
 
@@ -36,6 +38,18 @@ BEGIN
    -- Check over incoming parameters
    --------------------------------------------------------------------------
    out_return_code := 0;
+   
+   IF boo_include_extended IS NULL
+   THEN
+      boo_include_extended := FALSE;
+      
+   END IF;
+   
+   IF boo_return_geometry IS NULL
+   THEN
+      boo_return_geometry := FALSE;
+      
+   END IF;
    
    --------------------------------------------------------------------------
    -- Step 20
@@ -64,13 +78,13 @@ BEGIN
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
          WHERE 
-         p_include_extended OR NOT a.isocean
+         boo_include_extended OR NOT a.isocean
          ORDER BY RANDOM()
          LIMIT 1;
                
       ELSIF p_region IN ('ALASKA','AK','3338')
       THEN     
-         IF NOT p_include_extended
+         IF NOT boo_include_extended
          THEN
             out_status_message := 'Alaska is entirely extended H3 catchments.';
             RETURN;
@@ -93,7 +107,7 @@ BEGIN
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
          WHERE 
-         p_include_extended OR NOT a.isalaskan
+         boo_include_extended OR NOT a.isalaskan
          ORDER BY RANDOM()
          LIMIT 1;
                
@@ -115,7 +129,7 @@ BEGIN
             TABLESAMPLE SYSTEM(0.1)
          ) a
          WHERE 
-         p_include_extended OR NOT a.isocean
+         boo_include_extended OR NOT a.isocean
          ORDER BY RANDOM()
          LIMIT 1;
          
@@ -137,7 +151,7 @@ BEGIN
             TABLESAMPLE SYSTEM(0.1)
          ) a
          WHERE 
-         p_include_extended OR NOT a.isocean
+         boo_include_extended OR NOT a.isocean
          ORDER BY RANDOM()
          LIMIT 1;
          
@@ -159,7 +173,7 @@ BEGIN
             TABLESAMPLE SYSTEM(1)
          ) a
          WHERE 
-         p_include_extended OR NOT a.isocean
+         boo_include_extended OR NOT a.isocean
          ORDER BY RANDOM()
          LIMIT 1;
          
@@ -181,7 +195,7 @@ BEGIN
             TABLESAMPLE SYSTEM(1)
          ) a
          WHERE 
-         p_include_extended OR NOT a.isocean
+         boo_include_extended OR NOT a.isocean
          ORDER BY RANDOM()
          LIMIT 1;
          
@@ -203,7 +217,7 @@ BEGIN
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
          WHERE 
-         p_include_extended OR (a.isocean = 'N' AND a.isalaskan = 'N')
+         boo_include_extended OR (a.isocean = 'N' AND a.isalaskan = 'N')
          ORDER BY RANDOM()
          LIMIT 1;
       
@@ -241,8 +255,8 @@ BEGIN
       SELECT
        a.areasqkm
       ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      ,CASE WHEN boo_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN boo_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
       INTO
        out_areasqkm
       ,out_catchmentstatecodes
@@ -258,8 +272,8 @@ BEGIN
       SELECT
        a.areasqkm
       ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      ,CASE WHEN boo_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN boo_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
       INTO
        out_areasqkm
       ,out_catchmentstatecodes
@@ -275,8 +289,8 @@ BEGIN
       SELECT
        a.areasqkm
       ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      ,CASE WHEN boo_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN boo_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
       INTO
        out_areasqkm
       ,out_catchmentstatecodes
@@ -292,8 +306,8 @@ BEGIN
       SELECT
        a.areasqkm
       ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      ,CASE WHEN boo_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN boo_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
       INTO
        out_areasqkm
       ,out_catchmentstatecodes
@@ -309,8 +323,8 @@ BEGIN
       SELECT
        a.areasqkm
       ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      ,CASE WHEN boo_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN boo_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
       INTO
        out_areasqkm
       ,out_catchmentstatecodes
@@ -326,8 +340,8 @@ BEGIN
       SELECT
        a.areasqkm
       ,a.catchmentstatecodes
-      ,CASE WHEN p_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
-      ,CASE WHEN p_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
+      ,CASE WHEN boo_return_geometry THEN a.shape ELSE NULL::GEOMETRY END AS shape
+      ,CASE WHEN boo_return_geometry THEN ST_PointOnSurface(a.shape) ELSE NULL::GEOMETRY END AS shape_centroid
       INTO
        out_areasqkm
       ,out_catchmentstatecodes

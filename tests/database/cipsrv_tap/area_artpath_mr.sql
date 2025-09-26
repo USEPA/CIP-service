@@ -48,8 +48,11 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
+   
+   -- 1
    RETURN NEXT tap.is(
        rec.out_return_code
       ,0
@@ -62,48 +65,56 @@ BEGIN
       SELECT a.catchmentstatecode FROM tmp_cip_out a ORDER BY a.catchmentstatecode,a.nhdplusid
    );
    
+   -- 2
    RETURN NEXT tap.is(
        rec.out_catchment_count
       ,26
       ,'test 1 - basic catchment count'
    );
    
+   -- 3
    RETURN NEXT tap.is(
        ROUND((rec.out_indexed_areas->'features'->0->'geometry'->'coordinates'->0->0->0)::NUMERIC,5)
       ,-119.16218
       ,'test 1 - check longitude passthrough of first ordinate'
    );
    
+   -- 4
    RETURN NEXT tap.is(
        ary_nhdplusid[1]
       ,17573033::BIGINT
       ,'test 1 - check nhdplusid 1'
    );
 
+   -- 5
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'CA'
       ,'test 1 - check state code 1'
    );
    
+   -- 6
    RETURN NEXT tap.is(
        ary_nhdplusid[2]
       ,17573055::BIGINT
       ,'test 1 - check nhdplusid 1'
    );
 
+   -- 7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[2]
       ,'CA'
       ,'test 1 - check state code 1'
    );
    
+   -- 8
    RETURN NEXT tap.is(
        ary_nhdplusid[20]
       ,17573739::BIGINT
       ,'test 1 - check nhdplusid 2'
    );
 
+   -- 9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[20]
       ,'CA'
@@ -147,7 +158,8 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
    RETURN NEXT tap.is(
        rec.out_return_code
@@ -234,7 +246,8 @@ BEGIN
       ,p_return_indexed_collection      := FALSE
       ,p_return_catchment_geometry      := FALSE
       ,p_return_indexing_summary        := FALSE
-      ,p_return_full_catchment          := FALSE
+      ,p_return_full_catchments         := FALSE
+      ,p_limit_to_us_catchments         := TRUE
    );
    RETURN NEXT tap.is(
        rec.out_return_code

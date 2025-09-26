@@ -34,8 +34,21 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.catchment_32702(
    ,catchmentstatecodes
    ,vpuid
    ,statesplit
+   ,border_status
 )
 AS
+WITH subselect AS (
+   SELECT
+   s.*
+   FROM
+   cipsrv_epageofab_m.catchment_fabric s
+   WHERE
+      s.catchmentstatecode IN ('AS')
+   OR (
+          s.shape && cipsrv_nhdplus_m.generic_common_mbr('32702')
+      AND cipsrv_nhdplus_m.determine_grid_srid_f(s.shape) = 32702
+   )
+)
 SELECT
  NEXTVAL('cipsrv_nhdplus_m.catchment_32702_seq') AS objectid
 ,a.nhdplusid
@@ -67,9 +80,10 @@ SELECT
 ,a.catchmentstatecodes
 ,a.vpuid
 ,a.statesplit
+,a.border_status
 FROM (
    SELECT
-    aa.nhdplusid::BIGINT AS nhdplusid
+    CAST(aa.nhdplusid AS BIGINT) AS nhdplusid
    ,aa.istribal
    ,aa.istribal_areasqkm
    ,CASE WHEN aa.isnavigable = 'Y' THEN TRUE ELSE FALSE END AS isnavigable
@@ -87,14 +101,13 @@ FROM (
    ,CASE
     WHEN aa.state_count = 1
     THEN
-      0::INTEGER 
+      CAST(0 AS INTEGER) 
     ELSE
-      1::INTEGER
+      CAST(1 AS INTEGER)
     END AS statesplit
+   ,aa.border_status
    FROM
-   cipsrv_epageofab_m.catchment_fabric aa
-   WHERE
-   aa.catchmentstatecode IN ('AS')
+   subselect aa
    UNION ALL 
    SELECT
     bb.nhdplusid
@@ -113,6 +126,7 @@ FROM (
    ,bb.catchmentstatecodes
    ,bb.vpuid
    ,bb.statesplit
+   ,bb.border_status
    FROM (
       SELECT
        bbb.nhdplusid::BIGINT AS nhdplusid
@@ -130,12 +144,12 @@ FROM (
       ,ST_UNION(ST_Transform(bbb.shape,32702)) AS shape
       ,ARRAY_AGG(bbb.catchmentstatecode)::VARCHAR[] AS catchmentstatecodes
       ,MAX(bbb.vpuid) AS vpuid
-      ,2::INTEGER AS statesplit
+      ,CAST(2 AS INTEGER) AS statesplit
+      ,MIN(bbb.border_status) AS border_status /* should always be the same across cuts */
       FROM
-      cipsrv_epageofab_m.catchment_fabric bbb
+      subselect bbb
       WHERE
-          bbb.catchmentstatecode IN ('AS')
-      AND bbb.state_count > 1
+      bbb.state_count > 1
       GROUP BY
       bbb.nhdplusid::BIGINT
    ) bb
@@ -186,6 +200,9 @@ ON cipsrv_nhdplus_m.catchment_32702(statesplit);
 
 CREATE INDEX catchment_32702_10i
 ON cipsrv_nhdplus_m.catchment_32702(vpuid);
+
+CREATE INDEX catchment_32702_11i
+ON cipsrv_nhdplus_m.catchment_32702(border_status);
 
 CREATE INDEX catchment_32702_01f
 ON cipsrv_nhdplus_m.catchment_32702(SUBSTR(vpuid,1,2));

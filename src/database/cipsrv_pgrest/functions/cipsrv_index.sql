@@ -50,7 +50,8 @@ DECLARE
    boo_return_flowline_geometry       BOOLEAN;
    boo_return_huc12_geometry          BOOLEAN;
    boo_return_indexing_summary        BOOLEAN;
-   boo_return_full_catchment          BOOLEAN;
+   boo_return_full_catchments         BOOLEAN;
+   boo_limit_to_us_catchments         BOOLEAN; 
    
    int_catchment_count                INTEGER;
    num_catchment_areasqkm             NUMERIC;
@@ -360,13 +361,23 @@ BEGIN
       
    END IF;
  
-   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchment')
-   AND json_input->>'return_full_catchment' IS NOT NULL
+   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchments')
+   AND json_input->>'return_full_catchments' IS NOT NULL
    THEN
-      boo_return_full_catchment := (json_input->>'return_full_catchment')::BOOLEAN;
+      boo_return_full_catchments := (json_input->>'return_full_catchments')::BOOLEAN;
       
    ELSE
-      boo_return_full_catchment := FALSE;
+      boo_return_full_catchments := FALSE;
+      
+   END IF;
+ 
+   IF JSONB_PATH_EXISTS(json_input,'$.limit_to_us_catchments')
+   AND json_input->>'limit_to_us_catchments' IS NOT NULL
+   THEN
+      boo_limit_to_us_catchments := (json_input->>'limit_to_us_catchments')::BOOLEAN;
+      
+   ELSE
+      boo_limit_to_us_catchments := FALSE;
       
    END IF;
      
@@ -403,7 +414,8 @@ BEGIN
       ,p_return_indexed_collection      := boo_return_indexed_collection
       ,p_return_catchment_geometry      := boo_return_catchment_geometry
       ,p_return_indexing_summary        := boo_return_indexing_summary
-      ,p_return_full_catchment          := boo_return_full_catchment
+      ,p_return_full_catchments         := boo_return_full_catchments
+      ,p_limit_to_us_catchments         := boo_limit_to_us_catchments
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
@@ -469,7 +481,9 @@ BEGIN
       THEN
          json_flowlines := (
             SELECT 
-            JSONB_AGG(j.my_json) AS my_feats
+            JSONB_AGG(
+               j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+            ) AS my_feats
             FROM (
                SELECT 
                JSONB_BUILD_OBJECT(
@@ -497,8 +511,6 @@ BEGIN
                    cipsrv_nhdplus_m.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
                ) t
             ) j
          );
@@ -520,7 +532,9 @@ BEGIN
       THEN
          json_flowlines := (
             SELECT 
-            JSONB_AGG(j.my_json) AS my_feats
+            JSONB_AGG(
+               j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+            ) AS my_feats
             FROM (
                SELECT 
                JSONB_BUILD_OBJECT(
@@ -548,8 +562,6 @@ BEGIN
                    cipsrv_nhdplus_h.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
                ) t
             ) j
          );
@@ -589,7 +601,9 @@ BEGIN
    ----------------------------------------------------------------------------
    json_catchments := (
       SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
+      JSONB_AGG(
+         j.my_json ORDER BY j.my_json->'properties'->'catchmentstatecode',j.my_json->'properties'->'nhdplusid'
+      ) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(
@@ -615,9 +629,6 @@ BEGIN
              END AS geom
             FROM
             tmp_cip_out a
-            ORDER BY
-             a.catchmentstatecode
-            ,a.nhdplusid
          ) t
       ) j
    );

@@ -45,7 +45,7 @@
                <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Test Indexing Harness</h2>
                <span style="font-family: Arial; font-size: 11px;">Sketch a geometry or paste in GeoJSON:</span>
                <br/>
-               <textarea name="dzGeometry" id="dzGeometry" type="text" class="textbox" style="width: 500px;" rows="3"></textarea>
+               <textarea name="dzGeometry" id="dzGeometry" type="text" class="textbox" style="width: 500px;" rows="3" onchange="checkready()"></textarea>
                <br/>
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:</span>
@@ -93,65 +93,104 @@
                </table>
                
                <table border="0" align="center">
+               
                <tr>
-               <td valign="top" rowspan="2">
+               <td valign="top" colspan="2">
                <span style="font-family: Arial; font-size: 11px;">Default Indexing Methods:&nbsp;</span>
                </td>
+               </tr>
+               
+               <tr>
+               
                <td>
-               <span style="font-family: Arial; font-size: 11px;">Points:</span><br/>
+               <span style="font-family: Arial; font-size: 11px;">Points:</span>
                <select name="dzDefaultPointIndexingMethod" id="dzDefaultPointIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="point_simple" SELECTED>Point - Simple</option>
-               </select>
+               </select>&nbsp;&nbsp;&nbsp;
                </td>
-               <td width="150px;">
-               <span style="font-family: Arial; font-size: 11px;">Lines:</span><br/>
+               
+               <td>
+               <span style="font-family: Arial; font-size: 11px;">Lines:</span>
                <select name="dzDefaultLineIndexingMethod" id="dzDefaultLineIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="line_simple" SELECTED>Line - Simple</option>
                   <option value="line_levelpath">Line - LevelPath</option>
                </select>
                </td>
+               
                </tr>
+               
                <tr>
+               
                <td>
-               <span style="font-family: Arial; font-size: 11px;">Rings:</span><br/>
+               <span style="font-family: Arial; font-size: 11px;">Rings:</span>
                <select name="dzDefaultRingIndexingMethod" id="dzDefaultRingIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="area_simple" SELECTED>Area - Simple</option>
                   <option value="area_centroid">Area - Centroid</option>
                   <option value="area_artpath">Area - Artifical Paths</option>
                   <option value="treat_as_lines">Treat Rings as Lines</option>
-               </select>
+               </select>&nbsp;&nbsp;&nbsp;
                </td>
+               
                <td>
-               <span style="font-family: Arial; font-size: 11px;">Areas:</span><br/>
+               <span style="font-family: Arial; font-size: 11px;">Areas:</span>
                <select name="dzDefaultAreaIndexingMethod" id="dzDefaultAreaIndexingMethod" style="width:120px; font-family: Arial; font-size: 11px;">
                   <option value="area_simple" SELECTED>Area - Simple</option>
                   <option value="area_centroid">Area - Centroid</option>
                   <option value="area_artpath">Area - Artifical Paths</option>
                </select>
                </td>
+               
+               </tr>
+               
+               </table>
+               
+               <table border="0" align="center">
+               
+               <tr>
+               <td valign="top" colspan="2">
+               <span style="font-family: Arial; font-size: 11px;">Thresholds:</span>
+               </td>
+               </tr>
+               
+               <tr>
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Line:</span>
+               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               <td>&nbsp;</td>
+               </tr>
+               
+               <tr>
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Ring Area Catchment:</span>
+               <input name="dzRingCatThreasholdPerc" id="dzRingCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp;Ring Area Event:</span>
+               <input name="dzRingEvtThreasholdPerc" id="dzRingEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               <td/>
+               </tr>
+               
+               <tr>
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Area Catchment:</span>
+               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               
+               <td style="text-align: right;">
+               <span style="font-family: Arial; font-size: 11px;">Area Event:</span>
+               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
+               <span style="font-family: Arial; font-size: 11px;"> %</span>
+               </td>
+               
                </tr>
                </table>
                
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Line Thold:</span>
-               <input name="dzLineThreasholdPerc" id="dzLineThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="10" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Catchment Thold:</span>
-               <input name="dzRingCatThreasholdPerc" id="dzRingCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Ring Area Event Thold:</span>
-               <input name="dzRingEvtThreasholdPerc" id="dzRingEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <br/>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Catchment Thold:</span>
-               <input name="dzCatThreasholdPerc" id="dzCatThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="50" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Area Event Thold:</span>
-               <input name="dzEvtThreasholdPerc" id="dzEvtThreasholdPerc" type="text" class="text" style="display:inline; width:25px; font-family: Arial; font-size: 11px;" value="1" />
-               <span style="font-family: Arial; font-size: 11px;"> %</span>
-               <br/>
-               <br/>
                <span style="font-family: Arial; font-size: 11px;">Show Catchments:</span>
                <input name="dzShowCatchments" id="dzShowCatchments" type="checkbox" CHECKED>
                &nbsp;&nbsp;&nbsp;&nbsp;
@@ -160,6 +199,12 @@
                &nbsp;&nbsp;&nbsp;&nbsp;
                <span style="font-family: Arial; font-size: 11px;">Show HUC12s:</span>
                <input name="dzShowHUC12s" id="dzShowHUC12s" type="checkbox" DISABLED>
+               <br/>
+               <span style="font-family: Arial; font-size: 11px;">Return Full (not split by state) Catchments:</span>
+               <input name="dzReturnFullCatchments" id="dzReturnFullCatchments" type="checkbox">
+               &nbsp;&nbsp;&nbsp;&nbsp;
+               <span style="font-family: Arial; font-size: 11px;">Limit to US Catchments:</span>
+               <input name="dzLimitToUSCatchments" id="dzLimitToUSCatchments" type="checkbox" CHECKED>
                <br/>
                <br/>               
                <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
@@ -198,7 +243,7 @@
          polygon: true,
          polyline: true,
          rectangle: false,
-         circle: false,
+         circle: true,
          marker: true,
          circlemarker: false
       },
@@ -213,8 +258,16 @@
    map.on(L.Draw.Event.CREATED, function(e) {
       var type = e.layerType;
       var layer = e.layer;
-      drawnItems.clearLayers();       
-      document.getElementById("dzGeometry").value = JSON.stringify(e.layer.toGeoJSON().geometry);
+      drawnItems.clearLayers(); 
+
+      var geojsonfromdraw;
+      if (type == 'circle') {
+         var geo = circleToPolygon(e.layer,60);
+         geojsonfromdraw = JSON.stringify(geo.toGeoJSON().geometry);
+      } else {
+         geojsonfromdraw = JSON.stringify(e.layer.toGeoJSON().geometry);
+      }
+      document.getElementById("dzGeometry").value = geojsonfromdraw;
       drawnItems.addLayer(layer);
       document.getElementById("dz_run_service").disabled = false;
       
@@ -316,14 +369,33 @@
       var ringm  = document.getElementById("dzDefaultRingIndexingMethod");
       var aream  = document.getElementById("dzDefaultAreaIndexingMethod");
       
-      var geom  = JSON.parse(document.getElementById("dzGeometry").value);
+      var catchment_filter = get_mselect_values(catfl);
+      
+      var rboo = false;
+      if (document.getElementById("dzReturnFullCatchments").checked ) {
+         rboo = true;
+      }
+      
+      var luscat = false;
+      if (document.getElementById("dzLimitToUSCatchments").checked ) {
+         luscat = true;
+      }
+
+      var geom
+      try {
+         geom = JSON.parse(document.getElementById("dzGeometry").value);
+      } catch(e) {
+         document.getElementById("output").innerHTML = "<P>" + e + "</P>";
+         busy_off();
+         return true;
+      }
 
       var data = {
           "geometry":                       geom
           
          ,"geometry_clip":                  get_mselect_values(geomc)
          ,"geometry_clip_stage":            get_select_values(geoms)
-         ,"catchment_filter":               get_mselect_values(catfl)
+         ,"catchment_filter":               catchment_filter
          ,"nhdplus_version":                get_select_values(pnhdv)
          ,"wbd_version":                    get_select_values(pwbdv)
          
@@ -346,6 +418,8 @@
          ,"return_flowlines":               document.getElementById("dzShowFlowlines").checked
          ,"return_flowline_geometry":       true
          ,"return_huc12s":                  document.getElementById("dzShowHUC12s").checked
+         ,"return_full_catchments":         rboo
+         ,"limit_to_us_catchments":         luscat
       };
       
       httpPost(
@@ -541,6 +615,7 @@
                  + '<TR>'
                  + '<TH colspan="6" style="font-family: Arial; font-size: 14px;">' + response.catchment_count + ' Catchments Indexed - ' + roundNumber(response.catchment_areasqkm,2) + ' SqKm</TH>'
                  + '<TR>'
+                 + '<TH style="font-family: Arial; font-size: 14px;">&nbsp;</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">Zoom</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">State</TH>'
                  + '<TH style="font-family: Arial; font-size: 14px;">NHDPlusID</TH>'
@@ -553,11 +628,20 @@
          tbl_cnt = '';
          for (var i = 0; i < response.catchments.features.length; i++) {
             tbl_cnt += '<TR>'
+                    +  '<TD style="font-family: Arial; font-size: 14px;">' + (i + 1) + '</TD>'
                     +  '<TD style="font-family: Arial; font-size: 14px;">';
                     
             if (response.catchments.features[0].geometry.type !== null) {
-               tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
-               zoom_cache[response.catchments.features[i].properties.catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
+               
+               var catchmentstatecode = "ZZ";
+               if (response.catchments.features[i].properties.catchmentstatecode !== null ) {
+                  catchmentstatecode = response.catchments.features[i].properties.catchmentstatecode;
+               }
+               
+               tbl_cnt += '<input type="button" value=" " onclick="zoom_to_catchment(\'' + catchmentstatecode + response.catchments.features[i].properties.nhdplusid + '\');"/>';
+               
+               zoom_cache[catchmentstatecode + response.catchments.features[i].properties.nhdplusid] = response.catchments.features[i].geometry;
+               
             } else {
                tbl_cnt += '&nbsp;';
             }
@@ -633,6 +717,18 @@
       return rndedNum;
   }
   
+  function checkready() {
+     var gtext = document.getElementById("dzGeometry").value;
+     
+     if (gtext == null || gtext == "") {
+        null;
+        
+     } else {
+        document.getElementById("dz_run_service").disabled = false;
+     
+     }
+  }
+  
   function build_api() {
       
       if (
@@ -688,6 +784,121 @@
          zpostgrest_port + "/" + 
          zpostgrest_pref + "rpc/";
          
+   }
+   
+   function circleToPolygon(circle, sides = 60, withBearing = true) {
+       const origin = circle.getLatLng();
+       const radius = circle.getRadius();
+       const polys = createGeodesicPolygon(origin,radius,sides,0,withBearing);
+       const polygon = [];
+       for (let i = 0; i < polys.length; i += 1) {
+         const geometry = [polys[i].lat, polys[i].lng];
+         polygon.push(geometry);
+      }
+      return L.polygon(polygon, circle.options);
+   }
+   
+   function createGeodesicPolygon(
+      origin,
+      radius,
+      sides,
+      rotation,
+      withBearing = true
+   ) {
+      let trueAngle;
+      let newLonlat;
+      let geomPoint;
+      const points = [];
+
+      for (let i = 0; i < sides; i += 1) {
+         if (withBearing) {
+            trueAngle = (i * 360) / sides + rotation;
+            newLonlat = destinationVincenty(origin, trueAngle, radius);
+            geomPoint = L.latLng(newLonlat.lng, newLonlat.lat);
+         } else {
+            const pLat = origin.lat + Math.cos((2 * i * Math.PI) / sides) * radius;
+            const pLng = origin.lng + Math.sin((2 * i * Math.PI) / sides) * radius;
+            geomPoint = L.latLng(pLat, pLng);
+         }
+         points.push(geomPoint);
+      }
+
+      return points;
+   }
+   
+   function destinationVincenty(lonlat, brng, dist) {
+     // rewritten to work with leaflet
+     const VincentyConstants = {
+       a: L.CRS.Earth.R,
+       b: 6356752.3142,
+       f: 1 / 298.257223563,
+     };
+
+     const { a, b, f } = VincentyConstants;
+     const lon1 = lonlat.lng;
+     const lat1 = lonlat.lat;
+     const s = dist;
+     const pi = Math.PI;
+     const alpha1 = (brng * pi) / 180; // converts brng degrees to radius
+     const sinAlpha1 = Math.sin(alpha1);
+     const cosAlpha1 = Math.cos(alpha1);
+     const tanU1 =
+       (1 - f) * Math.tan((lat1 * pi) / 180 /* converts lat1 degrees to radius */);
+     const cosU1 = 1 / Math.sqrt(1 + tanU1 * tanU1);
+     const sinU1 = tanU1 * cosU1;
+     const sigma1 = Math.atan2(tanU1, cosAlpha1);
+     const sinAlpha = cosU1 * sinAlpha1;
+     const cosSqAlpha = 1 - sinAlpha * sinAlpha;
+     const uSq = (cosSqAlpha * (a * a - b * b)) / (b * b);
+     const A = 1 + (uSq / 16384) * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+     const B = (uSq / 1024) * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+     let sigma = s / (b * A);
+     let sigmaP = 2 * Math.PI;
+
+     let cos2SigmaM;
+     let sinSigma;
+     let cosSigma;
+     while (Math.abs(sigma - sigmaP) > 1e-12) {
+       cos2SigmaM = Math.cos(2 * sigma1 + sigma);
+       sinSigma = Math.sin(sigma);
+       cosSigma = Math.cos(sigma);
+       const deltaSigma =
+         B *
+         sinSigma *
+         (cos2SigmaM +
+           (B / 4) *
+             (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) -
+               (B / 6) *
+                 cos2SigmaM *
+                 (-3 + 4 * sinSigma * sinSigma) *
+                 (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+       sigmaP = sigma;
+       sigma = s / (b * A) + deltaSigma;
+     }
+     const tmp = sinU1 * sinSigma - cosU1 * cosSigma * cosAlpha1;
+     const lat2 = Math.atan2(
+       sinU1 * cosSigma + cosU1 * sinSigma * cosAlpha1,
+       (1 - f) * Math.sqrt(sinAlpha * sinAlpha + tmp * tmp)
+     );
+     const lambda = Math.atan2(
+       sinSigma * sinAlpha1,
+       cosU1 * cosSigma - sinU1 * sinSigma * cosAlpha1
+     );
+     const C = (f / 16) * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha));
+     const lam =
+       lambda -
+       (1 - C) *
+         f *
+         sinAlpha *
+         (sigma +
+           C *
+             sinSigma *
+             (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+     // const revAz = Math.atan2(sinAlpha, -tmp);  // final bearing
+     const lamFunc = lon1 + (lam * 180) / pi; // converts lam radius to degrees
+     const lat2a = (lat2 * 180) / pi; // converts lat2a radius to degrees
+
+     return L.latLng(lamFunc, lat2a);
    }
          
       </script>

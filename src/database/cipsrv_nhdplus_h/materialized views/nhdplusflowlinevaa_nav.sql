@@ -83,7 +83,22 @@ SELECT
 /* ++++++++++ */
 ,CASE
  WHEN a.hydroseq IN (
-   0
+   --- Big Tributaries --
+    35000200000828  -- Rio San Rodrigo 10295
+   ,35000300003120  -- Devils River 15710
+   ,35000300004180  -- Mexican Branch off Lake Amistad 28284
+   ,35000300004330  -- Subnetwork off 35000300004180 14976
+   ,35000300150490  -- Pecos River 80139
+   ,35000300003402  -- Dry Mexican network north and west of Lake Amistad 12130
+   ,35000300003526  -- Dry Mexican network south of Big Bend National Park 13322
+   ,35000300002413  -- Dry Mexican network southwest of Big Bend National Park 26115
+   ,35000300003658  -- Dry Mexican network southwest of Big Bend Ranch State Park 15182
+   ,35000600003441  -- Rio Puerco 15343
+   ,35000600003604  -- Rio Chama 29287
+   ,35000900000877  -- Irrigation system south of Alamos 10742
+   ,35000300003673  -- Dry Mexican network over Manuel Benevidas 14976
+   ,35000300004330  -- Mexican Branch off Lake Amistad 16303
+   ,35000900000871  -- Irrigation system south of Alamos 10819
  )
  THEN
    TRUE

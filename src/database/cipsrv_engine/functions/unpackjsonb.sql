@@ -32,6 +32,7 @@ CREATE OR REPLACE FUNCTION cipsrv_engine.unpackjsonb(
    ,OUT out_return_code                  INTEGER
    ,OUT out_status_message               VARCHAR
    ,OUT out_features                     cipsrv_engine.cip_feature[]
+   ,OUT out_known_region                 VARCHAR
 )
 IMMUTABLE
 AS $BODY$ 
@@ -40,12 +41,12 @@ DECLARE
    ary_points       cipsrv_engine.cip_feature[];
    ary_lines        cipsrv_engine.cip_feature[];
    ary_areas        cipsrv_engine.cip_feature[];
-   str_known_region VARCHAR := p_known_region;
    int_srid         INTEGER := p_int_srid;
    
 BEGIN
 
-   out_return_code := 0;
+   out_return_code  := 0;
+   out_known_region := p_known_region;
    
    ----------------------------------------------------------------------------
    -- Check over incoming parameters
@@ -70,10 +71,10 @@ BEGIN
    ----------------------------------------------------------------------------
    IF p_geometry IS NOT NULL
    THEN
-      out_features := cipsrv_engine.jsonb2features(
+      rec := cipsrv_engine.jsonb2features(
           p_features                      := p_geometry
          ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
+         ,p_known_region                  := out_known_region
          ,p_int_srid                      := int_srid
          ,p_default_point_indexing_method := p_default_point_indexing_method
          ,p_default_line_indexing_method  := p_default_line_indexing_method
@@ -83,12 +84,14 @@ BEGIN
          ,p_default_areacat_threshold     := p_default_areacat_threshold
          ,p_default_areaevt_threshold     := p_default_areaevt_threshold
       );
+      out_features     := rec.out_cip_features;
+      out_known_region := rec.out_known_region;
    
    ELSE
-      ary_points := cipsrv_engine.jsonb2features(
+      rec := cipsrv_engine.jsonb2features(
           p_features                      := p_points
          ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
+         ,p_known_region                  := out_known_region
          ,p_int_srid                      := int_srid
          ,p_default_point_indexing_method := p_default_point_indexing_method
          ,p_default_line_indexing_method  := p_default_line_indexing_method
@@ -98,11 +101,13 @@ BEGIN
          ,p_default_areacat_threshold     := p_default_areacat_threshold
          ,p_default_areaevt_threshold     := p_default_areaevt_threshold
       );
+      ary_points       := rec.out_cip_features;
+      out_known_region := rec.out_known_region;
       
-      ary_lines := cipsrv_engine.jsonb2features(
+      rec := cipsrv_engine.jsonb2features(
           p_features                      := p_lines
          ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
+         ,p_known_region                  := out_known_region
          ,p_int_srid                      := int_srid
          ,p_default_point_indexing_method := p_default_point_indexing_method
          ,p_default_line_indexing_method  := p_default_line_indexing_method
@@ -112,11 +117,13 @@ BEGIN
          ,p_default_areacat_threshold     := p_default_areacat_threshold
          ,p_default_areaevt_threshold     := p_default_areaevt_threshold
       );
+      ary_lines        := rec.out_cip_features;
+      out_known_region := rec.out_known_region;
       
-      ary_areas := cipsrv_engine.jsonb2features(
+      rec := cipsrv_engine.jsonb2features(
           p_features                      := p_areas
          ,p_nhdplus_version               := p_nhdplus_version
-         ,p_known_region                  := str_known_region
+         ,p_known_region                  := out_known_region
          ,p_int_srid                      := int_srid
          ,p_default_point_indexing_method := p_default_point_indexing_method
          ,p_default_line_indexing_method  := p_default_line_indexing_method
@@ -126,6 +133,8 @@ BEGIN
          ,p_default_areacat_threshold     := p_default_areacat_threshold
          ,p_default_areaevt_threshold     := p_default_areaevt_threshold
       );
+      ary_areas        := rec.out_cip_features;
+      out_known_region := rec.out_known_region;
       
       out_features := cipsrv_engine.featurecat(out_features,ary_points);
       out_features := cipsrv_engine.featurecat(out_features,ary_lines);
@@ -144,9 +153,9 @@ BEGIN
          IF out_features[i].isRing 
          AND out_features[i].ring_indexing_method != 'treat_as_lines'
          THEN
-            out_features[i].geometry := ST_MakePolygon(out_features[i].geometry);
-            out_features[i].gtype    := ST_GeometryType(out_features[i].geometry);
-            out_features[i].converted_to_ring := TRUE;
+            out_features[i].geometry             := ST_MakePolygon(out_features[i].geometry);
+            out_features[i].gtype                := ST_GeometryType(out_features[i].geometry);
+            out_features[i].converted_to_ring    := TRUE;
             out_features[i].area_indexing_method := out_features[i].ring_indexing_method;
             out_features[i].areacat_threshold    := out_features[i].ring_areacat_threshold;
             out_features[i].areaevt_threshold    := out_features[i].ring_areaevt_threshold;

@@ -30,7 +30,7 @@ AS
 SELECT
  NEXTVAL('cipsrv_epageofab_m.catchment_fabric_3338_1_seq')::INTEGER AS objectid
 ,CAST(NULL AS VARCHAR(2))             AS catchmentstatecode
-,a.nhdplusid::BIGINT                  AS nhdplusid
+,CAST(a.nhdplusid AS BIGINT)          AS nhdplusid
 ,CAST(NULL AS VARCHAR(1))             AS istribal
 ,CAST(NULL AS NUMERIC)                AS istribal_areasqkm
 ,a.sourcefc
@@ -90,7 +90,11 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,CAST('alaskacatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(aa.shape,3338) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(aa.shape,3338)
+      ,p_known_region  := '3338'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_epageofab_m.alaskacatchment aa
 ) a

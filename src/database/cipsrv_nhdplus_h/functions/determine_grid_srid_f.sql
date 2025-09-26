@@ -5,6 +5,8 @@ BEGIN
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.determine_grid_srid_f';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+EXCEPTION
+   WHEN OTHERS THEN NULL;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.determine_grid_srid_f(

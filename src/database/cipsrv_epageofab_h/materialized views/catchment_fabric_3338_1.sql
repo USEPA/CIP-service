@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_3338_1 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_3338_1_seq;
+CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_3338_1_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_3338_1(
     objectid
    ,catchmentstatecode
@@ -25,9 +28,9 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_3338_1(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                  AS objectid
+ NEXTVAL('cipsrv_epageofab_h.catchment_fabric_3338_1_seq')::INTEGER AS objectid
 ,CAST(NULL AS VARCHAR(2))             AS catchmentstatecode
-,a.nhdplusid::BIGINT                  AS nhdplusid
+,CAST(a.nhdplusid AS BIGINT)          AS nhdplusid
 ,CAST(NULL AS VARCHAR(1))             AS istribal
 ,CAST(NULL AS NUMERIC)                AS istribal_areasqkm
 ,a.sourcefc

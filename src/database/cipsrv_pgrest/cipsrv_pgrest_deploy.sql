@@ -33,7 +33,7 @@ BEGIN
    -- Collect the state domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.*)
+   JSONB_AGG(a.* ORDER BY a.stusps)
    INTO json_states
    FROM (
       SELECT
@@ -42,8 +42,6 @@ BEGIN
       ,aa.name
       FROM
       cipsrv_support.tiger_fedstatewaters aa
-      ORDER BY
-      aa.stusps
    ) a;
    
    ----------------------------------------------------------------------------
@@ -51,7 +49,7 @@ BEGIN
    -- Collect the tribes domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.*)
+   JSONB_AGG(a.* ORDER BY a.aiannhns_stem)
    INTO json_tribes
    FROM (
       SELECT
@@ -61,8 +59,6 @@ BEGIN
       ,aa.has_trust_lands
       FROM
       cipsrv_support.tribal_crosswalk aa
-      ORDER BY
-      aa.aiannhns_stem
    ) a;
    
    ----------------------------------------------------------------------------
@@ -139,7 +135,8 @@ DECLARE
    boo_return_flowline_geometry       BOOLEAN;
    boo_return_huc12_geometry          BOOLEAN;
    boo_return_indexing_summary        BOOLEAN;
-   boo_return_full_catchment          BOOLEAN;
+   boo_return_full_catchments         BOOLEAN;
+   boo_limit_to_us_catchments         BOOLEAN; 
    
    int_catchment_count                INTEGER;
    num_catchment_areasqkm             NUMERIC;
@@ -449,13 +446,23 @@ BEGIN
       
    END IF;
  
-   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchment')
-   AND json_input->>'return_full_catchment' IS NOT NULL
+   IF JSONB_PATH_EXISTS(json_input,'$.return_full_catchments')
+   AND json_input->>'return_full_catchments' IS NOT NULL
    THEN
-      boo_return_full_catchment := (json_input->>'return_full_catchment')::BOOLEAN;
+      boo_return_full_catchments := (json_input->>'return_full_catchments')::BOOLEAN;
       
    ELSE
-      boo_return_full_catchment := FALSE;
+      boo_return_full_catchments := FALSE;
+      
+   END IF;
+ 
+   IF JSONB_PATH_EXISTS(json_input,'$.limit_to_us_catchments')
+   AND json_input->>'limit_to_us_catchments' IS NOT NULL
+   THEN
+      boo_limit_to_us_catchments := (json_input->>'limit_to_us_catchments')::BOOLEAN;
+      
+   ELSE
+      boo_limit_to_us_catchments := FALSE;
       
    END IF;
      
@@ -492,7 +499,8 @@ BEGIN
       ,p_return_indexed_collection      := boo_return_indexed_collection
       ,p_return_catchment_geometry      := boo_return_catchment_geometry
       ,p_return_indexing_summary        := boo_return_indexing_summary
-      ,p_return_full_catchment          := boo_return_full_catchment
+      ,p_return_full_catchments         := boo_return_full_catchments
+      ,p_limit_to_us_catchments         := boo_limit_to_us_catchments
    );
    json_indexed_points      := rec.out_indexed_points;
    json_indexed_lines       := rec.out_indexed_lines;
@@ -558,7 +566,9 @@ BEGIN
       THEN
          json_flowlines := (
             SELECT 
-            JSONB_AGG(j.my_json) AS my_feats
+            JSONB_AGG(
+               j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+            ) AS my_feats
             FROM (
                SELECT 
                JSONB_BUILD_OBJECT(
@@ -586,8 +596,6 @@ BEGIN
                    cipsrv_nhdplus_m.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
                ) t
             ) j
          );
@@ -609,7 +617,9 @@ BEGIN
       THEN
          json_flowlines := (
             SELECT 
-            JSONB_AGG(j.my_json) AS my_feats
+            JSONB_AGG(
+               j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+            ) AS my_feats
             FROM (
                SELECT 
                JSONB_BUILD_OBJECT(
@@ -637,8 +647,6 @@ BEGIN
                    cipsrv_nhdplus_h.networknhdflowline a
                    WHERE
                    EXISTS (SELECT 1 FROM tmp_cip_out b WHERE b.nhdplusid = a.nhdplusid)
-                   ORDER BY
-                   a.nhdplusid
                ) t
             ) j
          );
@@ -678,7 +686,9 @@ BEGIN
    ----------------------------------------------------------------------------
    json_catchments := (
       SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
+      JSONB_AGG(
+         j.my_json ORDER BY j.my_json->'properties'->'catchmentstatecode',j.my_json->'properties'->'nhdplusid'
+      ) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(
@@ -704,9 +714,6 @@ BEGIN
              END AS geom
             FROM
             tmp_cip_out a
-            ORDER BY
-             a.catchmentstatecode
-            ,a.nhdplusid
          ) t
       ) j
    );
@@ -1361,7 +1368,9 @@ BEGIN
    THEN
       json_delineated_area := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1390,7 +1399,9 @@ BEGIN
    ELSE
       json_delineated_area := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nhdplusid'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1439,7 +1450,9 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -1871,7 +1884,9 @@ BEGIN
    ----------------------------------------------------------------------------
    json_flowlines := (
       SELECT 
-      JSONB_AGG(j.my_json) AS my_feats
+      JSONB_AGG(
+         j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+      ) AS my_feats
       FROM (
          SELECT 
          JSONB_BUILD_OBJECT(
@@ -2420,6 +2435,8 @@ DECLARE
    int_rad_found_count               INTEGER;
    int_src_found_count               INTEGER;
    int_cip_found_count               INTEGER;
+   int_huc12_found_count             INTEGER;
+   int_attr_found_count              INTEGER;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    
@@ -2454,33 +2471,34 @@ BEGIN
 
    ELSE
       RETURN JSONB_BUILD_OBJECT(
-          'flowlines'                 , NULL
-         ,'flowline_count'            , NULL
-         ,'catchments'                , NULL
-         ,'catchment_count'           , NULL
-         ,'linked_data_sfid_found'    , NULL
-         ,'linked_data_sfid_count'    , NULL
-         ,'linked_data_cip_found'     , NULL
-         ,'linked_data_cip_count'     , NULL
-         ,'linked_data_huc12_found'   , NULL
-         ,'linked_data_huc12_count'   , NULL
-         ,'linked_data_source_points' , NULL
-         ,'linked_data_source_lines'  , NULL
-         ,'linked_data_source_areas'  , NULL
-         ,'linked_data_source_count'  , NULL
-         ,'linked_data_reached_points', NULL
-         ,'linked_data_reached_lines' , NULL
-         ,'linked_data_reached_areas' , NULL
-         ,'linked_data_reached_count' , NULL
-         ,'linked_data_attributes'    , NULL
-         ,'start_nhdplusid'           , NULL
-         ,'start_measure'             , NULL
-         ,'start_linked_data_program' , NULL
-         ,'stop_nhdplusid'            , NULL
-         ,'stop_measure'              , NULL
-         ,'stop_linked_data_program'  , NULL
-         ,'return_code'               , -100
-         ,'status_message'            , 'nhdplus version parameter is required'
+          'flowlines'                   , NULL
+         ,'flowline_count'              , NULL
+         ,'catchments'                  , NULL
+         ,'catchment_count'             , NULL
+         ,'linked_data_sfid_found'      , NULL
+         ,'linked_data_sfid_count'      , NULL
+         ,'linked_data_cip_found'       , NULL
+         ,'linked_data_cip_count'       , NULL
+         ,'linked_data_huc12_found'     , NULL
+         ,'linked_data_huc12_count'     , NULL
+         ,'linked_data_source_points'   , NULL
+         ,'linked_data_source_lines'    , NULL
+         ,'linked_data_source_areas'    , NULL
+         ,'linked_data_source_count'    , NULL
+         ,'linked_data_reached_points'  , NULL
+         ,'linked_data_reached_lines'   , NULL
+         ,'linked_data_reached_areas'   , NULL
+         ,'linked_data_reached_count'   , NULL
+         ,'linked_data_attributes_found', NULL
+         ,'linked_data_attributes_count', NULL
+         ,'start_nhdplusid'             , NULL
+         ,'start_measure'               , NULL
+         ,'start_linked_data_program'   , NULL
+         ,'stop_nhdplusid'              , NULL
+         ,'stop_measure'                , NULL
+         ,'stop_linked_data_program'    , NULL
+         ,'return_code'                 , -100
+         ,'status_message'              , 'nhdplus version parameter is required'
       );
    
    END IF;
@@ -2870,6 +2888,17 @@ BEGIN
       
    END IF;
 
+   IF JSONB_PATH_EXISTS(json_input,'$.return_linked_data_huc12')
+   AND json_input->'return_linked_data_huc12' IS NOT NULL
+   AND json_input->>'return_linked_data_huc12' != ''
+   THEN
+      boo_return_linked_data_huc12 := (json_input->'return_linked_data_huc12')::BOOLEAN;
+      
+   ELSE
+      boo_return_linked_data_huc12 := FALSE;
+      
+   END IF;
+
    IF JSONB_PATH_EXISTS(json_input,'$.return_linked_data_source')
    AND json_input->'return_linked_data_source' IS NOT NULL
    AND json_input->>'return_linked_data_source' != ''
@@ -2878,6 +2907,17 @@ BEGIN
       
    ELSE
       boo_return_linked_data_source := FALSE;
+      
+   END IF;
+
+   IF JSONB_PATH_EXISTS(json_input,'$.return_linked_data_attributes')
+   AND json_input->'return_linked_data_attributes' IS NOT NULL
+   AND json_input->>'return_linked_data_attributes' != ''
+   THEN
+      boo_return_linked_data_attributes := (json_input->'return_linked_data_attributes')::BOOLEAN;
+      
+   ELSE
+      boo_return_linked_data_attributes := FALSE;
       
    END IF;
 
@@ -2979,40 +3019,43 @@ BEGIN
    int_rad_found_count            := rec.out_rad_found_count;
    int_sfid_found_count           := rec.out_sfid_found_count;
    int_cip_found_count            := rec.out_cip_found_count;
+   int_huc12_found_count          := rec.out_huc12_found_count;
    int_src_found_count            := rec.out_src_found_count;
+   int_attr_found_count           := rec.out_attr_found_count;
    int_return_code                := rec.out_return_code;
    str_status_message             := rec.out_status_message;
    
    IF int_return_code != 0
    THEN
       RETURN JSONB_BUILD_OBJECT(
-          'flowlines'                 , NULL
-         ,'flowline_count'            , NULL
-         ,'catchments'                , NULL
-         ,'catchment_count'           , NULL
-         ,'linked_data_sfid_found'    , NULL
-         ,'linked_data_sfid_count'    , NULL
-         ,'linked_data_cip_found'     , NULL
-         ,'linked_data_cip_count'     , NULL
-         ,'linked_data_huc12_found'   , NULL
-         ,'linked_data_huc12_count'   , NULL
-         ,'linked_data_source_points' , NULL
-         ,'linked_data_source_lines'  , NULL
-         ,'linked_data_source_areas'  , NULL
-         ,'linked_data_source_count'  , NULL
-         ,'linked_data_reached_points', NULL
-         ,'linked_data_reached_lines' , NULL
-         ,'linked_data_reached_areas' , NULL
-         ,'linked_data_reached_count' , NULL
-         ,'linked_data_attributes'    , NULL
-         ,'start_nhdplusid'           , int_start_nhdplusid
-         ,'start_measure'             , num_start_measure
-         ,'start_linked_data_program' , str_start_linked_data_program
-         ,'stop_nhdplusid'            , int_stop_nhdplusid
-         ,'stop_measure'              , num_stop_measure
-         ,'stop_linked_data_program'  , str_stop_linked_data_program
-         ,'return_code'               , int_return_code
-         ,'status_message'            , str_status_message
+          'flowlines'                   , NULL
+         ,'flowline_count'              , NULL
+         ,'catchments'                  , NULL
+         ,'catchment_count'             , NULL
+         ,'linked_data_sfid_found'      , NULL
+         ,'linked_data_sfid_count'      , NULL
+         ,'linked_data_cip_found'       , NULL
+         ,'linked_data_cip_count'       , NULL
+         ,'linked_data_huc12_found'     , NULL
+         ,'linked_data_huc12_count'     , NULL
+         ,'linked_data_source_points'   , NULL
+         ,'linked_data_source_lines'    , NULL
+         ,'linked_data_source_areas'    , NULL
+         ,'linked_data_source_count'    , NULL
+         ,'linked_data_reached_points'  , NULL
+         ,'linked_data_reached_lines'   , NULL
+         ,'linked_data_reached_areas'   , NULL
+         ,'linked_data_reached_count'   , NULL
+         ,'linked_data_attributes_found', NULL
+         ,'linked_data_attributes_count', NULL
+         ,'start_nhdplusid'             , int_start_nhdplusid
+         ,'start_measure'               , num_start_measure
+         ,'start_linked_data_program'   , str_start_linked_data_program
+         ,'stop_nhdplusid'              , int_stop_nhdplusid
+         ,'stop_measure'                , num_stop_measure
+         ,'stop_linked_data_program'    , str_stop_linked_data_program
+         ,'return_code'                 , int_return_code
+         ,'status_message'              , str_status_message
       );
    
    END IF;
@@ -3025,7 +3068,9 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3062,9 +3107,6 @@ BEGIN
                ,CASE WHEN boo_return_flowline_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
                FROM
                tmp_navigation_results a
-               ORDER BY
-                a.nav_order
-               ,a.network_distancekm
             ) t
          ) j
       );
@@ -3095,7 +3137,9 @@ BEGIN
    THEN
       json_catchments := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3112,8 +3156,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_catchments a
-               ORDER BY
-               a.orderingkey
             ) t
          ) j
       );
@@ -3144,7 +3186,9 @@ BEGIN
    THEN
       json_linked_data_sfid_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.eventtype,a.nearest_cip_network_distancekm,a.nearest_rad_network_distancekm
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -3172,10 +3216,6 @@ BEGIN
             ,aa.nearest_rad_network_flowtimeday
             FROM
             tmp_sfid_found aa
-            ORDER BY
-             aa.eventtype
-            ,aa.nearest_cip_network_distancekm
-            ,aa.nearest_rad_network_distancekm
          ) a
       );
             
@@ -3199,7 +3239,9 @@ BEGIN
    THEN
       json_linked_data_cip_found := (
          SELECT 
-         JSONB_AGG(a.*)
+         JSONB_AGG(
+            a.* ORDER BY a.network_distancekm,a.network_flowtimeday
+         )
          FROM (
             SELECT
              aa.eventtype
@@ -3232,9 +3274,6 @@ BEGIN
             ,aa.network_flowtimeday
             FROM
             tmp_cip_found aa
-            ORDER BY
-             aa.network_distancekm
-            ,aa.network_flowtimeday
          ) a
       );
             
@@ -3247,11 +3286,58 @@ BEGIN
       
    ELSE
       json_linked_data_cip_found := NULL;
+      int_cip_found_count        := NULL;
    
    END IF;
-
+   
    ----------------------------------------------------------------------------
    -- Step 80
+   -- Build the huc12 featurecollection
+   ----------------------------------------------------------------------------
+   IF boo_return_linked_data_huc12
+   AND int_huc12_found_count > 0
+   THEN
+      json_linked_data_huc12_found := (
+         SELECT 
+         JSONB_AGG(
+            a.* ORDER BY a.eventtype,a.source_joinkey,a.permid_joinkey,a.xwalk_huc12
+         )
+         FROM (
+            SELECT
+             aa.eventtype
+            ,aa.huc12_joinkey
+            ,aa.permid_joinkey
+            ,aa.source_originator
+            ,aa.source_featureid
+            ,aa.source_featureid2
+            ,aa.source_series
+            ,aa.source_subdivision
+            ,aa.source_joinkey
+            ,aa.start_date
+            ,aa.end_date
+            ,aa.xwalk_huc12
+            ,aa.xwalk_huc12_version
+            ,aa.xwalk_catresolution
+            ,aa.xwalk_huc12_areasqkm
+            FROM
+            tmp_huc12_found aa
+         ) a
+      );
+            
+      IF json_linked_data_huc12_found IS NULL
+      OR JSONB_ARRAY_LENGTH(json_linked_data_huc12_found) = 0
+      THEN
+         json_linked_data_huc12_found := NULL;
+         
+      END IF;
+      
+   ELSE
+      json_linked_data_huc12_found := NULL;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 90
    -- Build the source points featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_source
@@ -3259,7 +3345,9 @@ BEGIN
    THEN
       json_linked_data_source_points := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3284,9 +3372,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_points a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -3310,7 +3395,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 100
    -- Build the source lines featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_source
@@ -3318,7 +3403,9 @@ BEGIN
    THEN
       json_linked_data_source_lines := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3344,9 +3431,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_lines a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -3370,7 +3454,7 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 80
+   -- Step 110
    -- Build the source areas featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_source
@@ -3378,7 +3462,9 @@ BEGIN
    THEN
       json_linked_data_source_areas := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3404,9 +3490,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_src_areas a
-               ORDER BY
-                a.eventtype
-               ,a.orderingkey
             ) t
          ) j
       );
@@ -3430,7 +3513,7 @@ BEGIN
    END IF;
 
    ----------------------------------------------------------------------------
-   -- Step 110
+   -- Step 120
    -- Build the reached points featurecollection
    ----------------------------------------------------------------------------
    IF boo_return_linked_data_rad
@@ -3438,7 +3521,9 @@ BEGIN
    THEN
       json_linked_data_reached_points := (
          SELECT 
-         JSONB_AGG(j.my_json) AS my_feats
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'network_distancekm'
+         ) AS my_feats
          FROM (
             SELECT 
             JSONB_BUILD_OBJECT(
@@ -3478,9 +3563,6 @@ BEGIN
                ,ST_Transform(a.shape,4326) AS geom
                FROM
                tmp_rad_points a
-               ORDER BY
-                a.eventtype
-               ,a.network_distancekm
             ) t
          ) j
       );
@@ -3504,37 +3586,84 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-   -- Step 120
+   -- Step 130
+   -- Build the reached points featurecollection
+   ----------------------------------------------------------------------------
+   IF boo_return_linked_data_attributes
+   AND int_attr_found_count > 0
+   THEN
+      json_linked_data_attributes := (
+         SELECT 
+         JSONB_AGG(
+            j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'source_joinkey'
+         ) AS my_feats
+         FROM (
+            SELECT
+            TO_JSONB(aa) -'attributes' || aa.attributes AS my_json
+            FROM (
+               SELECT
+                aaa.eventtype
+               ,aaa.source_joinkey
+               ,aaa.source_originator
+               ,aaa.source_featureid
+               ,aaa.source_featureid2
+               ,aaa.source_series
+               ,aaa.source_subdivision
+               ,aaa.start_date
+               ,aaa.end_date
+               ,aaa.sfiddetailurl
+               ,aaa.attributes
+               FROM
+               tmp_attr aaa
+            ) aa
+         ) j
+      );
+            
+      IF json_linked_data_attributes IS NULL
+      OR JSONB_ARRAY_LENGTH(json_linked_data_attributes) = 0
+      THEN
+         json_linked_data_attributes := NULL;
+         
+      END IF;
+      
+   ELSE
+      json_linked_data_attributes := NULL;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 130
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSONB_BUILD_OBJECT(
-       'flowlines'                 , json_flowlines
-      ,'flowline_count'            , int_flowline_count
-      ,'catchments'                , json_catchments
-      ,'catchment_count'           , int_catchment_count
-      ,'linked_data_sfid_found'    , json_linked_data_sfid_found
-      ,'linked_data_sfid_count'    , int_sfid_found_count
-      ,'linked_data_cip_found'     , json_linked_data_cip_found
-      ,'linked_data_cip_count'     , int_cip_found_count
-      ,'linked_data_huc12_found'   , NULL
-      ,'linked_data_huc12_count'   , NULL
-      ,'linked_data_source_points' , json_linked_data_source_points
-      ,'linked_data_source_lines'  , json_linked_data_source_lines
-      ,'linked_data_source_areas'  , json_linked_data_source_areas
-      ,'linked_data_source_count'  , int_src_found_count
-      ,'linked_data_reached_points', json_linked_data_reached_points
-      ,'linked_data_reached_lines' , NULL
-      ,'linked_data_reached_areas' , NULL
-      ,'linked_data_reached_count' , int_rad_found_count
-      ,'linked_data_attributes'    , NULL
-      ,'start_nhdplusid'           , int_start_nhdplusid
-      ,'start_measure'             , num_start_measure
-      ,'start_linked_data_program' , str_start_linked_data_program
-      ,'stop_nhdplusid'            , int_stop_nhdplusid
-      ,'stop_measure'              , num_stop_measure
-      ,'stop_linked_data_program'  , str_stop_linked_data_program
-      ,'return_code'               , int_return_code
-      ,'status_message'            , str_status_message
+       'flowlines'                   , json_flowlines
+      ,'flowline_count'              , int_flowline_count
+      ,'catchments'                  , json_catchments
+      ,'catchment_count'             , int_catchment_count
+      ,'linked_data_sfid_found'      , json_linked_data_sfid_found
+      ,'linked_data_sfid_count'      , int_sfid_found_count
+      ,'linked_data_cip_found'       , json_linked_data_cip_found
+      ,'linked_data_cip_count'       , int_cip_found_count
+      ,'linked_data_huc12_found'     , json_linked_data_huc12_found
+      ,'linked_data_huc12_count'     , int_huc12_found_count
+      ,'linked_data_source_points'   , json_linked_data_source_points
+      ,'linked_data_source_lines'    , json_linked_data_source_lines
+      ,'linked_data_source_areas'    , json_linked_data_source_areas
+      ,'linked_data_source_count'    , int_src_found_count
+      ,'linked_data_reached_points'  , json_linked_data_reached_points
+      ,'linked_data_reached_lines'   , NULL
+      ,'linked_data_reached_areas'   , NULL
+      ,'linked_data_reached_count'   , int_rad_found_count
+      ,'linked_data_attributes_found', json_linked_data_attributes
+      ,'linked_data_attributes_count', int_attr_found_count
+      ,'start_nhdplusid'             , int_start_nhdplusid
+      ,'start_measure'               , num_start_measure
+      ,'start_linked_data_program'   , str_start_linked_data_program
+      ,'stop_nhdplusid'              , int_stop_nhdplusid
+      ,'stop_measure'                , num_stop_measure
+      ,'stop_linked_data_program'    , str_stop_linked_data_program
+      ,'return_code'                 , int_return_code
+      ,'status_message'              , str_status_message
    );
       
 END;

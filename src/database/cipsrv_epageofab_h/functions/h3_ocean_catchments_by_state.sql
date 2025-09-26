@@ -14,6 +14,8 @@ CREATE OR REPLACE FUNCTION cipsrv_epageofab_h.h3_ocean_catchments_by_state(
    ,IN  p_stusps               VARCHAR
    ,IN  p_state_clip           BOOLEAN  DEFAULT TRUE
    ,IN  p_bbox                 GEOMETRY DEFAULT NULL
+   ,IN  p_buffer_state_m       NUMERIC  DEFAULT NULL
+   ,IN  p_grid0_extend         BOOLEAN  DEFAULT FALSE
 ) RETURNS TABLE(
     objectid           INTEGER
    ,catchmentstatecode VARCHAR(2)
@@ -31,9 +33,11 @@ DECLARE
    str_src_cats       VARCHAR;
    boo_changed        BOOLEAN;
    geom_state         GEOMETRY;
+   geom_state_buff    GEOMETRY;
    geom_diff          GEOMETRY;
    num_areasqkm       NUMERIC;
    geom_bbox          GEOMETRY;
+   str_sql            TEXT;
 
 BEGIN
 
@@ -66,7 +70,7 @@ BEGIN
       cipsrv_nhdplus_h.snap_to_common_grid(
           a.shape
          ,$1
-         ,0.05
+         ,0.001
       ) AS shape
       FROM 
       cipsrv_support.' || str_src_state || ' a
@@ -102,7 +106,7 @@ BEGIN
           ST_INTERSECTION(
              geom_state
             ,geom_bbox
-            ,0.05
+            ,0.001
           )
          ,3
       );
@@ -118,6 +122,19 @@ BEGIN
    
    --------------------------------------------------------------------------
    -- Step 40
+   -- Buffer the H3 selection if requested 
+   --------------------------------------------------------------------------
+   IF p_buffer_state_m IS NOT NULL
+   THEN
+      geom_state_buff := ST_BUFFER(geom_state,p_buffer_state_m);
+   
+   ELSE
+      geom_state_buff := geom_state;
+      
+   END IF;
+   
+   --------------------------------------------------------------------------
+   -- Step 50
    -- Get the H3 polygons covering the polygon
    --------------------------------------------------------------------------
    cnt := 0;
@@ -129,7 +146,7 @@ BEGIN
       ,cipsrv_nhdplus_h.snap_to_common_grid(
           a.shape
          ,$1
-         ,0.05
+         ,0.001
       ) AS shape
       FROM (
          SELECT
@@ -143,7 +160,7 @@ BEGIN
          ) aa	
       ) a
    '
-   USING p_srid::VARCHAR,p_srid,p_stusps,geom_state
+   USING p_srid::VARCHAR,p_srid,p_stusps,geom_state_buff
    LOOP
       boo_changed  := FALSE;
       geom_diff    := rec.shape;
@@ -169,19 +186,40 @@ BEGIN
    
       END IF;
       
-      FOR rec2 IN EXECUTE '
+      str_sql := '
          SELECT
           a.nhdplusid
          ,cipsrv_nhdplus_h.snap_to_common_grid(
              a.shape
             ,$1
-            ,0.05
+            ,0.001
          ) AS shape
-         FROM
-         cipsrv_nhdplus_h.' || str_src_cats || ' a
+         FROM (
+            SELECT
+             aa.nhdplusid
+            ,aa.shape
+            FROM
+            cipsrv_nhdplus_h.' || str_src_cats || ' aa ';
+            
+      IF p_grid0_extend
+      THEN
+         str_sql := str_sql ||      
+           'UNION ALL
+            SELECT
+             bb.nhdplusid
+            ,ST_TRANSFORM(bb.shape,' || p_srid || ')
+            FROM
+            cipsrv_epageofab_h.grid0catchment bb';
+            
+      END IF;
+      
+      str_sql := str_sql ||
+        ') a
          WHERE
          ST_INTERSECTS(a.shape,$2)
-      '
+      ';
+
+      FOR rec2 IN EXECUTE str_sql
       USING p_srid::VARCHAR,geom_diff
       LOOP
          boo_changed := TRUE;

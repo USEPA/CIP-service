@@ -1,5 +1,8 @@
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_32161_1 CASCADE;
 
+DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_32161_1_seq;
+CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_32161_1_seq START WITH 1;
+
 CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_32161_1(
     objectid
    ,catchmentstatecode
@@ -25,9 +28,9 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_32161_1(
 )
 AS
 SELECT
- ROW_NUMBER() OVER()                  AS objectid
+ NEXTVAL('cipsrv_epageofab_h.catchment_fabric_32161_1_seq')::INTEGER AS objectid
 ,CAST(NULL AS VARCHAR(2))             AS catchmentstatecode
-,a.nhdplusid::BIGINT                  AS nhdplusid
+,CAST(a.nhdplusid AS BIGINT)          AS nhdplusid
 ,CAST(NULL AS VARCHAR(1))             AS istribal
 ,CAST(NULL AS NUMERIC)                AS istribal_areasqkm
 ,a.sourcefc
@@ -87,7 +90,11 @@ FROM (
    ,CAST(NULL AS VARCHAR(64)) AS h3hexagonaddr
    ,aa.vpuid
    ,CAST('nhdpluscatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(aa.shape,32161) AS shape
+   ,cipsrv_nhdplus_h.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(aa.shape,32161)
+      ,p_known_region  := '32161'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_nhdplus_h.nhdpluscatchment aa
    WHERE
@@ -104,7 +111,11 @@ FROM (
    ,bb.h3hexagonaddr
    ,bb.vpuid
    ,CAST('oceancatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(bb.shape,32161) AS shape
+   ,cipsrv_nhdplus_h.snap_to_common_grid(
+       p_geometry      := ST_TRANSFORM(bb.shape,32161)
+      ,p_known_region  := '32161'
+      ,p_grid_size     := 0.001
+    ) AS shape
    FROM   
    cipsrv_epageofab_h.oceancatchment bb
    WHERE

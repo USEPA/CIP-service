@@ -12,7 +12,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.index_point_simple(
    ,IN  p_known_region            VARCHAR
    ,IN  p_permid_joinkey          UUID
    ,IN  p_permid_geometry         GEOMETRY
-   ,IN  p_return_full_catchment   BOOLEAN
+   ,IN  p_statesplit              INTEGER DEFAULT NULL
+   ,OUT out_known_region          VARCHAR
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -20,7 +21,6 @@ VOLATILE
 AS $BODY$
 DECLARE
    rec                    RECORD;
-   str_known_region       VARCHAR;
    int_srid               INTEGER;
    geom_input             GEOMETRY;
    permid_geometry        GEOMETRY;
@@ -29,13 +29,26 @@ DECLARE
 
 BEGIN
 
-   str_known_region := p_known_region;
-
+   ----------------------------------------------------------------------------
+   -- Check over incoming parameters
+   ----------------------------------------------------------------------------
+   IF p_statesplit IS NULL
+   OR p_statesplit NOT IN (1,2)
+   THEN
+      int_splitselector := 1;
+      
+   ELSE
+      int_splitselector := p_statesplit;
+   
+   END IF;
+   
+   ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.determine_grid_srid(
        p_geometry      := p_geometry
       ,p_known_region  := p_known_region
    );
    int_srid           := rec.out_srid;
+   out_known_region   := rec.out_srid::VARCHAR;
    out_return_code    := rec.out_return_code;
    out_status_message := rec.out_status_message;
 
@@ -45,19 +58,8 @@ BEGIN
 
    END IF;
 
-   str_known_region := int_srid::VARCHAR;
-   
-   IF p_return_full_catchment IS NULL
-   OR p_return_full_catchment
-   THEN
-      int_splitselector := 2;
-      
-   ELSE
-      int_splitselector := 1;
-   
-   END IF;
-
-   IF str_known_region = '5070'
+   ----------------------------------------------------------------------------
+   IF out_known_region = '5070'
    THEN
       geom_input      := ST_Transform(p_geometry,5070);
       permid_geometry := ST_Transform(p_permid_geometry,5070);
@@ -83,7 +85,7 @@ BEGIN
       )
       ON CONFLICT DO NOTHING;
 
-   ELSIF str_known_region = '3338'
+   ELSIF out_known_region = '3338'
    THEN
       geom_input      := ST_Transform(p_geometry,3338);
       permid_geometry := ST_Transform(p_permid_geometry,3338);
@@ -109,7 +111,7 @@ BEGIN
       )
       ON CONFLICT DO NOTHING;
 
-   ELSIF str_known_region = '26904'
+   ELSIF out_known_region = '26904'
    THEN
       geom_input      := ST_Transform(p_geometry,26904);
       permid_geometry := ST_Transform(p_permid_geometry,26904);
@@ -135,7 +137,7 @@ BEGIN
       )
       ON CONFLICT DO NOTHING;
 
-   ELSIF str_known_region = '32161'
+   ELSIF out_known_region = '32161'
    THEN
       geom_input      := ST_Transform(p_geometry,32161);
       permid_geometry := ST_Transform(p_permid_geometry,32161);
@@ -161,7 +163,7 @@ BEGIN
       )
       ON CONFLICT DO NOTHING;
 
-   ELSIF str_known_region = '32655'
+   ELSIF out_known_region = '32655'
    THEN
       geom_input      := ST_Transform(p_geometry,32655);
       permid_geometry := ST_Transform(p_permid_geometry,32655);
@@ -187,7 +189,7 @@ BEGIN
       )
       ON CONFLICT DO NOTHING;
 
-   ELSIF str_known_region = '32702'
+   ELSIF out_known_region = '32702'
    THEN
       geom_input      := ST_Transform(p_geometry,32702);
       permid_geometry := ST_Transform(p_permid_geometry,32702);
@@ -215,7 +217,7 @@ BEGIN
 
    ELSE
       out_return_code    := -10;
-      out_status_message := 'err ' || str_known_region;
+      out_status_message := 'err ' || out_known_region;
 
    END IF;
    

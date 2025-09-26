@@ -1082,7 +1082,7 @@ BEGIN
       CREATE OR REPLACE VIEW cipsrv_gis.nhdplus_h_nhdpluscatchment_esri
       AS
       SELECT
-       a.objectid
+       CAST(a.objectid AS INTEGER)  AS objectid
       ,CAST(a.nhdplusid AS NUMERIC) AS nhdplusid
       ,a.sourcefc
       ,a.gridcode

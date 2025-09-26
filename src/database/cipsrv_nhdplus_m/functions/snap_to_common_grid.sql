@@ -5,6 +5,8 @@ BEGIN
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.snap_to_common_grid';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+EXCEPTION
+   WHEN OTHERS THEN NULL;
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.snap_to_common_grid(
@@ -16,11 +18,11 @@ IMMUTABLE
 AS $BODY$ 
 DECLARE
    rec                RECORD;
-   sdo_incoming       GEOMETRY;
+   sdo_incoming       public.GEOMETRY;
    int_raster_srid    INTEGER;
    int_return_code    INTEGER;
    str_status_message VARCHAR;
-   geom_grid          GEOMETRY;
+   geom_grid          public.GEOMETRY;
    num_lower_x        NUMERIC;
    num_lower_y        NUMERIC;
    incoming_srid      INTEGER;
@@ -32,13 +34,13 @@ BEGIN
    -- Check over incoming parameters
    ----------------------------------------------------------------------------
    IF  p_geometry IS NULL
-   OR  ST_ISEMPTY(p_geometry)
+   OR  public.ST_ISEMPTY(p_geometry)
    THEN
       RETURN NULL;
       
    END IF;
    
-   incoming_srid := ST_SRID(p_geometry);
+   incoming_srid := public.ST_SRID(p_geometry);
    
    --------------------------------------------------------------------------
    -- Step 20
@@ -62,12 +64,12 @@ BEGIN
    -- Step 30
    -- Project input geometry if required
    --------------------------------------------------------------------------
-   IF ST_SRID(p_geometry) = int_raster_srid
+   IF public.ST_SRID(p_geometry) = int_raster_srid
    THEN
       sdo_incoming := p_geometry;
       
    ELSE
-      sdo_incoming := ST_Transform(p_geometry,int_raster_srid);
+      sdo_incoming := public.ST_Transform(p_geometry,int_raster_srid);
       
    END IF;
    
@@ -76,14 +78,14 @@ BEGIN
    -- Get the lower point of the common grid space
    ----------------------------------------------------------------------------
    geom_grid   := cipsrv_nhdplus_m.generic_common_mbr(int_raster_srid::VARCHAR);
-   num_lower_x := ST_XMIN(geom_grid);
-   num_lower_y := ST_YMIN(geom_grid);
+   num_lower_x := public.ST_XMIN(geom_grid);
+   num_lower_y := public.ST_YMIN(geom_grid);
    
    ----------------------------------------------------------------------------
    -- Step 30
    -- Return results
    ----------------------------------------------------------------------------
-   RETURN ST_SNAPTOGRID(
+   RETURN public.ST_SNAPTOGRID(
        sdo_incoming
       ,num_lower_x
       ,num_lower_y
