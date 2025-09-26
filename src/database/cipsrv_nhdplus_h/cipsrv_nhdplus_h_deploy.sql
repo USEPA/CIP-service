@@ -15954,7 +15954,7 @@ BEGIN
       )
    
    LOOP
-      
+
       BEGIN
          INSERT INTO tmp_navigation_working30(
              nhdplusid
@@ -16053,14 +16053,14 @@ BEGIN
                   num_maximum_flowtimeday IS NULL
                OR mq.pathtimema - ut.base_pathtime   <= num_maximum_flowtimeday
             )
-            AND NOT EXISTS (
-               SELECT
-               1
-               FROM
-               tmp_navigation_working30 cc
-               WHERE
-               cc.hydroseq = mq.hydroseq
-            )
+            --AND NOT EXISTS (
+            --   SELECT
+            --   1
+            --   FROM
+            --   tmp_navigation_working30 cc
+            --   WHERE
+            --   cc.hydroseq = mq.hydroseq
+            --)
          )
          INSERT INTO tmp_navigation_working30(
              nhdplusid
@@ -16095,8 +16095,8 @@ BEGIN
          ,TRUE
          FROM
          ut a
-         WHERE
-         a.nhdplusid <> rec.nhdplusid
+         --WHERE
+         --a.nhdplusid <> rec.nhdplusid
          ON CONFLICT DO NOTHING;
          
          -- At some point this should be removed
