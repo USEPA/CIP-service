@@ -5135,66 +5135,85 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_ut_shorty()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 3840993;
+   num_start_measure   := 5.66198;
+   num_max_distancekm  := 15;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'UT'
-      ,p_start_nhdplusid            := 3840993
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 5.66198
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 15
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('MR UT SHORTY ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,1::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 1.2 - flowline_count'
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 30000400017915;
+   num_start_measure   := 4.56026;
+   num_max_distancekm  := 15;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'UT'
-      ,p_start_nhdplusid            := 30000400017915
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 4.56026
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 15
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('HR UT SHORTY  ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 2.1 = return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,19::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 2.2 - flowline_count'
    );
 
 END;$$;
@@ -5205,66 +5224,85 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_ut_350()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 22814447;
+   num_start_measure   := 1.10728;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'UT'
-      ,p_start_nhdplusid            := 22814447
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 1.10728
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('MR UT ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,125::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 1.2 - flowline count'
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 20000100000044;
+   num_start_measure   := 14.0713;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'UT'
-      ,p_start_nhdplusid            := 20000100000044
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 14.0713
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('HR UT ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 2.1 - return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,601::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 2.2 - flowline count'
    );
 
 END;$$;
@@ -5275,66 +5313,85 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_um_350()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 23207768;
+   num_start_measure   := 14.0492;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'UM'
-      ,p_start_nhdplusid            := 23207768
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 14.0492
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('MR UM ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,218::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 1.2 - flowline count'
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 55000500061680;
+   num_start_measure   := 84.56673;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'UM'
-      ,p_start_nhdplusid            := 55000500061680
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 84.56673
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
-
-   RETURN NEXT tap.is(
-       rec.out_flowline_count::INT
-      ,752::INT
-   );
+   
+   RETURN NEXT tap.diag('HR UM ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
    
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
+      ,'test 1.1 - return_code'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,752::INT
+      ,'test 1.2 - flowline count'
    );
 
 END;$$;
@@ -5345,66 +5402,85 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_dm_350()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 17819112;
+   num_start_measure   := 14.0492;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'DM'
-      ,p_start_nhdplusid            := 17819112
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 14.0492
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
-
+   
+   RETURN NEXT tap.diag('MR DM ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
+   );
+   
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,224::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 1.2 - flowline_count'
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 35000600173658;
+   num_start_measure   := 67.56459;
+   num_max_distancekm  := 350;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'DM'
-      ,p_start_nhdplusid            := 35000600173658
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 67.56459
+      ,p_start_measure              := num_start_measure
       ,p_stop_nhdplusid             := NULL
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
       ,p_stop_measure               := NULL
-      ,p_max_distancekm             := 350
+      ,p_max_distancekm             := num_max_distancekm
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
-
-   RETURN NEXT tap.is(
-       rec.out_flowline_count::INT
-      ,441::INT
-   );
+   
+   RETURN NEXT tap.diag('HR DM ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
    
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
+      ,'test 2.1 - return_code'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,441::INT
+      ,'test 2.1 - flowline_count'
    );
 
 END;$$;
@@ -5500,66 +5576,88 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_pp_short()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   int_stop_nhdplusid  BIGINT;
+   num_stop_measure    NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6186320;
+   num_start_measure   := 42.79978;
+   int_stop_nhdplusid  := 6189080;
+   num_stop_measure    := 88.4296;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'PP'
-      ,p_start_nhdplusid            := 6186320
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 42.79978
-      ,p_stop_nhdplusid             := 6189080
+      ,p_start_measure              := num_start_measure
+      ,p_stop_nhdplusid             := int_stop_nhdplusid
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
-      ,p_stop_measure               := 88.4296
+      ,p_stop_measure               := num_stop_measure
       ,p_max_distancekm             := NULL
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('MR PP ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,int_stop_nhdplusid,num_stop_measure],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,6::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 1.2 - flowline_count'
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 10000700016991;
+   num_start_measure   := 41.46198;
+   int_stop_nhdplusid  := 10000700036090;
+   num_stop_measure    := 91.89343;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'PP'
-      ,p_start_nhdplusid            := 10000700016991
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 41.46198
-      ,p_stop_nhdplusid             := 10000700036090
+      ,p_start_measure              := num_start_measure
+      ,p_stop_nhdplusid             := int_stop_nhdplusid
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
-      ,p_stop_measure               := 91.89343
+      ,p_stop_measure               := num_stop_measure
       ,p_max_distancekm             := NULL
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
-
-   RETURN NEXT tap.is(
-       rec.out_flowline_count::INT
-      ,7::INT
-   );
+   
+   RETURN NEXT tap.diag('HR PP ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,int_stop_nhdplusid,num_stop_measure],','));
    
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
+      ,'test 2.1 - return_code'
+   );
+
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,7::INT
+      ,'test 2.2 - flowline count'
    );
 
 END;$$;
@@ -5570,66 +5668,88 @@ CREATE OR REPLACE FUNCTION cipsrv_tap.nav_ppall_short()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
-   rec           RECORD;
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   int_stop_nhdplusid  BIGINT;
+   num_stop_measure    NUMERIC;
    
 BEGIN
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 2788639;
+   num_start_measure   := 27.31578;
+   int_stop_nhdplusid  := 1897288;
+   num_stop_measure    := 13.76972;
+   
    rec := cipsrv_nhdplus_m.navigate(
        p_search_type                := 'PPALL'
-      ,p_start_nhdplusid            := 2788639
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 27.31578
-      ,p_stop_nhdplusid             := 1897288
+      ,p_start_measure              := num_start_measure
+      ,p_stop_nhdplusid             := int_stop_nhdplusid
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
-      ,p_stop_measure               := 13.76972
+      ,p_stop_measure               := num_stop_measure
       ,p_max_distancekm             := NULL
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('MR PPALL ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,int_stop_nhdplusid,num_stop_measure],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
    );
 
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,135::INT
-   );
-   
-   RETURN NEXT tap.is(
-       rec.out_return_code::INT
-      ,0::INT
+      ,'test 1.2 - flowline count'
    );
    
    ----------------------------------------------------------------------------
+   int_start_nhdplusid := 50000800141148;
+   num_start_measure   := 7.01946;
+   int_stop_nhdplusid  := 50000800142389;
+   num_stop_measure    := 63.64216;
+   
    rec := cipsrv_nhdplus_h.navigate(
        p_search_type                := 'PPALL'
-      ,p_start_nhdplusid            := 50000800141148
+      ,p_start_nhdplusid            := int_start_nhdplusid
       ,p_start_permanent_identifier := NULL
       ,p_start_reachcode            := NULL
       ,p_start_hydroseq             := NULL
-      ,p_start_measure              := 7.01946
-      ,p_stop_nhdplusid             := 50000800142389
+      ,p_start_measure              := num_start_measure
+      ,p_stop_nhdplusid             := int_stop_nhdplusid
       ,p_stop_permanent_identifier  := NULL
       ,p_stop_reachcode             := NULL
       ,p_stop_hydroseq              := NULL
-      ,p_stop_measure               := 63.64216
+      ,p_stop_measure               := num_stop_measure
       ,p_max_distancekm             := NULL
       ,p_max_flowtimeday            := NULL
       ,p_return_flowline_details    := TRUE
       ,p_return_flowline_geometry   := TRUE
    );
-
-   RETURN NEXT tap.is(
-       rec.out_flowline_count::INT
-      ,242::INT
-   );
+   
+   RETURN NEXT tap.diag('HR PPALL ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,int_stop_nhdplusid,num_stop_measure],','));
    
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
+      ,'test 2.1 - return_code'
+   );
+
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,242::INT
+      ,'test 2.2 - flowline count'
    );
 
 END;$$;
