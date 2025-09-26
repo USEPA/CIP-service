@@ -312,9 +312,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.determine_states(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-132-gf83582e';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'f83582e07954ca896d1865db2f71e097cb6d606d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Thu Sep 25 17:04:37 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-134-gb84d220';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'b84d220e5aa05a0f1fee169a0f250b551b458fe1';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Sep 26 09:17:38 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
 
    rec                RECORD;
@@ -512,9 +512,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_state(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-132-gf83582e';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'f83582e07954ca896d1865db2f71e097cb6d606d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Thu Sep 25 17:04:37 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-134-gb84d220';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'b84d220e5aa05a0f1fee169a0f250b551b458fe1';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Sep 26 09:17:38 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                RECORD;
@@ -660,9 +660,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.clip_by_tribe(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-132-gf83582e';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'f83582e07954ca896d1865db2f71e097cb6d606d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Thu Sep 25 17:04:37 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-134-gb84d220';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'b84d220e5aa05a0f1fee169a0f250b551b458fe1';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Sep 26 09:17:38 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                        RECORD;
@@ -1080,9 +1080,9 @@ CREATE OR REPLACE FUNCTION cipsrv_support.geometry_clip(
 STABLE
 AS $BODY$
 DECLARE
-   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-132-gf83582e';
-   c_gitcommit     CONSTANT VARCHAR(255) := 'f83582e07954ca896d1865db2f71e097cb6d606d';
-   c_gitcommitdate CONSTANT VARCHAR(255) := 'Thu Sep 25 17:04:37 2025 -0400';
+   c_gitrelease    CONSTANT VARCHAR(255) := 'v1.2.1-134-gb84d220';
+   c_gitcommit     CONSTANT VARCHAR(255) := 'b84d220e5aa05a0f1fee169a0f250b551b458fe1';
+   c_gitcommitdate CONSTANT VARCHAR(255) := 'Fri Sep 26 09:17:38 2025 -0400';
    c_gitcommitauth CONSTANT VARCHAR(255) := 'Paul Dziemiela';
    
    rec                RECORD;

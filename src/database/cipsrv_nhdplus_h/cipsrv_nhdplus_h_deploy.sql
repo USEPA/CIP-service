@@ -19406,6 +19406,7 @@ DECLARE
    boo_check          BOOLEAN;
    int_sanity         INTEGER;
    sdo_flowline       GEOMETRY;
+   int_sancheck       INTEGER;
    
 BEGIN
 
@@ -19414,6 +19415,15 @@ BEGIN
    -- Check over incoming parameters
    --------------------------------------------------------------------------
    out_return_code := 0;
+   
+   IF p_region IN ('32702','AS','AMERICAN SAMOA')
+   THEN
+      int_sancheck := 250;
+      
+   ELSE
+      int_sancheck := 100;
+   
+   END IF;
    
    boo_check := FALSE;
    int_sanity := 1;
@@ -19526,7 +19536,7 @@ BEGIN
       
       int_sanity := int_sanity + 1;
       
-      IF int_sanity > 100
+      IF int_sanity > int_sancheck
       THEN
          out_return_code := -9;
          out_status_message := 'Sanity check failed';
