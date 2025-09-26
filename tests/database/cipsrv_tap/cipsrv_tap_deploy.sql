@@ -6292,8 +6292,8 @@ BEGIN
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
       ,p_distance_max_distkm          := NULL
-      ,p_raindrop_snap_max_distkm     := NULL
-      ,p_raindrop_path_max_distkm     := NULL
+      ,p_raindrop_snap_max_distkm     := 25
+      ,p_raindrop_path_max_distkm     := 0.75
       ,p_limit_innetwork              := FALSE
       ,p_limit_navigable              := FALSE
       ,p_fallback_fcode_allow         := NULL
@@ -6394,8 +6394,8 @@ BEGIN
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
       ,p_distance_max_distkm          := NULL
-      ,p_raindrop_snap_max_distkm     := NULL
-      ,p_raindrop_path_max_distkm     := NULL
+      ,p_raindrop_snap_max_distkm     := 25
+      ,p_raindrop_path_max_distkm     := 0.75
       ,p_limit_innetwork              := FALSE
       ,p_limit_navigable              := FALSE
       ,p_fallback_fcode_allow         := NULL
@@ -6516,4 +6516,1048 @@ BEGIN
       ,'test 1.3 catchment count ' || rec.out_catchment_count || ' = 63 '
    );
    
+END;$$;
+--******************************--
+----- randomnav.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.randomnav()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec           RECORD;
+   int_tmp       BIGINT;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- MR 
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomnav(
+       p_region           := NULL
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 1.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomnav(
+       p_region           := '5070'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 2.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomnav(
+       p_region           := '26904'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 3.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomnav(
+       p_region           := '32161'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 4.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomnav(
+       p_region           := '32655'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 5.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomnav(
+       p_region           := '32702'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 6.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- HR 
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomnav(
+       p_region           := NULL
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 7.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomnav(
+       p_region           := '5070'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 8.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomnav(
+       p_region           := '26904'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 9.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomnav(
+       p_region           := '32161'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 10.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomnav(
+       p_region           := '32655'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 11.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomnav(
+       p_region           := '32702'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 12.1 - return_code'
+   );
+
+END;$$;
+--******************************--
+----- randompoint.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.randompoint()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec           RECORD;
+   int_tmp       BIGINT;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   -- MR
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := NULL
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 1.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '5070'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 2.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '26904'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 3.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 4.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 5.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 6.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   -- HR
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := NULL
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 7.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '5070'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 8.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '26904'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 9.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 10.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 11.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 12.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   -- Extended MR
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := NULL
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 13.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '3338'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 14.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '5070'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 15.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '26904'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 16.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '32161'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 17.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '32655'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 18.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randompoint(
+       p_region           := '32702'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 19.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := NULL
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 20.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '3338'
+      ,p_include_extended := TRUE
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 21.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '5070'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 22.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '26904'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 23.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 24.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 25.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randompoint(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 26.1 - return_code'
+   );
+
+END;$$;
+--******************************--
+----- randomcatchment.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.randomcatchment()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec           RECORD;
+   int_tmp       BIGINT;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- MR
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := NULL
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 1.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '5070'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 2.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '26904'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 3.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 4.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 5.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 6.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- MR Extended
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := NULL
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 7.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '3338'
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 8.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '5070'
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 9.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '26904'
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 10.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 11.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 12.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 13.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- HR
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := NULL
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 14.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '5070'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 15.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '26904'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 16.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 17.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 18.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 19.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- HR Extended
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := NULL
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 20.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '3338'
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 21.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '5070'
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 22.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '26904'
+      ,p_include_extended := TRUE
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 23.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '32161'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 24.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '32655'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 25.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := '32702'
+      ,p_include_extended := NULL
+	   ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 26.1 - return_code'
+   );
+
+END;$$;
+--******************************--
+----- randomppnav.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.randomppnav()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec           RECORD;
+   int_tmp       BIGINT;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   -- MR
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomppnav(
+       p_region           := NULL
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 1.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomppnav(
+       p_region           := '5070'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 2.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomppnav(
+       p_region           := '26904'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 3.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomppnav(
+       p_region           := '32161'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 4.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomppnav(
+       p_region           := '32655'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 5.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomppnav(
+       p_region           := '32702'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 6.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- HR
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomppnav(
+       p_region           := NULL
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 7.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- AK placeholder
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomppnav(
+       p_region           := '5070'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 8.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomppnav(
+       p_region           := '26904'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 9.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomppnav(
+       p_region           := '32161'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 10.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomppnav(
+       p_region           := '32655'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 11.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomppnav(
+       p_region           := '32702'
+      ,p_return_geometry  := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 12.1 - return_code'
+   );
+
 END;$$;

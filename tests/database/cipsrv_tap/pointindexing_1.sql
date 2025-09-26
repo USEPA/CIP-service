@@ -82,8 +82,8 @@ BEGIN
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
       ,p_distance_max_distkm          := NULL
-      ,p_raindrop_snap_max_distkm     := NULL
-      ,p_raindrop_path_max_distkm     := NULL
+      ,p_raindrop_snap_max_distkm     := 25
+      ,p_raindrop_path_max_distkm     := 0.75
       ,p_limit_innetwork              := FALSE
       ,p_limit_navigable              := FALSE
       ,p_fallback_fcode_allow         := NULL
@@ -184,8 +184,8 @@ BEGIN
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
       ,p_distance_max_distkm          := NULL
-      ,p_raindrop_snap_max_distkm     := NULL
-      ,p_raindrop_path_max_distkm     := NULL
+      ,p_raindrop_snap_max_distkm     := 25
+      ,p_raindrop_path_max_distkm     := 0.75
       ,p_limit_innetwork              := FALSE
       ,p_limit_navigable              := FALSE
       ,p_fallback_fcode_allow         := NULL

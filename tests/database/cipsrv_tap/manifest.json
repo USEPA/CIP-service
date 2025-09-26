@@ -49,6 +49,11 @@
             ,"pointindexing_1.sql"
             
             ,"updn_1.sql"
+            
+            ,"randomnav.sql"
+            ,"randompoint.sql"
+            ,"randomcatchment.sql"
+            ,"randomppnav.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
