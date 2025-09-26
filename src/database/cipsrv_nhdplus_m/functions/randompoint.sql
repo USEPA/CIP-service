@@ -89,7 +89,7 @@ BEGIN
       IF int_sanity > 25
       THEN
          out_return_code    := -9;
-         out_status_message := 'Unable to process ' || int_featureid::VARCHAR || '.';
+         out_status_message := 'Unable to process ' || rec.out_nhdplusid::VARCHAR || '.';
          RETURN;
          
       END IF;

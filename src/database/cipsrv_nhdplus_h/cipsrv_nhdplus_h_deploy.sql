@@ -4269,40 +4269,40 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.delineate(
-    IN  p_search_type                  VARCHAR
-   ,IN  p_start_nhdplusid              BIGINT
-   ,IN  p_start_permanent_identifier   VARCHAR
-   ,IN  p_start_reachcode              VARCHAR
-   ,IN  p_start_hydroseq               BIGINT
-   ,IN  p_start_measure                NUMERIC
-   ,IN  p_stop_nhdplusid               BIGINT
-   ,IN  p_stop_permanent_identifier    VARCHAR
-   ,IN  p_stop_reachcode               VARCHAR
-   ,IN  p_stop_hydroseq                BIGINT
-   ,IN  p_stop_measure                 NUMERIC
-   ,IN  p_max_distancekm               NUMERIC
-   ,IN  p_max_flowtimeday              NUMERIC
-   ,IN  p_aggregation_engine           VARCHAR
-   ,IN  p_split_initial_catchment      BOOLEAN
-   ,IN  p_fill_basin_holes             BOOLEAN
-   ,IN  p_force_no_cache               BOOLEAN
-   ,IN  p_return_delineation_geometry  BOOLEAN
-   ,IN  p_return_flowlines             BOOLEAN   
-   ,IN  p_return_flowline_details      BOOLEAN
-   ,IN  p_return_flowline_geometry     BOOLEAN
-   ,IN  p_known_region                 VARCHAR DEFAULT NULL
+    IN  p_search_type                    VARCHAR
+   ,IN  p_start_nhdplusid                BIGINT
+   ,IN  p_start_permanent_identifier     VARCHAR
+   ,IN  p_start_reachcode                VARCHAR
+   ,IN  p_start_hydroseq                 BIGINT
+   ,IN  p_start_measure                  NUMERIC
+   ,IN  p_stop_nhdplusid                 BIGINT
+   ,IN  p_stop_permanent_identifier      VARCHAR
+   ,IN  p_stop_reachcode                 VARCHAR
+   ,IN  p_stop_hydroseq                  BIGINT
+   ,IN  p_stop_measure                   NUMERIC
+   ,IN  p_max_distancekm                 NUMERIC
+   ,IN  p_max_flowtimeday                NUMERIC
+   ,IN  p_aggregation_engine             VARCHAR
+   ,IN  p_split_initial_catchment        BOOLEAN
+   ,IN  p_fill_basin_holes               BOOLEAN
+   ,IN  p_force_no_cache                 BOOLEAN
+   ,IN  p_return_delineation_geometry    BOOLEAN
+   ,IN  p_return_flowlines               BOOLEAN   
+   ,IN  p_return_flowline_details        BOOLEAN
+   ,IN  p_return_flowline_geometry       BOOLEAN
+   ,IN  p_known_region                   VARCHAR DEFAULT NULL
    
-   ,OUT out_aggregation_used           VARCHAR
-   ,OUT out_start_nhdplusid            BIGINT
-   ,OUT out_start_permanent_identifier VARCHAR
-   ,OUT out_start_measure              NUMERIC
-   ,OUT out_grid_srid                  INTEGER
-   ,OUT out_stop_nhdplusid             BIGINT
-   ,OUT out_stop_measure               NUMERIC
-   ,OUT out_flowline_count             INTEGER
-   ,OUT out_return_flowlines           BOOLEAN
-   ,OUT out_return_code                NUMERIC
-   ,OUT out_status_message             VARCHAR
+   ,OUT out_aggregation_used             VARCHAR
+   ,OUT out_start_nhdplusid              BIGINT
+   ,OUT out_start_permanent_identifier   VARCHAR
+   ,OUT out_start_measure                NUMERIC
+   ,OUT out_grid_srid                    INTEGER
+   ,OUT out_stop_nhdplusid               BIGINT
+   ,OUT out_stop_measure                 NUMERIC
+   ,OUT out_flowline_count               INTEGER
+   ,OUT out_return_flowlines             BOOLEAN
+   ,OUT out_return_code                  INTEGER
+   ,OUT out_status_message               VARCHAR
 )
 VOLATILE
 AS $BODY$
@@ -17692,6 +17692,7 @@ BEGIN
       out_path_distance_km := rec.out_path_distance_km;
       out_end_point        := rec.out_end_point;
       out_indexing_line    := rec.out_indexing_line;
+      out_nhdplusid        := rec.out_flowlines[1].nhdplusid;
       out_return_code      := rec.out_return_code;
       out_status_message   := rec.out_status_message;
       RETURN;
@@ -18803,7 +18804,7 @@ BEGIN
             ,aa.isocean
             ,aa.isalaskan
             FROM
-            cipsrv_epageofab_m.catchment_fabric aa
+            cipsrv_epageofab_h.catchment_fabric aa
             TABLESAMPLE SYSTEM(num_big_samp)
          ) a
          WHERE 
@@ -19347,7 +19348,7 @@ BEGIN
       IF int_sanity > 25
       THEN
          out_return_code    := -9;
-         out_status_message := 'Unable to process ' || int_featureid::VARCHAR || '.';
+         out_status_message := 'Unable to process ' || rec.out_nhdplusid::VARCHAR || '.';
          RETURN;
          
       END IF;

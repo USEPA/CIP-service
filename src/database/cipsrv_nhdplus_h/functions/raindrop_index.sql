@@ -186,6 +186,7 @@ BEGIN
       out_path_distance_km := rec.out_path_distance_km;
       out_end_point        := rec.out_end_point;
       out_indexing_line    := rec.out_indexing_line;
+      out_nhdplusid        := rec.out_flowlines[1].nhdplusid;
       out_return_code      := rec.out_return_code;
       out_status_message   := rec.out_status_message;
       RETURN;

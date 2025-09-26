@@ -4384,7 +4384,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.delineate(
    ,OUT out_stop_measure                 NUMERIC
    ,OUT out_flowline_count               INTEGER
    ,OUT out_return_flowlines             BOOLEAN
-   ,OUT out_return_code                  NUMERIC
+   ,OUT out_return_code                  INTEGER
    ,OUT out_status_message               VARCHAR
 )
 VOLATILE
@@ -17782,6 +17782,7 @@ BEGIN
       out_path_distance_km := rec.out_path_distance_km;
       out_end_point        := rec.out_end_point;
       out_indexing_line    := rec.out_indexing_line;
+      out_nhdplusid        := rec.out_flowlines[1].nhdplusid;
       out_return_code      := rec.out_return_code;
       out_status_message   := rec.out_status_message;
       RETURN;
@@ -19437,7 +19438,7 @@ BEGIN
       IF int_sanity > 25
       THEN
          out_return_code    := -9;
-         out_status_message := 'Unable to process ' || int_featureid::VARCHAR || '.';
+         out_status_message := 'Unable to process ' || rec.out_nhdplusid::VARCHAR || '.';
          RETURN;
          
       END IF;

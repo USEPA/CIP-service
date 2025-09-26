@@ -5633,3 +5633,887 @@ BEGIN
    );
 
 END;$$;
+--******************************--
+----- delineate_1.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_1()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
+   int_tmp             INTEGER;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6667867;
+   num_start_measure   := 25.636;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_m.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'SPATIAL'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('MR UT SPATIAL ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
+   );
+
+   int_tmp := 63;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 1.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6667867;
+   num_start_measure   := 25.636;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_m.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'TOPO'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('MR UT TOPO ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 2.1 - return_code'
+   );
+
+   int_tmp := 63;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 2.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6667867;
+   num_start_measure   := 25.636;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_m.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'NONE'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('MR UT NONE ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 3.1 - return_code'
+   );
+
+   int_tmp := 63;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 3.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'SPATIAL'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UT SPATIAL ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 4.1 - return_code'
+   );
+
+   int_tmp := 225;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 4.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'TOPO'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UT TOPO ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 5.1 - return_code'
+   );
+
+   int_tmp := 225;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 5.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'NONE'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UT NONE ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 6.1 - return_code'
+   );
+
+   int_tmp := 225;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 6.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+
+END;$$;
+--******************************--
+----- delineate_2.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_1()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
+   int_tmp             INTEGER;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6667867;
+   num_start_measure   := 25.636;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_m.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'SPATIAL'
+      ,p_split_initial_catchment     := TRUE
+      ,p_fill_basin_holes            := TRUE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('MR UT SPATIAL ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
+   );
+
+   int_tmp := 63;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 1.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6667867;
+   num_start_measure   := 25.636;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_m.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'TOPO'
+      ,p_split_initial_catchment     := TRUE
+      ,p_fill_basin_holes            := TRUE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('MR UT TOPO ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 2.1 - return_code'
+   );
+
+   int_tmp := 63;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 2.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 6667867;
+   num_start_measure   := 25.636;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_m.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'NONE'
+      ,p_split_initial_catchment     := TRUE
+      ,p_fill_basin_holes            := TRUE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('MR UT NONE ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 3.1 - return_code'
+   );
+
+   int_tmp := 63;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 3.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'SPATIAL'
+      ,p_split_initial_catchment     := TRUE
+      ,p_fill_basin_holes            := TRUE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UT SPATIAL ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 4.1 - return_code'
+   );
+
+   int_tmp := 225;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 4.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'TOPO'
+      ,p_split_initial_catchment     := TRUE
+      ,p_fill_basin_holes            := TRUE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UT TOPO ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 5.1 - return_code'
+   );
+
+   int_tmp := 225;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 5.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UT'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'NONE'
+      ,p_split_initial_catchment     := TRUE
+      ,p_fill_basin_holes            := TRUE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UT NONE ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 6.1 - return_code'
+   );
+
+   int_tmp := 225;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 6.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+
+END;$$;
+--******************************--
+----- pointindexing_1.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.pointindexing_1()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec           RECORD;
+   int_tmp       BIGINT;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.pointindexing(
+       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+      ,p_indexing_engine              := 'DISTANCE'
+      ,p_fcode_allow                  := NULL
+      ,p_fcode_deny                   := NULL
+      ,p_distance_max_distkm          := 25
+      ,p_raindrop_snap_max_distkm     := NULL
+      ,p_raindrop_path_max_distkm     := NULL
+      ,p_limit_innetwork              := FALSE
+      ,p_limit_navigable              := FALSE
+      ,p_fallback_fcode_allow         := NULL
+      ,p_fallback_fcode_deny          := NULL
+      ,p_fallback_distance_max_distkm := NULL
+      ,p_fallback_limit_innetwork     := NULL
+      ,p_fallback_limit_navigable     := NULL
+      ,p_return_link_path             := TRUE
+      ,p_known_region                 := NULL
+      ,p_known_catchment_nhdplusid    := NULL 
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 1.1 - return_code'
+   );
+   
+   int_tmp := 20928204;
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,int_tmp
+      ,'test 1.2 - nhdplusid ' || rec.out_nhdplusid || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.pointindexing(
+       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+      ,p_indexing_engine              := 'CATCONSTRAINED'
+      ,p_fcode_allow                  := NULL
+      ,p_fcode_deny                   := NULL
+      ,p_distance_max_distkm          := NULL
+      ,p_raindrop_snap_max_distkm     := NULL
+      ,p_raindrop_path_max_distkm     := NULL
+      ,p_limit_innetwork              := FALSE
+      ,p_limit_navigable              := FALSE
+      ,p_fallback_fcode_allow         := NULL
+      ,p_fallback_fcode_deny          := NULL
+      ,p_fallback_distance_max_distkm := NULL
+      ,p_fallback_limit_innetwork     := NULL
+      ,p_fallback_limit_navigable     := NULL
+      ,p_return_link_path             := TRUE
+      ,p_known_region                 := NULL
+      ,p_known_catchment_nhdplusid    := NULL 
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 2.1 - return_code'
+   );
+   
+   int_tmp := 20928204;
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,int_tmp
+      ,'test 2.2 - nhdplusid ' || rec.out_nhdplusid || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.pointindexing(
+       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+      ,p_indexing_engine              := 'RAINDROP'
+      ,p_fcode_allow                  := NULL
+      ,p_fcode_deny                   := NULL
+      ,p_distance_max_distkm          := NULL
+      ,p_raindrop_snap_max_distkm     := NULL
+      ,p_raindrop_path_max_distkm     := NULL
+      ,p_limit_innetwork              := FALSE
+      ,p_limit_navigable              := FALSE
+      ,p_fallback_fcode_allow         := NULL
+      ,p_fallback_fcode_deny          := NULL
+      ,p_fallback_distance_max_distkm := NULL
+      ,p_fallback_limit_innetwork     := NULL
+      ,p_fallback_limit_navigable     := NULL
+      ,p_return_link_path             := TRUE
+      ,p_known_region                 := NULL
+      ,p_known_catchment_nhdplusid    := NULL 
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 3.1 - return_code'
+   );
+   
+   int_tmp := 20928204;
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,int_tmp
+      ,'test 3.2 - nhdplusid ' || rec.out_nhdplusid || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.pointindexing(
+       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+      ,p_indexing_engine              := 'DISTANCE'
+      ,p_fcode_allow                  := NULL
+      ,p_fcode_deny                   := NULL
+      ,p_distance_max_distkm          := 25
+      ,p_raindrop_snap_max_distkm     := NULL
+      ,p_raindrop_path_max_distkm     := NULL
+      ,p_limit_innetwork              := FALSE
+      ,p_limit_navigable              := FALSE
+      ,p_fallback_fcode_allow         := NULL
+      ,p_fallback_fcode_deny          := NULL
+      ,p_fallback_distance_max_distkm := NULL
+      ,p_fallback_limit_innetwork     := NULL
+      ,p_fallback_limit_navigable     := NULL
+      ,p_return_link_path             := TRUE
+      ,p_known_region                 := NULL
+      ,p_known_catchment_nhdplusid    := NULL 
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 4.1 - return_code'
+   );
+   
+   int_tmp := 21001300058689;
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,int_tmp
+      ,'test 4.2 - nhdplusid ' || rec.out_nhdplusid || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.pointindexing(
+       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+      ,p_indexing_engine              := 'CATCONSTRAINED'
+      ,p_fcode_allow                  := NULL
+      ,p_fcode_deny                   := NULL
+      ,p_distance_max_distkm          := NULL
+      ,p_raindrop_snap_max_distkm     := NULL
+      ,p_raindrop_path_max_distkm     := NULL
+      ,p_limit_innetwork              := FALSE
+      ,p_limit_navigable              := FALSE
+      ,p_fallback_fcode_allow         := NULL
+      ,p_fallback_fcode_deny          := NULL
+      ,p_fallback_distance_max_distkm := NULL
+      ,p_fallback_limit_innetwork     := NULL
+      ,p_fallback_limit_navigable     := NULL
+      ,p_return_link_path             := TRUE
+      ,p_known_region                 := NULL
+      ,p_known_catchment_nhdplusid    := NULL 
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 5.1 - return_code'
+   );
+   
+   int_tmp := 21001300058689;
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,int_tmp
+      ,'test 5.2 - nhdplusid ' || rec.out_nhdplusid || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.pointindexing(
+       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+      ,p_indexing_engine              := 'RAINDROP'
+      ,p_fcode_allow                  := NULL
+      ,p_fcode_deny                   := NULL
+      ,p_distance_max_distkm          := NULL
+      ,p_raindrop_snap_max_distkm     := NULL
+      ,p_raindrop_path_max_distkm     := NULL
+      ,p_limit_innetwork              := FALSE
+      ,p_limit_navigable              := FALSE
+      ,p_fallback_fcode_allow         := NULL
+      ,p_fallback_fcode_deny          := NULL
+      ,p_fallback_distance_max_distkm := NULL
+      ,p_fallback_limit_innetwork     := NULL
+      ,p_fallback_limit_navigable     := NULL
+      ,p_return_link_path             := TRUE
+      ,p_known_region                 := NULL
+      ,p_known_catchment_nhdplusid    := NULL 
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 6.1 - return_code'
+   );
+   
+   int_tmp := 21001300058689;
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,int_tmp
+      ,'test 6.2 - nhdplusid ' || rec.out_nhdplusid || ' = ' || int_tmp
+   );
+
+END;$$;
+--******************************--
+----- updn_1.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.updn_1()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 74.0892;
+   num_max_distancekm  := 25;
+   
+   rec := cipsrv_owld.upstreamdownstream(
+       p_nhdplus_version               := 'HR'
+      ,p_search_type                   := 'UT'
+      ,p_start_nhdplusid               := int_start_nhdplusid
+      ,p_start_permanent_identifier    := NULL
+      ,p_start_reachcode               := NULL
+      ,p_start_hydroseq                := NULL
+      ,p_start_measure                 := num_start_measure
+      ,p_start_source_featureid        := NULL
+      ,p_start_source_featureid2       := NULL
+      ,p_start_source_originator       := NULL
+      ,p_start_source_series           := NULL
+      ,p_start_start_date              := NULL
+      ,p_start_end_date                := NULL
+      ,p_start_permid_joinkey          := NULL
+      ,p_start_source_joinkey          := NULL
+      ,p_start_cip_joinkey             := NULL
+      ,p_start_linked_data_program     := NULL
+      ,p_start_search_precision        := NULL
+      ,p_start_push_rad_for_permid     := NULL
+      ,p_stop_nhdplusid                := NULL
+      ,p_stop_permanent_identifier     := NULL
+      ,p_stop_reachcode                := NULL
+      ,p_stop_hydroseq                 := NULL
+      ,p_stop_measure                  := NULL
+      ,p_stop_source_featureid         := NULL
+      ,p_stop_source_featureid2        := NULL
+      ,p_stop_source_originator        := NULL
+      ,p_stop_source_series            := NULL
+      ,p_stop_start_date               := NULL
+      ,p_stop_end_date                 := NULL
+      ,p_stop_permid_joinkey           := NULL
+      ,p_stop_source_joinkey           := NULL
+      ,p_stop_cip_joinkey              := NULL
+      ,p_stop_linked_data_program      := NULL
+      ,p_stop_search_precision         := NULL
+      ,p_stop_push_rad_for_permid      := NULL
+      ,p_max_distancekm                := num_max_distancekm
+      ,p_max_flowtimeday               := NULL
+      ,p_linked_data_search_list       := ARRAY['WQP']
+      ,p_search_precision              := 'CATCHMENT'
+      ,p_return_flowlines              := TRUE
+      ,p_return_flowline_details       := TRUE
+      ,p_return_flowline_geometry      := FALSE
+      ,p_return_catchments             := TRUE
+      ,p_return_linked_data_cip        := FALSE
+      ,p_return_linked_data_huc12      := FALSE
+      ,p_return_linked_data_source     := FALSE
+      ,p_return_linked_data_rad        := FALSE
+      ,p_return_linked_data_attributes := FALSE
+      ,p_remove_stop_start_sfids       := FALSE
+      ,p_push_source_geometry_as_rad   := FALSE
+      ,p_known_region                  := NULL
+   );
+   
+   RETURN NEXT tap.diag('UPDN ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,63::INT
+      ,'test 1.2 flowline count ' || rec.out_flowline_count || ' = 63 '
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_catchment_count::INT
+      ,63::INT
+      ,'test 1.3 catchment count ' || rec.out_catchment_count || ' = 63 '
+   );
+   
+END;$$;

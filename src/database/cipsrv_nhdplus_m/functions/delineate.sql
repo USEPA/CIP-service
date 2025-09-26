@@ -42,7 +42,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.delineate(
    ,OUT out_stop_measure                 NUMERIC
    ,OUT out_flowline_count               INTEGER
    ,OUT out_return_flowlines             BOOLEAN
-   ,OUT out_return_code                  NUMERIC
+   ,OUT out_return_code                  INTEGER
    ,OUT out_status_message               VARCHAR
 )
 VOLATILE
