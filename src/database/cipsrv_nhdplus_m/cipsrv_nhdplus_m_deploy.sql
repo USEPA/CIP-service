@@ -8565,7 +8565,7 @@ BEGIN
          FROM 
          cipsrv_nhdplus_m.networknhdflowline a
          WHERE
-         b.hydroseq = p_hydroseq;
+         a.hydroseq = p_hydroseq;
 
          out_flowline.out_lengthkm           := out_flowline.lengthkm;
          out_flowline.out_flowtimeday        := out_flowline.flowtimeday;
@@ -8640,7 +8640,7 @@ BEGIN
          FROM 
          cipsrv_nhdplus_m.networknhdflowline a
          WHERE
-             b.hydroseq = p_hydroseq
+             a.hydroseq = p_hydroseq
          AND (
             a.frommeas = p_measure
             OR
