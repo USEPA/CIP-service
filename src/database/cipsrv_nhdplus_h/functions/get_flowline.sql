@@ -96,7 +96,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -115,13 +115,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
@@ -171,7 +178,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -190,13 +197,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
@@ -281,7 +295,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -300,13 +314,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
@@ -356,7 +377,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -375,13 +396,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
@@ -466,7 +494,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -485,13 +513,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
@@ -541,7 +576,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -560,19 +595,26 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
          cipsrv_nhdplus_h.networknhdflowline a
          WHERE
-             b.hydroseq = p_hydroseq
+             a.hydroseq = p_hydroseq
          AND (
             a.frommeas = p_measure
             OR
@@ -655,7 +697,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -674,13 +716,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
@@ -739,7 +788,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -758,13 +807,20 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
          INTO STRICT
          out_flowline
          FROM 
