@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.navigate(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
@@ -43,7 +43,7 @@ DECLARE
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    
-   json_flowlines                    JSONB;
+   json_flowlines                    JSON;
    str_known_region                  VARCHAR;
    
 BEGIN
@@ -271,7 +271,7 @@ BEGIN
    
    IF int_return_code != 0
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'flowlines',       NULL
          ,'flowline_count',  NULL
          ,'nhdplus_version', str_nhdplus_version
@@ -287,7 +287,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF int_flowline_count = 0
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'flowlines',       NULL
          ,'flowline_count',  NULL
          ,'nhdplus_version', str_nhdplus_version
@@ -303,8 +303,8 @@ BEGIN
    ----------------------------------------------------------------------------
    json_flowlines := (
       SELECT 
-      JSONB_AGG(
-         j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
+      JSON_AGG(
+         j.my_json::JSON
       ) AS my_feats
       FROM (
          SELECT 
@@ -349,15 +349,11 @@ BEGIN
       ) j
    );
          
-   IF json_flowlines IS NULL
-   OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+   IF json_flowlines IS NOT NULL
    THEN
-      json_flowlines := NULL;
-      
-   ELSE
       json_flowlines := JSON_BUILD_OBJECT(
           'type'    , 'FeatureCollection'
-         ,'features', json_flowlines
+         ,'features', json_flowlines::JSON
       );
       
    END IF;
@@ -366,8 +362,8 @@ BEGIN
    -- Step 50
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
-       'flowlines',       json_flowlines
+   RETURN JSON_BUILD_OBJECT(
+       'flowlines',       json_flowlines::JSON
       ,'flowline_count',  int_flowline_count
       ,'nhdplus_version', str_nhdplus_version
       ,'return_code',     int_return_code
