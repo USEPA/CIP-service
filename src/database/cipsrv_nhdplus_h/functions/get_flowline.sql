@@ -129,6 +129,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -211,6 +212,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -328,6 +330,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -410,6 +413,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -527,6 +531,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -609,6 +614,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -730,6 +736,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -821,6 +828,7 @@ BEGIN
          ,0::NUMERIC    AS pathflowtime_adj
          /* ++++++++++ */
          ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 

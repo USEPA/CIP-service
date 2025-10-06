@@ -44,6 +44,7 @@ AS(
    ,pathflowtime_adj        NUMERIC
    /* ++++++++++ */
    ,nav_order               INTEGER
+   ,ordering_key            INTEGER
 );
 
 ALTER TYPE cipsrv_nhdplus_h.flowline OWNER TO cipsrv;
