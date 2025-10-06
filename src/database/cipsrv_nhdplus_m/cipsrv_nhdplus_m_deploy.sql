@@ -1,4 +1,99 @@
 --******************************--
+----- types/flowline.sql 
+
+DROP TYPE IF EXISTS cipsrv_nhdplus_m.flowline CASCADE;
+
+CREATE TYPE cipsrv_nhdplus_m.flowline 
+AS(
+    nhdplusid               BIGINT
+   ,hydroseq                BIGINT
+   ,fmeasure                NUMERIC
+   ,tmeasure                NUMERIC
+   ,levelpathi              BIGINT
+   ,terminalpa              BIGINT
+   ,uphydroseq              BIGINT
+   ,dnhydroseq              BIGINT
+   ,dnminorhyd              BIGINT
+   ,divergence              INTEGER
+   ,streamleve              INTEGER
+   ,arbolatesu              NUMERIC
+   ,fromnode                BIGINT
+   ,tonode                  BIGINT
+   ,vpuid                   VARCHAR(8)
+   /* ++++++++++ */
+   ,permanent_identifier    VARCHAR(40)
+   ,reachcode               VARCHAR(14)
+   ,fcode                   INTEGER
+   /* ++++++++++ */
+   ,lengthkm                NUMERIC
+   ,lengthkm_ratio          NUMERIC
+   ,flowtimeday             NUMERIC
+   ,flowtimeday_ratio       NUMERIC
+   /* ++++++++++ */
+   ,pathlengthkm            NUMERIC
+   ,pathflowtimeday         NUMERIC
+   /* ++++++++++ */
+   ,out_grid_srid           INTEGER
+   ,out_measure             NUMERIC
+   ,out_lengthkm            NUMERIC
+   ,out_flowtimeday         NUMERIC
+   ,out_pathlengthkm        NUMERIC
+   ,out_pathflowtimeday     NUMERIC
+   ,out_node                BIGINT
+   /* ++++++++++ */
+   ,network_distancekm      NUMERIC
+   ,network_flowtimeday     NUMERIC
+   ,pathlength_adj          NUMERIC
+   ,pathflowtime_adj        NUMERIC
+   /* ++++++++++ */
+   ,nav_order               INTEGER
+   ,ordering_key            INTEGER
+);
+
+ALTER TYPE cipsrv_nhdplus_m.flowline OWNER TO cipsrv;
+
+GRANT USAGE ON TYPE cipsrv_nhdplus_m.flowline TO PUBLIC;
+
+--******************************--
+----- types/snapflowline.sql 
+
+DROP TYPE IF EXISTS cipsrv_nhdplus_m.snapflowline CASCADE;
+
+CREATE TYPE cipsrv_nhdplus_m.snapflowline 
+AS(
+    permanent_identifier        VARCHAR(40)
+   ,fdate                       DATE
+   ,resolution                  INTEGER
+   ,gnis_id                     VARCHAR(10)
+   ,gnis_name                   VARCHAR(65)
+   ,lengthkm                    NUMERIC
+   ,totma                       NUMERIC
+   ,reachcode                   VARCHAR(14)
+   ,flowdir                     INTEGER
+   ,wbarea_permanent_identifier VARCHAR(40)
+   ,ftype                       INTEGER
+   ,fcode                       INTEGER
+   ,mainpath                    INTEGER
+   ,innetwork                   INTEGER
+   ,visibilityfilter            INTEGER
+   ,nhdplusid                   BIGINT
+   ,vpuid                       VARCHAR(16)
+   ,enabled                     INTEGER
+   ,fmeasure                    NUMERIC
+   ,tmeasure                    NUMERIC
+   ,hydroseq                    BIGINT
+   ,shape                       GEOMETRY
+   -----
+   ,snap_measure                NUMERIC
+   ,snap_distancekm             NUMERIC
+   ,snap_point                  GEOMETRY
+);
+
+ALTER TYPE cipsrv_nhdplus_m.snapflowline OWNER TO cipsrv;
+
+GRANT USAGE ON TYPE cipsrv_nhdplus_m.snapflowline TO PUBLIC;
+
+--******************************--
 ----- functions/generic_common_mbr.sql 
 
 DO $$DECLARE 
@@ -2834,6 +2929,78 @@ ANALYZE cipsrv_nhdplus_m.nhdflowline_32702;
 --VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdflowline_32702;
 
 --******************************--
+----- materialized views/nhdplusflow_upminordivs.sql 
+
+DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflow_upminordivs;
+
+CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflow_upminordivs(
+    objectid
+   ,nodenumber
+   ,deltalevel
+   ,direction
+   ,gapdistkm
+   ,hasgeo
+   ,fromhydroseq
+   ,tohydroseq
+   ,pathlength_adj
+   ,pathtimema_adj
+)
+AS
+SELECT
+ CAST(a.objectid     AS INTEGER)         AS objectid
+,CAST(a.nodenumber   AS BIGINT)          AS nodenumber
+,CAST(a.deltalevel   AS INTEGER)         AS deltalevel
+,CAST(a.direction    AS INTEGER)         AS direction 
+,CAST(a.gapdistkm    AS NUMERIC)         AS gapdistkm
+,CAST(a.hasgeo       AS VARCHAR(1))      AS hasgeo
+,CAST(a.fromhydroseq AS BIGINT)          AS fromhydroseq
+,CAST(a.tohydroseq   AS BIGINT)          AS tohydroseq
+,c.dnfullpathlength - b.upfullpathlength AS pathlength_adj
+,c.dnfullpathtimema - b.upfullpathtimema AS pathtimema_adj
+FROM
+cipsrv_nhdplus_m.nhdplusflow a
+JOIN (
+   SELECT
+    bb.hydroseq                   AS uphydro_seq
+   ,bb.pathlength                 AS upfullpathlength
+   ,bb.pathtimema                 AS upfullpathtimema
+   ,bb.dnhydroseq                 AS uphydro_dn
+   FROM
+   cipsrv_nhdplus_m.networknhdflowline bb
+) b
+ON
+b.uphydro_seq = a.fromhydroseq
+JOIN (
+   SELECT
+    cc.hydroseq                   AS dnhydro_seq
+   ,cc.pathlength   + cc.lengthkm AS dnfullpathlength
+   ,cc.pathtimema   + cc.totma    AS dnfullpathtimema
+   ,cc.uphydroseq                 AS dnhydro_up
+   FROM
+   cipsrv_nhdplus_m.networknhdflowline cc
+) c
+ON
+c.dnhydro_seq = a.tohydroseq
+WHERE
+b.uphydro_dn != c.dnhydro_seq;
+
+ALTER TABLE cipsrv_nhdplus_m.nhdplusflow_upminordivs OWNER TO cipsrv;
+GRANT SELECT ON cipsrv_nhdplus_m.nhdplusflow_upminordivs TO public;
+
+CREATE UNIQUE INDEX nhdplusflow_upminordivs_01u
+ON cipsrv_nhdplus_m.nhdplusflow_upminordivs(tohydroseq,fromhydroseq);
+
+CREATE UNIQUE INDEX nhdplusflow_upminordivs_02u
+ON cipsrv_nhdplus_m.nhdplusflow_upminordivs(objectid);
+
+CREATE INDEX nhdplusflow_upminordivs_01i
+ON cipsrv_nhdplus_m.nhdplusflow_upminordivs(nodenumber);
+
+ANALYZE cipsrv_nhdplus_m.nhdplusflow_upminordivs;
+
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflow_upminordivs;
+
+--******************************--
 ----- materialized views/nhdplusflowlinevaa_nav.sql 
 
 DROP MATERIALIZED VIEW IF EXISTS cipsrv_nhdplus_m.nhdplusflowlinevaa_nav;
@@ -2846,12 +3013,14 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(
    ,tmeasure
    ,levelpathi
    ,terminalpa
+   ,arbolatesu
    ,uphydroseq
    ,dnhydroseq
    ,dnminorhyd
    ,divergence
    ,fromnode
    ,tonode
+   ,streamleve
    /* ++++++++++ */
    ,lengthkm
    ,totma
@@ -2860,6 +3029,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(
    /* ++++++++++ */
    ,force_main_line
    ,ary_upstream_hydroseq
+   ,ary_upstream_hydromains
    ,ary_downstream_hydroseq
    /* ++++++++++ */
    ,headwater
@@ -2877,6 +3047,7 @@ SELECT
 ,CAST(a.tomeas     AS NUMERIC) AS tomeas
 ,CAST(a.levelpathi AS BIGINT)  AS levelpathi
 ,CAST(a.terminalpa AS BIGINT)  AS terminalpa
+,a.arbolatesu
 ,CASE
  WHEN a.uphydroseq = 0
  THEN
@@ -2899,8 +3070,9 @@ SELECT
    CAST(a.dnminorhyd AS BIGINT)
  END AS dnminorhyd
 ,a.divergence
-,CAST(a.fromnode AS BIGINT)   AS fromnode
-,CAST(a.tonode AS BIGINT)     AS tonode
+,CAST(a.fromnode AS BIGINT)    AS fromnode
+,CAST(a.tonode AS BIGINT)      AS tonode
+,CAST(a.streamleve AS INTEGER) AS streamleve
 /* ++++++++++ */
 ,CAST(a.lengthkm AS NUMERIC) AS lengthkm
 ,CASE
@@ -2984,50 +3156,34 @@ SELECT
    ,510002581  -- Wisconsin
    ,350005918  -- Yazoo
    ,590001280  -- Yellowstone
-   --- Born on the Port Allen Bayou --
-   ,350002673
-   ,350002676
-   ,350002718
-   ,350002733
-   ,350002775
-   ,350002785
-   ,350002783
-   ,350002835
-   ,350002844
-   ,350002873
-   ,350002878
-   ,350002894
-   ,350002915
-   ,350002946
-   ,350002973
-   ,350003025
-   ,350003055
-   ,350003153
-   ,350003177
-   ,350003182
-   ,350003196
-   ,350003274
-   ,350037594
-   ,350045866
-   ,350083155
-   --- Kaskaskia Old Course --
-   ,510000109
-   ,510000101
-   ,510000102
-   ,510000111
-   --- Other minor networks receiving big water
-   ,510000080
-   ,510000089
-   ,510000143
-   ,550002456
-   ,550003310
+
  )
  THEN
    TRUE
  ELSE
    FALSE
  END AS force_main_line
-,ARRAY(SELECT CAST(bb.fromhydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow bb WHERE bb.tohydroseq = a.hydroseq) AS ary_upstream_hydroseq
+,ARRAY(
+   SELECT 
+   CAST(bb.fromhydroseq AS BIGINT) 
+   FROM 
+   cipsrv_nhdplus_m.nhdplusflow bb 
+   WHERE 
+   bb.tohydroseq = a.hydroseq
+ ) AS ary_upstream_hydroseq
+,ARRAY(
+   SELECT 
+   CAST(ff.fromhydroseq AS BIGINT) 
+   FROM 
+   cipsrv_nhdplus_m.nhdplusflow ff 
+   JOIN
+   cipsrv_nhdplus_m.networknhdflowline gg
+   ON
+       gg.hydroseq    = ff.fromhydroseq
+   AND gg.dnhydroseq  = ff.tohydroseq 
+   WHERE 
+   ff.tohydroseq = a.hydroseq
+ ) AS ary_upstream_hydromains
 ,CASE
  WHEN a.dndraincou = 1
  THEN
@@ -3037,7 +3193,14 @@ SELECT
    ARRAY[CAST(a.dnhydroseq AS BIGINT),CAST(a.dnminorhyd AS BIGINT)]
  WHEN a.dndraincou > 2
  THEN
-   ARRAY(SELECT CAST(cc.tohydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow cc WHERE cc.fromhydroseq = a.hydroseq)
+   ARRAY(
+      SELECT 
+      CAST(cc.tohydroseq AS BIGINT) 
+      FROM 
+      cipsrv_nhdplus_m.nhdplusflow cc 
+      WHERE 
+      cc.fromhydroseq = a.hydroseq
+   )
  ELSE
    NULL
  END AS ary_downstream_hydroseq
@@ -3062,6 +3225,7 @@ SELECT
  ELSE
    FALSE
  END AS network_end
+/* ++++++++++ */
 ,a.vpuid
 FROM
 cipsrv_nhdplus_m.networknhdflowline a
@@ -3112,6 +3276,9 @@ CREATE INDEX nhdplusflowlinevaa_nav_gn1
 ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav USING GIN(ary_upstream_hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_nav_gn2
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav USING GIN(ary_upstream_hydromains);
+
+CREATE INDEX nhdplusflowlinevaa_nav_gn3
 ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav USING GIN(ary_downstream_hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_nav_10i
@@ -3298,93 +3465,6 @@ a.statesplit IN (0,1);
 
 ALTER TABLE cipsrv_nhdplus_m.catchment_32702_state OWNER TO cipsrv;
 GRANT SELECT ON cipsrv_nhdplus_m.catchment_32702_state TO public;
---******************************--
------ types/flowline.sql 
-
-DROP TYPE IF EXISTS cipsrv_nhdplus_m.flowline CASCADE;
-
-CREATE TYPE cipsrv_nhdplus_m.flowline 
-AS(
-    nhdplusid             BIGINT
-   ,hydroseq              BIGINT
-   ,fmeasure              NUMERIC
-   ,tmeasure              NUMERIC
-   ,levelpathi            BIGINT
-   ,terminalpa            BIGINT
-   ,uphydroseq            BIGINT
-   ,dnhydroseq            BIGINT
-   ,dnminorhyd            BIGINT
-   ,divergence            INTEGER
-   ,streamleve            INTEGER
-   ,arbolatesu            NUMERIC
-   ,fromnode              BIGINT
-   ,tonode                BIGINT
-   ,vpuid                 VARCHAR(8)
-   /* ++++++++++ */
-   ,permanent_identifier  VARCHAR(40)
-   ,reachcode             VARCHAR(14)
-   ,fcode                 INTEGER
-   /* ++++++++++ */
-   ,lengthkm              NUMERIC
-   ,lengthkm_ratio        NUMERIC
-   ,flowtimeday           NUMERIC
-   ,flowtimeday_ratio     NUMERIC
-   /* ++++++++++ */
-   ,pathlengthkm          NUMERIC
-   ,pathflowtimeday       NUMERIC
-   /* ++++++++++ */
-   ,out_grid_srid         INTEGER
-   ,out_measure           NUMERIC
-   ,out_lengthkm          NUMERIC
-   ,out_flowtimeday       NUMERIC
-   ,out_pathlengthkm      NUMERIC
-   ,out_pathflowtimeday   NUMERIC
-   ,out_node              BIGINT
-);
-
-ALTER TYPE cipsrv_nhdplus_m.flowline OWNER TO cipsrv;
-
-GRANT USAGE ON TYPE cipsrv_nhdplus_m.flowline TO PUBLIC;
-
---******************************--
------ types/snapflowline.sql 
-
-DROP TYPE IF EXISTS cipsrv_nhdplus_m.snapflowline CASCADE;
-
-CREATE TYPE cipsrv_nhdplus_m.snapflowline 
-AS(
-    permanent_identifier        VARCHAR(40)
-   ,fdate                       DATE
-   ,resolution                  INTEGER
-   ,gnis_id                     VARCHAR(10)
-   ,gnis_name                   VARCHAR(65)
-   ,lengthkm                    NUMERIC
-   ,totma                       NUMERIC
-   ,reachcode                   VARCHAR(14)
-   ,flowdir                     INTEGER
-   ,wbarea_permanent_identifier VARCHAR(40)
-   ,ftype                       INTEGER
-   ,fcode                       INTEGER
-   ,mainpath                    INTEGER
-   ,innetwork                   INTEGER
-   ,visibilityfilter            INTEGER
-   ,nhdplusid                   BIGINT
-   ,vpuid                       VARCHAR(16)
-   ,enabled                     INTEGER
-   ,fmeasure                    NUMERIC
-   ,tmeasure                    NUMERIC
-   ,hydroseq                    BIGINT
-   ,shape                       GEOMETRY
-   -----
-   ,snap_measure                NUMERIC
-   ,snap_distancekm             NUMERIC
-   ,snap_point                  GEOMETRY
-);
-
-ALTER TYPE cipsrv_nhdplus_m.snapflowline OWNER TO cipsrv;
-
-GRANT USAGE ON TYPE cipsrv_nhdplus_m.snapflowline TO PUBLIC;
-
 --******************************--
 ----- functions/catconstrained_index.sql 
 
@@ -8164,7 +8244,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8183,13 +8263,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8239,7 +8327,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8258,13 +8346,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8349,7 +8445,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8368,13 +8464,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8424,7 +8528,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8443,13 +8547,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8534,7 +8646,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8553,13 +8665,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8609,7 +8729,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8628,13 +8748,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8723,7 +8851,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8742,13 +8870,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema 
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8807,7 +8943,7 @@ BEGIN
          ,a.fcode
          /* ++++++++++ */
          ,a.lengthkm
-         ,a.lengthkm / (a.tomeas - a.frommeas)
+         ,a.lengthkm / (a.tomeas - a.frommeas) AS lengthkm_ratio
          ,CASE 
           WHEN a.totma IN (-9998,-9999)
           THEN
@@ -8826,13 +8962,21 @@ BEGIN
          ,a.pathlength
          ,a.pathtimema
          /* ++++++++++ */
-         ,NULL::INTEGER
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::NUMERIC
-         ,NULL::BIGINT
+         ,NULL::INTEGER AS out_grid_srid
+         ,NULL::NUMERIC AS out_measure
+         ,NULL::NUMERIC AS out_lengthkm
+         ,NULL::NUMERIC AS out_flowtimeday
+         ,NULL::NUMERIC AS out_pathlengthkm
+         ,NULL::NUMERIC AS out_pathflowtimeday
+         ,NULL::BIGINT  AS out_node
+         /* ++++++++++ */
+         ,0::NUMERIC    AS network_distancekm
+         ,0::NUMERIC    AS network_flowtimeday
+         ,0::NUMERIC    AS pathlength_adj
+         ,0::NUMERIC    AS pathflowtime_adj
+         /* ++++++++++ */
+         ,NULL::INTEGER AS nav_order
+         ,NULL::INTEGER AS ordering_key
          INTO STRICT
          out_flowline
          FROM 
@@ -8928,7 +9072,7 @@ EXCEPTION
    WHEN NO_DATA_FOUND
    THEN
       out_return_code    := -10;
-      out_status_message := 'no results found in cipsrv_nhdplus_m nhdflowline';
+      out_status_message := 'no results found in cipsrv_nhdplus_h nhdflowline';
       RETURN;
 
    WHEN OTHERS
@@ -8945,6 +9089,109 @@ BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
    WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.get_flowline';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
+
+--******************************--
+----- functions/append_flowlines.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.append_flowlines';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.append_flowlines(
+    IN  p_input                        cipsrv_nhdplus_m.flowline[]
+   ,IN  p_target                       cipsrv_nhdplus_m.flowline[]
+   ,IN  p_sort_by_ordering_key         BOOLEAN
+) RETURNS cipsrv_nhdplus_m.flowline[]
+IMMUTABLE
+AS $BODY$ 
+DECLARE
+   rez cipsrv_nhdplus_m.flowline[];
+   boo_check BOOLEAN;
+   
+BEGIN
+
+   IF COALESCE(ARRAY_LENGTH(p_input,1),0) = 0
+   THEN
+      RETURN p_target;
+      
+   ELSIF COALESCE(ARRAY_LENGTH(p_target,1),0) = 0
+   THEN
+      RETURN p_input;
+      
+   ELSE
+      rez := p_target;
+      
+      FOR i IN 1 .. ARRAY_LENGTH(p_input,1)
+      LOOP
+         boo_check := TRUE;
+         
+         FOR j IN 1 .. ARRAY_LENGTH(rez,1)
+         LOOP
+            IF rez[j].hydroseq = p_input[i].hydroseq
+            THEN
+               boo_check := FALSE;
+               
+            END IF;
+         
+         END LOOP;
+         
+         IF boo_check
+         THEN
+            rez := ARRAY_APPEND(rez,p_input[i]);
+         
+         END IF;
+      
+      END LOOP;
+      
+   END IF;
+   
+   IF COALESCE(ARRAY_LENGTH(rez,1),0) = 1
+   THEN
+      RETURN rez;
+      
+   ELSE
+   
+      IF p_sort_by_ordering_key
+      THEN
+         SELECT 
+         ARRAY_AGG(ct ORDER BY ct.ordering_key DESC)
+         INTO rez
+         FROM
+         UNNEST(rez) AS ct;
+         
+      END IF;
+      
+      RETURN rez;
+      
+   END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.append_flowlines';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
    EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
@@ -13780,9 +14027,17 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 40
+   -- Remove extraneous records
+   ----------------------------------------------------------------------------
+   DELETE FROM tmp_navigation_working30 a
+   WHERE
+   NOT a.selected;
+   
+   ----------------------------------------------------------------------------
+   -- Step 50
    -- Tag the downstream nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.ary_downstream_hydroseq
@@ -13795,29 +14050,29 @@ BEGIN
       ON
       a.hydroseq = b.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(cte.ary_downstream_hydroseq) )
-   THEN
-      0
-   ELSE
-      CASE
-      WHEN cte.coastal_connection
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(rec.ary_downstream_hydroseq) )
       THEN
-         3
-      WHEN cte.network_end
-      THEN
-         5
+         0
       ELSE
-         1
+         CASE
+         WHEN rec.coastal_connection
+         THEN
+            3
+         WHEN rec.network_end
+         THEN
+            5
+         ELSE
+            1
+         END
       END
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
+   
+   END LOOP;
    
    ----------------------------------------------------------------------------
    -- Step 50
@@ -13829,18 +14084,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_dd(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_dd(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_dd';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 --******************************--
 ----- functions/nav_dm.sql 
 
@@ -13861,6 +14120,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_dm(
 VOLATILE
 AS $BODY$
 DECLARE
+   rec       RECORD;
    int_count INTEGER;
    
 BEGIN
@@ -13954,7 +14214,6 @@ BEGIN
       ,uphydroseq
       ,dnhydroseq
       ,nav_order
-      ,selected
    )
    SELECT
     a.nhdplusid
@@ -13970,7 +14229,6 @@ BEGIN
    ,a.uphydroseq
    ,a.dnhydroseq
    ,a.nav_order
-   ,TRUE
    FROM
    dm a;
    
@@ -13980,7 +14238,7 @@ BEGIN
    -- Step 20
    -- Tag the nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.coastal_connection
@@ -13992,29 +14250,29 @@ BEGIN
       ON
       a.hydroseq = b.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN a.nav_order = (SELECT MAX(b.nav_order) FROM tmp_navigation_working30 b LIMIT 1)
-   THEN
-      CASE
-      WHEN cte.coastal_connection
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
       THEN
-         3
-      WHEN cte.network_end
-      THEN
-         5
+         CASE
+         WHEN rec.coastal_connection
+         THEN
+            3
+         WHEN rec.network_end
+         THEN
+            5
+         ELSE
+            1
+         END
       ELSE
-         1
+         0
       END
-   ELSE
-      0
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
+      
+   END LOOP;
    
    ----------------------------------------------------------------------------
    -- Step 30
@@ -14026,18 +14284,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_dm(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_dm(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_dm';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 --******************************--
 ----- functions/nav_pp.sql 
 
@@ -14237,7 +14499,6 @@ BEGIN
          ,terminalpa
          ,uphydroseq
          ,dnhydroseq
-         ,selected
       )
       SELECT
        b.nhdplusid
@@ -14252,7 +14513,6 @@ BEGIN
       ,b.terminalpa
       ,b.uphydroseq
       ,b.dnhydroseq
-      ,TRUE
       FROM
       tmp_network_working30 b;
       
@@ -14479,7 +14739,6 @@ BEGIN
             ,terminalpa
             ,uphydroseq
             ,dnhydroseq
-            ,selected
          )
          SELECT
           b.nhdplusid
@@ -14494,7 +14753,6 @@ BEGIN
          ,b.terminalpa
          ,b.uphydroseq
          ,b.dnhydroseq
-         ,TRUE
          FROM
          dijk a
          JOIN
@@ -14517,7 +14775,6 @@ BEGIN
             ,uphydroseq
             ,dnhydroseq
             ,nav_order
-            ,selected
          ) VALUES (
              obj_start_flowline.nhdplusid
             ,obj_start_flowline.hydroseq
@@ -14532,7 +14789,6 @@ BEGIN
             ,obj_start_flowline.uphydroseq
             ,obj_start_flowline.dnhydroseq
             ,0
-            ,TRUE
          );
          
          INSERT INTO tmp_navigation_working30(
@@ -14549,7 +14805,6 @@ BEGIN
             ,uphydroseq
             ,dnhydroseq
             ,nav_order
-            ,selected
          ) VALUES (
              obj_stop_flowline.nhdplusid
             ,obj_stop_flowline.hydroseq
@@ -14563,8 +14818,7 @@ BEGIN
             ,obj_stop_flowline.terminalpa
             ,obj_stop_flowline.uphydroseq
             ,obj_stop_flowline.dnhydroseq
-            ,99999999
-            ,TRUE            
+            ,99999999         
          );
          
       END IF;
@@ -14590,8 +14844,7 @@ BEGIN
       ON
       a.hydroseq = b.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
+      a.navtermination_flag IS NULL
    )
    UPDATE tmp_navigation_working30 a
    SET navtermination_flag = CASE
@@ -14633,9 +14886,7 @@ BEGIN
    COUNT(*) 
    INTO int_count 
    FROM 
-   tmp_navigation_working30 a
-   WHERE 
-   a.selected IS TRUE;
+   tmp_navigation_working30 a;
    
    RETURN int_count;
 
@@ -14643,15 +14894,23 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_pp(
-    cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline  
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_pp';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_pp(
-    cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-)  TO PUBLIC;
 
 --******************************--
 ----- functions/nav_ppall.sql 
@@ -15083,7 +15342,6 @@ BEGIN
       ,uphydroseq
       ,dnhydroseq
       ,nav_order
-      ,selected
    )
    SELECT
     a.nhdplusid
@@ -15099,7 +15357,6 @@ BEGIN
    ,a.uphydroseq
    ,a.dnhydroseq
    ,a.nav_order
-   ,TRUE
    FROM
    ut a
    ON CONFLICT DO NOTHING;
@@ -15128,9 +15385,7 @@ BEGIN
    COUNT(*) 
    INTO int_count 
    FROM 
-   tmp_navigation_working30 a
-   WHERE 
-   a.selected IS TRUE;
+   tmp_navigation_working30 a;
    
    RETURN int_count;
 
@@ -15138,15 +15393,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_ppall(
-    cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline  
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_ppall(
-    cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ppall';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/nav_single.sql 
@@ -15169,8 +15431,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_single(
 ) RETURNS INTEGER
 VOLATILE
 AS $BODY$
-DECLARE
-   
+DECLARE   
    num_init_meas_total      NUMERIC;
    num_init_fmeasure        NUMERIC;
    num_init_tmeasure        NUMERIC;
@@ -15270,7 +15531,6 @@ BEGIN
       ,dnhydroseq
       ,navtermination_flag
       ,nav_order
-      ,selected
    ) VALUES (
        obj_start_flowline.nhdplusid
       ,obj_start_flowline.hydroseq
@@ -15286,7 +15546,6 @@ BEGIN
       ,obj_start_flowline.dnhydroseq
       ,int_navtermination_flag
       ,0
-      ,TRUE
    );
 
    ----------------------------------------------------------------------------
@@ -15299,21 +15558,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_single(
-    VARCHAR
-   ,cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_single(
-    VARCHAR
-   ,cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_single';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/nav_trim_temp.sql 
@@ -15468,6 +15728,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_um(
 VOLATILE
 AS $BODY$
 DECLARE  
+   rec       RECORD;
    int_count INTEGER;
    
 BEGIN
@@ -15568,7 +15829,6 @@ BEGIN
       ,uphydroseq
       ,dnhydroseq
       ,nav_order
-      ,selected
    )
    SELECT
     a.nhdplusid
@@ -15584,7 +15844,6 @@ BEGIN
    ,a.uphydroseq
    ,a.dnhydroseq
    ,a.nav_order
-   ,TRUE
    FROM
    um a;
    
@@ -15594,7 +15853,7 @@ BEGIN
    -- Step 20
    -- Tag the nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.headwater
@@ -15603,28 +15862,28 @@ BEGIN
       JOIN
       cipsrv_nhdplus_m.nhdplusflowlinevaa_nav b
       ON
-      a.hydroseq = b.hydroseq
+      b.hydroseq = a.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
-   THEN
-      CASE
-      WHEN cte.headwater
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
       THEN
-         4
+         CASE
+         WHEN rec.headwater
+         THEN
+            4
+         ELSE
+            1
+         END
       ELSE
-         1
+         0  
       END
-   ELSE
-      0    
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
+   
+   END LOOP;
    
    ----------------------------------------------------------------------------
    -- Step 30
@@ -15636,280 +15895,302 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_um(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_um(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_um';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
------ functions/nav_ut_concise.sql 
+----- functions/nav_ut_minordiv.sql 
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_concise';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_minordiv';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_ut_concise(
-    IN  obj_start_flowline       cipsrv_nhdplus_m.flowline
-   ,IN  num_maximum_distancekm   NUMERIC
-   ,IN  num_maximum_flowtimeday  NUMERIC
-) RETURNS INTEGER
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_ut_minordiv(
+    IN  p_maximum_distancekm      NUMERIC
+   ,IN  p_maximum_flowtimeday     NUMERIC
+   ,IN  p_source_pathlength_adj   NUMERIC
+   ,IN  p_source_pathtimema_adj   NUMERIC
+   ,OUT out_minor_divs            cipsrv_nhdplus_m.flowline[]
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
+)
 VOLATILE
 AS $BODY$
 DECLARE
-   int_count INTEGER;
+   rec                      RECORD;
+   obj_flowline             cipsrv_nhdplus_m.flowline;
+   int_count bigint;
+   z bigint[];
+   zn numeric[];
+   vs varchar[];
    
 BEGIN
 
+   out_return_code := 0;
+   out_minor_divs  := ARRAY[]::cipsrv_nhdplus_m.flowline[];
+
+   ----------------------------------------------------------------------------
+   SELECT 
+   ARRAY_AGG((   
+       a.nhdplusid
+      ,a.hydroseq
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.levelpathi
+      ,a.terminalpa
+      ,a.uphydroseq
+      ,a.dnhydroseq
+      ,a.dnminorhyd
+      ,a.divergence
+      ,NULL::INTEGER
+      ,a.arbolatesu
+      ,NULL::BIGINT
+      ,NULL::BIGINT
+      ,a.vpuid
+      ---
+      ,NULL::VARCHAR
+      ,NULL::VARCHAR
+      ,NULL::INTEGER
+      ---
+      ,a.lengthkm
+      ,a.lengthkm / (a.tmeasure - a.fmeasure)
+      ,a.totma
+      ,CASE 
+       WHEN a.totma IN (-9998,-9999)
+       THEN
+          CAST(NULL AS NUMERIC)
+       ELSE
+          a.totma / (a.tmeasure - a.fmeasure)
+       END
+      ---
+      ,a.pathlength
+      ,a.pathtimema
+      ---
+      ,NULL::INTEGER
+      ,a.fmeasure
+      ,a.lengthkm
+      ,a.totma
+      ,a.pathlength
+      ,a.pathtimema
+      ,NULL::BIGINT
+      ---
+      ,a.network_distancekm  + a.lengthkm 
+      ,a.network_flowtimeday + a.totma
+      ,a.pathlength_adj + p_source_pathlength_adj
+      ,a.pathtimema_adj + p_source_pathtimema_adj
+      ---
+      ,a.nav_order + 1
+      ,a.arbolatesu::INTEGER
+   )::cipsrv_nhdplus_m.flowline)
+   INTO out_minor_divs
+   FROM (
+      SELECT
+       aa.nhdplusid
+      ,aa.hydroseq
+      ,aa.fmeasure
+      ,aa.tmeasure
+      ,aa.levelpathi
+      ,aa.terminalpa
+      ,aa.uphydroseq
+      ,aa.dnhydroseq
+      ,aa.dnminorhyd
+      ,aa.divergence
+      ,NULL::INTEGER
+      ,aa.arbolatesu
+      ,NULL::BIGINT
+      ,NULL::BIGINT
+      ,aa.vpuid
+      ---
+      ,NULL::VARCHAR
+      ,NULL::VARCHAR
+      ,NULL::INTEGER
+      ---
+      ,aa.lengthkm
+      ,aa.totma
+      ,aa.pathlength
+      ,aa.pathtimema
+      ---
+      ,bb.network_distancekm
+      ,bb.network_flowtimeday
+      ,bb.pathlength_adj
+      ,bb.pathtimema_adj
+      ---
+      ,bb.nav_order
+      FROM
+      cipsrv_nhdplus_m.nhdplusflowlinevaa_nav aa
+      JOIN (
+         SELECT
+          ccc.tohydroseq
+         ,ccc.fromhydroseq
+         ,bbb.network_distancekm
+         ,bbb.network_flowtimeday
+         ,ccc.pathlength_adj
+         ,ccc.pathtimema_adj
+         ,bbb.nav_order
+         FROM
+         tmp_navigation_working30 bbb
+         JOIN
+         cipsrv_nhdplus_m.nhdplusflow_upminordivs ccc
+         ON
+         ccc.tohydroseq = bbb.hydroseq
+         WHERE 
+         NOT EXISTS (
+            SELECT
+            1
+            FROM
+            tmp_navigation_working30 ddd
+            WHERE
+            ddd.hydroseq = ccc.fromhydroseq
+         )
+      ) bb
+      ON
+      bb.fromhydroseq = aa.hydroseq
+      WHERE (
+            p_maximum_distancekm IS NULL
+         OR bb.network_distancekm  <= p_maximum_distancekm
+      )
+      AND (
+            p_maximum_flowtimeday IS NULL
+         OR bb.network_flowtimeday <= p_maximum_flowtimeday
+      )
+      ORDER BY
+      bb.network_distancekm  + bb.pathlength_adj
+   ) a;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_minordiv';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
+
+--******************************--
+----- functions/nav_ut_search.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_search';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_ut_search(
+    IN  p_start_flowline          cipsrv_nhdplus_m.flowline
+   ,IN  p_maximum_distancekm      NUMERIC
+   ,IN  p_maximum_flowtimeday     NUMERIC
+   ,IN  p_init_baselengthkm       NUMERIC
+   ,IN  p_init_baseflowtimeday    NUMERIC 
+   ,IN  p_base_arbolatesu         NUMERIC
+   ,IN  p_branch_id               INTEGER
+   ,OUT out_flowline_count        INTEGER
+   ,OUT out_branches              cipsrv_nhdplus_m.flowline[]
+   ,OUT out_return_code           INTEGER
+   ,OUT out_status_message        VARCHAR
+)
+VOLATILE
+AS $BODY$
+DECLARE
+   int_count                INTEGER;
+   
+BEGIN
+
+   out_return_code          := 0;
+   out_flowline_count       := 0;
+   
    ----------------------------------------------------------------------------
    -- Step 10
-   -- Return total count of results
+   ----------------------------------------------------------------------------
+   IF p_start_flowline IS NULL
+   THEN
+      RETURN;
+      
+   END IF;
+   
+   ----------------------------------------------------------------------------
+   -- Step 20
    ----------------------------------------------------------------------------
    WITH RECURSIVE ut(
        nhdplusid
       ,hydroseq
       ,fmeasure
       ,tmeasure
+      ---
       ,lengthkm
       ,flowtimeday
+      ---
       ,network_distancekm
       ,network_flowtimeday
-      ,levelpathi
-      ,terminalpa
-      ,uphydroseq
-      ,dnhydroseq
-      ,base_pathlength
-      ,base_pathtime
-      ,nav_order
-   )
-   AS (
-      SELECT
-       obj_start_flowline.nhdplusid
-      ,obj_start_flowline.hydroseq
-      ,obj_start_flowline.out_measure
-      ,obj_start_flowline.tmeasure
-      ,obj_start_flowline.out_lengthkm
-      ,obj_start_flowline.out_flowtimeday
-      ,obj_start_flowline.out_lengthkm
-      ,obj_start_flowline.out_flowtimeday
-      ,obj_start_flowline.levelpathi
-      ,obj_start_flowline.terminalpa
-      ,obj_start_flowline.uphydroseq
-      ,obj_start_flowline.dnhydroseq
-      ,obj_start_flowline.pathlengthkm    + (obj_start_flowline.lengthkm    - obj_start_flowline.out_lengthkm)
-      ,obj_start_flowline.pathflowtimeday + (obj_start_flowline.flowtimeday - obj_start_flowline.out_flowtimeday)
-      ,0 AS nav_order
-      UNION
-      SELECT
-       mq.nhdplusid
-      ,mq.hydroseq
-      ,mq.fmeasure
-      ,mq.tmeasure
-      ,mq.lengthkm
-      ,mq.totma
-      ,mq.pathlength - ut.base_pathlength + mq.lengthkm
-      ,mq.pathtimema - ut.base_pathtime   + mq.totma
-      ,mq.levelpathi
-      ,mq.terminalpa
-      ,mq.uphydroseq
-      ,mq.dnhydroseq
-      ,ut.base_pathlength
-      ,ut.base_pathtime
-      ,ut.nav_order + 1
-      FROM
-      cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
-      CROSS JOIN
-      ut
-      WHERE
-      mq.ary_downstream_hydroseq @> ARRAY[ut.hydroseq]
-      AND (
-            num_maximum_distancekm IS NULL
-         OR mq.pathlength - ut.base_pathlength <= num_maximum_distancekm
-      )
-      AND (
-            num_maximum_flowtimeday IS NULL
-         OR mq.pathtimema - ut.base_pathtime   <= num_maximum_flowtimeday
-      )
-   )
-   INSERT INTO tmp_navigation_working30(
-       nhdplusid
-      ,hydroseq
-      ,fmeasure
-      ,tmeasure
-      ,lengthkm
-      ,flowtimeday
-      ,network_distancekm
-      ,network_flowtimeday
-      ,levelpathi
-      ,terminalpa
-      ,uphydroseq
-      ,dnhydroseq
-      ,nav_order
-      ,selected
-   )
-   SELECT
-    a.nhdplusid
-   ,a.hydroseq
-   ,a.fmeasure
-   ,a.tmeasure
-   ,a.lengthkm
-   ,a.flowtimeday
-   ,a.network_distancekm
-   ,a.network_flowtimeday
-   ,a.levelpathi
-   ,a.terminalpa
-   ,a.uphydroseq
-   ,a.dnhydroseq
-   ,a.nav_order
-   ,TRUE
-   FROM
-   ut a
-   ON CONFLICT DO NOTHING;
-   
-   GET DIAGNOSTICS int_count = ROW_COUNT;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Tag the upstream mainline nav termination flags
-   ----------------------------------------------------------------------------
-   WITH cte AS ( 
-      SELECT
-       a.hydroseq
-      ,b.ary_upstream_hydroseq
-      ,b.headwater
-      ,b.coastal_connection
-      FROM
-      tmp_navigation_working30 a
-      JOIN
-      cipsrv_nhdplus_m.nhdplusflowlinevaa_nav b
-      ON
-      a.hydroseq = b.hydroseq
-      WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(cte.ary_upstream_hydroseq) )
-   THEN
-      0
-   ELSE
-      CASE
-      WHEN cte.headwater
-      THEN
-         4
-      ELSE
-         1
-      END
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
-   
-   ----------------------------------------------------------------------------
-   -- Step 30
-   -- Return total count of results
-   ----------------------------------------------------------------------------
-   RETURN int_count;
-
-END;
-$BODY$
-LANGUAGE plpgsql;
-
-ALTER FUNCTION cipsrv_nhdplus_m.nav_ut_concise(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_ut_concise(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
-
---******************************--
------ functions/nav_ut_extended.sql 
-
-DO $$DECLARE 
-   a VARCHAR;b VARCHAR;
-BEGIN
-   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
-   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_extended';
-   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
-END$$;
-
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_ut_extended(
-    IN  obj_start_flowline       cipsrv_nhdplus_m.flowline
-   ,IN  num_maximum_distancekm   NUMERIC
-   ,IN  num_maximum_flowtimeday  NUMERIC
-) RETURNS INTEGER
-VOLATILE
-AS $BODY$
-DECLARE
-   rec                      RECORD;
-   int_count                INTEGER;
-   int_check                INTEGER;
-   num_init_baselengthkm    NUMERIC;
-   num_init_baseflowtimeday NUMERIC;
-   
-BEGIN
-
-   num_init_baselengthkm    := obj_start_flowline.pathlengthkm    + (obj_start_flowline.lengthkm    - obj_start_flowline.out_lengthkm);
-   num_init_baseflowtimeday := obj_start_flowline.pathflowtimeday + (obj_start_flowline.flowtimeday - obj_start_flowline.out_flowtimeday);
-   
-   ----------------------------------------------------------------------------
-   -- Step 10
-   -- First run upstream mainline
-   ----------------------------------------------------------------------------
-   WITH RECURSIVE um(
-       nhdplusid
-      ,hydroseq
-      ,fmeasure
-      ,tmeasure
-      ,lengthkm
-      ,flowtimeday
-      ,network_distancekm
-      ,network_flowtimeday
+      ---
       ,levelpathi
       ,terminalpa
       ,uphydroseq
       ,dnhydroseq
       ,divergence
+      ---
       ,base_pathlength
       ,base_pathtime
       ,nav_order
+      ,is_open_branch
    )
    AS (
       SELECT
-       obj_start_flowline.nhdplusid
-      ,obj_start_flowline.hydroseq
-      ,obj_start_flowline.out_measure
-      ,obj_start_flowline.tmeasure
-      ,obj_start_flowline.out_lengthkm
-      ,obj_start_flowline.out_flowtimeday
-      ,obj_start_flowline.out_lengthkm
-      ,obj_start_flowline.out_flowtimeday
-      ,obj_start_flowline.levelpathi
-      ,obj_start_flowline.terminalpa
-      ,obj_start_flowline.uphydroseq
-      ,obj_start_flowline.dnhydroseq
-      ,obj_start_flowline.divergence
-      ,num_init_baselengthkm
-      ,num_init_baseflowtimeday
-      ,0 AS nav_order
+       p_start_flowline.nhdplusid
+      ,p_start_flowline.hydroseq
+      ,p_start_flowline.out_measure
+      ,p_start_flowline.tmeasure
+      ---
+      ,p_start_flowline.out_lengthkm
+      ,p_start_flowline.out_flowtimeday
+      ---
+      ,p_start_flowline.network_distancekm
+      ,p_start_flowline.network_flowtimeday
+      ---
+      ,p_start_flowline.levelpathi
+      ,p_start_flowline.terminalpa
+      ,p_start_flowline.uphydroseq
+      ,p_start_flowline.dnhydroseq
+      ,p_start_flowline.divergence
+      --
+      ,p_init_baselengthkm
+      ,p_init_baseflowtimeday
+      --
+      ,p_start_flowline.nav_order
+      ,FALSE AS is_open_branch
       UNION
       SELECT
        mq.nhdplusid
@@ -15918,42 +16199,45 @@ BEGIN
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
       ,mq.totma
-      ,mq.pathlength - um.base_pathlength + mq.lengthkm
-      ,mq.pathtimema - um.base_pathtime   + mq.totma
+      ,(mq.pathlength + p_start_flowline.pathlength_adj)   - ut.base_pathlength + mq.lengthkm
+      ,(mq.pathtimema + p_start_flowline.pathflowtime_adj) - ut.base_pathtime   + mq.totma
       ,mq.levelpathi
       ,mq.terminalpa
-      ,mq.uphydroseq
+      ,CASE 
+       WHEN mq.force_main_line
+       THEN  -- Neuter navigation at big tribs
+         CAST(NULL AS BIGINT)
+       ELSE
+         mq.uphydroseq
+       END AS uphydroseq
       ,mq.dnhydroseq
       ,mq.divergence
-      ,um.base_pathlength -- base pathlength
-      ,um.base_pathtime
-      ,um.nav_order + 1000              
+      ---
+      ,ut.base_pathlength -- base pathlength
+      ,ut.base_pathtime
+      ---
+      ,ut.nav_order + 1
+      ,CASE 
+       WHEN mq.force_main_line
+       THEN
+         TRUE
+       ELSE
+         FALSE
+       END AS is_open_branch
       FROM
       cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
       CROSS JOIN
-      um
-      WHERE 
-      (
-         (
-                mq.hydroseq   = um.uphydroseq
-            AND mq.levelpathi = um.levelpathi
-         )
-         OR (
-                mq.hydroseq    = um.uphydroseq
-            AND um.divergence  = 2
-         )
-         OR (
-                mq.force_main_line IS TRUE
-            AND mq.dnhydroseq  = um.hydroseq
-         )
+      ut
+      WHERE
+          ut.uphydroseq IS NOT NULL
+      AND mq.dnhydroseq = ut.hydroseq
+      AND(
+            p_maximum_distancekm IS NULL
+         OR (mq.pathlength + p_start_flowline.pathlength_adj)   - ut.base_pathlength <= p_maximum_distancekm
       )
       AND (
-            num_maximum_distancekm IS NULL
-         OR mq.pathlength - um.base_pathlength <= num_maximum_distancekm
-      )
-      AND (
-            num_maximum_flowtimeday IS NULL
-         OR mq.pathtimema - um.base_pathtime   <= num_maximum_flowtimeday
+            p_maximum_flowtimeday IS NULL
+         OR (mq.pathtimema + p_start_flowline.pathflowtime_adj) - ut.base_pathtime   <= p_maximum_flowtimeday
       )
    )
    INSERT INTO tmp_navigation_working30(
@@ -15970,7 +16254,8 @@ BEGIN
       ,uphydroseq
       ,dnhydroseq
       ,nav_order
-      ,selected
+      ,is_open_branch
+      ,branch_id
    )
    SELECT
     a.nhdplusid
@@ -15986,236 +16271,284 @@ BEGIN
    ,a.uphydroseq
    ,a.dnhydroseq
    ,a.nav_order
-   ,TRUE
+   ,a.is_open_branch
+   ,p_branch_id 
    FROM
-   um a
+   ut a
    ON CONFLICT DO NOTHING;
-   
-   GET DIAGNOSTICS int_count = ROW_COUNT;
-   
-   ----------------------------------------------------------------------------
-   -- Step 20
-   -- Tag the upstream mainline nav termination flags
-   ----------------------------------------------------------------------------
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN a.nav_order = (SELECT MAX(b.nav_order) FROM tmp_navigation_working30 b LIMIT 1)
-   THEN
-      1
-   ELSE
-      0
-   END
-   WHERE 
-   selected = TRUE;
-   
-   ----------------------------------------------------------------------------
+
+   GET DIAGNOSTICS out_flowline_count = ROW_COUNT;
+
+   ---------------------------------------------------------------------------
    -- Step 30
-   -- Extract the divs off the mainline
    ----------------------------------------------------------------------------
-   FOR rec IN 
-      SELECT 
+   SELECT 
+   ARRAY_AGG((   
        a.nhdplusid
       ,a.hydroseq
       ,a.fmeasure
       ,a.tmeasure
-      ,a.lengthkm
-      ,a.totma
-      ,b.network_distancekm  + a.lengthkm AS network_distancekm
-      ,b.network_flowtimeday + a.totma    AS network_flowtimeday 
       ,a.levelpathi
       ,a.terminalpa
       ,a.uphydroseq
       ,a.dnhydroseq
-      ,b.nav_order
-      FROM 
-      cipsrv_nhdplus_m.nhdplusflowlinevaa_nav a
+      ,a.dnminorhyd
+      ,a.divergence
+      ,NULL::INTEGER
+      ,a.arbolatesu
+      ,NULL::BIGINT
+      ,NULL::BIGINT
+      ,a.vpuid
+      ---
+      ,NULL::VARCHAR
+      ,NULL::VARCHAR
+      ,NULL::INTEGER
+      ---
+      ,a.lengthkm
+      ,a.lengthkm / (a.tmeasure - a.fmeasure)
+      ,a.totma
+      ,CASE 
+       WHEN a.totma IN (-9998,-9999)
+       THEN
+          CAST(NULL AS NUMERIC)
+       ELSE
+          a.totma / (a.tmeasure - a.fmeasure)
+       END
+      ---
+      ,a.pathlength
+      ,a.pathtimema
+      ---
+      ,NULL::INTEGER
+      ,a.fmeasure
+      ,a.lengthkm
+      ,a.totma
+      ,a.pathlength
+      ,a.pathtimema
+      ,NULL::BIGINT
+      ---
+      ,a.network_distancekm  + a.lengthkm 
+      ,a.network_flowtimeday + a.totma
+      ,a.pathlength_adj
+      ,a.pathtimema_adj
+      ---
+      ,a.nav_order + 1
+      ,a.arbolatesu::INTEGER + 100000000
+   )::cipsrv_nhdplus_m.flowline)
+   INTO out_branches
+   FROM (
+      SELECT
+       aa.nhdplusid
+      ,aa.hydroseq
+      ,aa.fmeasure
+      ,aa.tmeasure
+      ,aa.levelpathi
+      ,aa.terminalpa
+      ,aa.uphydroseq
+      ,aa.dnhydroseq
+      ,aa.dnminorhyd
+      ,aa.divergence
+      ,NULL::INTEGER
+      ,aa.arbolatesu
+      ,NULL::BIGINT
+      ,NULL::BIGINT
+      ,aa.vpuid
+      ---
+      ,NULL::VARCHAR
+      ,NULL::VARCHAR
+      ,NULL::INTEGER
+      ---
+      ,aa.lengthkm
+      ,aa.totma
+      ,aa.pathlength
+      ,aa.pathtimema
+      ---
+      ,bb.network_distancekm
+      ,bb.network_flowtimeday
+      ,0  AS pathlength_adj
+      ,0  AS pathtimema_adj
+      ---
+      ,bb.nav_order
+      FROM
+      cipsrv_nhdplus_m.nhdplusflowlinevaa_nav aa
       JOIN
-      tmp_navigation_working30 b
+      tmp_navigation_working30 bb
       ON
-      a.ary_downstream_hydroseq @> ARRAY[b.hydroseq]
-      WHERE NOT EXISTS (
-         SELECT
-         1
-         FROM
-         tmp_navigation_working30 cc
-         WHERE
-         cc.hydroseq = a.hydroseq
-      )
+      bb.hydroseq = aa.hydroseq
+      WHERE
+          bb.branch_id = p_branch_id
+      AND bb.is_open_branch
+      ORDER BY
+      bb.network_distancekm
+   ) a;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_search';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
+
+--******************************--
+----- functions/nav_ut.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_ut(
+    IN  obj_start_flowline       cipsrv_nhdplus_m.flowline
+   ,IN  num_maximum_distancekm   NUMERIC
+   ,IN  num_maximum_flowtimeday  NUMERIC
+) RETURNS INTEGER
+VOLATILE
+AS $BODY$
+DECLARE
+   rec                      RECORD;
+   ary_branches             cipsrv_nhdplus_m.flowline[];
+   int_check                INTEGER;
+   int_count                INTEGER;
+   int_return_code          INTEGER;
+   str_status_message       VARCHAR;
+   int_sanity               INTEGER;
+   int_sanity_check         INTEGER := 400;
+   int_curr_branch_id       INTEGER;
+   boo_search               BOOLEAN;
+   ary_working              cipsrv_nhdplus_m.flowline[];
+   num_pathlength_adj       NUMERIC;
+   num_pathtimema_adj       NUMERIC;
+   boo_check                BOOLEAN;
+   num_init_baselengthkm    NUMERIC;
+   num_init_baseflowtimeday NUMERIC;
    
+BEGIN
+
+   int_count          := 0;
+   int_sanity         := 0;
+   
+   int_curr_branch_id := 0;
+   
+   num_pathlength_adj := 0;
+   num_pathtimema_adj := 0;
+   
+   num_init_baselengthkm    := obj_start_flowline.pathlengthkm    + (obj_start_flowline.lengthkm    - obj_start_flowline.out_lengthkm);
+   num_init_baseflowtimeday := obj_start_flowline.pathflowtimeday + (obj_start_flowline.flowtimeday - obj_start_flowline.out_flowtimeday);
+   
+   ary_working := ARRAY[obj_start_flowline]::cipsrv_nhdplus_m.flowline[];
+   ary_working[1].nav_order           := 0;
+   ary_working[1].network_distancekm  := obj_start_flowline.out_lengthkm;
+   ary_working[1].network_flowtimeday := obj_start_flowline.out_flowtimeday;
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Run a single upstream navigation excluding dnstream minor divergences
+   ----------------------------------------------------------------------------
+   boo_search := TRUE;
+   
+   WHILE boo_search
    LOOP
+      num_pathlength_adj := ary_working[1].pathlength_adj;
+      num_pathtimema_adj := ary_working[1].pathflowtime_adj;
       
-      BEGIN
-         INSERT INTO tmp_navigation_working30(
-             nhdplusid
-            ,hydroseq
-            ,fmeasure
-            ,tmeasure
-            ,lengthkm
-            ,flowtimeday
-            ,network_distancekm
-            ,network_flowtimeday
-            ,levelpathi
-            ,terminalpa
-            ,uphydroseq
-            ,dnhydroseq
-            ,nav_order
-            ,selected
-         ) VALUES (
-             rec.nhdplusid
-            ,rec.hydroseq
-            ,rec.fmeasure
-            ,rec.tmeasure
-            ,rec.lengthkm
-            ,rec.totma
-            ,rec.network_distancekm
-            ,rec.network_flowtimeday
-            ,rec.levelpathi
-            ,rec.terminalpa
-            ,rec.uphydroseq
-            ,rec.dnhydroseq
-            ,rec.nav_order
-            ,TRUE
-         );
-   
-         WITH RECURSIVE ut(
-             nhdplusid
-            ,hydroseq
-            ,fmeasure
-            ,tmeasure
-            ,lengthkm
-            ,flowtimeday
-            ,network_distancekm
-            ,network_flowtimeday
-            ,levelpathi
-            ,terminalpa
-            ,uphydroseq
-            ,dnhydroseq
-            ,base_pathlength
-            ,base_pathtime
-            ,nav_order
-         )
-         AS (
-            SELECT
-             rec.nhdplusid
-            ,rec.hydroseq
-            ,rec.fmeasure
-            ,rec.tmeasure
-            ,rec.lengthkm
-            ,rec.totma
-            ,rec.lengthkm
-            ,rec.totma
-            ,rec.levelpathi
-            ,rec.terminalpa
-            ,rec.uphydroseq
-            ,rec.dnhydroseq
-            ,num_init_baselengthkm 
-            ,num_init_baseflowtimeday
-            ,rec.nav_order
-            UNION
-            SELECT
-             mq.nhdplusid
-            ,mq.hydroseq
-            ,mq.fmeasure
-            ,mq.tmeasure
-            ,mq.lengthkm
-            ,mq.totma
-            ,mq.pathlength - ut.base_pathlength + mq.lengthkm
-            ,mq.pathtimema - ut.base_pathtime   + mq.totma
-            ,mq.levelpathi
-            ,mq.terminalpa
-            ,mq.uphydroseq
-            ,mq.dnhydroseq
-            ,ut.base_pathlength
-            ,ut.base_pathtime
-            ,ut.nav_order + 1 
-            FROM
-            cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
-            CROSS JOIN
-            ut
-            WHERE
-            mq.ary_downstream_hydroseq @> ARRAY[ut.hydroseq]
-            AND (
-                  num_maximum_distancekm IS NULL
-               OR mq.pathlength - ut.base_pathlength <= num_maximum_distancekm
-            )
-            AND (
-                  num_maximum_flowtimeday IS NULL
-               OR mq.pathtimema - ut.base_pathtime   <= num_maximum_flowtimeday
-            )
-            --AND NOT EXISTS (
-            --   SELECT
-            --   1
-            --   FROM
-            --   tmp_navigation_working30 cc
-            --   WHERE
-            --   cc.hydroseq = mq.hydroseq
-            --)
-         )
-         INSERT INTO tmp_navigation_working30(
-             nhdplusid
-            ,hydroseq
-            ,fmeasure
-            ,tmeasure
-            ,lengthkm
-            ,flowtimeday
-            ,network_distancekm
-            ,network_flowtimeday
-            ,levelpathi
-            ,terminalpa
-            ,uphydroseq
-            ,dnhydroseq
-            ,nav_order
-            ,selected
-         )
-         SELECT
-          a.nhdplusid
-         ,a.hydroseq
-         ,a.fmeasure
-         ,a.tmeasure
-         ,a.lengthkm
-         ,a.flowtimeday
-         ,a.network_distancekm
-         ,a.network_flowtimeday
-         ,a.levelpathi
-         ,a.terminalpa
-         ,a.uphydroseq
-         ,a.dnhydroseq
-         ,a.nav_order
-         ,TRUE
-         FROM
-         ut a
-         --WHERE
-         --a.nhdplusid <> rec.nhdplusid
-         ON CONFLICT DO NOTHING;
-         
-         -- At some point this should be removed
-         GET DIAGNOSTICS int_check = row_count;
+      rec := cipsrv_nhdplus_m.nav_ut_search(
+          p_start_flowline       := ary_working[1]
+         ,p_maximum_distancekm   := num_maximum_distancekm
+         ,p_maximum_flowtimeday  := num_maximum_flowtimeday
+         ,p_init_baselengthkm    := num_init_baselengthkm
+         ,p_init_baseflowtimeday := num_init_baseflowtimeday 
+         ,p_base_arbolatesu      := obj_start_flowline.arbolatesu
+         ,p_branch_id            := int_curr_branch_id
+      );
+      ary_branches       := rec.out_branches;
+      int_check          := rec.out_flowline_count;
+      int_return_code    := rec.out_return_code;
+      str_status_message := rec.out_status_message;
+
+      IF int_check > 0
+      THEN
+         int_count          := int_count + int_check - COALESCE(ARRAY_LENGTH(ary_branches,1),0);
+         int_curr_branch_id := int_curr_branch_id + 1;
+      
          IF int_check > 10000
          THEN
-            RAISE WARNING '% %',rec.nhdplusid,int_check;
+            RAISE WARNING '% hydroseq: %',int_check,ary_working[1].hydroseq;
             
-         END IF;              
+         END IF;
          
-         int_count := int_count + int_check;
+      END IF;
+      
+      ary_working        := ary_working[2:];
+      
+      ----------------------------------------------------------------------------
+      -- Prioritize following branches if found
+      ----------------------------------------------------------------------------
+      IF COALESCE(ARRAY_LENGTH(ary_branches,1),0) > 0
+      THEN
+         ary_working := cipsrv_nhdplus_m.append_flowlines(
+             p_input  := ary_branches
+            ,p_target := ary_working
+            ,p_sort_by_ordering_key := TRUE
+         );
          
-      EXCEPTION
-         WHEN UNIQUE_VIOLATION 
-         THEN
-            NULL;
+      ELSE
+      ----------------------------------------------------------------------------
+      -- Search for open minor divergences
+      ----------------------------------------------------------------------------
+         rec := cipsrv_nhdplus_m.nav_ut_minordiv(
+             p_maximum_distancekm     := num_maximum_distancekm
+            ,p_maximum_flowtimeday    := num_maximum_flowtimeday
+            ,p_source_pathlength_adj  := num_pathlength_adj
+            ,p_source_pathtimema_adj  := num_pathtimema_adj
+         );
+         ary_working := cipsrv_nhdplus_m.append_flowlines(
+             p_input  := rec.out_minor_divs
+            ,p_target := ary_working
+            ,p_sort_by_ordering_key := TRUE
+         );
+      
+      END IF;
 
-         WHEN OTHERS
-         THEN               
-            RAISE;
-            
-      END;
+      ----------------------------------------------------------------------------
+      -- Check for loops or other problems
+      ----------------------------------------------------------------------------
+      int_sanity := int_sanity + 1;
+      IF int_sanity > int_sanity_check
+      THEN
+         RAISE EXCEPTION 'sanity check % for hydroseq %: %',int_sanity,obj_start_flowline.hydroseq,TO_JSON(ary_working);
+         
+      END IF;
+      
+      IF COALESCE(ARRAY_LENGTH(ary_working,1),0) = 0
+      THEN
+         boo_search := FALSE;
+         
+      END IF;
 
    END LOOP;
-   
+
    ----------------------------------------------------------------------------
-   -- Step 40
-   -- Tag the upstream mainline nav termination flags
+   -- Step 20
+   -- Tag remaining upstream mainline nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.ary_upstream_hydroseq
@@ -16225,31 +16558,31 @@ BEGIN
       JOIN
       cipsrv_nhdplus_m.nhdplusflowlinevaa_nav b
       ON
-      a.hydroseq = b.hydroseq
+      b.hydroseq = a.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(cte.ary_upstream_hydroseq) )
-   THEN
-      0
-   ELSE
-      CASE
-      WHEN cte.headwater
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(rec.ary_upstream_hydroseq) )
       THEN
-         4
+         0
       ELSE
-         1
+         CASE
+         WHEN rec.headwater
+         THEN
+            4
+         ELSE
+            1
+         END
       END
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
    
+   END LOOP;
+
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 30
    -- Return total count of results
    ----------------------------------------------------------------------------
    RETURN int_count;
@@ -16258,17 +16591,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_ut_extended(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_ut_extended(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/navigate.sql 
@@ -16358,7 +16696,7 @@ BEGIN
    ELSIF str_search_type IN ('DM','DOWNSTREAM MAIN PATH ONLY')
    THEN
       str_search_type := 'DM';
-      
+   
    ELSE
       out_return_code    := -1;
       out_status_message := 'Valid SearchType codes are UM, UT, DM, DD and PP.';
@@ -16466,7 +16804,7 @@ BEGIN
       RETURN;
    
    END IF;
-
+   
    IF num_maximum_flowtimeday IS NOT NULL
    AND   obj_start_flowline.flowtimeday IS NULL
    THEN
@@ -16625,34 +16963,19 @@ BEGIN
    ----------------------------------------------------------------------------
          IF str_search_type = 'UT'
          THEN 
-            IF (
-                   num_maximum_distancekm  IS NULL
-               AND num_maximum_flowtimeday IS NULL
-               AND obj_start_flowline.arbolatesu > 500
-            ) OR (
-                   num_maximum_distancekm  IS NOT NULL
-               AND num_maximum_distancekm > 200
-               AND obj_start_flowline.arbolatesu > 200
-            ) OR (
-                   num_maximum_flowtimeday  IS NOT NULL
-               AND num_maximum_flowtimeday > 3
-               AND obj_start_flowline.arbolatesu > 200
-            )
-            THEN
-               int_counter := cipsrv_nhdplus_m.nav_ut_extended(
-                   obj_start_flowline      := obj_start_flowline
-                  ,num_maximum_distancekm  := num_maximum_distancekm
-                  ,num_maximum_flowtimeday := num_maximum_flowtimeday
-               );
-
-            ELSE   
-               int_counter := cipsrv_nhdplus_m.nav_ut_concise(
-                   obj_start_flowline      := obj_start_flowline
-                  ,num_maximum_distancekm  := num_maximum_distancekm
-                  ,num_maximum_flowtimeday := num_maximum_flowtimeday
-               );
-
-            END IF;
+            int_counter := cipsrv_nhdplus_m.nav_ut(
+                obj_start_flowline      := obj_start_flowline
+               ,num_maximum_distancekm  := num_maximum_distancekm
+               ,num_maximum_flowtimeday := num_maximum_flowtimeday
+            );
+            
+         ELSIF str_search_type = 'UTOLD'
+         THEN
+            int_counter := cipsrv_nhdplus_m.nav_ut_old(
+                obj_start_flowline      := obj_start_flowline
+               ,num_maximum_distancekm  := num_maximum_distancekm
+               ,num_maximum_flowtimeday := num_maximum_flowtimeday
+            );
                  
    ----------------------------------------------------------------------------
    -- Step 110
@@ -16733,8 +17056,7 @@ BEGIN
                ) aa
             )
             WHERE
-                a.selected IS TRUE
-            AND a.network_distancekm > num_maximum_distancekm;
+            a.network_distancekm > num_maximum_distancekm;
 
          ELSIF num_maximum_flowtimeday IS NOT NULL
          THEN
@@ -16770,8 +17092,7 @@ BEGIN
                ) aa
             )
             WHERE
-                a.selected IS TRUE
-            AND a.network_flowtimeday > num_maximum_flowtimeday;
+            a.network_flowtimeday > num_maximum_flowtimeday;
 
          END IF;
          
@@ -16814,8 +17135,8 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.hydroseq
-      ,a.fmeasure
-      ,a.tmeasure
+      ,ROUND(a.fmeasure,5) AS fmeasure
+      ,ROUND(a.tmeasure,5) AS tmeasure
       ,a.levelpathi
       ,a.terminalpa
       ,a.uphydroseq
@@ -16885,8 +17206,7 @@ BEGIN
          ON
          aa.nhdplusid = bb.nhdplusid
          WHERE
-             aa.selected IS TRUE
-         AND aa.fmeasure <> aa.tmeasure
+             aa.fmeasure <> aa.tmeasure
          AND aa.fmeasure >= 0 AND aa.fmeasure <= 100
          AND aa.tmeasure >= 0 AND aa.tmeasure <= 100
          AND aa.lengthkm > 0
@@ -16915,8 +17235,8 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.hydroseq
-      ,a.fmeasure
-      ,a.tmeasure
+      ,ROUND(a.fmeasure,5) AS fmeasure
+      ,ROUND(a.tmeasure,5) AS tmeasure
       ,a.levelpathi
       ,a.terminalpa
       ,a.uphydroseq
@@ -16946,8 +17266,7 @@ BEGIN
          FROM
          tmp_navigation_working30 aa
          WHERE
-             aa.selected IS TRUE
-         AND aa.fmeasure <> aa.tmeasure
+             aa.fmeasure <> aa.tmeasure
          AND aa.fmeasure >= 0 AND aa.fmeasure <= 100
          AND aa.tmeasure >= 0 AND aa.tmeasure <= 100
          AND aa.lengthkm > 0
@@ -16970,7 +17289,6 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql;
-
 
 DO $$DECLARE 
    a VARCHAR;b VARCHAR;
