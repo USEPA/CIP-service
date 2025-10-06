@@ -15,6 +15,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_dm(
 VOLATILE
 AS $BODY$
 DECLARE
+   rec       RECORD;
    int_count INTEGER;
    
 BEGIN
@@ -108,7 +109,6 @@ BEGIN
       ,uphydroseq
       ,dnhydroseq
       ,nav_order
-      ,selected
    )
    SELECT
     a.nhdplusid
@@ -124,7 +124,6 @@ BEGIN
    ,a.uphydroseq
    ,a.dnhydroseq
    ,a.nav_order
-   ,TRUE
    FROM
    dm a;
    
@@ -134,7 +133,7 @@ BEGIN
    -- Step 20
    -- Tag the nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.coastal_connection
@@ -146,29 +145,29 @@ BEGIN
       ON
       a.hydroseq = b.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN a.nav_order = (SELECT MAX(b.nav_order) FROM tmp_navigation_working30 b LIMIT 1)
-   THEN
-      CASE
-      WHEN cte.coastal_connection
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
       THEN
-         3
-      WHEN cte.network_end
-      THEN
-         5
+         CASE
+         WHEN rec.coastal_connection
+         THEN
+            3
+         WHEN rec.network_end
+         THEN
+            5
+         ELSE
+            1
+         END
       ELSE
-         1
+         0
       END
-   ELSE
-      0
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
+      
+   END LOOP;
    
    ----------------------------------------------------------------------------
    -- Step 30
@@ -180,15 +179,19 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.nav_dm(
-    cipsrv_nhdplus_h.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_dm(
-    cipsrv_nhdplus_h.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_dm';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;

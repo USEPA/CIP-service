@@ -194,7 +194,6 @@ BEGIN
          ,terminalpa
          ,uphydroseq
          ,dnhydroseq
-         ,selected
       )
       SELECT
        b.nhdplusid
@@ -209,7 +208,6 @@ BEGIN
       ,b.terminalpa
       ,b.uphydroseq
       ,b.dnhydroseq
-      ,TRUE
       FROM
       tmp_network_working30 b;
       
@@ -436,7 +434,6 @@ BEGIN
             ,terminalpa
             ,uphydroseq
             ,dnhydroseq
-            ,selected
          )
          SELECT
           b.nhdplusid
@@ -451,7 +448,6 @@ BEGIN
          ,b.terminalpa
          ,b.uphydroseq
          ,b.dnhydroseq
-         ,TRUE
          FROM
          dijk a
          JOIN
@@ -474,7 +470,6 @@ BEGIN
             ,uphydroseq
             ,dnhydroseq
             ,nav_order
-            ,selected
          ) VALUES (
              obj_start_flowline.nhdplusid
             ,obj_start_flowline.hydroseq
@@ -489,7 +484,6 @@ BEGIN
             ,obj_start_flowline.uphydroseq
             ,obj_start_flowline.dnhydroseq
             ,0
-            ,TRUE
          );
          
          INSERT INTO tmp_navigation_working30(
@@ -506,7 +500,6 @@ BEGIN
             ,uphydroseq
             ,dnhydroseq
             ,nav_order
-            ,selected
          ) VALUES (
              obj_stop_flowline.nhdplusid
             ,obj_stop_flowline.hydroseq
@@ -520,8 +513,7 @@ BEGIN
             ,obj_stop_flowline.terminalpa
             ,obj_stop_flowline.uphydroseq
             ,obj_stop_flowline.dnhydroseq
-            ,99999999
-            ,TRUE            
+            ,99999999         
          );
          
       END IF;
@@ -547,8 +539,7 @@ BEGIN
       ON
       a.hydroseq = b.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
+      a.navtermination_flag IS NULL
    )
    UPDATE tmp_navigation_working30 a
    SET navtermination_flag = CASE
@@ -590,9 +581,7 @@ BEGIN
    COUNT(*) 
    INTO int_count 
    FROM 
-   tmp_navigation_working30 a
-   WHERE 
-   a.selected IS TRUE;
+   tmp_navigation_working30 a;
    
    RETURN int_count;
 
@@ -600,13 +589,21 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_pp(
-    cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline  
-) OWNER TO cipsrv;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_pp';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_pp(
-    cipsrv_nhdplus_m.flowline
-   ,cipsrv_nhdplus_m.flowline
-)  TO PUBLIC;
 
