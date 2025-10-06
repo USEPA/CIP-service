@@ -43,14 +43,17 @@ BEGIN
       ON tmp_navigation_working30(dnhydroseq);
       
       CREATE INDEX tmp_navigation_working30_02i
+      ON tmp_navigation_working30(navtermination_flag);
+      
+      CREATE INDEX tmp_navigation_working30_03i
       ON tmp_navigation_working30(selected)
       WHERE selected IS FALSE;
       
-      CREATE INDEX tmp_navigation_working30_03i
+      CREATE INDEX tmp_navigation_working30_04i
       ON tmp_navigation_working30(is_open_branch)
       WHERE is_open_branch IS TRUE;
       
-      CREATE INDEX tmp_navigation_working30_04i
+      CREATE INDEX tmp_navigation_working30_05i
       ON tmp_navigation_working30(branch_id);
       
    END IF;
