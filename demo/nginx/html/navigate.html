@@ -312,7 +312,9 @@
    L.control.layers(null, layer_items).addTo(map);
 
    function dzStr(val) {
-      if (!val) {
+      if (val == 0 ) {
+         return "0";
+      } else if (!val) {
          return "";
       } else {
          return val.toString();
