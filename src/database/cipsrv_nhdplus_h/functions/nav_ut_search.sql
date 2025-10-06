@@ -3,11 +3,11 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_extended_branch';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_search';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut_extended_branch(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut_search(
     IN  p_start_flowline          cipsrv_nhdplus_h.flowline
    ,IN  p_maximum_distancekm      NUMERIC
    ,IN  p_maximum_flowtimeday     NUMERIC
@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut_extended_branch(
    ,IN  p_base_arbolatesu         NUMERIC
    ,IN  p_branch_id               INTEGER
    ,OUT out_flowline_count        INTEGER
-   ,OUT out_branches              BIGINT[]
+   ,OUT out_branches              cipsrv_nhdplus_h.flowline[]
    ,OUT out_return_code           INTEGER
    ,OUT out_status_message        VARCHAR
 )
@@ -30,6 +30,9 @@ BEGIN
    out_return_code          := 0;
    out_flowline_count       := 0;
    
+   ----------------------------------------------------------------------------
+   -- Step 10
+   ----------------------------------------------------------------------------
    IF p_start_flowline IS NULL
    THEN
       RETURN;
@@ -37,7 +40,8 @@ BEGIN
    END IF;
    
    ----------------------------------------------------------------------------
-
+   -- Step 20
+   ----------------------------------------------------------------------------
    WITH RECURSIVE ut(
        nhdplusid
       ,hydroseq
@@ -172,15 +176,108 @@ BEGIN
    ON CONFLICT DO NOTHING;
 
    GET DIAGNOSTICS out_flowline_count = ROW_COUNT;
-   
+
    ---------------------------------------------------------------------------
-   SELECT
-   ARRAY_AGG(a.hydroseq) INTO out_branches
-   FROM
-   tmp_navigation_working30 a
-   WHERE
-       a.branch_id = p_branch_id
-   AND a.is_open_branch;
+   -- Step 30
+   ----------------------------------------------------------------------------
+   SELECT 
+   ARRAY_AGG((   
+       a.nhdplusid
+      ,a.hydroseq
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.levelpathi
+      ,a.terminalpa
+      ,a.uphydroseq
+      ,a.dnhydroseq
+      ,a.dnminorhyd
+      ,a.divergence
+      ,NULL::INTEGER
+      ,a.arbolatesu
+      ,NULL::BIGINT
+      ,NULL::BIGINT
+      ,a.vpuid
+      ---
+      ,NULL::VARCHAR
+      ,NULL::VARCHAR
+      ,NULL::INTEGER
+      ---
+      ,a.lengthkm
+      ,a.lengthkm / (a.tmeasure - a.fmeasure)
+      ,a.totma
+      ,CASE 
+       WHEN a.totma IN (-9998,-9999)
+       THEN
+          CAST(NULL AS NUMERIC)
+       ELSE
+          a.totma / (a.tmeasure - a.fmeasure)
+       END
+      ---
+      ,a.pathlength
+      ,a.pathtimema
+      ---
+      ,NULL::INTEGER
+      ,a.fmeasure
+      ,a.lengthkm
+      ,a.totma
+      ,a.pathlength
+      ,a.pathtimema
+      ,NULL::BIGINT
+      ---
+      ,a.network_distancekm  + a.lengthkm 
+      ,a.network_flowtimeday + a.totma
+      ,a.pathlength_adj
+      ,a.pathtimema_adj
+      ---
+      ,a.nav_order + 1
+      ,a.arbolatesu::INTEGER + 100000000
+   )::cipsrv_nhdplus_h.flowline)
+   INTO out_branches
+   FROM (
+      SELECT
+       aa.nhdplusid
+      ,aa.hydroseq
+      ,aa.fmeasure
+      ,aa.tmeasure
+      ,aa.levelpathi
+      ,aa.terminalpa
+      ,aa.uphydroseq
+      ,aa.dnhydroseq
+      ,aa.dnminorhyd
+      ,aa.divergence
+      ,NULL::INTEGER
+      ,aa.arbolatesu
+      ,NULL::BIGINT
+      ,NULL::BIGINT
+      ,aa.vpuid
+      ---
+      ,NULL::VARCHAR
+      ,NULL::VARCHAR
+      ,NULL::INTEGER
+      ---
+      ,aa.lengthkm
+      ,aa.totma
+      ,aa.pathlength
+      ,aa.pathtimema
+      ---
+      ,bb.network_distancekm
+      ,bb.network_flowtimeday
+      ,0  AS pathlength_adj
+      ,0  AS pathtimema_adj
+      ---
+      ,bb.nav_order
+      FROM
+      cipsrv_nhdplus_h.nhdplusflowlinevaa_nav aa
+      JOIN
+      tmp_navigation_working30 bb
+      ON
+      bb.hydroseq = aa.hydroseq
+      WHERE
+          bb.branch_id = p_branch_id
+      AND bb.is_open_branch
+      ORDER BY
+      bb.network_distancekm
+   ) a;
 
 END;
 $BODY$
@@ -191,7 +288,7 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_extended_branch';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_search';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
    EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);

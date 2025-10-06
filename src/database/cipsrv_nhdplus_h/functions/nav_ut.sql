@@ -3,11 +3,11 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_extended';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut';
    IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
 END$$;
 
-CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut_extended(
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_ut(
     IN  obj_start_flowline       cipsrv_nhdplus_h.flowline
    ,IN  num_maximum_distancekm   NUMERIC
    ,IN  num_maximum_flowtimeday  NUMERIC
@@ -16,13 +16,13 @@ VOLATILE
 AS $BODY$
 DECLARE
    rec                      RECORD;
-   ary_branches             BIGINT[];
+   ary_branches             cipsrv_nhdplus_h.flowline[];
    int_check                INTEGER;
    int_count                INTEGER;
    int_return_code          INTEGER;
    str_status_message       VARCHAR;
    int_sanity               INTEGER;
-   int_sanity_check         INTEGER := 100;
+   int_sanity_check         INTEGER := 400;
    int_curr_branch_id       INTEGER;
    boo_search               BOOLEAN;
    ary_working              cipsrv_nhdplus_h.flowline[];
@@ -46,7 +46,9 @@ BEGIN
    num_init_baseflowtimeday := obj_start_flowline.pathflowtimeday + (obj_start_flowline.flowtimeday - obj_start_flowline.out_flowtimeday);
    
    ary_working := ARRAY[obj_start_flowline]::cipsrv_nhdplus_h.flowline[];
-   ary_working[1].nav_order := 0;
+   ary_working[1].nav_order           := 0;
+   ary_working[1].network_distancekm  := obj_start_flowline.out_lengthkm;
+   ary_working[1].network_flowtimeday := obj_start_flowline.out_flowtimeday;
    
    ----------------------------------------------------------------------------
    -- Step 10
@@ -56,12 +58,10 @@ BEGIN
    
    WHILE boo_search
    LOOP
-      RAISE WARNING 'start %, adj % nd %',ary_working[1].hydroseq,ary_working[1].pathlength_adj,ary_working[1].network_distancekm;
-      RAISE WARNING '%',TO_JSON(ary_working[1]);
-      
       num_pathlength_adj := ary_working[1].pathlength_adj;
       num_pathtimema_adj := ary_working[1].pathflowtime_adj;
-      rec := cipsrv_nhdplus_h.nav_ut_extended_branch(
+      
+      rec := cipsrv_nhdplus_h.nav_ut_search(
           p_start_flowline       := ary_working[1]
          ,p_maximum_distancekm   := num_maximum_distancekm
          ,p_maximum_flowtimeday  := num_maximum_flowtimeday
@@ -70,122 +70,109 @@ BEGIN
          ,p_base_arbolatesu      := obj_start_flowline.arbolatesu
          ,p_branch_id            := int_curr_branch_id
       );
-      ary_working        := ary_working[2:];
       ary_branches       := rec.out_branches;
       int_check          := rec.out_flowline_count;
       int_return_code    := rec.out_return_code;
       str_status_message := rec.out_status_message;
-      
-      RAISE WARNING 'branch count %',ARRAY_LENGTH(ary_branches,1); 
+
       IF int_check > 0
       THEN
-         int_count          := int_count + int_check;
+         int_count          := int_count + int_check - COALESCE(ARRAY_LENGTH(ary_branches,1),0);
          int_curr_branch_id := int_curr_branch_id + 1;
       
-      END IF;  
-
-      ----------------------------------------------------------------------------
-      -- Search for open minor divergences
-      ----------------------------------------------------------------------------
-      rec := cipsrv_nhdplus_h.nav_ut_extended_minordiv(
-          p_maximum_distancekm     := num_maximum_distancekm
-         ,p_maximum_flowtimeday    := num_maximum_flowtimeday
-         ,p_source_pathlength_adj  := num_pathlength_adj
-         ,p_source_pathtimema_adj  := num_pathtimema_adj
-      );
-      IF COALESCE(ARRAY_LENGTH(rec.out_minor_divs,1),0) = 0
-      THEN
-         NULL;
-         
-      ELSE      
-         IF COALESCE(ARRAY_LENGTH(ary_working,1),0) = 0
+         IF int_check > 10000
          THEN
-            ary_working := rec.out_minor_divs;
+            RAISE WARNING '% hydroseq: %',int_check,ary_working[1].hydroseq;
             
-         ELSE
-            FOR i IN 1 .. ARRAY_LENGTH(rec.out_minor_divs,1)
-            LOOP
-               boo_check := TRUE;
-               
-               FOR j IN 1 .. ARRAY_LENGTH(ary_working,1)
-               LOOP
-                  IF ary_working[j].hydroseq = rec.out_minor_divs[i].hydroseq
-                  THEN
-                     boo_check := FALSE;
-                     
-                  END IF;
-               
-               END LOOP;
-               
-               IF boo_check
-               THEN
-                  ary_working := ARRAY_APPEND(ary_working,rec.out_minor_divs[i]);
-               
-               END IF;
-            
-            END LOOP;
-         
          END IF;
          
       END IF;
       
-      RAISE WARNING 'minors %',TO_JSON(ary_working); 
+      ary_working        := ary_working[2:];
       
+      ----------------------------------------------------------------------------
+      -- Prioritize following branches if found
+      ----------------------------------------------------------------------------
+      IF COALESCE(ARRAY_LENGTH(ary_branches,1),0) > 0
+      THEN
+         ary_working := cipsrv_nhdplus_h.append_flowlines(
+             p_input  := ary_branches
+            ,p_target := ary_working
+            ,p_sort_by_ordering_key := TRUE
+         );
+         
+      ELSE
+      ----------------------------------------------------------------------------
+      -- Search for open minor divergences
+      ----------------------------------------------------------------------------
+         rec := cipsrv_nhdplus_h.nav_ut_minordiv(
+             p_maximum_distancekm     := num_maximum_distancekm
+            ,p_maximum_flowtimeday    := num_maximum_flowtimeday
+            ,p_source_pathlength_adj  := num_pathlength_adj
+            ,p_source_pathtimema_adj  := num_pathtimema_adj
+         );
+         ary_working := cipsrv_nhdplus_h.append_flowlines(
+             p_input  := rec.out_minor_divs
+            ,p_target := ary_working
+            ,p_sort_by_ordering_key := TRUE
+         );
       
+      END IF;
 
+      ----------------------------------------------------------------------------
+      -- Check for loops or other problems
+      ----------------------------------------------------------------------------
       int_sanity := int_sanity + 1;
       IF int_sanity > int_sanity_check
       THEN
-         RAISE EXCEPTION 'sanity check';
+         RAISE EXCEPTION 'sanity check % for hydroseq %: %',int_sanity,obj_start_flowline.hydroseq,TO_JSON(ary_working);
          
       END IF;
       
-      IF ARRAY_LENGTH(ary_working,1) IS NULL
-      OR ARRAY_LENGTH(ary_working,1) = 0
+      IF COALESCE(ARRAY_LENGTH(ary_working,1),0) = 0
       THEN
          boo_search := FALSE;
          
       END IF;
-      select count(*) into int_check from tmp_navigation_working30;
-      raise warning 'bottom %',int_check;
+
    END LOOP;
-   raise warning '<><> %',int_count;
+
    ----------------------------------------------------------------------------
    -- Step 20
-   -- Tag the upstream mainline nav termination flags
+   -- Tag remaining upstream mainline nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.ary_upstream_hydroseq
       ,b.headwater
-      ,b.coastal_connection
       FROM
       tmp_navigation_working30 a
       JOIN
       cipsrv_nhdplus_h.nhdplusflowlinevaa_nav b
       ON
-      a.hydroseq = b.hydroseq
+      b.hydroseq = a.hydroseq
       WHERE
       a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE ARRAY[d.hydroseq] @> cte.ary_upstream_hydroseq )
-   THEN
-      0
-   ELSE
-      CASE
-      WHEN cte.headwater
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(rec.ary_upstream_hydroseq) )
       THEN
-         4
+         0
       ELSE
-         1
+         CASE
+         WHEN rec.headwater
+         THEN
+            4
+         ELSE
+            1
+         END
       END
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
+   
+   END LOOP;
 
    ----------------------------------------------------------------------------
    -- Step 30
@@ -202,7 +189,7 @@ DO $$DECLARE
 BEGIN
    SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
    INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut_extended';
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_ut';
    IF b IS NOT NULL THEN 
    EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
    EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);

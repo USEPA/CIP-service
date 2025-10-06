@@ -83,7 +83,7 @@ BEGIN
    ELSIF str_search_type IN ('DM','DOWNSTREAM MAIN PATH ONLY')
    THEN
       str_search_type := 'DM';
-      
+   
    ELSE
       out_return_code    := -1;
       out_status_message := 'Valid SearchType codes are UM, UT, DM, DD and PP.';
@@ -350,34 +350,19 @@ BEGIN
    ----------------------------------------------------------------------------
          IF str_search_type = 'UT'
          THEN 
-            IF (
-                   num_maximum_distancekm  IS NULL
-               AND num_maximum_flowtimeday IS NULL
-               AND obj_start_flowline.arbolatesu > 500
-            ) OR (
-                   num_maximum_distancekm  IS NOT NULL
-               AND num_maximum_distancekm > 200
-               AND obj_start_flowline.arbolatesu > 200
-            ) OR (
-                   num_maximum_flowtimeday  IS NOT NULL
-               AND num_maximum_flowtimeday > 3
-               AND obj_start_flowline.arbolatesu > 200
-            )
-            THEN
-               int_counter := cipsrv_nhdplus_h.nav_ut_extended(
-                   obj_start_flowline      := obj_start_flowline
-                  ,num_maximum_distancekm  := num_maximum_distancekm
-                  ,num_maximum_flowtimeday := num_maximum_flowtimeday
-               );
-
-            ELSE   
-               int_counter := cipsrv_nhdplus_h.nav_ut_concise(
-                   obj_start_flowline      := obj_start_flowline
-                  ,num_maximum_distancekm  := num_maximum_distancekm
-                  ,num_maximum_flowtimeday := num_maximum_flowtimeday
-               );
-
-            END IF;
+            int_counter := cipsrv_nhdplus_h.nav_ut(
+                obj_start_flowline      := obj_start_flowline
+               ,num_maximum_distancekm  := num_maximum_distancekm
+               ,num_maximum_flowtimeday := num_maximum_flowtimeday
+            );
+            
+         ELSIF str_search_type = 'UTOLD'
+         THEN
+            int_counter := cipsrv_nhdplus_h.nav_ut_old(
+                obj_start_flowline      := obj_start_flowline
+               ,num_maximum_distancekm  := num_maximum_distancekm
+               ,num_maximum_flowtimeday := num_maximum_flowtimeday
+            );
                  
    ----------------------------------------------------------------------------
    -- Step 110
@@ -458,8 +443,7 @@ BEGIN
                ) aa
             )
             WHERE
-                a.selected IS TRUE
-            AND a.network_distancekm > num_maximum_distancekm;
+            a.network_distancekm > num_maximum_distancekm;
 
          ELSIF num_maximum_flowtimeday IS NOT NULL
          THEN
@@ -495,8 +479,7 @@ BEGIN
                ) aa
             )
             WHERE
-                a.selected IS TRUE
-            AND a.network_flowtimeday > num_maximum_flowtimeday;
+            a.network_flowtimeday > num_maximum_flowtimeday;
 
          END IF;
          
@@ -539,8 +522,8 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.hydroseq
-      ,a.fmeasure
-      ,a.tmeasure
+      ,ROUND(a.fmeasure,5) AS fmeasure
+      ,ROUND(a.tmeasure,5) AS tmeasure
       ,a.levelpathi
       ,a.terminalpa
       ,a.uphydroseq
@@ -610,8 +593,7 @@ BEGIN
          ON
          aa.nhdplusid = bb.nhdplusid
          WHERE
-             aa.selected IS TRUE
-         AND aa.fmeasure <> aa.tmeasure
+             aa.fmeasure <> aa.tmeasure
          AND aa.fmeasure >= 0 AND aa.fmeasure <= 100
          AND aa.tmeasure >= 0 AND aa.tmeasure <= 100
          AND aa.lengthkm > 0
@@ -640,8 +622,8 @@ BEGIN
       SELECT
        a.nhdplusid
       ,a.hydroseq
-      ,a.fmeasure
-      ,a.tmeasure
+      ,ROUND(a.fmeasure,5) AS fmeasure
+      ,ROUND(a.tmeasure,5) AS tmeasure
       ,a.levelpathi
       ,a.terminalpa
       ,a.uphydroseq
@@ -671,8 +653,7 @@ BEGIN
          FROM
          tmp_navigation_working30 aa
          WHERE
-             aa.selected IS TRUE
-         AND aa.fmeasure <> aa.tmeasure
+             aa.fmeasure <> aa.tmeasure
          AND aa.fmeasure >= 0 AND aa.fmeasure <= 100
          AND aa.tmeasure >= 0 AND aa.tmeasure <= 100
          AND aa.lengthkm > 0
