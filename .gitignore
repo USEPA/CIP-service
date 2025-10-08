@@ -19,3 +19,4 @@ ImportLog*
 **/scratch/
 **/Index/
 **/jupyter/.ipynb_checkpoints
+*.pyHistory
