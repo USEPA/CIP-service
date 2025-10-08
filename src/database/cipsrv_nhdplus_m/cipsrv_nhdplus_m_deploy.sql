@@ -15781,20 +15781,25 @@ BEGIN
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
       ,mq.totma
-      ,mq.pathlength - um.base_pathlength + mq.lengthkm
-      ,mq.pathtimema - um.base_pathtime   + mq.totma
+      ,(mq.pathlength + COALESCE(md.pathlength_adj,0)) - um.base_pathlength + mq.lengthkm
+      ,(mq.pathtimema + COALESCE(md.pathtimema_adj,0)) - um.base_pathtime   + mq.totma
       ,mq.levelpathi
       ,mq.terminalpa
       ,mq.uphydroseq
       ,mq.dnhydroseq
       ,mq.divergence
-      ,um.base_pathlength -- base pathlength
+      ,um.base_pathlength
       ,um.base_pathtime
       ,um.nav_order + 1 
       FROM
       cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
       CROSS JOIN
       um
+      LEFT JOIN
+      cipsrv_nhdplus_m.nhdplusflow_upminordivs md
+      ON
+          md.tohydroseq   = um.hydroseq
+      AND md.fromhydroseq = mq.hydroseq
       WHERE
       (
          (
