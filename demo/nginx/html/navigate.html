@@ -2,6 +2,7 @@
 <html lang="en" >
    <head>
       <meta charset="UTF-8">
+      <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
       <title>CIP Service Navigation</title>
       <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
       <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
@@ -519,31 +520,137 @@
          zgis_port = ":" + gis_port;
       }
       
-      if ( zgis_type == "geoserver" ) {
-         gis_server = zgis_prot + "://" + zgis_host + zgis_port;
-         const nv = get_select_values(document.getElementById("resolution"));
+      if ( zgis_type ) {
+         let gis_server = zgis_prot + "://" + zgis_host + zgis_port;
          
-         lyr_nhdplus_m_flowlines = L.tileLayer.wms(gis_server + "/wms",{
-             layers: 'cipsrv:nhdplus_m_flowlines'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
+         if (typeof gis_pref === "undefined" || gis_pref === null || gis_pref == "NONE") {
+            // pass
+         } else {
+            gis_server = zgis_prot + "://" + zgis_host + zgis_port + '/' + gis_pref
+         }
+         
+         if ( zgis_type == "geoserver" ) {
+            
+            lyr_nhdplus_m_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_m_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+            
+            lyr_nhdplus_h_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_h_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+                        
+         } else if ( zgis_type == "arcgis" ) {
+            const dynlyr = [
+                {
+                   "ID": 0
+                  ,"source": {
+                      "type"      : "mapLayer"
+                     ,"mapLayerId": 0
+                   }
+                }
+               ,{
+                   "ID": 4
+                  ,"source": {
+                      "type"      : "mapLayer"
+                     ,"mapLayerId": 4
+                   }
+                  ,"drawingInfo":{
+                      "renderer": {
+                         "type"  : "simple"
+                        ,"symbol": {
+                            "type" : "esriSLS"
+                           ,"style": "esriSLSSolid"
+                           ,"color": [65,107,223,255]
+                           ,"width": 1.5
+                         }
+                      }
+                     ,"showLabels": false
+                   }                  
+                }
+            ];
+            
+            pfunc = function(error,featureCollection) {
+               if (error || featureCollection.features.length === 0) {
+                  // pass
+               } else {
+                  for (let i = 0; i < featureCollection.features.length; i++) {
+                     if (featureCollection.features[i].layerId == 4) {
+                        const z = "<B>NHDPlus " + featureCollection.features[i].properties.Resolution + " Resolution</B><BR/>" +
+                        "NHDPlusID: " +
+                        dzStr(featureCollection.features[i].properties.NHDPlusID) +
+                        "<BR/>" +
+                        "Perm ID: " +
+                        featureCollection.features[i].properties.Permanent_Identifier +
+                        "<BR/>" +
+                        "FCode: " +
+                        dzStr(featureCollection.features[i].properties.FCode) +
+                        "<BR/>" +
+                        "Reach Code: " +
+                        featureCollection.features[i].properties.ReachCode +
+                        "<BR/>" +
+                        "Hydro Seq: " +
+                        dzStr(featureCollection.features[i].properties.HydrologicSequence) +
+                        "<BR/>" +
+                        "FMeasure: " +
+                        dzStr(featureCollection.features[i].properties.FromMeasure) +
+                        "<BR/>" +
+                        "TMeasure: " +
+                        dzStr(featureCollection.features[i].properties.ToMeasure) +
+                        "<BR/>" +
+                        "Down Hydro Seq: " +
+                        dzStr(featureCollection.features[i].properties.DownstreamMainPathHydroSeq) +
+                        "<BR/>" +
+                        "Terminal Path ID: " +
+                        dzStr(featureCollection.features[i].properties.TerminalPathIdentifier) +
+                        "<BR/>" +
+                        "GNIS Name: " +
+                        featureCollection.features[i].properties.GNIS_Name +
+                        "<BR/>" +
+                        "Length (Km): " +
+                        dzStr(featureCollection.features[i].properties.LengthKm) +
+                        "<BR/>" +
+                        "FlowTime (Day): " +
+                        dzStr(featureCollection.features[i].properties.TimeOfTravelMeanAverage) +
+                        "<BR/>";
+                        return z;
+                     }
+                  }
+               }
+            }
+            
+            lyr_nhdplus_m_flowlines = L.esri.dynamicMapLayer({
+                url: gis_server + "/rest/services/nhdplus_m/MapServer/"
+               ,layers: [0,4]
+               ,dynamicLayers: dynlyr
+            });            
+            lyr_nhdplus_m_flowlines.bindPopup(pfunc);
+            
+            lyr_nhdplus_h_flowlines = L.esri.dynamicMapLayer({
+                url: gis_server + "/rest/services/nhdplus_h/MapServer/"
+               ,layers: [0,4]
+               ,dynamicLayers: dynlyr
+            });            
+            lyr_nhdplus_h_flowlines.bindPopup(pfunc);
+         
+         } else {
+            console.log('err ' + zgis_type);
+            
+         }
+         
+         const nv = get_select_values(document.getElementById("resolution"));
          
          if (nv == "nhdplus_m" ) {
             lyr_nhdplus_m_flowlines.addTo(map);
-         }
-         
+         }         
          layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
-         
-         lyr_nhdplus_h_flowlines = L.tileLayer.wms(gis_server + "/wms",{
-             layers: 'cipsrv:nhdplus_h_flowlines'
-            ,format: 'image/png'
-            ,transparent: true
-            ,version: '1.3.0'
-            ,attribution: "US EPA"
-         });
          
          if (nv == "nhdplus_h" ) {
             lyr_nhdplus_h_flowlines.addTo(map);
@@ -563,7 +670,7 @@
       } else if (!val) {
          return "";
       } else {
-         return val.toString();
+         return val.toString().replace(/\,/g,"");
       }
    }   
    
@@ -579,6 +686,7 @@
    function onEachFeature_flowlines(feature,layer) {
       if (feature.properties && feature.properties.nhdplusid) {
          layer.bindPopup(
+            "<B>Navigation Results</B><BR/>" +
             "NHDPlusID: " +
             dzStr(feature.properties.nhdplusid) +
             "<BR/>" +
