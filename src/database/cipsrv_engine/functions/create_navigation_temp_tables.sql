@@ -27,31 +27,34 @@ BEGIN
          ,terminalpa                  BIGINT
          ,uphydroseq                  BIGINT
          ,dnhydroseq                  BIGINT
+         ,dnminorhyd                  BIGINT
+         ,arbolatesu                  NUMERIC
          ,navtermination_flag         INTEGER
          ,nav_order                   INTEGER
          ,selected                    BOOLEAN
+         ,is_open_branch              BOOLEAN
+         ,branch_id                   INTEGER
       );
 
       CREATE UNIQUE INDEX tmp_navigation_working30_pk
-      ON tmp_navigation_working30(nhdplusid);
-      
-      CREATE UNIQUE INDEX tmp_navigation_working30_1u
       ON tmp_navigation_working30(hydroseq);
       
       CREATE INDEX tmp_navigation_working30_01i
-      ON tmp_navigation_working30(network_distancekm);
-            
-      CREATE INDEX tmp_navigation_working30_02i
-      ON tmp_navigation_working30(network_flowtimeday);
-      
-      CREATE INDEX tmp_navigation_working30_03i
       ON tmp_navigation_working30(dnhydroseq);
       
+      CREATE INDEX tmp_navigation_working30_02i
+      ON tmp_navigation_working30(navtermination_flag);
+      
+      CREATE INDEX tmp_navigation_working30_03i
+      ON tmp_navigation_working30(selected)
+      WHERE selected IS FALSE;
+      
       CREATE INDEX tmp_navigation_working30_04i
-      ON tmp_navigation_working30(nav_order);
+      ON tmp_navigation_working30(is_open_branch)
+      WHERE is_open_branch IS TRUE;
       
       CREATE INDEX tmp_navigation_working30_05i
-      ON tmp_navigation_working30(selected);
+      ON tmp_navigation_working30(branch_id);
       
    END IF;
    

@@ -8,12 +8,14 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(
    ,tmeasure
    ,levelpathi
    ,terminalpa
+   ,arbolatesu
    ,uphydroseq
    ,dnhydroseq
    ,dnminorhyd
    ,divergence
    ,fromnode
    ,tonode
+   ,streamleve
    /* ++++++++++ */
    ,lengthkm
    ,totma
@@ -22,6 +24,7 @@ CREATE MATERIALIZED VIEW cipsrv_nhdplus_m.nhdplusflowlinevaa_nav(
    /* ++++++++++ */
    ,force_main_line
    ,ary_upstream_hydroseq
+   ,ary_upstream_hydromains
    ,ary_downstream_hydroseq
    /* ++++++++++ */
    ,headwater
@@ -39,6 +42,7 @@ SELECT
 ,CAST(a.tomeas     AS NUMERIC) AS tomeas
 ,CAST(a.levelpathi AS BIGINT)  AS levelpathi
 ,CAST(a.terminalpa AS BIGINT)  AS terminalpa
+,a.arbolatesu
 ,CASE
  WHEN a.uphydroseq = 0
  THEN
@@ -61,8 +65,9 @@ SELECT
    CAST(a.dnminorhyd AS BIGINT)
  END AS dnminorhyd
 ,a.divergence
-,CAST(a.fromnode AS BIGINT)   AS fromnode
-,CAST(a.tonode AS BIGINT)     AS tonode
+,CAST(a.fromnode AS BIGINT)    AS fromnode
+,CAST(a.tonode AS BIGINT)      AS tonode
+,CAST(a.streamleve AS INTEGER) AS streamleve
 /* ++++++++++ */
 ,CAST(a.lengthkm AS NUMERIC) AS lengthkm
 ,CASE
@@ -146,50 +151,34 @@ SELECT
    ,510002581  -- Wisconsin
    ,350005918  -- Yazoo
    ,590001280  -- Yellowstone
-   --- Born on the Port Allen Bayou --
-   ,350002673
-   ,350002676
-   ,350002718
-   ,350002733
-   ,350002775
-   ,350002785
-   ,350002783
-   ,350002835
-   ,350002844
-   ,350002873
-   ,350002878
-   ,350002894
-   ,350002915
-   ,350002946
-   ,350002973
-   ,350003025
-   ,350003055
-   ,350003153
-   ,350003177
-   ,350003182
-   ,350003196
-   ,350003274
-   ,350037594
-   ,350045866
-   ,350083155
-   --- Kaskaskia Old Course --
-   ,510000109
-   ,510000101
-   ,510000102
-   ,510000111
-   --- Other minor networks receiving big water
-   ,510000080
-   ,510000089
-   ,510000143
-   ,550002456
-   ,550003310
+
  )
  THEN
    TRUE
  ELSE
    FALSE
  END AS force_main_line
-,ARRAY(SELECT CAST(bb.fromhydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow bb WHERE bb.tohydroseq = a.hydroseq) AS ary_upstream_hydroseq
+,ARRAY(
+   SELECT 
+   CAST(bb.fromhydroseq AS BIGINT) 
+   FROM 
+   cipsrv_nhdplus_m.nhdplusflow bb 
+   WHERE 
+   bb.tohydroseq = a.hydroseq
+ ) AS ary_upstream_hydroseq
+,ARRAY(
+   SELECT 
+   CAST(ff.fromhydroseq AS BIGINT) 
+   FROM 
+   cipsrv_nhdplus_m.nhdplusflow ff 
+   JOIN
+   cipsrv_nhdplus_m.networknhdflowline gg
+   ON
+       gg.hydroseq    = ff.fromhydroseq
+   AND gg.dnhydroseq  = ff.tohydroseq 
+   WHERE 
+   ff.tohydroseq = a.hydroseq
+ ) AS ary_upstream_hydromains
 ,CASE
  WHEN a.dndraincou = 1
  THEN
@@ -199,7 +188,14 @@ SELECT
    ARRAY[CAST(a.dnhydroseq AS BIGINT),CAST(a.dnminorhyd AS BIGINT)]
  WHEN a.dndraincou > 2
  THEN
-   ARRAY(SELECT CAST(cc.tohydroseq AS BIGINT) FROM cipsrv_nhdplus_m.nhdplusflow cc WHERE cc.fromhydroseq = a.hydroseq)
+   ARRAY(
+      SELECT 
+      CAST(cc.tohydroseq AS BIGINT) 
+      FROM 
+      cipsrv_nhdplus_m.nhdplusflow cc 
+      WHERE 
+      cc.fromhydroseq = a.hydroseq
+   )
  ELSE
    NULL
  END AS ary_downstream_hydroseq
@@ -224,6 +220,7 @@ SELECT
  ELSE
    FALSE
  END AS network_end
+/* ++++++++++ */
 ,a.vpuid
 FROM
 cipsrv_nhdplus_m.networknhdflowline a
@@ -274,6 +271,9 @@ CREATE INDEX nhdplusflowlinevaa_nav_gn1
 ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav USING GIN(ary_upstream_hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_nav_gn2
+ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav USING GIN(ary_upstream_hydromains);
+
+CREATE INDEX nhdplusflowlinevaa_nav_gn3
 ON cipsrv_nhdplus_m.nhdplusflowlinevaa_nav USING GIN(ary_downstream_hydroseq);
 
 CREATE INDEX nhdplusflowlinevaa_nav_10i

@@ -3,6 +3,8 @@ from exporter import auto_fm,tbexporter,fcexporter,get_env_data;
 import domains;
 from aliases import update_aliases;
 
+networkflowlines_only = False;
+
 ###############################################################################
 env = get_env_data(os.path.dirname(os.path.realpath(__file__)) + os.sep + '.env');
 work_path = os.path.dirname(os.path.realpath(__file__)) + os.sep + "nhdplus_m";
@@ -80,7 +82,12 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_flow_direction_esri";
 outname   = "flow_direction";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -103,133 +110,15 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
-source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdarea_esri";
-outname   = "nhdarea";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("adding domains to " + outname + "...",end="",flush=True);
-domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
-domains.ElevationRange(work_path + os.sep + container_name  ,outname,"elevation");
-domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
-domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
-domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
-domains.NoYes(work_path + os.sep + container_name           ,outname,"onoffnet");
-domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
-domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
-arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
-arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
-arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
-arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
-arcpy.management.AddIndex(target_nm,"visibilityfilter"              ,"idx06");
-arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx07");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
-###############################################################################
-source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdline_esri";
-outname   = "nhdline";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("adding domains to " + outname + "...",end="",flush=True);
-domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
-domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
-domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
-domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
-arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
-arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
-arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
-arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
-arcpy.management.AddIndex(target_nm,"visibilityfilter"              ,"idx06");
-arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx07");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
-###############################################################################
-source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdpoint_esri";
-outname   = "nhdpoint";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("adding domains to " + outname + "...",end="",flush=True);
-domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
-domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
-domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
-arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
-arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
-arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
-arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
-arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx06");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
-###############################################################################
-source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdwaterbody_esri";
-outname   = "nhdwaterbody";
-target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
-
-print("adding aliases to " + outname + "...",end="",flush=True);
-update_aliases(work_path + os.sep + container_name,outname);
-print(" DONE.");
-
-print("adding domains to " + outname + "...",end="",flush=True);
-domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
-domains.ElevationRange(work_path + os.sep + container_name  ,outname,"elevation");
-domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
-domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
-domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
-domains.NoYes(work_path + os.sep + container_name           ,outname,"onoffnet");
-domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
-domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
-print(" DONE.");
-
-print("indexing " + outname + "...",end="",flush=True);
-arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
-arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
-arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
-arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
-arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
-arcpy.management.AddIndex(target_nm,"visibilityfilter"              ,"idx06");
-arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx07");
-arcpy.management.AddIndex(target_nm,"reachcode"                     ,"idx08");
-print(" DONE.");
-print(outname + " export complete.");
-print(" ");
-
-###############################################################################
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_networknhdflowline_esri";
 outname   = "networknhdflowline";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -277,10 +166,163 @@ print(outname + " export complete.");
 print(" ");
 
 ###############################################################################
+source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdarea_esri";
+outname   = "nhdarea";
+target_nm = work_path + os.sep + container_name + os.sep + outname;
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
+
+print("adding aliases to " + outname + "...",end="",flush=True);
+update_aliases(work_path + os.sep + container_name,outname);
+print(" DONE.");
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.ElevationRange(work_path + os.sep + container_name  ,outname,"elevation");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"onoffnet");
+domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
+print(" DONE.");
+
+print("indexing " + outname + "...",end="",flush=True);
+arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
+arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
+arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
+arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
+arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
+arcpy.management.AddIndex(target_nm,"visibilityfilter"              ,"idx06");
+arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx07");
+print(" DONE.");
+print(outname + " export complete.");
+print(" ");
+
+###############################################################################
+source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdline_esri";
+outname   = "nhdline";
+target_nm = work_path + os.sep + container_name + os.sep + outname;
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
+
+print("adding aliases to " + outname + "...",end="",flush=True);
+update_aliases(work_path + os.sep + container_name,outname);
+print(" DONE.");
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+print(" DONE.");
+
+print("indexing " + outname + "...",end="",flush=True);
+arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
+arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
+arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
+arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
+arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
+arcpy.management.AddIndex(target_nm,"visibilityfilter"              ,"idx06");
+arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx07");
+print(" DONE.");
+print(outname + " export complete.");
+print(" ");
+
+###############################################################################
+source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdpoint_esri";
+outname   = "nhdpoint";
+target_nm = work_path + os.sep + container_name + os.sep + outname;
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
+
+print("adding aliases to " + outname + "...",end="",flush=True);
+update_aliases(work_path + os.sep + container_name,outname);
+print(" DONE.");
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+print(" DONE.");
+
+print("indexing " + outname + "...",end="",flush=True);
+arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
+arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
+arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
+arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
+arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
+arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx06");
+print(" DONE.");
+print(outname + " export complete.");
+print(" ");
+
+###############################################################################
+source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdwaterbody_esri";
+outname   = "nhdwaterbody";
+target_nm = work_path + os.sep + container_name + os.sep + outname;
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
+
+print("adding aliases to " + outname + "...",end="",flush=True);
+update_aliases(work_path + os.sep + container_name,outname);
+print(" DONE.");
+
+print("adding domains to " + outname + "...",end="",flush=True);
+domains.Resolution(work_path + os.sep + container_name      ,outname,"resolution");
+domains.ElevationRange(work_path + os.sep + container_name  ,outname,"elevation");
+domains.FType(work_path + os.sep + container_name           ,outname,"ftype");
+domains.FCode(work_path + os.sep + container_name           ,outname,"fcode");
+domains.VisibilityFilter(work_path + os.sep + container_name,outname,"visibilityfilter");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"onoffnet");
+domains.PurpCode(work_path + os.sep + container_name        ,outname,"purpcode");
+domains.NoYes(work_path + os.sep + container_name           ,outname,"burn");
+print(" DONE.");
+
+print("indexing " + outname + "...",end="",flush=True);
+arcpy.management.AddIndex(target_nm,"nhdplusid"                     ,"idx01");
+arcpy.management.AddIndex(target_nm,"permanent_identifier"          ,"idx02");
+arcpy.management.AddIndex(target_nm,"gnis_id"                       ,"idx03");
+arcpy.management.AddIndex(target_nm,"ftype"                         ,"idx04");
+arcpy.management.AddIndex(target_nm,"fcode"                         ,"idx05");
+arcpy.management.AddIndex(target_nm,"visibilityfilter"              ,"idx06");
+arcpy.management.AddIndex(target_nm,"vpuid"                         ,"idx07");
+arcpy.management.AddIndex(target_nm,"reachcode"                     ,"idx08");
+print(" DONE.");
+print(outname + " export complete.");
+print(" ");
+
+###############################################################################
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_nonnetworknhdflowline_esri";
 outname   = "nonnetworknhdflowline";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -314,7 +356,13 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdplusflow_esri";
 outname   = "nhdplusflow";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = tbexporter(source,outname,work_path,container_name);
+ret       = tbexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_tb       = networkflowlines_only
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -341,7 +389,13 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdpluscatchment_esri";
 outname   = "nhdpluscatchment";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -359,7 +413,14 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdplussink_esri";
 outname   = "nhdplussink";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name,'POINT');
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,geometry_type  = 'POINT'
+   ,empty_fc       = networkflowlines_only
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -384,7 +445,14 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_nhdplusgage_esri";
 outname   = "nhdplusgage";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name,'POINT');
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,geometry_type  = 'POINT'
+   ,empty_fc       = networkflowlines_only
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);
@@ -405,7 +473,13 @@ print(" ");
 source    = source_conn + r"/cipsrv_gis.nhdplus_m_wbdhu12_esri";
 outname   = "wbdhu12";
 target_nm = work_path + os.sep + container_name + os.sep + outname;
-ret       = fcexporter(source,outname,work_path,container_name);
+ret       = fcexporter(
+    source         = source
+   ,outname        = outname
+   ,work_path      = work_path
+   ,container_name = container_name
+   ,empty_fc       = networkflowlines_only
+);
 
 print("adding aliases to " + outname + "...",end="",flush=True);
 update_aliases(work_path + os.sep + container_name,outname);

@@ -9,11 +9,10 @@ info:
   contact:
     name: US EPA Office of Water
     url: https://www.epa.gov/aboutepa/about-office-water
-    email: WATERS_SUPPORT@epa.gov
   license:
     name: Creative Commons Zero Public Domain Dedication
     url: https://edg.epa.gov/EPA_Data_License.html
-  version: 1.0.0
+  version: 1.5.0
 servers:
 - url: https://localhost:3000
 paths:
@@ -30,7 +29,7 @@ paths:
             schema:
               $ref: '#/components/schemas/cipsrv_index_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Indexing Response
           content:
             application/json:
@@ -62,7 +61,7 @@ paths:
             schema:
               $ref: '#/components/schemas/navigate_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Navigation Response
           content:
             application/json:
@@ -81,7 +80,7 @@ paths:
             schema:
               $ref: '#/components/schemas/delineate_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Delineation Response
           content:
             application/json:
@@ -100,7 +99,7 @@ paths:
             schema:
               $ref: '#/components/schemas/pointindexing_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Point Indexing Response
           content:
             application/json:
@@ -119,7 +118,7 @@ paths:
             schema:
               $ref: '#/components/schemas/upstreamdownstream_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Upstream Downstream Response
           content:
             application/json:
@@ -138,7 +137,7 @@ paths:
             schema:
               $ref: '#/components/schemas/randomcatchment_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Utility Random Catchment Response
           content:
             application/json:
@@ -157,7 +156,7 @@ paths:
             schema:
               $ref: '#/components/schemas/randomhuc12_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Utility Random HUC12 Response
           content:
             application/json:
@@ -176,7 +175,7 @@ paths:
             schema:
               $ref: '#/components/schemas/randomnav_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Utility Random Nav Location Response
           content:
             application/json:
@@ -195,7 +194,7 @@ paths:
             schema:
               $ref: '#/components/schemas/randomppnav_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Utility Random PP Nav Locations Response
           content:
             application/json:
@@ -214,7 +213,7 @@ paths:
             schema:
               $ref: '#/components/schemas/randompoint_rb'
       responses:
-        200:
+        '200':
           description: CIP-service Utility Random Point Response
           content:
             application/json:
@@ -272,7 +271,7 @@ components:
           items:
             type: string
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
         wbd_version:
           description: WBD version used in CIP indexing. Currently non-functional.
@@ -373,6 +372,14 @@ components:
           description: Flag as to return the HUC12 geometry when HUC12s are returned in the results payload.  Currently non-functional.
           type: ['boolean','null']
           default: true
+        return_full_catchments:
+          description: Flag to allow indexing to return full catchments not split by state or national borders.
+          type: ['boolean','null']
+          default: false
+        limit_to_us_catchments:
+          description: Flag to allow indexing to return catchments outside the borders of the United States. 
+          type: ['boolean','null']
+          default: true
       required:
       - nhdplus_version
     cipsrv_index_resp:
@@ -411,7 +418,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
         search_type:
           $ref: '#/components/schemas/search_type'
@@ -488,7 +495,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
         search_type:
           $ref: '#/components/schemas/search_type'
@@ -574,10 +581,45 @@ components:
           - $ref: '#/components/schemas/geojson_featurecollection'
           - $ref: '#/components/schemas/geojson_feature'
           - $ref: '#/components/schemas/geojson_geometry'
-        nhdplus_version:
-          default: nhdplus_m
-          $ref: '#/components/schemas/nhdplus_version'
-        return_snap_path:
+        indexing_engine:
+          oneOf:
+          - $ref: '#/components/schemas/indexing_engine'
+          - type: 'null'
+        fcode_allow:
+          oneOf:
+          - $ref: '#/components/schemas/fcode_allow'
+          - type: 'null'
+        fcode_deny:
+          oneOf:
+          - $ref: '#/components/schemas/fcode_deny'
+          - type: 'null'
+        distance_max_distkm:
+          description: Maximum distance in kilometers the DISTANCE engine uses to find a reach measure candidate.
+          oneOf:
+          - type: number
+          - type: 'null'
+        raindrop_snap_max_distkm:
+          description: Maximum distance in kilometers the RAINDROP engine uses to snap to the final reach measure candidate.
+          oneOf:
+          - type: number
+          - type: 'null'
+        raindrop_path_max_distkm:
+          description: Maximum distance in kilometers the RAINDROP engine will travel towards a final candidate.
+          oneOf:
+          - type: number
+          - type: 'null'
+        limit_innetwork:
+          description: Flag to limit results to innetwork flowlines.
+          oneOf:
+          - type: boolean
+          - type: 'null'
+        limit_navigable:
+          description: Flag to limit results to navigable flowlines.
+          oneOf:
+          - type: boolean
+          - type: 'null'
+        return_link_path:
+          description: Flag whether to return a geometry representing the indexing path from start to candidate.
           oneOf:
           - type: boolean
           - type: 'null'
@@ -585,6 +627,14 @@ components:
           oneOf:
           - $ref: '#/components/schemas/known_region'
           - type: 'null'
+        known_catchment_nhdplusid:
+          description: In some scenarios users may know the catchment NHDPlusID in which they desire to index.  Providing the value bypasses the cost of determining the catchment via spatial intersection.
+          oneOf:
+          - type: integer
+          - type: 'null'
+        nhdplus_version:
+          default: nhdplus_h
+          $ref: '#/components/schemas/nhdplus_version'
     pointindexing_resp:
       type: object
       properties:
@@ -620,7 +670,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
         search_type:
           $ref: '#/components/schemas/search_type'
@@ -1133,7 +1183,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
     randomcatchment_resp:
       type: object
@@ -1144,7 +1194,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
     randomhuc12_resp:
       type: object
@@ -1155,7 +1205,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
     randomnav_resp:
       type: object
@@ -1166,7 +1216,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
     randomppnav_resp:
       type: object
@@ -1179,7 +1229,7 @@ components:
       type: object
       properties:
         nhdplus_version:
-          default: nhdplus_m
+          default: nhdplus_h
           $ref: '#/components/schemas/nhdplus_version'
     randompoint_resp:
       type: object
@@ -1538,6 +1588,25 @@ components:
       - PPALL
       examples:
       - UT
+    indexing_engine:
+      description: Logic used to select a reach measure for indexing.
+      type: string
+      enum:
+      - DISTANCE
+      - RAINDROP
+      - CATCONSTRAINED
+      examples:
+      - DISTANCE
+    fcode_allow:
+      description: List of FCode values used for selecting a candidate reach measure.
+      type: array
+      items:
+        type: number
+    fcode_deny:
+      description: List of FCode values avoided in selecting a candidate reach measure.
+      type: array
+      items:
+        type: number
     start_nhdplusid:
       description: NHDPlus flowline NHDPlusID bigint value from which to begin the navigation.
       type: integer

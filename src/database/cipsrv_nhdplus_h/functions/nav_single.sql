@@ -17,7 +17,6 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.nav_single(
 VOLATILE
 AS $BODY$
 DECLARE
-   
    num_init_meas_total      NUMERIC;
    num_init_fmeasure        NUMERIC;
    num_init_tmeasure        NUMERIC;
@@ -117,7 +116,6 @@ BEGIN
       ,dnhydroseq
       ,navtermination_flag
       ,nav_order
-      ,selected
    ) VALUES (
        obj_start_flowline.nhdplusid
       ,obj_start_flowline.hydroseq
@@ -133,7 +131,6 @@ BEGIN
       ,obj_start_flowline.dnhydroseq
       ,int_navtermination_flag
       ,0
-      ,TRUE
    );
 
    ----------------------------------------------------------------------------
@@ -146,19 +143,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.nav_single(
-    VARCHAR
-   ,cipsrv_nhdplus_h.flowline
-   ,cipsrv_nhdplus_h.flowline
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.nav_single(
-    VARCHAR
-   ,cipsrv_nhdplus_h.flowline
-   ,cipsrv_nhdplus_h.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.nav_single';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 

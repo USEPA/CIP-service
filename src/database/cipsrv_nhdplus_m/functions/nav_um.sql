@@ -15,6 +15,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_um(
 VOLATILE
 AS $BODY$
 DECLARE  
+   rec       RECORD;
    int_count INTEGER;
    
 BEGIN
@@ -67,20 +68,25 @@ BEGIN
       ,mq.tmeasure
       ,mq.lengthkm  -- segment lengthkm
       ,mq.totma
-      ,mq.pathlength - um.base_pathlength + mq.lengthkm
-      ,mq.pathtimema - um.base_pathtime   + mq.totma
+      ,(mq.pathlength + COALESCE(md.pathlength_adj,0)) - um.base_pathlength + mq.lengthkm
+      ,(mq.pathtimema + COALESCE(md.pathtimema_adj,0)) - um.base_pathtime   + mq.totma
       ,mq.levelpathi
       ,mq.terminalpa
       ,mq.uphydroseq
       ,mq.dnhydroseq
       ,mq.divergence
-      ,um.base_pathlength -- base pathlength
+      ,um.base_pathlength
       ,um.base_pathtime
       ,um.nav_order + 1 
       FROM
       cipsrv_nhdplus_m.nhdplusflowlinevaa_nav mq
       CROSS JOIN
       um
+      LEFT JOIN
+      cipsrv_nhdplus_m.nhdplusflow_upminordivs md
+      ON
+          md.tohydroseq   = um.hydroseq
+      AND md.fromhydroseq = mq.hydroseq
       WHERE
       (
          (
@@ -115,7 +121,6 @@ BEGIN
       ,uphydroseq
       ,dnhydroseq
       ,nav_order
-      ,selected
    )
    SELECT
     a.nhdplusid
@@ -131,7 +136,6 @@ BEGIN
    ,a.uphydroseq
    ,a.dnhydroseq
    ,a.nav_order
-   ,TRUE
    FROM
    um a;
    
@@ -141,7 +145,7 @@ BEGIN
    -- Step 20
    -- Tag the nav termination flags
    ----------------------------------------------------------------------------
-   WITH cte AS ( 
+   FOR rec IN
       SELECT
        a.hydroseq
       ,b.headwater
@@ -150,28 +154,28 @@ BEGIN
       JOIN
       cipsrv_nhdplus_m.nhdplusflowlinevaa_nav b
       ON
-      a.hydroseq = b.hydroseq
+      b.hydroseq = a.hydroseq
       WHERE
-          a.selected = TRUE   
-      AND a.navtermination_flag IS NULL
-   )
-   UPDATE tmp_navigation_working30 a
-   SET navtermination_flag = CASE
-   WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
-   THEN
-      CASE
-      WHEN cte.headwater
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN a.nav_order = (SELECT MAX(c.nav_order) FROM tmp_navigation_working30 c LIMIT 1)
       THEN
-         4
+         CASE
+         WHEN rec.headwater
+         THEN
+            4
+         ELSE
+            1
+         END
       ELSE
-         1
+         0  
       END
-   ELSE
-      0    
-   END
-   FROM cte
-   WHERE
-   a.hydroseq = cte.hydroseq;
+      WHERE
+      a.hydroseq = rec.hydroseq;
+   
+   END LOOP;
    
    ----------------------------------------------------------------------------
    -- Step 30
@@ -183,15 +187,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_um(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC   
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_um(
-    cipsrv_nhdplus_m.flowline
-   ,NUMERIC
-   ,NUMERIC
-)  TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_um';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
