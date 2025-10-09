@@ -2,7 +2,8 @@
 
 The CIP-service project builds upon a long lineage of efforts indexing and analyzing water based events upon a common hydrologic framework.  CIP-service provides logic to index, persist, analyze and export these events.  The data model used for this purpose is termed the OWLD model and directly builds from the older Reach Address Database and NHD Event models.  Earlier models generally did not persist the incoming source datasets and did not support catchment indexing.  The following model is meant to both expand upon and encompass earlier models.
 
-![owld model diagram](docs/owld_model.drawio.png)
+![owld model diagram](owld_model.drawio.png)
+
 click on image to expand for closer inspection
 
 Tables in blue store source information, tables in red concern catchment indexing, whilst tables in green support reach indexing.  Datasets may populate all or a portion of these sections.  Traditionally Esri software has been used to persist and distribute EPA water quality information.  The use of single guid keys to tie together the model supports the limited single field joins available in the Esri stack.  
