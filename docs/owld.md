@@ -130,123 +130,130 @@ Geometry in the **src_a** table is limited to polygon and multipolygon types.
 
 ### \<prog\>_src2cip
 
+The **src2cip** table is meant to persist information specific to the CIP indexing action.
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | src2cip_joinkey             | varchar      |   40 |        N |             |
-|   3 | cip_joinkey                 | varchar      |   40 |        N |             |
-|   4 | source_joinkey              | varchar      |   40 |        N |             |
-|   5 | permid_joinkey              | varchar      |   40 |        Y |             |
-|   6 | cat_joinkey                 | varchar      |   40 |        N |             |
-|   7 | catchmentstatecode          | varchar      |    2 |        N |             |
-|   8 | nhdplusid                   | numeric      |      |        N |             |
-|   9 | catchmentresolution         | varchar      |    2 |        Y |             |
-|  10 | cip_action                  | varchar      |  255 |        Y |             |
-|  11 | overlap_measure             | numeric      |      |        Y |             |
-|  12 | cip_method                  | varchar      |  255 |        Y |             |
-|  13 | cip_parms                   | varchar      |  255 |        Y |             |
-|  14 | cip_date                    | timestamp&nbsp;tz |      |        Y |             |
-|  15 | cip_version                 | varchar      |  255 |        Y |             |
+|   2 | src2cip_joinkey             | varchar      |   40 |        N | singular guid key for the element |
+|   3 | cip_joinkey                 | varchar      |   40 |        N | joinkey guid value of the indexed CIP catchment results |
+|   4 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|   5 | permid_joinkey              | varchar      |   40 |        Y | joinkey guid value of the parent src element |
+|   6 | cat_joinkey                 | varchar      |   40 |        N | legacy joinkey value of the indexed catchment, usually the state code + nhdplusid  |
+|   7 | catchmentstatecode          | varchar      |    2 |        N | state code when indexing against state-cut catchments |
+|   8 | nhdplusid                   | numeric      |      |        N | nhdplusid of the indexed catchment |
+|   9 | catchmentresolution         | varchar      |    2 |        Y | nhdplus version use for catchment indexing |
+|  10 | cip_action                  | varchar      |  255 |        Y | CIP keyword describing the action taking to index the source element |
+|  11 | overlap_measure             | numeric      |      |        Y | numeric QA value describing a percentage or ratio of overlap between source and catchment |
+|  12 | cip_method                  | varchar      |  255 |        Y | CIP keyword describing detailed methodolody use in catchment indexing    |
+|  13 | cip_parms                   | varchar      |  255 |        Y | specific parameters and thresholds used in catchment indexing |
+|  14 | cip_date                    | timestamp&nbsp;tz |      |        Y | vintage of CIP logic used for indexing |
+|  15 | cip_version                 | varchar      |  255 |        Y | version of CIP logic used for indexing |
 |  16 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_cip
 
+The **cip** table contains the results of CIP indexing.
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | cip_joinkey                 | varchar      |   40 |        N |             |
-|   3 | permid_joinkey              | varchar      |   40 |        Y |             |
-|   4 | source_originator           | varchar      |  130 |        N |             |
-|   5 | source_featureid            | varchar      |  100 |        N |             |
-|   6 | source_featureid2           | varchar      |  100 |        Y |             |
-|   7 | source_series               | varchar      |  100 |        Y |             |
-|   8 | source_subdivision          | varchar      |  100 |        Y |             |
-|   9 | source_joinkey              | varchar      |   40 |        N |             |
-|  10 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
-|  11 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
-|  12 | cat_joinkey                 | varchar      |   40 |        N |             |
-|  13 | catchmentstatecode          | varchar      |    2 |        N |             |
-|  14 | nhdplusid                   | numeric      |      |        N |             |
-|  15 | istribal                    | varchar      |    1 |        Y |             |
-|  16 | istribal_areasqkm           | numeric      |      |        Y |             |
-|  17 | catchmentresolution         | varchar      |    2 |        Y |             |
-|  18 | catchmentareasqkm           | numeric      |      |        Y |             |
-|  19 | xwalk_huc12                 | varchar      |   12 |        Y |             |
-|  20 | xwalk_method                | varchar      |   18 |        Y |             |
-|  21 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
-|  22 | isnavigable                 | varchar      |    1 |        Y |             |
-|  23 | hasvaa                      | varchar      |    1 |        Y |             |
-|  24 | issink                      | varchar      |    1 |        Y |             |
-|  25 | isheadwater                 | varchar      |    1 |        Y |             |
-|  26 | iscoastal                   | varchar      |    1 |        Y |             |
-|  27 | isocean                     | varchar      |    1 |        Y |             |
-|  28 | isalaskan                   | varchar      |    1 |        Y |             |
-|  29 | h3hexagonaddr               | varchar      |   64 |        Y |             |
+|   2 | cip_joinkey                 | varchar      |   40 |        N | singular guid key for the element |
+|   3 | permid_joinkey              | varchar      |   40 |        Y | joinkey guid value of the parent src element |
+|   4 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|   5 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|   6 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|   7 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|   8 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|   9 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|  10 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  11 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  12 | cat_joinkey                 | varchar      |   40 |        N | legacy joinkey value of the indexed catchment, usually the state code + nhdplusid  |
+|  13 | catchmentstatecode          | varchar      |    2 |        N | state code when indexing against state-cut catchments |
+|  14 | nhdplusid                   | numeric      |      |        N | nhdplusid of the indexed catchment |
+|  15 | istribal                    | varchar      |    1 |        Y | flag indicating the catchment indexed is wholly or partially under tribal land |
+|  16 | istribal_areasqkm           | numeric      |      |        Y | tribal area of the catchment in square kilometers  |
+|  17 | catchmentresolution         | varchar      |    2 |        Y | the NHDPlus version of the catchment layer used for CIP indexing |
+|  18 | catchmentareasqkm           | numeric      |      |        Y | the area of the catchment in square kilometers |
+|  19 | xwalk_huc12                 | varchar      |   12 |        Y | the crosswalk HUC12 value of the indexed catchment |
+|  20 | xwalk_method                | varchar      |   18 |        Y | the method used to craft the crosswalk between catchments and HUC12s |
+|  21 | xwalk_huc12_version         | varchar      |   16 |        Y | the HUC12 layer used in the determining the HUC12 value of the catchment |
+|  22 | isnavigable                 | varchar      |    1 |        Y | flag indicating the indexed catchment has a flowline suitable for network navigation |
+|  23 | hasvaa                      | varchar      |    1 |        Y | flag indicating the indexed catchment is part of the NHDPlus VAA network |
+|  24 | issink                      | varchar      |    1 |        Y | flag indicating the indexed catchment is a sink |
+|  25 | isheadwater                 | varchar      |    1 |        Y | flag indicating the indexed catchment has a headwater flowline |
+|  26 | iscoastal                   | varchar      |    1 |        Y | flag indicating the indexed catchment has a coastal flowline |
+|  27 | isocean                     | varchar      |    1 |        Y | flag indicating the indexed catchment is part of the ocean catchment extension to NHDPlus |
+|  28 | isalaskan                   | varchar      |    1 |        Y | flag indicating the indexed catchment is part of the Alaska catchment extension to NHDPlus |
+|  29 | h3hexagonaddr               | varchar      |   64 |        Y | for catchments in extensions, the value of the level 8 H3 hex address for the catchment |
 |  30 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_cip_geo
 
-Geometry in the **cip_geo** table is limited to polygon and multipolygon type. 
+The optional **cip_geo** table provides catchment geometries for visualization and further analysis.  For programs where this table is not populated, users should be provided clear instructions on where to find the geometries from other sources.  Geometry in the **cip_geo** table is limited to polygon and multipolygon type. 
 
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | cat_joinkey                 | varchar      |   40 |        N |             |
-|   3 | catchmentstatecode          | varchar      |    2 |        N |             |
-|   4 | nhdplusid                   | numeric      |      |        N |             |
-|   5 | catchmentresolution         | varchar      |    2 |        N |             |
-|   6 | catchmentareasqkm           | numeric      |      |        Y |             |
-|   7 | xwalk_huc12                 | varchar      |   12 |        Y |             |
-|   8 | xwalk_method                | varchar      |   18 |        Y |             |
-|   9 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
+|   2 | cat_joinkey                 | varchar      |   40 |        N | legacy joinkey value of the indexed catchment, usually the state code + nhdplusid  |
+|   3 | catchmentstatecode          | varchar      |    2 |        N | state code when indexing against state-cut catchments |
+|   4 | nhdplusid                   | numeric      |      |        N | nhdplusid of the indexed catchment |
+|   5 | catchmentresolution         | varchar      |    2 |        N | the NHDPlus version of the catchment layer used for CIP indexing |
+|   6 | catchmentareasqkm           | numeric      |      |        Y | the area of the catchment in square kilometers |
+|   7 | xwalk_huc12                 | varchar      |   12 |        Y | the crosswalk HUC12 value of the indexed catchment |
+|   8 | xwalk_method                | varchar      |   18 |        Y | the method used to craft the crosswalk between catchments and HUC12s |
+|   9 | xwalk_huc12_version         | varchar      |   16 |        Y | the HUC12 layer used in the determining the HUC12 value of the catchment |
 |  10 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  11 | shape                       | geometry     |      |        Y |             |
+|  11 | shape                       | geometry     |      |        Y | geometry of the catchment     |
 
 ### \<prog\>_huc12
 
+The **huc12** table lists all HUC12 values for a given source as determined by catchment indexing.
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | source_originator           | varchar      |  130 |        N |             |
-|   3 | source_featureid            | varchar      |  100 |        N |             |
-|   4 | source_featureid2           | varchar      |  100 |        Y |             |
-|   5 | source_series               | varchar      |  100 |        Y |             |
-|   6 | source_subdivision          | varchar      |  100 |        Y |             |
-|   7 | source_joinkey              | varchar      |   40 |        N |             |
-|   8 | permid_joinkey              | varchar      |   40 |        Y |             |
-|   9 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
-|  10 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
-|  11 | xwalk_huc12                 | varchar      |   12 |        N |             |
-|  12 | xwalk_catresolution         | varchar      |    2 |        N |             |
-|  13 | xwalk_huc12_version         | varchar      |   16 |        N |             |
-|  14 | xwalk_huc12_areasqkm        | numeric      |      |        Y |             |
+|   2 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|   3 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|   4 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|   5 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|   6 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|   7 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|   8 | permid_joinkey              | varchar      |   40 |        Y | joinkey guid value of the parent src element |
+|   9 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  10 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  11 | xwalk_huc12                 | varchar      |   12 |        N | the crosswalk HUC12 value of the indexed catchment |
+|  12 | xwalk_catresolution         | varchar      |    2 |        N | the NHDPlus version of the catchments used to determine the HUC12 |
+|  13 | xwalk_huc12_version         | varchar      |   16 |        N | the HUC12 layer used in the determining the HUC12 value of the catchment |
+|  14 | xwalk_huc12_areasqkm        | numeric      |      |        Y | the area in square kilometers of the crosswalk HUC12 |
 |  15 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_huc12_geo
 
-Geometry in the **cip_geo** table is limited to polygon and multipolygon type. 
+The optional **huc12_geo** table provides crosswalk HUC12 geometries for visualization and further analysis.  Geometry in the **huc12_geo** table is limited to polygon and multipolygon type. 
 
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | xwalk_huc12                 | varchar      |   12 |        N |             |
-|   3 | xwalk_catresolution         | varchar      |    2 |        N |             |
-|   4 | xwalk_huc12_version         | varchar      |   16 |        N |             |
-|   5 | xwalk_huc12_areasqkm        | numeric      |      |        N |             |
+|   2 | xwalk_huc12                 | varchar      |   12 |        N | the crosswalk HUC12 value of the indexed catchment |
+|   3 | xwalk_catresolution         | varchar      |    2 |        N | the NHDPlus version of the catchments used to determine the HUC12 |
+|   4 | xwalk_huc12_version         | varchar      |   16 |        N | the HUC12 layer used in the determining the HUC12 value of the catchment |
+|   5 | xwalk_huc12_areasqkm        | numeric      |      |        N | the area in square kilometers of the crosswalk HUC12 |
 |   6 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|   7 | shape                       | geometry     |      |        Y |             |
+|   7 | shape                       | geometry     |      |        Y | geometry of the crosswalk HUC12 polygon |
 
 ### \<prog\>_src2rad
 
+The **src2rad** table is meant to persist information specific to the reach indexing action.
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | source_joinkey              | varchar      |   40 |        N |             |
-|   4 | permid_joinkey              | varchar      |   40 |        N |             |
-|   5 | reach_indexing_actio        | varchar      |  255 |        Y |             |
+|   2 | permanent_identifier        | varchar      |   40 |        N | singular guid key for the event |
+|   3 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|   4 | permid_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent src element |
+|   5 | reach_indexing_action       | varchar      |  255 |        Y | keyword describing the action taking to reach index the source element |
 |   6 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|   7 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_rad_p
 
@@ -255,41 +262,36 @@ Geometry in the **rad_p** table is limited to point type.
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y |             |
-|   4 | reachcode                   | varchar      |   14 |        Y |             |
-|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y |             |
-|   6 | reachresolution             | varchar      |    2 |        Y |             |
-|   7 | feature_permanent_identifier| varchar      |   40 |        Y |             |
-|   8 | featureclassref             | integer      |      |        Y |             |
-|   9 | source_originator           | varchar      |  130 |        N |             |
-|  10 | source_featureid            | varchar      |  100 |        N |             |
-|  11 | source_featureid2           | varchar      |  100 |        Y |             |
-|  12 | source_datadesc             | varchar      |  100 |        Y |             |
-|  13 | source_series               | varchar      |  100 |        Y |             |
-|  14 | source_subdivision          | varchar      |  100 |        Y |             |
-|  15 | source_joinkey              | varchar      |   40 |        N |             |
-|  16 | permid_joinkey              | varchar      |   40 |        N |             |
-|  17 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
-|  18 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
-|  19 | featuredetailurl            | varchar      |  255 |        Y |             |
-|  20 | measure                     | numeric      |      |        Y |             |
-|  21 | eventtype                   | integer      |      |        Y |             |
-|  22 | eventoffset                 | numeric      |      |        Y |             |
-|  23 | geogstate                   | varchar      |    2 |        Y |             |
-|  24 | xwalk_huc12                 | varchar      |   12 |        Y |             |
-|  25 | xwalk_method                | varchar      |   16 |        Y |             |
-|  26 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
-|  27 | isnavigable                 | varchar      |    1 |        Y |             |
-|  28 | hasvaa                      | varchar      |    1 |        Y |             |
-|  29 | issink                      | varchar      |    1 |        Y |             |
-|  30 | isheadwater                 | varchar      |    1 |        Y |             |
-|  31 | iscoastal                   | varchar      |    1 |        Y |             |
-|  32 | isocean                     | varchar      |    1 |        Y |             |
-|  33 | isalaskan                   | varchar      |    1 |        Y |             |
-|  34 | h3hexagonaddr               | varchar      |   64 |        Y |             |
-|  35 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  36 | shape                       | geometry     |      |        Y |             |
+|   2 | permanent_identifier        | varchar      |   40 |        N | singular guid key for the event |
+|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y | date the event was created |
+|   4 | reachcode                   | varchar      |   14 |        Y | reach code on which the event is located |
+|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y | deprecated reach version date.  these dates no longer exist in newer versions of NHDPlus and the field remains for legacy usage. |
+|   6 | reachresolution             | varchar      |    2 |        Y | nhdplus version of the layer used for reach indexing |
+|   7 | feature_permanent_identifier| varchar      |   40 |        Y | optional identifier for tying to a specific NHDPlus flowline when applicable.  mostly used in the reach indexing of points to allow quick access to the specific flowline. |
+|   8 | featureclassref             | integer      |      |        Y | legacy domain value to indicate the type of feature in the feature_permanent_identifier field |
+|   9 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|  10 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|  11 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|  12 | source_datadesc             | varchar      |  100 |        Y | optional textual description of the event.  should not be used for primary keying of events. |
+|  13 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|  14 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|  15 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|  16 | permid_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent src element |
+|  17 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  18 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  19 | featuredetailurl            | varchar      |  255 |        Y | reference URL specific to the reach indexed event |  
+|  20 | measure                     | numeric      |      |        Y | reach measure at which the point event occurs on the reach |
+|  21 | eventtype                   | integer      |      |        Y | domain value representing the name or version of the dataset |
+|  22 | geogstate                   | varchar      |    2 |        Y | optional legacy column used to indicate the US state into which and event falls or mostly falls  |
+|  23 | xwalk_huc12                 | varchar      |   12 |        Y | optional crosswalk HUC12 value of the reach indexed point |
+|  24 | xwalk_method                | varchar      |   16 |        Y | the method used to craft the crosswalk between reached points and HUC12s |
+|  25 | xwalk_huc12_version         | varchar      |   16 |        Y | the HUC12 layer used in the determining the HUC12 value of the catchment |
+|  26 | isnavigable                 | varchar      |    1 |        Y | flag indicating the reached point is upon a flowline suitable for network navigation |
+|  27 | hasvaa                      | varchar      |    1 |        Y | flag indicating the reached point is upon a flowline in the VAA NHDPlus network |
+|  28 | isheadwater                 | varchar      |    1 |        Y | flag indicating the reached point is upon a flowline which is a headwater |
+|  29 | iscoastal                   | varchar      |    1 |        Y | flag indicating the reached point is upon a flowline which is a coastline |
+|  30 | globalid                    | varchar      |   40 |        N | vendor guid key    |
+|  31 | shape                       | geometry     |      |        Y | geometry of the reach indexed event |
 
 ### \<prog\>_rad_l
 
@@ -298,43 +300,39 @@ Geometry in the **rad_p** table is limited to linestring type.
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y |             |
-|   4 | reachcode                   | varchar      |   14 |        Y |             |
-|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y |             |
-|   6 | reachresolution             | varchar      |   16 |        Y |             |
-|   7 | feature_permanent_identifier| varchar      |   40 |        Y |             |
-|   8 | featureclassref             | integer      |      |        Y |             |
-|   9 | source_originator           | varchar      |  130 |        N |             |
-|  10 | source_featureid            | varchar      |  100 |        N |             |
-|  11 | source_featureid2           | varchar      |  100 |        Y |             |
-|  12 | source_datadesc             | varchar      |  100 |        Y |             |
-|  13 | source_series               | varchar      |  100 |        Y |             |
-|  14 | source_subdivision          | varchar      |  100 |        Y |             |
-|  15 | source_joinkey              | varchar      |   40 |        N |             |
-|  16 | permid_joinkey              | varchar      |   40 |        N |             |
-|  17 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
-|  18 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
-|  19 | featuredetailurl            | varchar      |  255 |        Y |             |
-|  20 | fmeasure                    | numeric      |      |        Y |             |
-|  21 | tmeasure                    | numeric      |      |        Y |             |
-|  22 | eventtype                   | integer      |      |        Y |             |
-|  23 | eventoffset                 | numeric      |      |        Y |             |
-|  24 | event_lengthkm              | numeric      |      |        Y |             |
-|  25 | geogstate                   | varchar      |    2 |        Y |             |
-|  26 | xwalk_huc12                 | varchar      |   12 |        Y |             |
-|  27 | xwalk_method                | varchar      |   16 |        Y |             |
-|  28 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
-|  29 | isnavigable                 | varchar      |    1 |        Y |             |
-|  30 | hasvaa                      | varchar      |    1 |        Y |             |
-|  31 | issink                      | varchar      |    1 |        Y |             |
-|  32 | isheadwater                 | varchar      |    1 |        Y |             |
-|  33 | iscoastal                   | varchar      |    1 |        Y |             |
-|  34 | isocean                     | varchar      |    1 |        Y |             |
-|  35 | isalaskan                   | varchar      |    1 |        Y |             |
-|  36 | h3hexagonaddr               | varchar      |   64 |        Y |             |
-|  37 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  38 | shape                       | geometry     |      |        Y |             |
+|   2 | permanent_identifier        | varchar      |   40 |        N | singular guid key for the event |
+|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y | date the event was created |
+|   4 | reachcode                   | varchar      |   14 |        Y | reach code on which the event is located  |
+|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y | deprecated reach version date.  these dates no longer exist in newer versions of NHDPlus and the field remains for legacy usage. |
+|   6 | reachresolution             | varchar      |   16 |        Y | nhdplus version of the layer used for reach indexing |
+|   7 | feature_permanent_identifier| varchar      |   40 |        Y | optional identifier for tying to a specific NHDPlus flowline when applicable. |
+|   8 | featureclassref             | integer      |      |        Y | legacy domain value to indicate the type of feature in the feature_permanent_identifier field |
+|   9 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|  10 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|  11 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|  12 | source_datadesc             | varchar      |  100 |        Y | optional textual description of the event.  should not be used for primary keying of events. |
+|  13 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|  14 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|  15 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|  16 | permid_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent src element |
+|  17 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  18 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  19 | featuredetailurl            | varchar      |  255 |        Y | reference URL specific to the reach indexed event |  
+|  20 | fmeasure                    | numeric      |      |        Y | starting measure of the event on the reach |
+|  21 | tmeasure                    | numeric      |      |        Y | ending measure of the event on the reach |
+|  22 | eventtype                   | integer      |      |        Y | domain value representing the name or version of the dataset |
+|  23 | eventoffset                 | numeric      |      |        Y | very optional legacy column indicating an offset for event from a reached flowline.  positive values are to the left of the travel of the flowline with negative values to the right |
+|  24 | event_lengthkm              | numeric      |      |        Y | length of the reached event in kilometers|
+|  25 | geogstate                   | varchar      |    2 |        Y | optional legacy column used to indicate the US state into which and event falls or mostly falls |
+|  26 | xwalk_huc12                 | varchar      |   12 |        Y | optional crosswalk HUC12 value of the reach indexed flowline.  May not be fully accurate if flowlines cross multiple HUC12 boundaries |
+|  27 | xwalk_method                | varchar      |   16 |        Y | the method used to craft the crosswalk between reached flowlines and HUC12s |
+|  28 | xwalk_huc12_version         | varchar      |   16 |        Y | the HUC12 layer used in the determining the HUC12 value of the catchment |
+|  29 | isnavigable                 | varchar      |    1 |        Y | flag indicating the reached line is upon a flowline suitable for network navigation |
+|  30 | hasvaa                      | varchar      |    1 |        Y | flag indicating the reached line is upon a flowline in the VAA NHDPlus network |
+|  31 | isheadwater                 | varchar      |    1 |        Y | flag indicating the reached point is upon a flowline which is a headwater |
+|  32 | iscoastal                   | varchar      |    1 |        Y | flag indicating the reached point is upon a flowline which is a coastline |
+|  33 | globalid                    | varchar      |   40 |        N | vendor guid key    |
+|  34 | shape                       | geometry     |      |        Y | geometry of the reach indexed event |
 
 ### \<prog\>_rad_a
 
@@ -343,41 +341,41 @@ Geometry in the **rad_a** table is limited to polygon and multipolygon type.
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y |             |
-|   4 | reachcode                   | varchar      |   14 |        Y |             |
-|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y |             |
-|   6 | reachresolution             | varchar      |    2 |        Y |             |
-|   7 | feature_permanent_identifier| varchar      |   40 |        Y |             |
-|   8 | featureclassref             | integer      |      |        Y |             |
-|   9 | source_originator           | varchar      |  130 |        N |             |
-|  10 | source_featureid            | varchar      |  100 |        N |             |
-|  11 | source_featureid2           | varchar      |  100 |        Y |             |
-|  12 | source_datadesc             | varchar      |  100 |        Y |             |
-|  13 | source_series               | varchar      |  100 |        Y |             |
-|  14 | source_subdivision          | varchar      |  100 |        Y |             |
-|  15 | source_joinkey              | varchar      |   40 |        N |             |
-|  16 | permid_joinkey              | varchar      |   40 |        N |             |
-|  17 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
-|  18 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
-|  19 | featuredetailurl            | varchar      |  255 |        Y |             |
-|  20 | eventtype                   | integer      |      |        Y |             |
-|  21 | event_areasqkm              | numeric      |      |        Y |             |
-|  22 | geogstate                   | varchar      |    2 |        Y |             |
-|  23 | xwalk_huc12                 | varchar      |   12 |        Y |             |
-|  24 | xwalk_method                | varchar      |   16 |        Y |             |
-|  25 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
+|   2 | permanent_identifier        | varchar      |   40 |        N | singular guid key for the event |
+|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y | date the event was created |
+|   4 | reachcode                   | varchar      |   14 |        Y | reach code on which the event is located  |
+|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y | deprecated reach version date.  these dates no longer exist in newer versions of NHDPlus and the field remains for legacy usage. |
+|   6 | reachresolution             | varchar      |    2 |        Y | nhdplus version of the layer used for reach indexing |
+|   7 | feature_permanent_identifier| varchar      |   40 |        Y | optional identifier for tying to a specific NHDPlus flowline when applicable. |
+|   8 | featureclassref             | integer      |      |        Y | legacy domain value to indicate the type of feature in the feature_permanent_identifier field |
+|   9 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|  10 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|  11 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|  12 | source_datadesc             | varchar      |  100 |        Y | optional textual description of the event.  should not be used for primary keying of events. |
+|  13 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|  14 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|  15 | source_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent sfid entity |
+|  16 | permid_joinkey              | varchar      |   40 |        N | joinkey guid value of the parent src element |
+|  17 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  18 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  19 | featuredetailurl            | varchar      |  255 |        Y | reference URL specific to the reach indexed event |  
+|  20 | eventtype                   | integer      |      |        Y | domain value representing the name or version of the dataset |
+|  21 | event_areasqkm              | numeric      |      |        Y | area of the reached event in square kilometers |
+|  22 | geogstate                   | varchar      |    2 |        Y | optional legacy column used to indicate the US state into which and event falls or mostly falls |
+|  23 | xwalk_huc12                 | varchar      |   12 |        Y | optional crosswalk HUC12 value of the reach indexed flowline.  May not be fully accurate if flowlines cross multiple HUC12 boundaries |
+|  24 | xwalk_method                | varchar      |   16 |        Y | the method used to craft the crosswalk between reached areas and HUC12s |
+|  25 | xwalk_huc12_version         | varchar      |   16 |        Y | the HUC12 layer used in the determining the HUC12 value of the catchment |
 |  26 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  27 | shape                       | geometry     |      |        Y |             |
+|  27 | shape                       | geometry     |      |        Y | geometry of the reach indexed event |
 
 ### \<prog\>_rad_evt2meta
 
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | meta_processid              | varchar      |   40 |        N |             |
-|   4 | reachresolution             | varchar      |    2 |        Y |             |
+|   2 | permanent_identifier        | varchar      |   40 |        N | guid key for the event |
+|   3 | meta_processid              | varchar      |   40 |        N | guid key for the metadata record |
+|   4 | reachresolution             | varchar      |    2 |        Y | nhdplus version of the layer used for reach indexing |
 |   5 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_rad_metadata
@@ -385,27 +383,27 @@ Geometry in the **rad_a** table is limited to polygon and multipolygon type.
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | meta_processid              | varchar      |   40 |        N |             |
-|   3 | processdescription          | varchar      | 4000 |        Y |             |
-|   4 | processdate                 | timestamp&nbsp;tz |      |        Y |             |
-|   5 | attributeaccuracyreport     | varchar      | 1800 |        Y |             |
-|   6 | logicalconsistencyreport    | varchar      | 1000 |        Y |             |
-|   7 | completenessreport          | varchar      | 2400 |        Y |             |
-|   8 | horizpositionalaccuracyrepor| varchar      | 3100 |        Y |             |
-|   9 | vertpositionalaccuracyreport| varchar      | 3100 |        Y |             |
-|  10 | metadatastandardname        | varchar      |  100 |        Y |             |
-|  11 | metadatastandardversion     | varchar      |   40 |        Y |             |
-|  12 | metadatadate                | timestamp&nbsp;tz |      |        Y |             |
-|  13 | datasetcredit               | varchar      | 4000 |        Y |             |
-|  14 | contactorganization         | varchar      |  100 |        Y |             |
-|  15 | addresstype                 | varchar      |   40 |        Y |             |
-|  16 | address                     | varchar      |  100 |        Y |             |
-|  17 | city                        | varchar      |   40 |        Y |             |
-|  18 | stateorprovince             | varchar      |   30 |        Y |             |
-|  19 | postalcode                  | varchar      |   20 |        Y |             |
-|  20 | contactvoicetelephone       | varchar      |   40 |        Y |             |
-|  21 | contactinstructions         | varchar      |  120 |        Y |             |
-|  22 | contactemailaddress         | varchar      |   40 |        Y |             |
+|   2 | meta_processid              | varchar      |   40 |        N | singular guid key for the metadata record |
+|   3 | processdescription          | varchar      | 4000 |        Y | explanation of the process used to create the data, including parameters or tolerances |
+|   4 | processdate                 | timestamp&nbsp;tz |      |        Y | date when the data was completed |
+|   5 | attributeaccuracyreport     | varchar      | 1800 |        Y | explanation of entities and assignments of values in dataset |
+|   6 | logicalconsistencyreport    | varchar      | 1000 |        Y | explanation of fidelity and relationships in dataset, and tests used |
+|   7 | completenessreport          | varchar      | 2400 |        Y | information about omissions, criteria, definitions used to derive dataset |
+|   8 | horizpositionalaccuracyrepor| varchar      | 3100 |        Y | horizontal coordinate measurements and description of test used |
+|   9 | vertpositionalaccuracyreport| varchar      | 3100 |        Y | vertical coordinate measurements and description of test used |
+|  10 | metadatastandardname        | varchar      |  100 |        Y | name of the metadata standard used to document the dataset |
+|  11 | metadatastandardversion     | varchar      |   40 |        Y | identification of the version of the metadata standard used to document it |
+|  12 | metadatadate                | timestamp&nbsp;tz |      |        Y | date the metadata was last created or updated |
+|  13 | datasetcredit               | varchar      | 4000 |        Y | recognition of those who contributed to the dataset |
+|  14 | contactorganization         | varchar      |  100 |        Y | name or organization to which type of contact applies |
+|  15 | addresstype                 | varchar      |   40 |        Y | information provided about the address, i.e. mailing, physical, etc |
+|  16 | address                     | varchar      |  100 |        Y | address line for the address |
+|  17 | city                        | varchar      |   40 |        Y | city of the address |
+|  18 | stateorprovince             | varchar      |   30 |        Y | state or province of the address |
+|  19 | postalcode                  | varchar      |   20 |        Y | ZIP or other postal code of the address |
+|  20 | contactvoicetelephone       | varchar      |   40 |        Y | telephone number to reach organization or individual |
+|  21 | contactinstructions         | varchar      |  120 |        Y | supplemental instructions to contact organization or individual |
+|  22 | contactemailaddress         | varchar      |   40 |        Y | email address to reach organization or individual |
 |  23 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_rad_srccit
@@ -413,19 +411,18 @@ Geometry in the **rad_a** table is limited to polygon and multipolygon type.
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | title                       | varchar      |  255 |        Y |             |
-|   3 | source_datasetid            | varchar      |   40 |        N |             |
-|   4 | sourcecitationabbreviation  | varchar      |  255 |        Y |             |
-|   5 | originator                  | varchar      |  400 |        Y |             |
-|   6 | publicationdate             | timestamp&nbsp;tz |      |        Y |             |
-|   7 | beginningdate               | timestamp&nbsp;tz |      |        Y |             |
-|   8 | endingdate                  | timestamp&nbsp;tz |      |        Y |             |
-|   9 | sourcecontribution          | varchar      |  255 |        Y |             |
-|  10 | sourcescaledenominator      | numeric      |      |        Y |             |
-|  11 | typeofsourcemedia           | varchar      |  255 |        Y |             |
-|  12 | calendardate                | timestamp&nbsp;tz |      |        Y |             |
-|  13 | sourcecurrentnessreference  | varchar      |  255 |        Y |             |
-|  14 | meta_processid              | varchar      |   40 |        N |             |
-|  15 | field                       | integer      |      |        Y |             |
-|  16 | globalid                    | varchar      |   40 |        N | vendor guid key    |
+|   2 | title                       | varchar      |  255 |        Y | name by which the dataset is known |
+|   3 | source_datasetid            | varchar      |   40 |        N | singular guid key for the source citation record |
+|   4 | sourcecitationabbreviation  | varchar      |  255 |        Y | short form alias for source citation |
+|   5 | originator                  | varchar      |  400 |        Y | name of organization or individual who developed the dataset |
+|   6 | publicationdate             | timestamp&nbsp;tz |      |        Y | date the dataset is published or made available for release |
+|   7 | beginningdate               | timestamp&nbsp;tz |      |        Y | first year of the event (if range of dates applies) |
+|   8 | endingdate                  | timestamp&nbsp;tz |      |        Y | last year of the event (if range of dates applies) |
+|   9 | sourcecontribution          | varchar      |  255 |        Y | brief statement identifying information contributed by source to dataset |
+|  10 | sourcescaledenominator      | numeric      |      |        Y | denomination of representative fraction on a map |
+|  11 | typeofsourcemedia           | varchar      |  255 |        Y | the medium of the source dataset, i.e. paper, CD-ROM, online, etc |
+|  12 | calendardate                | timestamp&nbsp;tz |      |        Y | the year (if single date applies) |
+|  13 | sourcecurrentnessreference  | varchar      |  255 |        Y | the basis on which the source time period of content information of the source data set is determined |
+|  14 | meta_processid              | varchar      |   40 |        N | guid key for the parent metadata record |
+|  15 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
