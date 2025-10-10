@@ -8,17 +8,39 @@ click on image to expand for closer inspection
 
 Tables in blue store source information, tables in red concern catchment indexing, whilst tables in green support reach indexing.  Datasets may populate all or a portion of these sections.  Traditionally Esri software has been used to persist and distribute EPA water quality information.  The use of single guid keys to tie together the model supports the limited single field joins available in the Esri stack.  
 
+### \<prog\>_control
+
+The **control** table contains keyword pairs providing metadata and context to the dataset useful to clients and analysis tools wokring with the data.  Common keywords would include:
+
+* NAME - providing a full descriptive name for the dataset
+* DESCRIPTION - providing a longer description of the dataset
+* URL - providing a link to the dataset program
+* EVENTTYPE - providing updfront the eventtype domain value used by the dataset
+* VINTAGE - providing a general date stamp of the dataset
+* RESOLUTION[] - multiple entries providing the NHDPlus resolutions contained in the dataset
+* PRECISION[] - multiple entries showing the indeixng methods used to create the dataset
+* XWALK_NHDPLUS_VERSION - providing the XWALK_HUC12_VERSION used by the dataset
+
+|     | column name                 | datatype     |  len | nullable | description             |
+|----:|:----------------------------|:-------------|-----:|:--------:|:------------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key      |
+|   2 | keyword                     | varchar      |      |        N | keyword in keyword pair |
+|   3 | value_str                   | varchar      |      |        Y | value when textual      |
+|   4 | value_num                   | numeric      |      |        Y | value when numeric      |
+|   5 | value_date                  | date         |      |        Y | value when date         |
+|   6 | globalid                    | varchar      |   40 |        N | vendor guid key         |
+
 ### \<prog\>_sfid
 
-The **sfid** table serves as the foundation of the model.
+The **sfid** table serves as the foundation of the model.  Each row represents a unit of work for the program.  Traditionally this has been keyed via cominations of source_originator, source_featureid, source_series, start_date and end_date as needed.  The addition of source_featureid2  and source_subdivision were added to support even more nuanced work breakdowns.
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
-|   2 | source_originator           | varchar      |  130 |        N |             |
-|   3 | source_featureid            | varchar      |  100 |        N |             |
-|   4 | source_featureid2           | varchar      |  100 |        Y |             |
-|   5 | source_series               | varchar      |  100 |        Y |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
+|   2 | source_originator           | varchar      |  130 |        N | key value used to represent the origin of data, for example a state government or federal agency. |
+|   3 | source_featureid            | varchar      |  100 |        N | key value for the source |
+|   4 | source_featureid2           | varchar      |  100 |        Y | optional secondary key value for the source |
+|   5 | source_series               | varchar      |  100 |        Y | optional             |
 |   6 | source_subdivision          | varchar      |  100 |        Y |             |
 |   7 | source_joinkey              | varchar      |   40 |        N |             |
 |   8 | start_date                  | timestamp tz |      |        Y |             |
@@ -42,13 +64,13 @@ The **sfid** table serves as the foundation of the model.
 |  26 | rad_mr_area_count           | integer      |      |        Y |             |
 |  27 | rad_hr_area_count           | integer      |      |        Y |             |
 |  28 | globalid                    | varchar      |   40 |        N |             |
-|  29 | shape                       | geometry     |      |        Y |             |
+|  29 | shape                       | geometry     |      |        Y | vendor guid key    |
 
 ### \<prog\>_src_p
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permid_joinkey              | varchar      |   40 |        N |             |
 |   3 | source_originator           | varchar      |  130 |        N |             |
 |   4 | source_featureid            | varchar      |  100 |        N |             |
@@ -59,14 +81,14 @@ The **sfid** table serves as the foundation of the model.
 |   9 | start_date                  | timestamp tz |      |        Y |             |
 |  10 | end_date                    | timestamp tz |      |        Y |             |
 |  11 | featuredetailurl            | varchar      |  255 |        Y |             |
-|  12 | globalid                    | varchar      |   40 |        N |             |
+|  12 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  13 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_src_l
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permid_joinkey              | varchar      |   40 |        N |             |
 |   3 | source_originator           | varchar      |  130 |        N |             |
 |   4 | source_featureid            | varchar      |  100 |        N |             |
@@ -78,14 +100,14 @@ The **sfid** table serves as the foundation of the model.
 |  10 | end_date                    | timestamp tz |      |        Y |             |
 |  11 | featuredetailurl            | varchar      |  255 |        Y |             |
 |  12 | lengthkm                    | numeric      |      |        Y |             |
-|  13 | globalid                    | varchar      |   40 |        N |             |
+|  13 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  14 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_src_a
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permid_joinkey              | varchar      |   40 |        N |             |
 |   3 | source_originator           | varchar      |  130 |        N |             |
 |   4 | source_featureid            | varchar      |  100 |        N |             |
@@ -97,14 +119,14 @@ The **sfid** table serves as the foundation of the model.
 |  10 | end_date                    | timestamp tz |      |        Y |             |
 |  11 | featuredetailurl            | varchar      |  255 |        Y |             |
 |  12 | areasqkm                    | numeric      |      |        Y |             |
-|  13 | globalid                    | varchar      |   40 |        N |             |
+|  13 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  14 | shape                       | geometry     |      |        Y |             | 
 
 ### \<prog\>_src2cip
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | src2cip_joinkey             | varchar      |   40 |        N |             |
 |   3 | cip_joinkey                 | varchar      |   40 |        N |             |
 |   4 | source_joinkey              | varchar      |   40 |        N |             |
@@ -119,13 +141,13 @@ The **sfid** table serves as the foundation of the model.
 |  13 | cip_parms                   | varchar      |  255 |        Y |             |
 |  14 | cip_date                    | timestamp tz |      |        Y |             |
 |  15 | cip_version                 | varchar      |  255 |        Y |             |
-|  16 | globalid                    | varchar      |   40 |        N |             |
+|  16 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_cip
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | cip_joinkey                 | varchar      |   40 |        N |             |
 |   3 | permid_joinkey              | varchar      |   40 |        Y |             |
 |   4 | source_originator           | varchar      |  130 |        N |             |
@@ -154,13 +176,13 @@ The **sfid** table serves as the foundation of the model.
 |  27 | isocean                     | varchar      |    1 |        Y |             |
 |  28 | isalaskan                   | varchar      |    1 |        Y |             |
 |  29 | h3hexagonaddr               | varchar      |   64 |        Y |             |
-|  30 | globalid                    | varchar      |   40 |        N |             |
+|  30 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_cip_geo
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | cat_joinkey                 | varchar      |   40 |        N |             |
 |   3 | catchmentstatecode          | varchar      |    2 |        N |             |
 |   4 | nhdplusid                   | numeric      |      |        N |             |
@@ -169,14 +191,14 @@ The **sfid** table serves as the foundation of the model.
 |   7 | xwalk_huc12                 | varchar      |   12 |        Y |             |
 |   8 | xwalk_method                | varchar      |   18 |        Y |             |
 |   9 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
-|  10 | globalid                    | varchar      |   40 |        N |             |
+|  10 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  11 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_huc12
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | source_originator           | varchar      |  130 |        N |             |
 |   3 | source_featureid            | varchar      |  100 |        N |             |
 |   4 | source_featureid2           | varchar      |  100 |        Y |             |
@@ -190,37 +212,37 @@ The **sfid** table serves as the foundation of the model.
 |  12 | xwalk_catresolution         | varchar      |    2 |        N |             |
 |  13 | xwalk_huc12_version         | varchar      |   16 |        N |             |
 |  14 | xwalk_huc12_areasqkm        | numeric      |      |        Y |             |
-|  15 | globalid                    | varchar      |   40 |        N |             |
+|  15 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_huc12_geo
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | xwalk_huc12                 | varchar      |   12 |        N |             |
 |   3 | xwalk_catresolution         | varchar      |    2 |        N |             |
 |   4 | xwalk_huc12_version         | varchar      |   16 |        N |             |
 |   5 | xwalk_huc12_areasqkm        | numeric      |      |        N |             |
-|   6 | globalid                    | varchar      |   40 |        N |             |
+|   6 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |   7 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_src2rad
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
 |   3 | source_joinkey              | varchar      |   40 |        N |             |
 |   4 | permid_joinkey              | varchar      |   40 |        N |             |
 |   5 | reach_indexing_actio        | varchar      |  255 |        Y |             |
-|   6 | globalid                    | varchar      |   40 |        N |             |
+|   6 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |   7 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_rad_p
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
 |   3 | eventdate                   | timestamp tz |      |        Y |             |
 |   4 | reachcode                   | varchar      |   14 |        Y |             |
@@ -254,14 +276,14 @@ The **sfid** table serves as the foundation of the model.
 |  32 | isocean                     | varchar      |    1 |        Y |             |
 |  33 | isalaskan                   | varchar      |    1 |        Y |             |
 |  34 | h3hexagonaddr               | varchar      |   64 |        Y |             |
-|  35 | globalid                    | varchar      |   40 |        N |             |
+|  35 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  36 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_rad_l
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
 |   3 | eventdate                   | timestamp tz |      |        Y |             |
 |   4 | reachcode                   | varchar      |   14 |        Y |             |
@@ -297,14 +319,14 @@ The **sfid** table serves as the foundation of the model.
 |  34 | isocean                     | varchar      |    1 |        Y |             |
 |  35 | isalaskan                   | varchar      |    1 |        Y |             |
 |  36 | h3hexagonaddr               | varchar      |   64 |        Y |             |
-|  37 | globalid                    | varchar      |   40 |        N |             |
+|  37 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  38 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_rad_a
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
 |   3 | eventdate                   | timestamp tz |      |        Y |             |
 |   4 | reachcode                   | varchar      |   14 |        Y |             |
@@ -329,24 +351,24 @@ The **sfid** table serves as the foundation of the model.
 |  23 | xwalk_huc12                 | varchar      |   12 |        Y |             |
 |  24 | xwalk_method                | varchar      |   16 |        Y |             |
 |  25 | xwalk_huc12_version         | varchar      |   16 |        Y |             |
-|  26 | globalid                    | varchar      |   40 |        N |             |
+|  26 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 |  27 | shape                       | geometry     |      |        Y |             |
 
 ### \<prog\>_rad_evt2meta
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
 |   3 | meta_processid              | varchar      |   40 |        N |             |
 |   4 | reachresolution             | varchar      |    2 |        Y |             |
-|   5 | globalid                    | varchar      |   40 |        N |             |
+|   5 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_rad_metadata
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | meta_processid              | varchar      |   40 |        N |             |
 |   3 | processdescription          | varchar      | 4000 |        Y |             |
 |   4 | processdate                 | timestamp tz |      |        Y |             |
@@ -368,13 +390,13 @@ The **sfid** table serves as the foundation of the model.
 |  20 | contactvoicetelephone       | varchar      |   40 |        Y |             |
 |  21 | contactinstructions         | varchar      |  120 |        Y |             |
 |  22 | contactemailaddress         | varchar      |   40 |        Y |             |
-|  23 | globalid                    | varchar      |   40 |        N |             |
+|  23 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_rad_srccit
 
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
+|     | column name                 | datatype     |  len | nullable | description        |
+|----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
+|   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | title                       | varchar      |  255 |        Y |             |
 |   3 | source_datasetid            | varchar      |   40 |        N |             |
 |   4 | sourcecitationabbreviation  | varchar      |  255 |        Y |             |
@@ -389,16 +411,5 @@ The **sfid** table serves as the foundation of the model.
 |  13 | sourcecurrentnessreference  | varchar      |  255 |        Y |             |
 |  14 | meta_processid              | varchar      |   40 |        N |             |
 |  15 | field                       | integer      |      |        Y |             |
-|  16 | globalid                    | varchar      |   40 |        N |             |
-
-### \<prog\>_control
-
-|     | column name                 | datatype     |  len | nullable | description |
-|----:|:----------------------------|:-------------|-----:|:--------:|:------------|
-|   1 | objectid                    | integer      |      |        N |             |
-|   2 | keyword                     | varchar      |      |        N |             |
-|   3 | value_str                   | varchar      |      |        Y |             |
-|   4 | value_num                   | numeric      |      |        Y |             |
-|   5 | value_date                  | date         |      |        Y |             |
-|   6 | globalid                    | varchar      |   40 |        N |             |
+|  16 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
