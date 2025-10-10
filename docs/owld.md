@@ -18,7 +18,7 @@ The **control** table contains keyword pairs providing metadata and context to t
 * EVENTTYPE - providing updfront the eventtype domain value used by the dataset
 * VINTAGE - providing a general date stamp of the dataset
 * RESOLUTION[] - multiple entries providing the NHDPlus resolutions contained in the dataset
-* PRECISION[] - multiple entries showing the indeixng methods used to create the dataset
+* PRECISION[] - multiple entries showing the indexing methods used to create the dataset
 * XWALK_NHDPLUS_VERSION - providing the XWALK_HUC12_VERSION used by the dataset
 
 |     | column name                 | datatype     |  len | nullable | description             |
@@ -32,95 +32,101 @@ The **control** table contains keyword pairs providing metadata and context to t
 
 ### \<prog\>_sfid
 
-The **sfid** table serves as the foundation of the model.  Each row represents a unit of work for the program.  Traditionally this has been keyed via cominations of source_originator, source_featureid, source_series, start_date and end_date as needed.  The addition of source_featureid2  and source_subdivision were added to support even more nuanced work breakdowns.
+The **sfid** table serves as the foundation of the model.  Each row represents a unit of work for the program.  Traditionally this has been keyed via cominations of source_originator, source_featureid, source_series, start_date and end_date as needed.  The addition of source_featureid2 and source_subdivision were added to support even more nuanced entity systems.  The counts in the tables may be used by clients to more efficiently interrogate the data model.
 
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | source_originator           | varchar      |  130 |        N | key value used to represent the origin of data, for example a state government or federal agency. |
-|   3 | source_featureid            | varchar      |  100 |        N | key value for the source |
-|   4 | source_featureid2           | varchar      |  100 |        Y | optional secondary key value for the source |
-|   5 | source_series               | varchar      |  100 |        Y | optional             |
-|   6 | source_subdivision          | varchar      |  100 |        Y |             |
-|   7 | source_joinkey              | varchar      |   40 |        N |             |
-|   8 | start_date                  | timestamp tz |      |        Y |             |
-|   9 | end_date                    | timestamp tz |      |        Y |             |
-|  10 | sfiddetailurl               | varchar      |  255 |        Y |             |
-|  11 | load_id                     | varchar      |  255 |        Y |             |
-|  12 | load_date                   | timestamp tz |      |        Y |             |
-|  13 | src_event_count             | integer      |      |        Y |             |
-|  14 | src_point_count             | integer      |      |        Y |             |
-|  15 | src_line_count              | integer      |      |        Y |             |
-|  16 | src_area_count              | integer      |      |        Y |             |
-|  17 | cat_mr_count                | integer      |      |        Y |             |
-|  18 | cat_hr_count                | integer      |      |        Y |             |
-|  19 | xwalk_huc12_np21_count      | integer      |      |        Y |             |
-|  20 | rad_mr_event_count          | integer      |      |        Y |             |
-|  21 | rad_hr_event_count          | integer      |      |        Y |             |
-|  22 | rad_mr_point_count          | integer      |      |        Y |             |
-|  23 | rad_hr_point_count          | integer      |      |        Y |             |
-|  24 | rad_mr_line_count           | integer      |      |        Y |             |
-|  25 | rad_hr_line_count           | integer      |      |        Y |             |
-|  26 | rad_mr_area_count           | integer      |      |        Y |             |
-|  27 | rad_hr_area_count           | integer      |      |        Y |             |
-|  28 | globalid                    | varchar      |   40 |        N |             |
-|  29 | shape                       | geometry     |      |        Y | vendor guid key    |
+|   3 | source_featureid            | varchar      |  100 |        N | key value for the source entity |
+|   4 | source_featureid2           | varchar      |  100 |        Y | optional secondary key value for the source entity |
+|   5 | source_series               | varchar      |  100 |        Y | optional secondary key value for the source entity, often a grouping or batching key used by the program |
+|   6 | source_subdivision          | varchar      |  100 |        Y | optional secondary key value for the source entity |
+|   7 | source_joinkey              | varchar      |   40 |        N | singular guid key for the record, used to join tables in systems without multi-column joins |
+|   8 | start_date                  | timestamp&nbsp;tz |      |        Y | optional secondary key value used for temporal bounding |
+|   9 | end_date                    | timestamp&nbsp;tz |      |        Y | optional secondary key value used for temporal bounding |
+|  10 | sfiddetailurl               | varchar      |  255 |        Y | reference URL to source program entity  |
+|  11 | load_id                     | varchar      |  255 |        Y | identifier for user or system adding the particular entity record |
+|  12 | load_date                   | timestamp&nbsp;tz |      |        Y | date the entity was added to the dataset |
+|  13 | src_event_count             | integer      |      |        Y | optional summary count of component source records of the entity |
+|  14 | src_point_count             | integer      |      |        Y | optional summary count of component source point records of the entity |
+|  15 | src_line_count              | integer      |      |        Y | optional summary count of component source line records of the entity |
+|  16 | src_area_count              | integer      |      |        Y | optional summary count of component source area records of the entity |
+|  17 | cat_mr_count                | integer      |      |        Y | optional summary count of medium resolution NHDPlus CIP catchment records of the entity |
+|  18 | cat_hr_count                | integer      |      |        Y | optional summary count of high resolution NHDPlus CIP catchment records of the entity |
+|  19 | xwalk_huc12_np21_count      | integer      |      |        Y | optional summary count of NP21 version XWALK HUC12 components |
+|  20 | rad_mr_event_count          | integer      |      |        Y | optional summary count of medium resolution NHDPlus reached events |         |
+|  21 | rad_hr_event_count          | integer      |      |        Y | optional summary count of high resolution NHDPlus reached events |     
+|  22 | rad_mr_point_count          | integer      |      |        Y | optional summary count of medium resolution NHDPlus reached point events |     
+|  23 | rad_hr_point_count          | integer      |      |        Y | optional summary count of high resolution NHDPlus reached point events |     
+|  24 | rad_mr_line_count           | integer      |      |        Y | optional summary count of medium resolution NHDPlus reached line events |     
+|  25 | rad_hr_line_count           | integer      |      |        Y | optional summary count of high resolution NHDPlus reached line events |     
+|  26 | rad_mr_area_count           | integer      |      |        Y | optional summary count of medium resolution NHDPlus reached area events |     
+|  27 | rad_hr_area_count           | integer      |      |        Y | optional summary count of high resolution NHDPlus reached area events |     
+|  28 | globalid                    | varchar      |   40 |        N | vendor guid key    |
+|  29 | shape                       | geometry     |      |        Y | optional bounding box polygon meant to provide a way to quickly zoom to the region of the entity. If not required or not applicable (such as with point entities), just leave empty. |
 
 ### \<prog\>_src_p
 
+Each entity may be comprised of zero or more source elements.  Source events are partitioned into three tables to support the Esri requirement of one geometry type per table.  Geometry in the **src_p** table is limited to point and multipoint types.  
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permid_joinkey              | varchar      |   40 |        N |             |
-|   3 | source_originator           | varchar      |  130 |        N |             |
-|   4 | source_featureid            | varchar      |  100 |        N |             |
-|   5 | source_featureid2           | varchar      |  100 |        Y |             |
-|   6 | source_series               | varchar      |  100 |        Y |             |
-|   7 | source_subdivision          | varchar      |  100 |        Y |             |
-|   8 | source_joinkey              | varchar      |   40 |        N |             |
-|   9 | start_date                  | timestamp tz |      |        Y |             |
-|  10 | end_date                    | timestamp tz |      |        Y |             |
-|  11 | featuredetailurl            | varchar      |  255 |        Y |             |
+|   2 | permid_joinkey              | varchar      |   40 |        N | singular guid key for the source element |
+|   3 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|   4 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|   5 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|   6 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|   7 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|   8 | source_joinkey              | varchar      |   40 |        N | source joinkey value of the parent entity |
+|   9 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  10 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  11 | featuredetailurl            | varchar      |  255 |        Y | reference URL specific to the source element.  Depending on availability, this may be the same as the sfiddetailurl of the parent entity. |
 |  12 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  13 | shape                       | geometry     |      |        Y |             |
+|  13 | shape                       | geometry     |      |        Y | geometry of the source element |
 
 ### \<prog\>_src_l
 
+Geometry in the **src_l** table is limited to line and multilinestring types. 
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permid_joinkey              | varchar      |   40 |        N |             |
-|   3 | source_originator           | varchar      |  130 |        N |             |
-|   4 | source_featureid            | varchar      |  100 |        N |             |
-|   5 | source_featureid2           | varchar      |  100 |        Y |             |
-|   6 | source_series               | varchar      |  100 |        Y |             |
-|   7 | source_subdivision          | varchar      |  100 |        Y |             |
-|   8 | source_joinkey              | varchar      |   40 |        N |             |
-|   9 | start_date                  | timestamp tz |      |        Y |             |
-|  10 | end_date                    | timestamp tz |      |        Y |             |
-|  11 | featuredetailurl            | varchar      |  255 |        Y |             |
-|  12 | lengthkm                    | numeric      |      |        Y |             |
+|   2 | permid_joinkey              | varchar      |   40 |        N | singular guid key for the source element |
+|   3 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|   4 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|   5 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|   6 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|   7 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|   8 | source_joinkey              | varchar      |   40 |        N | source joinkey value of the parent entity |
+|   9 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  10 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  11 | featuredetailurl            | varchar      |  255 |        Y | reference URL specific to the source element.  Depending on availability, this may be the same as the sfiddetailurl of the parent entity. |
+|  12 | lengthkm                    | numeric      |      |        Y | total length of the geometry element in kilometers |
 |  13 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  14 | shape                       | geometry     |      |        Y |             |
+|  14 | shape                       | geometry     |      |        Y | geometry of the source element |
 
 ### \<prog\>_src_a
 
+Geometry in the **src_a** table is limited to polygon and multipolygon types. 
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
-|   2 | permid_joinkey              | varchar      |   40 |        N |             |
-|   3 | source_originator           | varchar      |  130 |        N |             |
-|   4 | source_featureid            | varchar      |  100 |        N |             |
-|   5 | source_featureid2           | varchar      |  100 |        Y |             |
-|   6 | source_series               | varchar      |  100 |        Y |             |
-|   7 | source_subdivision          | varchar      |  100 |        Y |             |
-|   8 | source_joinkey              | varchar      |   40 |        N |             |
-|   9 | start_date                  | timestamp tz |      |        Y |             |
-|  10 | end_date                    | timestamp tz |      |        Y |             |
-|  11 | featuredetailurl            | varchar      |  255 |        Y |             |
-|  12 | areasqkm                    | numeric      |      |        Y |             |
+|   2 | permid_joinkey              | varchar      |   40 |        N | singular guid key for the source element |
+|   3 | source_originator           | varchar      |  130 |        N | source originator value of the parent entity |
+|   4 | source_featureid            | varchar      |  100 |        N | source featureid value of the parent entity |
+|   5 | source_featureid2           | varchar      |  100 |        Y | source featureid2 value of the parent entity |
+|   6 | source_series               | varchar      |  100 |        Y | source series value of the parent entity |
+|   7 | source_subdivision          | varchar      |  100 |        Y | source subdivision value of the parent entity |
+|   8 | source_joinkey              | varchar      |   40 |        N | source joinkey value of the parent entity |
+|   9 | start_date                  | timestamp&nbsp;tz |      |        Y | start date value of the parent entity |
+|  10 | end_date                    | timestamp&nbsp;tz |      |        Y | end_date value of the parent entity |
+|  11 | featuredetailurl            | varchar      |  255 |        Y | reference URL specific to the source element.  Depending on availability, this may be the same as the sfiddetailurl of the parent entity. |
+|  12 | areasqkm                    | numeric      |      |        Y | total area of the geometry element in square kilometers |
 |  13 | globalid                    | varchar      |   40 |        N | vendor guid key    |
-|  14 | shape                       | geometry     |      |        Y |             | 
+|  14 | shape                       | geometry     |      |        Y | geometry of the source element |
 
 ### \<prog\>_src2cip
 
@@ -139,7 +145,7 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |  11 | overlap_measure             | numeric      |      |        Y |             |
 |  12 | cip_method                  | varchar      |  255 |        Y |             |
 |  13 | cip_parms                   | varchar      |  255 |        Y |             |
-|  14 | cip_date                    | timestamp tz |      |        Y |             |
+|  14 | cip_date                    | timestamp&nbsp;tz |      |        Y |             |
 |  15 | cip_version                 | varchar      |  255 |        Y |             |
 |  16 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
@@ -156,8 +162,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |   7 | source_series               | varchar      |  100 |        Y |             |
 |   8 | source_subdivision          | varchar      |  100 |        Y |             |
 |   9 | source_joinkey              | varchar      |   40 |        N |             |
-|  10 | start_date                  | timestamp tz |      |        Y |             |
-|  11 | end_date                    | timestamp tz |      |        Y |             |
+|  10 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
+|  11 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
 |  12 | cat_joinkey                 | varchar      |   40 |        N |             |
 |  13 | catchmentstatecode          | varchar      |    2 |        N |             |
 |  14 | nhdplusid                   | numeric      |      |        N |             |
@@ -179,6 +185,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |  30 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_cip_geo
+
+Geometry in the **cip_geo** table is limited to polygon and multipolygon type. 
 
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
@@ -206,8 +214,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |   6 | source_subdivision          | varchar      |  100 |        Y |             |
 |   7 | source_joinkey              | varchar      |   40 |        N |             |
 |   8 | permid_joinkey              | varchar      |   40 |        Y |             |
-|   9 | start_date                  | timestamp tz |      |        Y |             |
-|  10 | end_date                    | timestamp tz |      |        Y |             |
+|   9 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
+|  10 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
 |  11 | xwalk_huc12                 | varchar      |   12 |        N |             |
 |  12 | xwalk_catresolution         | varchar      |    2 |        N |             |
 |  13 | xwalk_huc12_version         | varchar      |   16 |        N |             |
@@ -215,6 +223,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |  15 | globalid                    | varchar      |   40 |        N | vendor guid key    |
 
 ### \<prog\>_huc12_geo
+
+Geometry in the **cip_geo** table is limited to polygon and multipolygon type. 
 
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
@@ -240,13 +250,15 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 
 ### \<prog\>_rad_p
 
+Geometry in the **rad_p** table is limited to point type. 
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | eventdate                   | timestamp tz |      |        Y |             |
+|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y |             |
 |   4 | reachcode                   | varchar      |   14 |        Y |             |
-|   5 | reachsmdate                 | timestamp tz |      |        Y |             |
+|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y |             |
 |   6 | reachresolution             | varchar      |    2 |        Y |             |
 |   7 | feature_permanent_identifier| varchar      |   40 |        Y |             |
 |   8 | featureclassref             | integer      |      |        Y |             |
@@ -258,8 +270,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |  14 | source_subdivision          | varchar      |  100 |        Y |             |
 |  15 | source_joinkey              | varchar      |   40 |        N |             |
 |  16 | permid_joinkey              | varchar      |   40 |        N |             |
-|  17 | start_date                  | timestamp tz |      |        Y |             |
-|  18 | end_date                    | timestamp tz |      |        Y |             |
+|  17 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
+|  18 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
 |  19 | featuredetailurl            | varchar      |  255 |        Y |             |
 |  20 | measure                     | numeric      |      |        Y |             |
 |  21 | eventtype                   | integer      |      |        Y |             |
@@ -281,13 +293,15 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 
 ### \<prog\>_rad_l
 
+Geometry in the **rad_p** table is limited to linestring type. 
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | eventdate                   | timestamp tz |      |        Y |             |
+|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y |             |
 |   4 | reachcode                   | varchar      |   14 |        Y |             |
-|   5 | reachsmdate                 | timestamp tz |      |        Y |             |
+|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y |             |
 |   6 | reachresolution             | varchar      |   16 |        Y |             |
 |   7 | feature_permanent_identifier| varchar      |   40 |        Y |             |
 |   8 | featureclassref             | integer      |      |        Y |             |
@@ -299,8 +313,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |  14 | source_subdivision          | varchar      |  100 |        Y |             |
 |  15 | source_joinkey              | varchar      |   40 |        N |             |
 |  16 | permid_joinkey              | varchar      |   40 |        N |             |
-|  17 | start_date                  | timestamp tz |      |        Y |             |
-|  18 | end_date                    | timestamp tz |      |        Y |             |
+|  17 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
+|  18 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
 |  19 | featuredetailurl            | varchar      |  255 |        Y |             |
 |  20 | fmeasure                    | numeric      |      |        Y |             |
 |  21 | tmeasure                    | numeric      |      |        Y |             |
@@ -324,13 +338,15 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 
 ### \<prog\>_rad_a
 
+Geometry in the **rad_a** table is limited to polygon and multipolygon type. 
+
 |     | column name                 | datatype     |  len | nullable | description        |
 |----:|:----------------------------|:-------------|-----:|:--------:|:-------------------|
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | permanent_identifier        | varchar      |   40 |        N |             |
-|   3 | eventdate                   | timestamp tz |      |        Y |             |
+|   3 | eventdate                   | timestamp&nbsp;tz |      |        Y |             |
 |   4 | reachcode                   | varchar      |   14 |        Y |             |
-|   5 | reachsmdate                 | timestamp tz |      |        Y |             |
+|   5 | reachsmdate                 | timestamp&nbsp;tz |      |        Y |             |
 |   6 | reachresolution             | varchar      |    2 |        Y |             |
 |   7 | feature_permanent_identifier| varchar      |   40 |        Y |             |
 |   8 | featureclassref             | integer      |      |        Y |             |
@@ -342,8 +358,8 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |  14 | source_subdivision          | varchar      |  100 |        Y |             |
 |  15 | source_joinkey              | varchar      |   40 |        N |             |
 |  16 | permid_joinkey              | varchar      |   40 |        N |             |
-|  17 | start_date                  | timestamp tz |      |        Y |             |
-|  18 | end_date                    | timestamp tz |      |        Y |             |
+|  17 | start_date                  | timestamp&nbsp;tz |      |        Y |             |
+|  18 | end_date                    | timestamp&nbsp;tz |      |        Y |             |
 |  19 | featuredetailurl            | varchar      |  255 |        Y |             |
 |  20 | eventtype                   | integer      |      |        Y |             |
 |  21 | event_areasqkm              | numeric      |      |        Y |             |
@@ -371,7 +387,7 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |   1 | objectid                    | integer      |      |        N | vendor integer key |
 |   2 | meta_processid              | varchar      |   40 |        N |             |
 |   3 | processdescription          | varchar      | 4000 |        Y |             |
-|   4 | processdate                 | timestamp tz |      |        Y |             |
+|   4 | processdate                 | timestamp&nbsp;tz |      |        Y |             |
 |   5 | attributeaccuracyreport     | varchar      | 1800 |        Y |             |
 |   6 | logicalconsistencyreport    | varchar      | 1000 |        Y |             |
 |   7 | completenessreport          | varchar      | 2400 |        Y |             |
@@ -379,7 +395,7 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |   9 | vertpositionalaccuracyreport| varchar      | 3100 |        Y |             |
 |  10 | metadatastandardname        | varchar      |  100 |        Y |             |
 |  11 | metadatastandardversion     | varchar      |   40 |        Y |             |
-|  12 | metadatadate                | timestamp tz |      |        Y |             |
+|  12 | metadatadate                | timestamp&nbsp;tz |      |        Y |             |
 |  13 | datasetcredit               | varchar      | 4000 |        Y |             |
 |  14 | contactorganization         | varchar      |  100 |        Y |             |
 |  15 | addresstype                 | varchar      |   40 |        Y |             |
@@ -401,13 +417,13 @@ The **sfid** table serves as the foundation of the model.  Each row represents a
 |   3 | source_datasetid            | varchar      |   40 |        N |             |
 |   4 | sourcecitationabbreviation  | varchar      |  255 |        Y |             |
 |   5 | originator                  | varchar      |  400 |        Y |             |
-|   6 | publicationdate             | timestamp tz |      |        Y |             |
-|   7 | beginningdate               | timestamp tz |      |        Y |             |
-|   8 | endingdate                  | timestamp tz |      |        Y |             |
+|   6 | publicationdate             | timestamp&nbsp;tz |      |        Y |             |
+|   7 | beginningdate               | timestamp&nbsp;tz |      |        Y |             |
+|   8 | endingdate                  | timestamp&nbsp;tz |      |        Y |             |
 |   9 | sourcecontribution          | varchar      |  255 |        Y |             |
 |  10 | sourcescaledenominator      | numeric      |      |        Y |             |
 |  11 | typeofsourcemedia           | varchar      |  255 |        Y |             |
-|  12 | calendardate                | timestamp tz |      |        Y |             |
+|  12 | calendardate                | timestamp&nbsp;tz |      |        Y |             |
 |  13 | sourcecurrentnessreference  | varchar      |  255 |        Y |             |
 |  14 | meta_processid              | varchar      |   40 |        N |             |
 |  15 | field                       | integer      |      |        Y |             |
