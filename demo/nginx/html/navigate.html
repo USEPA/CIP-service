@@ -45,9 +45,9 @@
                <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Navigation Test Harness</h2>
                <span style="font-family: Arial; font-size: 11px;">Add points to the map or enter GeoJSON text:</span>
                <br/>
-               <input id="start_point"  name="start_point"  type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
+               <input id="start_point" name="start_point"  type="text" class="textbox" style="width: 400px;" onchange="updatept(this.value);blank_start_nhdplusids();check_start();" />
                <br/>
-               <input id="stop_point" name="stop_point" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
+               <input id="stop_point"  name="stop_point" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
                <select name="resolution" id="resolution" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
@@ -750,25 +750,25 @@
          }
          
          var data = {
-             "search_type"               : st
-            ,"nhdplus_version"           : nv
+             "search_type"                 : st
+            ,"nhdplus_version"             : nv
              
-            ,"start_nhdplusid"           : document.getElementById("start_nhdplusid").value
-            ,"start_permanent_identifier": document.getElementById("start_permanent_identifier").value
-            ,"start_reachcode"           : document.getElementById("start_reachcode").value
-            ,"start_hydroseq"            : document.getElementById("start_hydrosequence").value
-            ,"start_measure"             : document.getElementById("start_measure").value
+            ,"start_nhdplusid"             : document.getElementById("start_nhdplusid").value
+            ,"start_permanent_identifier"  : document.getElementById("start_permanent_identifier").value
+            ,"start_reachcode"             : document.getElementById("start_reachcode").value
+            ,"start_hydroseq"              : document.getElementById("start_hydrosequence").value
+            ,"start_measure"               : document.getElementById("start_measure").value
             
-            ,"stop_nhdplusid"            : document.getElementById("stop_nhdplusid").value
-            ,"stop_permanent_identifier" : document.getElementById("stop_permanent_identifier").value
-            ,"stop_reachcode"            : document.getElementById("stop_reachcode").value
-            ,"stop_hydroseq"             : document.getElementById("stop_hydrosequence").value
-            ,"stop_measure"              : document.getElementById("stop_measure").value
+            ,"stop_nhdplusid"              : document.getElementById("stop_nhdplusid").value
+            ,"stop_permanent_identifier"   : document.getElementById("stop_permanent_identifier").value
+            ,"stop_reachcode"              : document.getElementById("stop_reachcode").value
+            ,"stop_hydroseq"               : document.getElementById("stop_hydrosequence").value
+            ,"stop_measure"                : document.getElementById("stop_measure").value
             
-            ,"max_distancekm"            : mxkm
-            ,"max_flowtimeday"           : mxday
-            ,"return_flowline_details"   : true
-            ,"return_flowline_geometry"  : true
+            ,"max_distancekm"              : mxkm
+            ,"max_flowtimeday"             : mxday
+            ,"return_flowline_details"     : true
+            ,"return_flowline_geometry"    : true
          }
       
          httpPost(
