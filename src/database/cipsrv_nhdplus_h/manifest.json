@@ -65,6 +65,7 @@
             ,"functions/fetch_grids_by_geometry.sql"
             ,"functions/get_measure.sql"
             ,"functions/get_flowline.sql"
+            ,"functions/fdr_flowaccumulation.sql"
             ,"functions/append_flowlines.sql"
             ,"functions/index_area_artpath.sql"
             ,"functions/index_area_centroid.sql"
