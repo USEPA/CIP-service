@@ -46,7 +46,14 @@ def auto_fm(source,force_date=False):
    return fms;
    
 ###############################################################################   
-def tbexporter(source,outname,work_path,container_name,force_date=False):
+def tbexporter(
+    source
+   ,outname
+   ,work_path
+   ,container_name
+   ,force_date = False
+   ,empty_tb   = False   
+):
 
    print("counting " + source + "....",end="",flush=True);
    bef = arcpy.GetCount_management(source)[0];
@@ -56,24 +63,75 @@ def tbexporter(source,outname,work_path,container_name,force_date=False):
    arcpy.env.useCompatibleFieldTypes = True;
 
    print("exporting " + outname + "...",end="",flush=True);
-   target_nm = work_path + os.sep + container_name + os.sep + outname;
-   arcpy.conversion.ExportTable(
-       in_table      = source
-      ,out_table     = work_path + os.sep + container_name + os.sep + outname
-      ,field_mapping = auto_fm(source,force_date=force_date)
-   );
+   
+   if empty_tb:
+      
+      if arcpy.Exists(arcpy.env.scratchGDB + os.sep + 'temp'):
+         arcpy.Delete_management(arcpy.env.scratchGDB + os.sep + 'temp');
+         
+      arcpy.management.CreateTable(
+          out_path      = arcpy.env.scratchGDB
+         ,out_name      = 'temp'
+         ,template      = source
+         ,oid_type      = "32_BIT"
+      );
+      
+      fields = arcpy.ListFields(arcpy.env.scratchGDB + os.sep + 'temp');
+      for fld in fields:
+         if fld.name.lower() in ['objectid','globalid']:
+            try:
+               arcpy.management.DeleteField(
+                   in_table   = arcpy.env.scratchGDB + os.sep + 'temp'
+                  ,drop_field = fld.name
+               );
+            except:
+               print(".  bouncing on existing " + fld.name);
+               None;
+            
+         if fld.aliasName == 'OBJECTID_1':
+            arcpy.AlterField_management(
+                in_table        = arcpy.env.scratchGDB + os.sep + 'temp'
+               ,field           = fld.name
+               ,new_field_alias = 'OBJECTID'
+            );
+      
+      arcpy.management.CreateTable(
+          out_path      = work_path + os.sep + container_name
+         ,out_name      = outname
+         ,template      = arcpy.env.scratchGDB + os.sep + 'temp'
+         ,oid_type      = "32_BIT"
+      );
+         
+   else:
+      arcpy.conversion.ExportTable(
+          in_table      = source
+         ,out_table     = work_path + os.sep + container_name + os.sep + outname
+         ,field_mapping = auto_fm(source,force_date=force_date)
+      );
+   
    print(" DONE.");
-   print("counting " + outname + "....",end="",flush=True);
-   aft = arcpy.GetCount_management(work_path + os.sep + container_name + os.sep + outname)[0];
-   print(" " + str(aft) + ".");
-   if bef != aft:
-      raise Exception("export counts for " + outname + " do not match!");
+   
+   if not empty_tb:
+      print("counting " + outname + "....",end="",flush=True);
+      aft = arcpy.GetCount_management(work_path + os.sep + container_name + os.sep + outname)[0];
+      print(" " + str(aft) + ".");
+      if bef != aft:
+         raise Exception("export counts for " + outname + " do not match!");
    
    arcpy.management.AddGlobalIDs(work_path + os.sep + container_name + os.sep + outname);   
    print(" DONE.");
     
 ###############################################################################   
-def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_null_geom=False,force_date=False):
+def fcexporter(
+    source
+   ,outname
+   ,work_path
+   ,container_name
+   ,geometry_type = None
+   ,add_null_geom = False
+   ,force_date    = False
+   ,empty_fc      = False
+):
 
    print("counting " + source + "....",end="",flush=True);
    bef = int(arcpy.GetCount_management(source)[0]);
@@ -100,11 +158,12 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_nu
          ,schema_type   = 'NO_TEST'
       );         
    
-   elif bef == 0:
+   elif bef == 0 or empty_fc:
       print("creating empty fc " + outname + "...",end="",flush=True);
       
       if arcpy.Exists(arcpy.env.scratchGDB + os.sep + 'temp'):
          arcpy.Delete_management(arcpy.env.scratchGDB + os.sep + 'temp');
+         
       arcpy.management.CreateFeatureclass(
           out_path      = arcpy.env.scratchGDB
          ,out_name      = 'temp'
@@ -146,6 +205,7 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_nu
    
    else:
       print("exporting " + outname + "...",end="",flush=True);
+      
       arcpy.conversion.ExportFeatures(
            in_features   = source
           ,out_features  = work_path + os.sep + container_name + os.sep + outname
@@ -153,11 +213,13 @@ def fcexporter(source,outname,work_path,container_name,geometry_type=None,add_nu
       );
       
    print(" DONE.");
-   print("counting " + outname  + "....",end="",flush=True);
-   aft = int(arcpy.GetCount_management(work_path + os.sep + container_name + os.sep + outname)[0]);
-   print(" " + str(aft) + ".");
-   if bef != aft:
-      raise Exception("export counts for " + outname + " do not match!");
+   
+   if not empty_fc:
+      print("counting " + outname  + "....",end="",flush=True);
+      aft = int(arcpy.GetCount_management(work_path + os.sep + container_name + os.sep + outname)[0]);
+      print(" " + str(aft) + ".");
+      if bef != aft:
+         raise Exception("export counts for " + outname + " do not match!");
    
    arcpy.management.AddGlobalIDs(work_path + os.sep + container_name + os.sep + outname);
    print(" DONE.");
