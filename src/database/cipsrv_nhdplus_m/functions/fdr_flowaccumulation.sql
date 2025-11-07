@@ -6,6 +6,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.fdr_flowaccumulation(
    ,out_max_accumulation   OUT INTEGER
    ,out_max_accumulation_x OUT INTEGER
    ,out_max_accumulation_y OUT INTEGER
+   ,out_return_code        OUT INTEGER
+   ,out_status_message     OUT VARCHAR
 )
 STABLE
 AS
@@ -39,6 +41,8 @@ BEGIN
    -- from raster digital elevation models
    -- Abstr. Int. Cartogr. Assoc., 
 
+   out_return_code := 0;
+   
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters

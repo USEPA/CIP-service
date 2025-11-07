@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en" >
+   <head>
+      <meta charset="UTF-8">
+      <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
+      <title>CIP Service Flow Accumulation</title>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <style>
+         #busy {
+           position: absolute;
+           top: 15%;
+           left: 820px;
+           z-index: 100;
+         }
+      </style>
+      <script src="./config.js" onerror="return null;"></script>
+   </head>
+   <body>
+      <div id="busy">
+         <svg width="57" height="57" viewBox="0 0 57 57" xmlns="http://www.w3.org/2000/svg" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+               <g transform="translate(1 1)" stroke-width="2">
+                  <circle cx="5" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;5;50;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" values="5;27;49;5" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="27" cy="5" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" from="5" to="5" values="5;50;50;5" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" from="27" to="27" values="27;49;5;27" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="49" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;50;5;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" from="49" to="49" begin="0s" dur="2.2s" values="49;5;27;49" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+               </g>
+            </g>
+         </svg>
+      </div>
+      <div id="container" style="width: 1400px;">
+         <div id="map" class="map" style="height: 700px; width: 800px; float: left;"></div>
+         <div id="righty" style="width: 600px; float: left;">
+            <div id="top" style="text-align: center;">
+               <h2>&nbsp;</h2>
+               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Flow Accumulation Test Harness</h2>
+               <span style="font-family: Arial; font-size: 11px;">Add a reasonably sized polygon to the map or enter GeoJSON text:</span>
+               <br />
+               <input id="p_area_of_interest" name="p_area_of_interest" type="text" class="textbox" style="width: 400px;" onchange="updategeo(this.value);" />
+
+               <br />
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <select name="p_nhdplus_version" id="p_nhdplus_version" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
+                  <option value="nhdplus_m">Medium Resolution</option>
+                  <option value="nhdplus_h" SELECTED>High Resolution</option>
+               </select>
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">Default Weight:</span>
+               <input name="p_default_weight" type="text" class="text" id="p_default_weight" style="display:inline; width:25px" value="1" />
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Image Format:</span>
+               <select name="p_image_format" id="p_image_format" onchange="menuOptions(this.value)" style="width:60px">
+                  <option value="PNG" SELECTED>png</option>
+               </select>
+               <br />
+               <br />
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
+               
+               <br />
+               <br />
+
+            </div>
+         </div>
+         <div id="output" style="width: 1200px; text-align: center; font-family: Arial; font-size: 15px;"></div>
+         
+      </div>
+
+      <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script>
+   document.getElementById("dz_run_service").disabled = true;
+
+   document.getElementById("busy").style.visibility = "hidden";
+
+   var map = L.map("map").setView([46.874626,-96.782341],12);
+   mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; " + mapLink,
+      maxZoom: 18
+   }).addTo(map);
+
+   var drawnItems = new L.FeatureGroup().addTo(map);
+   var drawControl = new L.Control.Draw({
+      draw: {
+         polygon: true,
+         polyline: false,
+         rectangle: false,
+         circle: false,
+         marker: false,
+         circlemarker: false
+      },
+      edit: {
+         featureGroup: drawnItems,
+         edit: false,
+         remove: true
+      }
+   });
+   map.addControl(drawControl);
+
+   map.on(L.Draw.Event.CREATED, function (e) {
+      var type = e.layerType;
+      var layer = e.layer;
+
+      drawnItems.clearLayers();
+
+      geojsonval = e.layer.toGeoJSON().geometry;
+
+      if (type === "polygon") {
+         document.getElementById("p_area_of_interest").value = JSON.stringify(geojsonval);
+      }
+
+      drawnItems.addLayer(layer);
+      document.getElementById("dz_run_service").disabled = false;
+   });
+
+   map.on(L.Draw.Event.DELETED, function (e) {
+      document.getElementById("p_area_of_interest").value = "";
+      document.getElementById("dz_run_service").disabled = true;
+   });
+   
+   var flow_accumulation = L.geoJson().addTo(map);
+         
+   var flowlines = new L.GeoJSON(null, {
+      onEachFeature: onEachFeature_flowlines
+   }).addTo(map);
+   
+   var pngrast;
+         
+   var layer_items = {
+       "Sketch": flow_accumulation
+   };
+   
+   if (
+      typeof gis_host === "undefined" ||
+      gis_host === null ||
+      gis_host == "NONE"
+   ) {
+      null;
+   } else {
+      zgis_host = gis_host;
+      
+      if (
+         typeof gis_type === "undefined" ||
+         gis_type === null ||
+         gis_type == "NONE"
+      ) {
+         zgis_type = "geoserver";
+      } else {
+         zgis_type = gis_type;
+      }
+   
+      if (
+         typeof gis_prot === "undefined" ||
+         gis_prot === null ||
+         gis_prot == "NONE"
+      ) {
+         zgis_prot = "http";
+      } else {
+         zgis_prot = gis_prot;
+      }
+      
+      if (
+         typeof gis_port === "undefined" ||
+         gis_port === null ||
+         gis_port == "NONE"
+      ) {
+         zgis_port = "";
+      } else {
+         zgis_port = ":" + gis_port;
+      }
+      
+      if ( zgis_type ) {
+         let gis_server = zgis_prot + "://" + zgis_host + zgis_port;
+         
+         if (typeof gis_pref === "undefined" || gis_pref === null || gis_pref == "NONE") {
+            // pass
+         } else {
+            gis_server = zgis_prot + "://" + zgis_host + zgis_port + '/' + gis_pref
+         }
+         
+         if ( zgis_type == "geoserver" ) {
+            
+            lyr_nhdplus_m_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_m_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+            
+            lyr_nhdplus_h_flowlines = L.tileLayer.wms(gis_server + "/wms",{
+                layers: 'cipsrv:nhdplus_h_flowlines'
+               ,format: 'image/png'
+               ,transparent: true
+               ,version: '1.3.0'
+               ,attribution: "US EPA"
+            });
+                        
+         } else if ( zgis_type == "arcgis" ) {
+            const dynlyr = [
+                {
+                   "ID": 0
+                  ,"source": {
+                      "type"      : "mapLayer"
+                     ,"mapLayerId": 0
+                   }
+                }
+               ,{
+                   "ID": 4
+                  ,"source": {
+                      "type"      : "mapLayer"
+                     ,"mapLayerId": 4
+                   }
+                  ,"drawingInfo":{
+                      "renderer": {
+                         "type"  : "simple"
+                        ,"symbol": {
+                            "type" : "esriSLS"
+                           ,"style": "esriSLSSolid"
+                           ,"color": [65,107,223,255]
+                           ,"width": 1.5
+                         }
+                      }
+                     ,"showLabels": false
+                   }                  
+                }
+            ];
+            
+            pfunc = function(error,featureCollection) {
+               if (error || featureCollection.features.length === 0) {
+                  // pass
+               } else {
+                  for (let i = 0; i < featureCollection.features.length; i++) {
+                     if (featureCollection.features[i].layerId == 4) {
+                        const z = "<B>NHDPlus " + featureCollection.features[i].properties.Resolution + " Resolution</B><BR/>" +
+                        "NHDPlusID: " +
+                        dzStr(featureCollection.features[i].properties.NHDPlusID) +
+                        "<BR/>" +
+                        "Perm ID: " +
+                        featureCollection.features[i].properties.Permanent_Identifier +
+                        "<BR/>" +
+                        "FCode: " +
+                        dzStr(featureCollection.features[i].properties.FCode) +
+                        "<BR/>" +
+                        "Reach Code: " +
+                        featureCollection.features[i].properties.ReachCode +
+                        "<BR/>" +
+                        "Hydro Seq: " +
+                        dzStr(featureCollection.features[i].properties.HydrologicSequence) +
+                        "<BR/>" +
+                        "FMeasure: " +
+                        dzStr(featureCollection.features[i].properties.FromMeasure) +
+                        "<BR/>" +
+                        "TMeasure: " +
+                        dzStr(featureCollection.features[i].properties.ToMeasure) +
+                        "<BR/>" +
+                        "Down Hydro Seq: " +
+                        dzStr(featureCollection.features[i].properties.DownstreamMainPathHydroSeq) +
+                        "<BR/>" +
+                        "Terminal Path ID: " +
+                        dzStr(featureCollection.features[i].properties.TerminalPathIdentifier) +
+                        "<BR/>" +
+                        "GNIS Name: " +
+                        featureCollection.features[i].properties.GNIS_Name +
+                        "<BR/>" +
+                        "Length (Km): " +
+                        dzStr(featureCollection.features[i].properties.LengthKm) +
+                        "<BR/>" +
+                        "FlowTime (Day): " +
+                        dzStr(featureCollection.features[i].properties.TimeOfTravelMeanAverage) +
+                        "<BR/>";
+                        return z;
+                     }
+                  }
+               }
+            }
+            
+            lyr_nhdplus_m_flowlines = L.esri.dynamicMapLayer({
+                url: gis_server + "/rest/services/nhdplus_m/MapServer/"
+               ,layers: [0,4]
+               ,dynamicLayers: dynlyr
+            });            
+            lyr_nhdplus_m_flowlines.bindPopup(pfunc);
+            
+            lyr_nhdplus_h_flowlines = L.esri.dynamicMapLayer({
+                url: gis_server + "/rest/services/nhdplus_h/MapServer/"
+               ,layers: [0,4]
+               ,dynamicLayers: dynlyr
+            });            
+            lyr_nhdplus_h_flowlines.bindPopup(pfunc);
+         
+         } else {
+            console.log('err ' + zgis_type);
+            
+         }
+         
+         const nv = get_select_values(document.getElementById("resolution"));
+         
+         if (nv == "nhdplus_m" ) {
+            lyr_nhdplus_m_flowlines.addTo(map);
+         }         
+         layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
+         
+         if (nv == "nhdplus_h" ) {
+            lyr_nhdplus_h_flowlines.addTo(map);
+         }
+         layer_items["HR Flowlines"] = lyr_nhdplus_h_flowlines;
+         
+      }
+      
+   }
+   L.control.layers(null, layer_items).addTo(map);
+
+   function onEachFeature_flowlines(feature,layer) {
+      if (feature.properties && feature.properties.nhdplusid) {
+         layer.bindPopup(
+            "<B>Navigation Results</B><BR/>" +
+            "NHDPlusID: " +
+            dzStr(feature.properties.nhdplusid) +
+            "<BR/>" +
+            "Perm ID: " +
+            feature.properties.permanent_identifier +
+            "<BR/>" +
+            "FCode: " +
+            dzStr(feature.properties.fcode) +
+            "<BR/>" +
+            "Reach Code: " +
+            feature.properties.reachcode +
+            "<BR/>" +
+            "Hydro Seq: " +
+            dzStr(feature.properties.hydroseq) +
+            "<BR/>" +
+            "FMeasure: " +
+            dzStr(feature.properties.fmeasure) +
+            "<BR/>" +
+            "TMeasure: " +
+            dzStr(feature.properties.tmeasure) +
+            "<BR/>" +
+            "Down Hydro Seq: " +
+            dzStr(feature.properties.dnhydroseq) +
+            "<BR/>" +
+            "Terminal Path ID: " +
+            dzStr(feature.properties.terminalpa) +
+            "<BR/>" +
+            "GNIS Name: " +
+            feature.properties.gnis_name +
+            "<BR/>" +
+            "Length (Km): " +
+            dzStr(feature.properties.lengthkm) +
+            "<BR/>" +
+            "Network Distance (Km): " +
+            dzStr(feature.properties.network_distancekm) +
+            "<BR/>" 
+         );
+      }
+   }
+   
+   function run_service() {
+      dz_clear();
+      busy_on();
+
+      const image_format    = document.getElementById("p_image_format");
+      const nhdplus_version = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          area_of_interest: JSON.parse(document.getElementById("p_area_of_interest").value)
+         ,default_weight  : document.getElementById("p_default_weight").value
+         ,image_format    : image_format.options[image_format.selectedIndex].value
+         ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+      };
+
+      httpPost(
+         build_api() + "flow_accumulation",
+         data,
+         srvresponse
+      );
+   }
+
+   function srvresponse(error, response) {
+      busy_off();
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+
+      var srv_rez = response;
+
+      if (
+         srv_rez == null ||
+         srv_rez.flow_accumulation == null ||
+         srv_rez.return_code != 0
+      ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+      }
+      
+      img_bounds = L.latLngBounds(
+          L.latLng(srv_rez.image_bbox[2],srv_rez.image_bbox[1])
+         ,L.latLng(srv_rez.image_bbox[4],srv_rez.image_bbox[3])
+      )
+      
+      pngrast = L.imageOverlay(
+          'data:image/png;base64,' + srv_rez.flow_accumulation
+         ,img_bounds
+      );
+      pngrast.addTo(map);
+
+      map.fitBounds(
+          img_bounds
+         ,{
+            maxZoom: 15
+          }
+      );
+      
+   }
+
+   function httpPost(url, data, callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("POST", url, true);
+      xmlHttp.setRequestHeader("Content-Type", "application/json");
+      xmlHttp.responseType = "json";
+      xmlHttp.onreadystatechange = function () {
+         if (xmlHttp.readyState === 4) {
+            if (xmlHttp.status === 200) {
+               response = xmlHttp.response;
+               callback(null, response);
+            } else {
+               callback(xmlHttp.statusText, null);
+            }
+         }
+      };
+      xmlHttp.send(JSON.stringify(data));
+   }
+   
+   function dz_reset() {
+      document.getElementById("output").innerHTML = "";
+      flow_accumulation.clearLayers();
+      blank_geo();
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   //Function to clear map on new request or Clear button
+   function dz_clear() {
+      document.getElementById("output").innerHTML = "";
+      flow_accumulation.clearLayers();
+      busy_off();
+   }
+
+   //Function to turn on the dorky animation
+   function busy_on() {
+      document.getElementById("busy").style.visibility = "visible";
+      document.body.style.cursor = "wait";
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   //Function to turn off the dorky animation
+   function busy_off() {
+      document.getElementById("busy").style.visibility = "hidden";
+      document.body.style.cursor = "auto";
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   function blank_geo() {
+      drawnItems.clearLayers();
+      document.getElementById("p_area_of_interest").value = "";
+   }
+   
+   function updatepoly(txtval) {
+      drawnItems.clearLayers();
+
+      if (txtval == null || txtval == undefined || txtval == "") {
+         document.getElementById("dz_run_service").disabled = true;
+         drawnItems.clearLayers();
+         flow_accumulation.clearLayers();
+         
+      } else {
+         var layer;
+
+         layer = L.geoJSON({
+             type: "Feature"
+            ,geometry: JSON.parse(txtval)
+         });
+         drawnItems.addLayer(layer);
+         
+         document.getElementById("dz_run_service").disabled = false;
+         layer.bindPopup(txtval);
+         map.fitBounds(drawnItems.getBounds(), {
+            maxZoom: 15
+         });
+      }
+   }
+  
+   function get_url_parameter(param_key) {
+      var page_url = window.location.search.substring(1);
+      var url_variables = page_url.split('&');
+      for (var i = 0; i < url_variables.length; i++) {
+         var parameter_name = url_variables[i].split('=');
+         if (parameter_name[0] == param_key) {
+           return parameter_name[1];
+         }
+      }
+      return null;
+   }
+   
+   function build_api() {
+      
+      if (
+         typeof postgrest_host === "undefined" ||
+         postgrest_host === null ||
+         postgrest_host == "NONE"
+      ) {
+         zpostgrest_host = get_url_parameter("postgrest_host");
+      } else {
+         zpostgrest_host = postgrest_host;
+      }
+
+      if (
+         typeof postgrest_port === "undefined" ||
+         postgrest_port === null ||
+         postgrest_port == "NONE"
+      ) {
+         zpostgrest_port = get_url_parameter("postgrest_port");
+      } else {
+         zpostgrest_port = postgrest_port;
+      }
+
+      if (
+         typeof postgrest_pref === "undefined" ||
+         postgrest_pref === null ||
+         postgrest_pref == "NONE"
+      ) {
+         zpostgrest_pref = get_url_parameter("postgrest_pref");
+      } else {
+         zpostgrest_pref = postgrest_pref;
+      }
+      
+      if (zpostgrest_pref === null ) {
+         zpostgrest_pref = "";
+      } else {
+         zpostgrest_pref = zpostgrest_pref + "/";
+      }
+
+      if (zpostgrest_host === null) {
+         console.log("no PostgREST API server location defined.");
+         return;
+      }
+
+      var http = "http";
+      if (zpostgrest_port == "443") {
+         http = "https";
+      }
+      
+      return http +
+         "://" +
+         zpostgrest_host +
+         ":" +
+         zpostgrest_port + "/" + 
+         zpostgrest_pref + "rpc/";
+         
+   }
+   
+      </script>
+   </body>
+</html>

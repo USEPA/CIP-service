@@ -6,6 +6,8 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.fdr_flowaccumulation(
    ,out_max_accumulation   OUT INTEGER
    ,out_max_accumulation_x OUT INTEGER
    ,out_max_accumulation_y OUT INTEGER
+   ,out_return_code        OUT INTEGER
+   ,out_status_message     OUT VARCHAR
 )
 STABLE
 AS
@@ -38,6 +40,8 @@ BEGIN
    -- A fast and simple algorithm for calculating flow accumulation matrices 
    -- from raster digital elevation models
    -- Abstr. Int. Cartogr. Assoc., 
+   
+   out_return_code := 0;
 
    ----------------------------------------------------------------------------
    -- Step 10
