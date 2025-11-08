@@ -412,8 +412,8 @@
       }
       
       img_bounds = L.latLngBounds(
-          L.latLng(srv_rez.image_bbox[2],srv_rez.image_bbox[1])
-         ,L.latLng(srv_rez.image_bbox[4],srv_rez.image_bbox[3])
+          L.latLng(srv_rez.image_bbox[1],srv_rez.image_bbox[0])
+         ,L.latLng(srv_rez.image_bbox[3],srv_rez.image_bbox[2])
       )
       
       pngrast = L.imageOverlay(
