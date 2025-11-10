@@ -23,11 +23,14 @@ DECLARE
    str_known_region                  VARCHAR;
    str_nhdplus_version               VARCHAR;
    rst_temp                          RASTER;
+   rst_temp2                         RASTER;
    rst_flow_accumulation             RASTER;
    base64_raster                     TEXT;
+   int_raster_srid                   INTEGER;
    int_max_accumulation              INTEGER;
    int_max_accumulation_x            INTEGER;
    int_max_accumulation_y            INTEGER;
+   sdo_max_accumulation_pt           GEOMETRY;
    str_image_format                  VARCHAR;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
@@ -116,6 +119,8 @@ BEGIN
       int_max_accumulation       := rec.out_max_accumulation;
       int_max_accumulation_x     := rec.out_max_accumulation_x;
       int_max_accumulation_y     := rec.out_max_accumulation_y;
+      sdo_max_accumulation_pt    := rec.out_max_accumulation_pt;
+      int_raster_srid            := rec.out_raster_srid; 
       int_return_code            := rec.out_return_code;
       str_status_message         := rec.out_status_message;
       
@@ -130,6 +135,8 @@ BEGIN
       int_max_accumulation       := rec.out_max_accumulation;
       int_max_accumulation_x     := rec.out_max_accumulation_x;
       int_max_accumulation_y     := rec.out_max_accumulation_y;
+      sdo_max_accumulation_pt    := rec.out_max_accumulation_pt;
+      int_raster_srid            := rec.out_raster_srid; 
       int_return_code            := rec.out_return_code;
       str_status_message         := rec.out_status_message;
    
@@ -141,15 +148,17 @@ BEGIN
    IF int_return_code != 0
    THEN
       RETURN JSON_BUILD_OBJECT(
-          'flow_accumulation' , NULL
-         ,'image_format'      , NULL
-         ,'image_bbox'        , NULL
-         ,'max_accumulation'  , NULL
-         ,'max_accumulation_x', NULL
-         ,'max_accumulation_y', NULL
-         ,'nhdplus_version'   , str_nhdplus_version
-         ,'return_code'       , int_return_code
-         ,'status_message'    , str_status_message
+          'flow_accumulation'  , NULL
+         ,'image_format'       , NULL
+         ,'image_bbox'         , NULL
+         ,'max_accumulation'   , NULL
+         ,'max_accumulation_x' , NULL
+         ,'max_accumulation_y' , NULL
+         ,'max_accumulation_pt', NULL
+         ,'raster_srid'        , NULL
+         ,'nhdplus_version'    , str_nhdplus_version
+         ,'return_code'        , int_return_code
+         ,'status_message'     , str_status_message
       );
    
    END IF;
@@ -160,6 +169,8 @@ BEGIN
    ----------------------------------------------------------------------------
    IF str_image_format = 'PNG'
    THEN
+      str_image_mimetype := 'image/png';
+      
       rst_temp := public.ST_MAPALGEBRA(
           rst_flow_accumulation
          ,1
@@ -167,11 +178,24 @@ BEGIN
          ,'CASE WHEN [rast] > 0 THEN LOG([rast]) ELSE [rast] END'
          ,-1
       );
+      
+      rst_temp2 := public._ST_MapAlgebra(
+          ARRAY[ROW(rst_temp,1)]::public.rastbandarg[]
+         ,'public.ST_Max4ma(double precision[][][],integer[][],text[])'::regprocedure
+         ,NULL::text
+         ,3
+         ,3
+         ,'FIRST'::text
+         ,NULL::raster
+         ,NULL::double precision []
+         ,NULL::boolean
+         ,VARIADIC NULL::text[]
+      );
 
       base64_raster := ENCODE(
           public.ST_ASPNG(
              rast        := public.ST_COLORMAP(
-                rast        := rst_temp
+                rast        := rst_temp2
                ,nband       := 1
                ,colormap    := 
 '100% 255   0   0 255
@@ -186,20 +210,44 @@ BEGIN
              )
           )
          ,'base64'
-      );
-      str_image_mimetype := 'image/png';
+      );      
       
-      sdo_raster_bounding_box := ST_TRANSFORM(
-          ST_ENVELOPE(rst_flow_accumulation)
+      sdo_raster_bounding_box := public.ST_TRANSFORM(
+          public.ST_ENVELOPE(rst_flow_accumulation)
          ,4326
       );
       
       ary_raster_bounding_box := ARRAY[
-          ST_XMIN(sdo_raster_bounding_box)
-         ,ST_YMIN(sdo_raster_bounding_box)
-         ,ST_XMAX(sdo_raster_bounding_box)
-         ,ST_YMAX(sdo_raster_bounding_box)
+          public.ST_XMIN(sdo_raster_bounding_box)
+         ,public.ST_YMIN(sdo_raster_bounding_box)
+         ,public.ST_XMAX(sdo_raster_bounding_box)
+         ,public.ST_YMAX(sdo_raster_bounding_box)
       ];      
+      
+   ELSIF str_image_format = 'GTIFF'
+   THEN
+      str_image_mimetype := 'image/tiff; application=geotiff';
+      
+      base64_raster := ENCODE(
+          public.ST_ASGDALRASTER(
+             rast        := rst_flow_accumulation
+            ,format      := 'GTiff'
+            ,srid        := int_raster_srid
+          )
+         ,'base64'
+      );      
+      
+      sdo_raster_bounding_box := public.ST_TRANSFORM(
+          public.ST_ENVELOPE(rst_flow_accumulation)
+         ,4326
+      );
+      
+      ary_raster_bounding_box := ARRAY[
+          public.ST_XMIN(sdo_raster_bounding_box)
+         ,public.ST_YMIN(sdo_raster_bounding_box)
+         ,public.ST_XMAX(sdo_raster_bounding_box)
+         ,public.ST_YMAX(sdo_raster_bounding_box)
+      ];  
       
    END IF;
    
@@ -208,15 +256,23 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'flow_accumulation' , base64_raster
-      ,'image_format'      , str_image_mimetype
-      ,'image_bbox'        , ARRAY_TO_JSON(ary_raster_bounding_box)
-      ,'max_accumulation'  , int_max_accumulation
-      ,'max_accumulation_x', int_max_accumulation_x
-      ,'max_accumulation_y', int_max_accumulation_y
-      ,'nhdplus_version'   , str_nhdplus_version
-      ,'return_code'       , int_return_code
-      ,'status_message'    , str_status_message
+       'flow_accumulation'  , base64_raster
+      ,'image_format'       , str_image_mimetype
+      ,'image_bbox'         , ARRAY_TO_JSON(ary_raster_bounding_box)
+      ,'max_accumulation'   , int_max_accumulation
+      ,'max_accumulation_x' , int_max_accumulation_x
+      ,'max_accumulation_y' , int_max_accumulation_y
+      ,'max_accumulation_pt', JSON_BUILD_OBJECT(
+           'type'      , 'Feature'
+          ,'geometry'  , public.ST_ASGEOJSON(public.ST_TRANSFORM(sdo_max_accumulation_pt,4326))::JSON
+          ,'properties', JSON_BUILD_OBJECT(
+              'max_accumulation', int_max_accumulation
+           )
+       )
+      ,'raster_srid'        , int_raster_srid
+      ,'nhdplus_version'    , str_nhdplus_version
+      ,'return_code'        , int_return_code
+      ,'status_message'     , str_status_message
    );
       
 END;

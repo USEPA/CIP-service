@@ -1,13 +1,26 @@
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.fdr_flowaccumulation';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);ELSE
+   IF a IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s',a);END IF;END IF;
+END$$;
+
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.fdr_flowaccumulation(
-    p_area_of_interest     IN  GEOMETRY
-   ,p_default_weight       IN  INTEGER DEFAULT 1
-   ,p_known_region         IN  VARCHAR DEFAULT NULL
-   ,out_flow_accumulation  OUT RASTER
-   ,out_max_accumulation   OUT INTEGER
-   ,out_max_accumulation_x OUT INTEGER
-   ,out_max_accumulation_y OUT INTEGER
-   ,out_return_code        OUT INTEGER
-   ,out_status_message     OUT VARCHAR
+    p_area_of_interest      IN  GEOMETRY
+   ,p_default_weight        IN  INTEGER DEFAULT 1
+   ,p_known_region          IN  VARCHAR DEFAULT NULL
+   ,out_flow_accumulation   OUT RASTER
+   ,out_max_accumulation    OUT INTEGER
+   ,out_max_accumulation_x  OUT INTEGER
+   ,out_max_accumulation_y  OUT INTEGER
+   ,out_max_accumulation_pt OUT GEOMETRY
+   ,out_raster_srid         OUT INTEGER
+   ,out_return_code         OUT INTEGER
+   ,out_status_message      OUT VARCHAR
 )
 STABLE
 AS
@@ -16,7 +29,6 @@ DECLARE
    rec                 RECORD;
    int_depth_charge    INTEGER := 100000;
    int_default_weight  INTEGER := p_default_weight;
-   int_raster_srid     INTEGER;
    int_columns         INTEGER;
    int_rows            INTEGER;
    rast_fdr            RASTER;
@@ -70,7 +82,7 @@ BEGIN
        p_geometry     := p_area_of_interest
       ,p_known_region := p_known_region
    );
-   int_raster_srid    := rec.out_srid;
+   out_raster_srid    := rec.out_srid;
 
    IF rec.out_return_code <> 0
    THEN
@@ -85,7 +97,7 @@ BEGIN
    rec := cipsrv_nhdplus_h.fetch_grids_by_geometry(
        p_FDR_input       := p_area_of_interest
       ,p_FAC_input       := NULL
-      ,p_known_region    := int_raster_srid::VARCHAR
+      ,p_known_region    := out_raster_srid::VARCHAR
       ,p_FDR_nodata      := 255
       ,p_FAC_nodata      := NULL
       ,p_crop            := TRUE
@@ -361,13 +373,13 @@ BEGIN
                --++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                IF int_nidp_value > 1
                THEN
-                  --raise warning 'intersection found at %, %',int_working_x,int_working_y;
+                  --RAISE WARNING 'intersection found at %, %',int_working_x,int_working_y;
                   boo_continue := FALSE;
 
                ELSIF int_working_x < 1 OR int_working_x > int_columns
                OR    int_working_y < 1 OR int_working_y > int_rows
                THEN
-                  raise warning 'exiting grid at %, %',int_working_x,int_working_y;
+                  RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
                   boo_continue := FALSE;
                
                END IF;
@@ -384,14 +396,24 @@ BEGIN
    -- Step 60
    -- Return the matrix as raster
    ----------------------------------------------------------------------------
-   out_flow_accumulation := public.ST_SetValues(
+   out_flow_accumulation := public.ST_SETVALUES(
        rast    := out_flow_accumulation
       ,nband   := 1
       ,x       := 1
       ,y       := 1
       ,newvalueset := mat_accum
    );
-
+   
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Return pourpoint as geometry
+   ----------------------------------------------------------------------------
+   out_max_accumulation_pt := public.ST_PIXELASCENTROID(
+       rast   := out_flow_accumulation
+      ,x      := out_max_accumulation_x
+      ,y      := out_max_accumulation_y
+   );
+   
 END;
 $BODY$
 LANGUAGE plpgsql;

@@ -58,14 +58,15 @@
                <span style="font-family: Arial; font-size: 11px;">Default Weight:</span>
                <input name="p_default_weight" type="text" class="text" id="p_default_weight" style="display:inline; width:25px" value="1" />
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Image Format:</span>
-               <select name="p_image_format" id="p_image_format" onchange="menuOptions(this.value)" style="width:60px">
+               <select name="p_image_format" id="p_image_format" style="width:60px">
                   <option value="PNG" SELECTED>png</option>
+                  <option value="GTIFF">gtiff</option>
                </select>
                <br />
                <br />
-               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;
-               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;
-               
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;&nbsp;
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;&nbsp;
+               <input type="button" onclick="dz_download();" value="Download" name="dz_download" id="dz_download" />
                <br />
                <br />
 
@@ -78,8 +79,56 @@
       <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
       <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script src="https://unpkg.com/georaster"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+      <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
+      <script src="https://unpkg.com/geoblaze"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.min.js"></script>
+      
       <script>
+   
+   var pngrast      = null;
+   var raster_srid  = null;
+   var image_format = null;
+   var bin_image    = null;
+   
+   proj4.defs([
+       [
+           'EPSG:4326'
+          ,'+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'
+       ]
+      ,[
+           'EPSG:4269'
+          ,'+title=NAD83 (long/lat) +proj=longlat +a=6378137.0 +b=6356752.31414036 +ellps=GRS80 +datum=NAD83 +units=degrees'
+       ]
+      ,[
+           'EPSG:3338'
+          ,'+proj=aea +lat_0=50 +lon_0=-154 +lat_1=55 +lat_2=65 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:5070'
+          ,'+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:26904'
+          ,'+proj=utm +zone=4 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:32161'
+          ,'+proj=lcc +lat_0=17.8333333333333 +lon_0=-66.4333333333333 +lat_1=18.4333333333333 +lat_2=18.0333333333333 +x_0=200000 +y_0=200000 +ellps=GRS80 +nadgrids=us_noaa_pvhpgn.tif +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:32655'
+          ,'+proj=utm +zone=55 +datum=WGS84 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:32702'
+          ,'+proj=utm +zone=2 +south +datum=WGS84 +units=m +no_defs +type=crs'
+       ]
+   ]);
+
    document.getElementById("dz_run_service").disabled = true;
+   document.getElementById("dz_download").disabled = true;
 
    document.getElementById("busy").style.visibility = "hidden";
 
@@ -94,20 +143,39 @@
    var drawnItems = new L.FeatureGroup().addTo(map);
    var drawControl = new L.Control.Draw({
       draw: {
-         polygon: true,
-         polyline: false,
-         rectangle: false,
-         circle: false,
-         marker: false,
-         circlemarker: false
+          polygon: {
+              shapeOptions: {
+                 fill: true
+                ,fillColor: "#03f"
+                ,fillOpacity: 0.0
+              }
+          }
+         ,polyline: false
+         ,rectangle: false
+         ,circle: false
+         ,marker: false
+         ,circlemarker: false
       },
       edit: {
-         featureGroup: drawnItems,
-         edit: false,
-         remove: true
+          featureGroup: drawnItems
+         ,edit: false
+         ,remove: true
       }
    });
+   
    map.addControl(drawControl);
+   
+   drawnItems.on('click',function(evt) {
+      if (raster_srid == null || pngrast == null || image_format == 'PNG' ) {
+         return;
+      } 
+      var latlng = map.mouseEventToLatLng(evt.originalEvent);
+      var point = proj4(proj4('EPSG:4326'),proj4('EPSG:' + raster_srid),[latlng.lng,latlng.lat]);
+      var pixel_val = geoblaze.identify(pngrast.georasters[0],point);
+      if (pixel_val[0] !== null ) {
+         alert(pixel_val[0]);
+      }
+   });
 
    map.on(L.Draw.Event.CREATED, function (e) {
       var type = e.layerType;
@@ -130,16 +198,18 @@
       document.getElementById("dz_run_service").disabled = true;
    });
    
-   var flow_accumulation = L.geoJson().addTo(map);
+   var max_accumulation_pt = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Max Accumulation</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
          
    var flowlines = new L.GeoJSON(null, {
       onEachFeature: onEachFeature_flowlines
    }).addTo(map);
-   
-   var pngrast;
          
    var layer_items = {
-       "Sketch": flow_accumulation
+       "Max Point": max_accumulation_pt
    };
    
    if (
@@ -306,7 +376,7 @@
             
          }
          
-         const nv = get_select_values(document.getElementById("resolution"));
+         const nv = get_select_values(document.getElementById("p_nhdplus_version"));
          
          if (nv == "nhdplus_m" ) {
             lyr_nhdplus_m_flowlines.addTo(map);
@@ -394,7 +464,7 @@
          document.getElementById("output").innerHTML = "<P>" + error + "</P>";
          return false;
       }
-
+      
       var srv_rez = response;
 
       if (
@@ -416,18 +486,66 @@
          ,L.latLng(srv_rez.image_bbox[3],srv_rez.image_bbox[2])
       )
       
-      pngrast = L.imageOverlay(
-          'data:image/png;base64,' + srv_rez.flow_accumulation
-         ,img_bounds
-      );
-      pngrast.addTo(map);
+      if (response.max_accumulation_pt !== null && response.max_accumulation_pt.type !== null) {
+         max_accumulation_pt.addData(response.max_accumulation_pt);
+      }
+      
+      raster_srid = response.raster_srid.toString();
+      
+      if ( response.image_format == 'image/png' ) {
+         image_format = 'PNG';
+      } else {
+         image_format = 'GTIFF';
+      }
+      bin_image = 'data:' + response.image_format + ';base64,' + srv_rez.flow_accumulation;
+      
+      if ( image_format == 'PNG' ) {
+         pngrast = L.imageOverlay(
+             bin_image
+            ,img_bounds
+         );
+         pngrast.addTo(map);
+         
+      } else {
+         fetch(bin_image)
+         .then(response => response.arrayBuffer())
+         .then(arrayBuffer => {
+            parseGeoraster(arrayBuffer).then(georaster => {
+               //console.log("georaster:", georaster);
+               const min = georaster.mins[0];
+               const max = georaster.maxs[0];
+               const range = georaster.ranges[0];
 
+               var scale = chroma.scale('OrRd').domain([min,max]).classes([0,33,65,100]);
+               
+               pngrast = new GeoRasterLayer({
+                   georaster: georaster
+                  ,opacity: 0.7
+                  ,pixelValuesToColorFn: function(pixelValues) {
+                     var pixelValue = pixelValues[0];
+                     
+                     if ( pixelValue === -1 ) {
+                        return null;
+                     } 
+                     var color = scale(pixelValue).hex();
+                     return color;
+                   }
+                  ,resolution: 64
+               });
+               //console.log(pngrast);
+               pngrast.addTo(map);
+
+            });
+         });
+      }
+      
       map.fitBounds(
           img_bounds
          ,{
             maxZoom: 15
           }
       );
+      document.getElementById("dz_download").disabled = false;
       
    }
 
@@ -451,17 +569,32 @@
    
    function dz_reset() {
       document.getElementById("output").innerHTML = "";
-      flow_accumulation.clearLayers();
+      max_accumulation_pt.clearLayers();
       blank_geo();
+      blank_raster();
       busy_off();
       document.getElementById("dz_run_service").disabled = true;
+      document.getElementById("dz_download").disabled = true;
    }
 
    //Function to clear map on new request or Clear button
    function dz_clear() {
       document.getElementById("output").innerHTML = "";
-      flow_accumulation.clearLayers();
+      blank_raster();
       busy_off();
+   }
+   
+   function blank_raster() {
+      max_accumulation_pt.clearLayers();
+      
+      if ( pngrast == null ) {
+         raster_srid = null;
+      } else {
+         map.removeLayer(pngrast);
+         pngrast      = null;
+         raster_srid  = null;
+         image_format = null;
+      }
    }
 
    //Function to turn on the dorky animation
@@ -489,7 +622,7 @@
       if (txtval == null || txtval == undefined || txtval == "") {
          document.getElementById("dz_run_service").disabled = true;
          drawnItems.clearLayers();
-         flow_accumulation.clearLayers();
+         max_accumulation_pt.clearLayers();
          
       } else {
          var layer;
@@ -518,6 +651,90 @@
          }
       }
       return null;
+   }
+   
+   function get_select_values(sval){
+      let result = null;
+      
+      if ( sval == null ) {
+         return result;
+      }
+      
+      if ( sval.options == null ) {
+         return result;
+      }
+      
+      if ( sval.selectedIndex == null ) {
+         return result;
+      }
+      //console.log(sval);
+      return sval.options[sval.selectedIndex].value;
+   
+   }
+   
+   function get_mselect_values(sval){
+      let result = [];
+      let options = sval && sval.options;
+      let opt;
+      
+      if ( options == null ) {
+         return result;
+      }
+
+      for (var i=0, iLen=options.length; i<iLen; i++) {
+         opt = options[i];
+
+         if (opt.selected) {
+            result.push(opt.value || opt.text);
+         }
+      }
+      return result;
+   }
+   
+   function change_resolution() {
+      const nv = get_select_values(document.getElementById("p_nhdplus_version"));
+
+      if (lyr_nhdplus_m_flowlines !== null && nv == "nhdplus_m" ) {
+         if (map.hasLayer(lyr_nhdplus_h_flowlines) ) {
+            map.removeLayer(lyr_nhdplus_h_flowlines);
+         }
+         if (! map.hasLayer(lyr_nhdplus_m_flowlines) ) {
+            map.addLayer(lyr_nhdplus_m_flowlines);
+         }
+
+      } else if (lyr_nhdplus_h_flowlines !== null && nv == "nhdplus_h" ) {
+         if (map.hasLayer(lyr_nhdplus_m_flowlines) ) {
+            map.removeLayer(lyr_nhdplus_m_flowlines);
+         }
+         if (! map.hasLayer(lyr_nhdplus_h_flowlines) ) {
+            map.addLayer(lyr_nhdplus_h_flowlines);
+         }
+
+      }
+   }
+   
+   function updategeo(txtval) {
+      drawnItems.clearLayers();
+
+      if (txtval == null || txtval == undefined || txtval == "") {
+         document.getElementById("dz_run_service").disabled = true;
+         drawnItems.clearLayers();
+         
+      } else {
+         var layer;
+
+         layer = L.geoJSON({
+             type: "Feature"
+            ,geometry: JSON.parse(txtval)
+         });
+         drawnItems.addLayer(layer);
+         
+         document.getElementById("dz_run_service").disabled = false;
+         layer.bindPopup(txtval);
+         map.fitBounds(drawnItems.getBounds(), {
+            maxZoom: 15
+         });
+      }
    }
    
    function build_api() {
@@ -575,6 +792,23 @@
          zpostgrest_port + "/" + 
          zpostgrest_pref + "rpc/";
          
+   }
+   
+   function dz_download() {
+      const downloadLink = document.createElement('a');
+      document.body.appendChild(downloadLink);
+      var fileName;
+      
+      if ( image_format == 'PNG' ) {
+         fileName = 'image.png';
+      } else {
+         fileName = 'image.tiff';
+      }         
+
+      downloadLink.href = bin_image;
+      downloadLink.target = '_self';
+      downloadLink.download = fileName;
+      downloadLink.click(); 
    }
    
       </script>
