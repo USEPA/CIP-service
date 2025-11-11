@@ -67,7 +67,7 @@ BEGIN
       int_default_weight := cipsrv_engine.json2integer(json_input->'default_weight');
       
    ELSE
-      int_default_weight := 1;
+      int_default_weight := 3;
    
    END IF;
    
@@ -112,7 +112,6 @@ BEGIN
    THEN
       rec := cipsrv_nhdplus_m.fdr_flowaccumulation(
           p_area_of_interest     := sdo_area_of_interest
-         ,p_default_weight       := int_default_weight
          ,p_known_region         := str_known_region
       );
       rst_flow_accumulation      := rec.out_flow_accumulation;
@@ -128,7 +127,6 @@ BEGIN
    THEN
       rec := cipsrv_nhdplus_h.fdr_flowaccumulation(
           p_area_of_interest     := sdo_area_of_interest
-         ,p_default_weight       := int_default_weight
          ,p_known_region         := str_known_region
       );
       rst_flow_accumulation      := rec.out_flow_accumulation;
@@ -183,8 +181,8 @@ BEGIN
           ARRAY[ROW(rst_temp,1)]::public.rastbandarg[]
          ,'public.ST_Max4ma(double precision[][][],integer[][],text[])'::regprocedure
          ,NULL::text
-         ,3
-         ,3
+         ,int_default_weight
+         ,int_default_weight
          ,'FIRST'::text
          ,NULL::raster
          ,NULL::double precision []
