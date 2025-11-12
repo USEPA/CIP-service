@@ -110,6 +110,15 @@ BEGIN
    ----------------------------------------------------------------------------
    int_columns := public.ST_Width(rast_fdr);
    int_rows    := public.ST_Height(rast_fdr);
+   
+   IF int_columns IS NULL
+   OR int_rows    IS NULL
+   THEN
+      out_return_code    := -11;
+      out_status_message := 'area of interest does not intersect fdr grid';
+      RETURN;
+   
+   END IF;
 
    out_flow_accumulation := public.ST_MakeEmptyRaster(
       rast := rast_fdr

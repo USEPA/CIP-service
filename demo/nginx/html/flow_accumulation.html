@@ -56,7 +56,7 @@
                <br />
                <br />
                <span style="font-family: Arial; font-size: 11px;">PNG Weight:</span>
-               <input name="p_default_weight" type="text" class="text" id="p_default_weight" style="display:inline; width:25px" value="3" />
+               <input name="p_default_weight" type="text" class="text" id="p_default_weight" style="display:inline; width:25px" value="1" />
                <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Image Format:</span>
                <select name="p_image_format" id="p_image_format" style="width:60px">
                   <option value="PNG" SELECTED>png</option>
@@ -69,6 +69,22 @@
                <input type="button" onclick="dz_download();" value="Download" name="dz_download" id="dz_download" />
                <br />
                <br />
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">Catchment:</span>&nbsp;
+               <input name="p_catchment_nhdplusid" type="text" class="text" id="p_catchment_nhdplusid" style="display:inline; width:125px" value="" />&nbsp;
+               <input type="button" onclick="fetch_catchment();" value="Fetch" id="dz_fetch_catchment" />
+               <input type="button" onclick="rando_catchment();" value="Random" id="dz_rando_catchment" />
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">HUC12 (F3):</span>&nbsp;
+               <input name="p_huc12_f3" type="text" class="text" id="p_huc12_f3" style="display:inline; width:125px" value="" />&nbsp;
+               <input type="button" onclick="fetch_huc12();" value="Fetch" id="dz_fetch_huc12" />
+               <input type="button" onclick="rando_huc12();" value="Random" id="dz_rando_huc12" />
+               <br/>
+               <br/>
+               <input type="button" value="Link" name="dz_link" id="dz_link" />
+               <input name="dz_link_text" type="text" class="text" id="dz_link_text" style="display:inline; width:350px" value="" />
 
             </div>
          </div>
@@ -86,6 +102,88 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.min.js"></script>
       
       <script>
+   const queryString = window.location.search;
+   const urlParams = new URLSearchParams(queryString);
+   let   lat  = urlParams.get('lat');
+   let   lng  = urlParams.get('lng');
+   let   zoom = urlParams.get('zoom');
+   let   rez  = urlParams.get('resolution');
+   let   dwt  = urlParams.get('default_weight');
+   let   ift  = urlParams.get('image_format');
+   let   kct  = urlParams.get('catchment_nhdplusid');
+   let   khu  = urlParams.get('huc12_f3');
+   
+   if (lat === " " || lat == null) {
+      lat = 46.874626;
+   }
+   
+   if (lng === " " || lng == null) {
+      lng = -96.782341;
+   }
+
+   if (zoom === " " || zoom == null) {
+      zoom = 12;
+   }
+   
+   if (rez === " " || rez == null) {
+      rez = "nhdplus_h";
+   } else {
+      const z = rez.toUpperCase();
+      if (z == "HR" || z == "H" || z == "NHDPLUS_H") {
+         rez = "nhdplus_h";
+      } else if (z == "MR" || z == "M" || z == "NHDPLUS_M") {
+         rez = "nhdplus_m";
+      } else {
+         rez = "nhdplus_h";
+      }
+   
+   }
+   document.getElementById("p_nhdplus_version").value = rez;
+   
+   if (kct === " " || kct == null) {
+      kct = "";
+   }
+   document.getElementById("p_catchment_nhdplusid").value = kct;
+   
+   if (khu === " " || khu == null) {
+      khu = "";
+   }
+   document.getElementById("p_huc12_f3").value = khu;
+   
+   ////////////////////////////////////////////////////////////////////////////
+   const linkButton = document.getElementById('dz_link');
+   linkButton.addEventListener('click', () => {
+     let p = new URLSearchParams();
+     let c = map.getCenter();
+     p.append('lat',c.lat);
+     p.append('lng',c.lng);
+     p.append('zoom',map.getZoom()); 
+     
+     p.append('resolution',get_select_values(document.getElementById("p_nhdplus_version")));
+     
+     const imgfm = get_select_values(document.getElementById("p_image_format"));
+     p.append('image_format',imgfm);
+     
+     const defw = document.getElementById("p_default_weight").value;
+     if (defw != null && defw !== "") {
+        p.append('default_weight',defw);
+     }
+     
+     const kct = document.getElementById("p_catchment_nhdplusid").value;
+     if (kct != null && kct !== "") {
+        p.append('catchment_nhdplusid',kct);
+     }
+     
+     const khu = document.getElementById("p_huc12_f3").value;
+     if (khu != null && khu !== "") {
+        p.append('huc12_f3',khu);
+     }
+     
+     let linktext = window.location.origin + window.location.pathname + '?' + p.toString();
+     //console.log(linktext);
+     document.getElementById("dz_link_text").value = linktext;
+     
+   });
    
    var pngrast      = null;
    var raster_srid  = null;
@@ -132,7 +230,7 @@
 
    document.getElementById("busy").style.visibility = "hidden";
 
-   var map = L.map("map").setView([46.874626,-96.782341],12);
+   var map = L.map("map").setView([lat,lng],zoom);
    mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
 
    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -392,7 +490,17 @@
       
    }
    L.control.layers(null, layer_items).addTo(map);
-
+   
+   function dzStr(val) {
+      if (val == 0 ) {
+         return "0";
+      } else if (!val) {
+         return "";
+      } else {
+         return val.toString().replace(/\,/g,"");
+      }
+   } 
+   
    function onEachFeature_flowlines(feature,layer) {
       if (feature.properties && feature.properties.nhdplusid) {
          layer.bindPopup(
@@ -449,6 +557,7 @@
          ,default_weight  : document.getElementById("p_default_weight").value
          ,image_format    : image_format.options[image_format.selectedIndex].value
          ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,output_srid     : 3857
       };
 
       httpPost(
@@ -614,6 +723,8 @@
    function blank_geo() {
       drawnItems.clearLayers();
       document.getElementById("p_area_of_interest").value = "";
+      document.getElementById("p_catchment_nhdplusid").value = "";
+      document.getElementById("p_huc12_f3").value = "";
    }
    
    function updatepoly(txtval) {
@@ -726,6 +837,13 @@
          layer = L.geoJSON({
              type: "Feature"
             ,geometry: JSON.parse(txtval)
+         },{
+             style: {
+                fillColor: "#ff7800"
+               ,color: "#007800"
+               ,opacity: 1
+               ,fillOpacity: 0
+             }
          });
          drawnItems.addLayer(layer);
          
@@ -809,6 +927,204 @@
       downloadLink.target = '_self';
       downloadLink.download = fileName;
       downloadLink.click(); 
+   }
+   
+   function fetch_catchment() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_huc12_f3").value = "";
+
+      const catchment_nhdplusid  = document.getElementById("p_catchment_nhdplusid");
+      const nhdplus_version      = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          known_nhdplusid    : catchment_nhdplusid.value
+         ,nhdplus_version    : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomcatchment",
+         data,
+         randomcatchmentresponse
+      );
+   
+   }
+   
+   function rando_catchment() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_huc12_f3").value = "";
+
+      const catchment_nhdplusid  = document.getElementById("p_catchment_nhdplusid");
+      const nhdplus_version      = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          known_nhdplusid    : null
+         ,nhdplus_version    : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomcatchment",
+         data,
+         randomcatchmentresponse
+      );
+   
+   }
+   
+   function randomcatchmentresponse(error, response) {
+      
+      if (error) {
+         busy_off();
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+      
+      var srv_rez = response;
+
+      if ( srv_rez.return_code != 0 ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+      }
+      
+      document.getElementById("p_catchment_nhdplusid").value = srv_rez.catchment.properties.nhdplusid.toString();
+      document.getElementById("p_area_of_interest").value    = JSON.stringify(srv_rez.catchment.geometry);
+      
+      drawnItems.clearLayers();
+         
+      var layer = L.geoJSON({
+          type: "Feature"
+         ,geometry: srv_rez.catchment.geometry
+      },{
+          style: {
+             fillColor: "#ff7800"
+            ,color: "#007800"
+            ,opacity: 1
+            ,fillOpacity: 0
+          }
+      });
+      drawnItems.addLayer(layer);
+      
+      const image_format    = document.getElementById("p_image_format");
+      const nhdplus_version = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          area_of_interest: JSON.parse(document.getElementById("p_area_of_interest").value)
+         ,default_weight  : document.getElementById("p_default_weight").value
+         ,image_format    : image_format.options[image_format.selectedIndex].value
+         ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,output_srid     : 3857
+      };
+
+      httpPost(
+         build_api() + "flow_accumulation",
+         data,
+         srvresponse
+      );
+   
+   }
+   
+   function fetch_huc12() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_catchment_nhdplusid").value = "";
+
+      const huc12_f3  = document.getElementById("p_huc12_f3");
+
+      var data = {
+          known_huc12        : huc12_f3.value
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomhuc12",
+         data,
+         randomhuc12response
+      );
+   
+   }
+   
+   function rando_huc12() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_catchment_nhdplusid").value = "";
+
+      const huc12_f3  = document.getElementById("p_huc12_f3");
+
+      var data = {
+          known_huc12        : null
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomhuc12",
+         data,
+         randomhuc12response
+      );
+   
+   }
+   
+   function randomhuc12response(error, response) {
+      
+      if (error) {
+         busy_off();
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+      
+      var srv_rez = response;
+
+      if ( srv_rez.return_code != 0 ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+      }
+      
+      document.getElementById("p_huc12_f3").value         = srv_rez.huc12.properties.huc12;
+      document.getElementById("p_area_of_interest").value = JSON.stringify(srv_rez.huc12.geometry);
+      
+      drawnItems.clearLayers();
+         
+      var layer = L.geoJSON({
+          type: "Feature"
+         ,geometry: srv_rez.huc12.geometry
+      },{
+          style: {
+             fillColor: "#ff7800"
+            ,color: "#007800"
+            ,opacity: 1
+            ,fillOpacity: 0
+          }
+      });
+      drawnItems.addLayer(layer);
+      
+      const image_format    = document.getElementById("p_image_format");
+      const nhdplus_version = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          area_of_interest: JSON.parse(document.getElementById("p_area_of_interest").value)
+         ,default_weight  : document.getElementById("p_default_weight").value
+         ,image_format    : image_format.options[image_format.selectedIndex].value
+         ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,output_srid     : 3857
+      };
+
+      httpPost(
+         build_api() + "flow_accumulation",
+         data,
+         srvresponse
+      );
+   
    }
    
       </script>

@@ -11,6 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.fdr_flowaccumulation(
     p_area_of_interest      IN  GEOMETRY
+   ,p_default_weight        IN  INTEGER DEFAULT 1
    ,p_known_region          IN  VARCHAR DEFAULT NULL
    ,out_flow_accumulation   OUT RASTER
    ,out_max_accumulation    OUT INTEGER
@@ -27,6 +28,7 @@ $BODY$
 DECLARE
    rec                 RECORD;
    int_depth_charge    INTEGER := 100000;
+   int_default_weight  INTEGER := p_default_weight;
    int_columns         INTEGER;
    int_rows            INTEGER;
    rast_fdr            RASTER;
@@ -50,9 +52,9 @@ BEGIN
    -- A fast and simple algorithm for calculating flow accumulation matrices 
    -- from raster digital elevation models
    -- Abstr. Int. Cartogr. Assoc., 
-
-   out_return_code := 0;
    
+   out_return_code := 0;
+
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters
@@ -62,6 +64,13 @@ BEGIN
    IF p_area_of_interest IS NULL
    THEN
       RAISE EXCEPTION 'Input area of interest is null';
+
+   END IF;
+
+   IF int_default_weight IS NULL
+   OR int_default_weight = 0
+   THEN
+      int_default_weight := 1;
 
    END IF;
 
@@ -101,6 +110,15 @@ BEGIN
    ----------------------------------------------------------------------------
    int_columns := public.ST_Width(rast_fdr);
    int_rows    := public.ST_Height(rast_fdr);
+   
+   IF int_columns IS NULL
+   OR int_rows    IS NULL
+   THEN
+      out_return_code    := -11;
+      out_status_message := 'area of interest does not intersect fdr grid';
+      RETURN;
+   
+   END IF;
 
    out_flow_accumulation := public.ST_MakeEmptyRaster(
       rast := rast_fdr
@@ -370,7 +388,7 @@ BEGIN
                ELSIF int_working_x < 1 OR int_working_x > int_columns
                OR    int_working_y < 1 OR int_working_y > int_rows
                THEN
-                  --RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
+                  RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
                   boo_continue := FALSE;
                
                END IF;
@@ -387,7 +405,7 @@ BEGIN
    -- Step 60
    -- Return the matrix as raster
    ----------------------------------------------------------------------------
-   out_flow_accumulation := public.ST_SetValues(
+   out_flow_accumulation := public.ST_SETVALUES(
        rast    := out_flow_accumulation
       ,nband   := 1
       ,x       := 1
@@ -404,7 +422,7 @@ BEGIN
       ,x      := out_max_accumulation_x
       ,y      := out_max_accumulation_y
    );
-
+   
 END;
 $BODY$
 LANGUAGE plpgsql;

@@ -37,6 +37,7 @@ DECLARE
    str_image_mimetype                VARCHAR;
    sdo_raster_bounding_box           GEOMETRY;
    ary_raster_bounding_box           NUMERIC[];
+   int_output_srid                   INTEGER;
    
 BEGIN
    
@@ -67,7 +68,7 @@ BEGIN
       int_default_weight := cipsrv_engine.json2integer(json_input->'default_weight');
       
    ELSE
-      int_default_weight := 3;
+      int_default_weight := 1;
    
    END IF;
    
@@ -102,6 +103,17 @@ BEGIN
    ELSE
       str_image_format := 'PNG';
          
+   END IF;
+   
+   IF JSONB_PATH_EXISTS(json_input,'$.output_srid')
+   AND json_input->'output_srid' IS NOT NULL
+   AND json_input->>'output_srid' != ''
+   THEN
+      int_output_srid := cipsrv_engine.json2integer(json_input->'output_srid');
+      
+   ELSE
+      int_output_srid := NULL;
+   
    END IF;
    
    ----------------------------------------------------------------------------
@@ -190,6 +202,16 @@ BEGIN
          ,VARIADIC NULL::text[]
       );
 
+      IF int_output_srid IS NOT NULL
+      AND int_output_srid != int_raster_srid
+      THEN
+         rst_temp2 := public.ST_TRANSFORM(
+             rst_temp2
+            ,int_output_srid
+         );
+      
+      END IF;
+
       base64_raster := ENCODE(
           public.ST_ASPNG(
              rast        := public.ST_COLORMAP(
@@ -211,7 +233,7 @@ BEGIN
       );      
       
       sdo_raster_bounding_box := public.ST_TRANSFORM(
-          public.ST_ENVELOPE(rst_flow_accumulation)
+          public.ST_ENVELOPE(rst_temp2)
          ,4326
       );
       
