@@ -100,6 +100,10 @@ BEGIN
    THEN
       str_search_type := 'UT';
    
+   ELSIF str_search_type IN ('UTNMD','UPSTREAM WITH TRIBUTARIES NO MINOR DIVS')
+   THEN
+      str_search_type := 'UTNMD';
+   
    ELSIF str_search_type IN ('UM','UPSTREAM MAIN PATH ONLY')
    THEN
       str_search_type := 'UM';
@@ -114,7 +118,7 @@ BEGIN
       
    ELSE
       out_return_code    := -1;
-      out_status_message := 'Valid SearchType codes are UM, UT, DM, DD and PP.';
+      out_status_message := 'Valid SearchType codes are UM, UT, UTNMD, DM, DD, PP and PPALL.';
 
    END IF;
 

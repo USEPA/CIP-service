@@ -4,8 +4,9 @@
       <meta charset="UTF-8">
       <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
       <title>CIP Service Delineation</title>
-      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
-      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css' />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
       <style>
          #busy {
            position: absolute;
@@ -50,7 +51,7 @@
                <input id="stop_point"  name="stop_point" type="text" class="textbox" style="width: 400px;" onchange="updatept2(this.value);blank_stop_nhdplusids();check_start();" />
                <br/>
                <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
-               <select name="resolution" id="resolution" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
+               <select name="p_nhdplus_version" id="p_nhdplus_version" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
                   <option value="nhdplus_m">Medium Resolution</option>
                   <option value="nhdplus_h" SELECTED>High Resolution</option>
                </select>
@@ -151,6 +152,8 @@
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
       <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/4.0.0/Control.FullScreen.js'></script>
+      <script src="./common.js" onerror="return null;"></script>
       <script>
    const queryString = window.location.search;
    const urlParams = new URLSearchParams(queryString);
@@ -203,7 +206,7 @@
       }
    
    }
-   document.getElementById("resolution").value = rez;
+   document.getElementById("p_nhdplus_version").value = rez;
    
    if (styp === " " || styp == null) {
       styp = "UT";
@@ -346,7 +349,7 @@
      p.append('lng',c.lng);
      p.append('zoom',map.getZoom()); 
      
-     p.append('resolution',get_select_values(document.getElementById("resolution")));
+     p.append('resolution',get_select_values(document.getElementById("p_nhdplus_version")));
      p.append('search_type',get_select_values(document.getElementById("search_type")));
      
      const mxtyp = get_select_values(document.getElementById("max_type"));
@@ -458,6 +461,9 @@
    });
    basemap.addTo(map);
    
+   var fsControl = L.control.fullscreen();
+	map.addControl(fsControl);
+   
    var lyr_nhdplus_m_flowlines = null;
    var lyr_nhdplus_h_flowlines = null;
    
@@ -566,200 +572,11 @@
       ,"Delineated Area"   : delineated_area
       ,"Delineated Streams": flowlines
    };
-   
-   if (
-      typeof gis_host === "undefined" ||
-      gis_host === null ||
-      gis_host == "NONE"
-   ) {
-      null;
-   } else {
-      zgis_host = gis_host;
-      
-      if (
-         typeof gis_type === "undefined" ||
-         gis_type === null ||
-         gis_type == "NONE"
-      ) {
-         zgis_type = "geoserver";
-      } else {
-         zgis_type = gis_type;
-      }
-   
-      if (
-         typeof gis_prot === "undefined" ||
-         gis_prot === null ||
-         gis_prot == "NONE"
-      ) {
-         zgis_prot = "http";
-      } else {
-         zgis_prot = gis_prot;
-      }
-      
-      if (
-         typeof gis_port === "undefined" ||
-         gis_port === null ||
-         gis_port == "NONE"
-      ) {
-         zgis_port = "";
-      } else {
-         zgis_port = ":" + gis_port;
-      }
-      
-      if ( zgis_type == "geoserver" ) {
-         let gis_server = zgis_prot + "://" + zgis_host + zgis_port;
-         
-         if (typeof gis_pref === "undefined" || gis_pref === null || gis_pref == "NONE") {
-            // pass
-         } else {
-            gis_server = zgis_prot + "://" + zgis_host + zgis_port + '/' + gis_pref
-         }
-         
-         if ( zgis_type == "geoserver" ) {
-            
-            lyr_nhdplus_m_flowlines = L.tileLayer.wms(gis_server + "/wms",{
-                layers: 'cipsrv:nhdplus_m_flowlines'
-               ,format: 'image/png'
-               ,transparent: true
-               ,version: '1.3.0'
-               ,attribution: "US EPA"
-            });
-            
-            lyr_nhdplus_h_flowlines = L.tileLayer.wms(gis_server + "/wms",{
-                layers: 'cipsrv:nhdplus_h_flowlines'
-               ,format: 'image/png'
-               ,transparent: true
-               ,version: '1.3.0'
-               ,attribution: "US EPA"
-            });
-                        
-         } else if ( zgis_type == "arcgis" ) {
-            const dynlyr = [
-                {
-                   "ID": 0
-                  ,"source": {
-                      "type"      : "mapLayer"
-                     ,"mapLayerId": 0
-                   }
-                }
-               ,{
-                   "ID": 4
-                  ,"source": {
-                      "type"      : "mapLayer"
-                     ,"mapLayerId": 4
-                   }
-                  ,"drawingInfo":{
-                      "renderer": {
-                         "type"  : "simple"
-                        ,"symbol": {
-                            "type" : "esriSLS"
-                           ,"style": "esriSLSSolid"
-                           ,"color": [65,107,223,255]
-                           ,"width": 1.5
-                         }
-                      }
-                     ,"showLabels": false
-                   }                  
-                }
-            ];
-            
-            pfunc = function(error,featureCollection) {
-               if (error || featureCollection.features.length === 0) {
-                  // pass
-               } else {
-                  for (let i = 0; i < featureCollection.features.length; i++) {
-                     if (featureCollection.features[i].layerId == 4) {
-                        const z = "<B>NHDPlus " + featureCollection.features[i].properties.Resolution + " Resolution</B><BR/>" +
-                        "NHDPlusID: " +
-                        dzStr(featureCollection.features[i].properties.NHDPlusID) +
-                        "<BR/>" +
-                        "Perm ID: " +
-                        featureCollection.features[i].properties.Permanent_Identifier +
-                        "<BR/>" +
-                        "FCode: " +
-                        dzStr(featureCollection.features[i].properties.FCode) +
-                        "<BR/>" +
-                        "Reach Code: " +
-                        featureCollection.features[i].properties.ReachCode +
-                        "<BR/>" +
-                        "Hydro Seq: " +
-                        dzStr(featureCollection.features[i].properties.HydrologicSequence) +
-                        "<BR/>" +
-                        "FMeasure: " +
-                        dzStr(featureCollection.features[i].properties.FromMeasure) +
-                        "<BR/>" +
-                        "TMeasure: " +
-                        dzStr(featureCollection.features[i].properties.ToMeasure) +
-                        "<BR/>" +
-                        "Down Hydro Seq: " +
-                        dzStr(featureCollection.features[i].properties.DownstreamMainPathHydroSeq) +
-                        "<BR/>" +
-                        "Terminal Path ID: " +
-                        dzStr(featureCollection.features[i].properties.TerminalPathIdentifier) +
-                        "<BR/>" +
-                        "GNIS Name: " +
-                        featureCollection.features[i].properties.GNIS_Name +
-                        "<BR/>" +
-                        "Length (Km): " +
-                        dzStr(featureCollection.features[i].properties.LengthKm) +
-                        "<BR/>" +
-                        "FlowTime (Day): " +
-                        dzStr(featureCollection.features[i].properties.TimeOfTravelMeanAverage) +
-                        "<BR/>";
-                        return z;
-                     }
-                  }
-               }
-            }
-            
-            lyr_nhdplus_m_flowlines = L.esri.dynamicMapLayer({
-                url: gis_server + "/rest/services/nhdplus_m/MapServer/"
-               ,layers: [0,4]
-               ,dynamicLayers: dynlyr
-            });            
-            lyr_nhdplus_m_flowlines.bindPopup(pfunc);
-            
-            lyr_nhdplus_h_flowlines = L.esri.dynamicMapLayer({
-                url: gis_server + "/rest/services/nhdplus_h/MapServer/"
-               ,layers: [0,4]
-               ,dynamicLayers: dynlyr
-            });            
-            lyr_nhdplus_h_flowlines.bindPopup(pfunc);
-         
-         } else {
-            console.log('err ' + zgis_type);
-            
-         }
-         
-         const nv = get_select_values(document.getElementById("resolution"));
-         
-         if (nv == "nhdplus_m" ) {
-            lyr_nhdplus_m_flowlines.addTo(map);
-         }         
-         layer_items["MR Flowlines"] = lyr_nhdplus_m_flowlines;
-         
-         if (nv == "nhdplus_h" ) {
-            lyr_nhdplus_h_flowlines.addTo(map);
-         }
-         layer_items["HR Flowlines"] = lyr_nhdplus_h_flowlines;
-         
-      }
-      
-   }
-      
+  
+   init_layer_items();
    L.control.layers(null, layer_items).addTo(map);
    
    check_start();
-   
-   function dzStr(val) {
-      if (val == 0 ) {
-         return "0";
-      } else if (!val) {
-         return "";
-      } else {
-         return val.toString().replace(/\,/g,"");
-      }
-   } 
    
    function onEachFeature_snap_path(feature,layer) {
       if (feature.properties && feature.properties.snap_distancekm) {
@@ -822,7 +639,7 @@
       busy_on();
 
       const sp = document.getElementById("start_point").value;
-      const nv = get_select_values(document.getElementById("resolution"));
+      const nv = get_select_values(document.getElementById("p_nhdplus_version"));
       if (sp == "" ) {
          
          const st = get_select_values(document.getElementById("search_type"));
@@ -896,62 +713,6 @@
       
    }
    
-   function httpPost(url,data,callback) {
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open("POST",url,true);
-      xmlHttp.setRequestHeader('Content-Type','application/json');
-      xmlHttp.responseType = 'json';
-      xmlHttp.onreadystatechange = function() {
-         if(xmlHttp.readyState === 4) {
-            if(xmlHttp.status === 200) {
-               response = xmlHttp.response;
-               callback(null,response);
-            } else {
-               callback(xmlHttp.statusText,null);
-            }
-         }
-      };
-      xmlHttp.send(JSON.stringify(data));
-   }
-
-   function get_select_values(sval){
-      let result = null;
-      
-      if ( sval == null ) {
-         return result;
-      }
-      
-      if ( sval.options == null ) {
-         return result;
-      }
-      
-      if ( sval.selectedIndex == null ) {
-         return result;
-      }
-      //console.log(sval);
-      return sval.options[sval.selectedIndex].value;
-   
-   }
-   
-   function get_mselect_values(sval){
-      let result = [];
-      let options = sval && sval.options;
-      let opt;
-      
-      if ( options == null ) {
-         return result;
-      }
-
-      for (var i=0, iLen=options.length; i<iLen; i++) {
-         opt = options[i];
-
-         if (opt.selected) {
-            result.push(opt.value || opt.text);
-         }
-      }
-      return result;
-   }
-   
    function del_response(error,response) {
       busy_off();
 
@@ -1023,7 +784,7 @@
       }
 
       var stop_geojsonval  = document.getElementById("stop_point").value;
-      const nv  = get_select_values(document.getElementById("resolution"));
+      const nv  = get_select_values(document.getElementById("p_nhdplus_version"));
       if (stop_geojsonval !== "") {
          
          var data = {
@@ -1118,7 +879,7 @@
          
       }
       
-      const nv  = get_select_values(document.getElementById("resolution"));
+      const nv  = get_select_values(document.getElementById("p_nhdplus_version"));
       const st  = get_select_values(document.getElementById("search_type"));
       
       const mt  = get_select_values(document.getElementById("max_type"));
@@ -1214,29 +975,6 @@
 
    function blank_pt2() {
       document.getElementById("stop_point").value = "";
-   }
-   
-   function change_resolution() {
-      const nv = get_select_values(document.getElementById("resolution"));
-      blank_nhdplusids();
-
-      if (lyr_nhdplus_m_flowlines !== null && nv == "nhdplus_m" ) {
-         if (map.hasLayer(lyr_nhdplus_h_flowlines) ) {
-            map.removeLayer(lyr_nhdplus_h_flowlines);
-         }
-         if (! map.hasLayer(lyr_nhdplus_m_flowlines) ) {
-            map.addLayer(lyr_nhdplus_m_flowlines);
-         }
-
-      } else if (lyr_nhdplus_h_flowlines !== null && nv == "nhdplus_h" ) {
-         if (map.hasLayer(lyr_nhdplus_m_flowlines) ) {
-            map.removeLayer(lyr_nhdplus_m_flowlines);
-         }
-         if (! map.hasLayer(lyr_nhdplus_h_flowlines) ) {
-            map.addLayer(lyr_nhdplus_h_flowlines);
-         }
-
-      }
    }
     
    function blank_nhdplusids() {
@@ -1347,19 +1085,6 @@
          document.getElementById("search_max").disabled = false;
       }
    }
-
-   function get_url_parameter(param_key) {
-      const pu = window.location.search.substring(1);
-      
-      var url_variables = pu.split('&');
-      for (var i = 0; i < url_variables.length; i++) {
-         var parameter_name = url_variables[i].split('=');
-         if (parameter_name[0] == param_key) {
-            return parameter_name[1];
-         }
-      }
-      return null;
-   }
    
    function updatept(geojson) {
       if (geojson == null || geojson == undefined || geojson == "") {
@@ -1400,64 +1125,7 @@
          } 
       }
    }
-   
-   function build_api() {
       
-      if (
-         typeof postgrest_host === "undefined" ||
-         postgrest_host === null ||
-         postgrest_host == "NONE"
-      ) {
-         zpostgrest_host = get_url_parameter("postgrest_host");
-      } else {
-         zpostgrest_host = postgrest_host;
-      }
-
-      if (
-         typeof postgrest_port === "undefined" ||
-         postgrest_port === null ||
-         postgrest_port == "NONE"
-      ) {
-         zpostgrest_port = get_url_parameter("postgrest_port");
-      } else {
-         zpostgrest_port = postgrest_port;
-      }
-
-      if (
-         typeof postgrest_pref === "undefined" ||
-         postgrest_pref === null ||
-         postgrest_pref == "NONE"
-      ) {
-         zpostgrest_pref = get_url_parameter("postgrest_pref");
-      } else {
-         zpostgrest_pref = postgrest_pref;
-      }
-      
-      if (zpostgrest_pref === null ) {
-         zpostgrest_pref = "";
-      } else {
-         zpostgrest_pref = zpostgrest_pref + "/";
-      }
-
-      if (zpostgrest_host === null) {
-         console.log("no PostgREST API server location defined.");
-         return;
-      }
-
-      var http = "http";
-      if (zpostgrest_port == "443") {
-         http = "https";
-      }
-      
-      return http +
-         "://" +
-         zpostgrest_host +
-         ":" +
-         zpostgrest_port + "/" + 
-         zpostgrest_pref + "rpc/";
-         
-   }
-          
       </script>
    </body>
 </html>

@@ -4,8 +4,9 @@
       <meta charset="UTF-8">
       <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
       <title>CIP Service Indexing</title>
-      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
-      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css' />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
       <style>
          #busy {
            position: absolute;
@@ -220,6 +221,8 @@
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
       <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/4.0.0/Control.FullScreen.js'></script>
+      <script src="./common.js" onerror="return null;"></script>
       <script>
    document.getElementById("dz_run_service").disabled = true;
    document.getElementById("busy").style.visibility = "hidden";
@@ -237,6 +240,9 @@
       maxZoom: 18
    });
    basemap.addTo(map);
+   
+   var fsControl = L.control.fullscreen();
+	map.addControl(fsControl);
    
    var drawnItems = new L.FeatureGroup().addTo(map);
    var drawControl = new L.Control.Draw({
@@ -431,24 +437,6 @@
      
    }
    
-   function httpPost(url,data,callback) {
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open("POST",url,true);
-      xmlHttp.setRequestHeader('Content-Type','application/json');
-      xmlHttp.responseType = 'json';
-      xmlHttp.onreadystatechange = function() {
-         if(xmlHttp.readyState === 4) {
-            if(xmlHttp.status === 200) {
-               response = xmlHttp.response;
-               callback(null,response);
-            } else {
-               callback(xmlHttp.statusText,null);
-            }
-         }
-      };
-      xmlHttp.send(JSON.stringify(data));
-   }
-   
    function getDomains() {
       var xmlHttp = new XMLHttpRequest();
       xmlHttp.onreadystatechange = function() {
@@ -493,44 +481,6 @@
       var url = build_api() + "cipsrv_domains"
       xmlHttp.open('GET',url);
       xmlHttp.send();
-   }      
-   
-   function get_select_values(select){
-      var result = null;
-      
-      if ( select == null ) {
-         return result;
-      }
-      
-      if ( select.options == null ) {
-         return result;
-      }
-      
-      if ( select.selectedIndex == null ) {
-         return result;
-      }
-      
-      return select.options[select.selectedIndex].value;
-   
-   }
-   
-   function get_mselect_values(select){
-      var result = [];
-      var options = select && select.options;
-      var opt;
-      
-      if ( options == null ) {
-         return result;
-      }
-
-      for (var i=0, iLen=options.length; i<iLen; i++) {
-         opt = options[i];
-
-         if (opt.selected) {
-            result.push(opt.value || opt.text);
-         }
-      }
-      return result;
    }
    
    function get_response(error,response) {
@@ -716,77 +666,24 @@
       var multiple = Math.pow(10, digits);
       var rndedNum = Math.round(number * multiple) / multiple;
       return rndedNum;
-  }
-  
-  function checkready() {
-     var gtext = document.getElementById("dzGeometry").value;
-     
-     if (gtext == null || gtext == "") {
-        null;
-        
-     } else {
-        document.getElementById("dz_run_service").disabled = false;
-     
-     }
-  }
-  
-  function build_api() {
-      
-      if (
-         typeof postgrest_host === "undefined" ||
-         postgrest_host === null ||
-         postgrest_host == "NONE"
-      ) {
-         zpostgrest_host = get_url_parameter("postgrest_host");
-      } else {
-         zpostgrest_host = postgrest_host;
-      }
-
-      if (
-         typeof postgrest_port === "undefined" ||
-         postgrest_port === null ||
-         postgrest_port == "NONE"
-      ) {
-         zpostgrest_port = get_url_parameter("postgrest_port");
-      } else {
-         zpostgrest_port = postgrest_port;
-      }
-
-      if (
-         typeof postgrest_pref === "undefined" ||
-         postgrest_pref === null ||
-         postgrest_pref == "NONE"
-      ) {
-         zpostgrest_pref = get_url_parameter("postgrest_pref");
-      } else {
-         zpostgrest_pref = postgrest_pref;
-      }
-      
-      if (zpostgrest_pref === null ) {
-         zpostgrest_pref = "";
-      } else {
-         zpostgrest_pref = zpostgrest_pref + "/";
-      }
-
-      if (zpostgrest_host === null) {
-         console.log("no PostgREST API server location defined.");
-         return;
-      }
-
-      var http = "http";
-      if (zpostgrest_port == "443") {
-         http = "https";
-      }
-      
-      return http +
-         "://" +
-         zpostgrest_host +
-         ":" +
-         zpostgrest_port + "/" + 
-         zpostgrest_pref + "rpc/";
-         
    }
-   
+  
+   function checkready() {
+      var gtext = document.getElementById("dzGeometry").value;
+     
+      if (gtext == null || gtext == "") {
+         null;
+        
+      } else {
+         document.getElementById("dz_run_service").disabled = false;
+     
+      }
+   }
+  
+   function blank_nhdplusids() {
+     return;
+   }
+
    function circleToPolygon(circle, sides = 60, withBearing = true) {
        const origin = circle.getLatLng();
        const radius = circle.getRadius();
