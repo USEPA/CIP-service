@@ -4522,6 +4522,10 @@ BEGIN
    THEN
       str_search_type := 'UT';
    
+   ELSIF str_search_type IN ('UTNMD','UPSTREAM WITH TRIBUTARIES NO MINOR DIVS')
+   THEN
+      str_search_type := 'UTNMD';
+   
    ELSIF str_search_type IN ('UM','UPSTREAM MAIN PATH ONLY')
    THEN
       str_search_type := 'UM';
@@ -4536,7 +4540,7 @@ BEGIN
       
    ELSE
       out_return_code    := -1;
-      out_status_message := 'Valid SearchType codes are UM, UT, DM, DD and PP.';
+      out_status_message := 'Valid SearchType codes are UM, UT, UTNMD, DM, DD, PP and PPALL.';
 
    END IF;
 
@@ -7701,13 +7705,16 @@ BEGIN
       
    END IF;
    
-   IF str_direction IN ('UT','UM')
+   IF str_direction IN ('UT','UM','UTNMD')
    THEN
       str_direction := 'U';
       
    ELSIF str_direction IN ('DD','DM','PP','PPALL')
    THEN
       str_direction := 'D';
+      
+   ELSE
+      RAISE EXCEPTION 'err %',str_direction;
       
    END IF;
    
@@ -8198,13 +8205,16 @@ BEGIN
       
    END IF;
    
-   IF str_direction IN ('UT','UM')
+   IF str_direction IN ('UT','UM','UTNMD')
    THEN
       str_direction := 'U';
       
    ELSIF str_direction IN ('DD','DM','PP','PPALL')
    THEN
       str_direction := 'D';
+      
+   ELSE
+      RAISE EXCEPTION 'err %',str_direction;
       
    END IF;
    
@@ -9157,9 +9167,9 @@ BEGIN
    -- A fast and simple algorithm for calculating flow accumulation matrices 
    -- from raster digital elevation models
    -- Abstr. Int. Cartogr. Assoc., 
-
-   out_return_code := 0;
    
+   out_return_code := 0;
+
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters
@@ -9215,6 +9225,15 @@ BEGIN
    ----------------------------------------------------------------------------
    int_columns := public.ST_Width(rast_fdr);
    int_rows    := public.ST_Height(rast_fdr);
+   
+   IF int_columns IS NULL
+   OR int_rows    IS NULL
+   THEN
+      out_return_code    := -11;
+      out_status_message := 'area of interest does not intersect fdr grid';
+      RETURN;
+   
+   END IF;
 
    out_flow_accumulation := public.ST_MakeEmptyRaster(
       rast := rast_fdr
@@ -9484,7 +9503,7 @@ BEGIN
                ELSIF int_working_x < 1 OR int_working_x > int_columns
                OR    int_working_y < 1 OR int_working_y > int_rows
                THEN
-                  --RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
+                  RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
                   boo_continue := FALSE;
                
                END IF;
@@ -9501,7 +9520,7 @@ BEGIN
    -- Step 60
    -- Return the matrix as raster
    ----------------------------------------------------------------------------
-   out_flow_accumulation := public.ST_SetValues(
+   out_flow_accumulation := public.ST_SETVALUES(
        rast    := out_flow_accumulation
       ,nband   := 1
       ,x       := 1
@@ -9518,7 +9537,7 @@ BEGIN
       ,x      := out_max_accumulation_x
       ,y      := out_max_accumulation_y
    );
-
+   
 END;
 $BODY$
 LANGUAGE plpgsql;
@@ -15904,7 +15923,7 @@ BEGIN
       
    ELSIF num_maximum_distancekm < obj_start_flowline.out_lengthkm
    THEN
-      IF str_search_type IN ('UM','UT')
+      IF str_search_type IN ('UM','UT','UTNMD')
       THEN
          num_init_fmeasure := obj_start_flowline.out_measure;
          num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_distancekm / obj_start_flowline.lengthkm_ratio,5);
@@ -15920,7 +15939,7 @@ BEGIN
 
    ELSIF num_maximum_flowtimeday < obj_start_flowline.out_flowtimeday
    THEN
-      IF str_search_type IN ('UM','UT')
+      IF str_search_type IN ('UM','UT','UTNMD')
       THEN
          num_init_fmeasure := obj_start_flowline.out_measure;
          num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_flowtimeday / obj_start_flowline.flowtimeday_ratio,5);
@@ -16083,7 +16102,7 @@ BEGIN
    THEN
       num_trim_meas := num_trim / num_ratio;
    
-      IF p_search_type IN ('UT','UM')
+      IF p_search_type IN ('UT','UM','UTNMD')
       THEN
          num_tmeasure := ROUND(p_tmeasure - num_trim_meas,5);
       
@@ -16124,30 +16143,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_trim_temp';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 --******************************--
 ----- functions/nav_um.sql 
 
@@ -17054,6 +17065,196 @@ BEGIN
 END$$;
 
 --******************************--
+----- functions/nav_ut_no_minordiv.sql 
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_no_minordiv';
+   IF b IS NOT NULL THEN EXECUTE FORMAT('DROP FUNCTION IF EXISTS %s(%s)',a,b);END IF;
+END$$;
+
+CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.nav_ut_no_minordiv(
+    IN  obj_start_flowline       cipsrv_nhdplus_m.flowline
+   ,IN  num_maximum_distancekm   NUMERIC
+   ,IN  num_maximum_flowtimeday  NUMERIC
+) RETURNS INTEGER
+VOLATILE
+AS $BODY$
+DECLARE
+   rec                      RECORD;
+   ary_branches             cipsrv_nhdplus_m.flowline[];
+   int_check                INTEGER;
+   int_count                INTEGER;
+   int_return_code          INTEGER;
+   str_status_message       VARCHAR;
+   int_sanity               INTEGER;
+   int_sanity_check         INTEGER := 400;
+   int_curr_branch_id       INTEGER;
+   boo_search               BOOLEAN;
+   ary_working              cipsrv_nhdplus_m.flowline[];
+   num_pathlength_adj       NUMERIC;
+   num_pathtimema_adj       NUMERIC;
+   boo_check                BOOLEAN;
+   num_init_baselengthkm    NUMERIC;
+   num_init_baseflowtimeday NUMERIC;
+   
+BEGIN
+
+   int_count          := 0;
+   int_sanity         := 0;
+   
+   int_curr_branch_id := 0;
+   
+   num_pathlength_adj := 0;
+   num_pathtimema_adj := 0;
+   
+   num_init_baselengthkm    := obj_start_flowline.pathlengthkm    + (obj_start_flowline.lengthkm    - obj_start_flowline.out_lengthkm);
+   num_init_baseflowtimeday := obj_start_flowline.pathflowtimeday + (obj_start_flowline.flowtimeday - obj_start_flowline.out_flowtimeday);
+   
+   ary_working := ARRAY[obj_start_flowline]::cipsrv_nhdplus_m.flowline[];
+   ary_working[1].nav_order           := 0;
+   ary_working[1].network_distancekm  := obj_start_flowline.out_lengthkm;
+   ary_working[1].network_flowtimeday := obj_start_flowline.out_flowtimeday;
+   
+   ----------------------------------------------------------------------------
+   -- Step 10
+   -- Run a single upstream navigation excluding dnstream minor divergences
+   ----------------------------------------------------------------------------
+   boo_search := TRUE;
+   
+   WHILE boo_search
+   LOOP
+      num_pathlength_adj := ary_working[1].pathlength_adj;
+      num_pathtimema_adj := ary_working[1].pathflowtime_adj;
+      
+      rec := cipsrv_nhdplus_m.nav_ut_search(
+          p_start_flowline       := ary_working[1]
+         ,p_maximum_distancekm   := num_maximum_distancekm
+         ,p_maximum_flowtimeday  := num_maximum_flowtimeday
+         ,p_init_baselengthkm    := num_init_baselengthkm
+         ,p_init_baseflowtimeday := num_init_baseflowtimeday 
+         ,p_base_arbolatesu      := obj_start_flowline.arbolatesu
+         ,p_branch_id            := int_curr_branch_id
+      );
+      ary_branches       := rec.out_branches;
+      int_check          := rec.out_flowline_count;
+      int_return_code    := rec.out_return_code;
+      str_status_message := rec.out_status_message;
+
+      IF int_check > 0
+      THEN
+         int_count          := int_count + int_check - COALESCE(ARRAY_LENGTH(ary_branches,1),0);
+         int_curr_branch_id := int_curr_branch_id + 1;
+      
+         IF int_check > 10000
+         THEN
+            RAISE WARNING '% hydroseq: %',int_check,ary_working[1].hydroseq;
+            
+         END IF;
+         
+      END IF;
+      
+      ary_working        := ary_working[2:];
+      
+      ----------------------------------------------------------------------------
+      -- Prioritize following branches if found
+      ----------------------------------------------------------------------------
+      IF COALESCE(ARRAY_LENGTH(ary_branches,1),0) > 0
+      THEN
+         ary_working := cipsrv_nhdplus_m.append_flowlines(
+             p_input  := ary_branches
+            ,p_target := ary_working
+            ,p_sort_by_ordering_key := TRUE
+         );
+      
+      END IF;
+
+      ----------------------------------------------------------------------------
+      -- Check for loops or other problems
+      ----------------------------------------------------------------------------
+      int_sanity := int_sanity + 1;
+      IF int_sanity > int_sanity_check
+      THEN
+         RAISE EXCEPTION 'sanity check % for hydroseq %: %',int_sanity,obj_start_flowline.hydroseq,TO_JSON(ary_working);
+         
+      END IF;
+      
+      IF COALESCE(ARRAY_LENGTH(ary_working,1),0) = 0
+      THEN
+         boo_search := FALSE;
+         
+      END IF;
+
+   END LOOP;
+
+   ----------------------------------------------------------------------------
+   -- Step 20
+   -- Tag remaining upstream mainline nav termination flags
+   ----------------------------------------------------------------------------
+   FOR rec IN
+      SELECT
+       a.hydroseq
+      ,b.ary_upstream_hydroseq
+      ,b.headwater
+      FROM
+      tmp_navigation_working30 a
+      JOIN
+      cipsrv_nhdplus_m.nhdplusflowlinevaa_nav b
+      ON
+      b.hydroseq = a.hydroseq
+      WHERE
+      a.navtermination_flag IS NULL
+   LOOP
+      UPDATE tmp_navigation_working30 a
+      SET navtermination_flag = CASE
+      WHEN EXISTS ( SELECT 1 FROM tmp_navigation_working30 d WHERE d.hydroseq = ANY(rec.ary_upstream_hydroseq) )
+      THEN
+         0
+      ELSE
+         CASE
+         WHEN rec.headwater
+         THEN
+            4
+         ELSE
+            1
+         END
+      END
+      WHERE
+      a.hydroseq = rec.hydroseq;
+   
+   END LOOP;
+
+   ----------------------------------------------------------------------------
+   -- Step 30
+   -- Return total count of results
+   ----------------------------------------------------------------------------
+   RETURN int_count;
+
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_ut_no_minordiv';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
+
+--******************************--
 ----- functions/navigate.sql 
 
 DO $$DECLARE 
@@ -17129,6 +17330,10 @@ BEGIN
    ELSIF str_search_type IN ('UT','UPSTREAM WITH TRIBUTARIES')
    THEN
       str_search_type := 'UT';
+   
+   ELSIF str_search_type IN ('UTNMD','UPSTREAM WITH TRIBUTARIES NO MINOR DIVS')
+   THEN
+      str_search_type := 'UTNMD';
    
    ELSIF str_search_type IN ('UM','UPSTREAM MAIN PATH ONLY')
    THEN
@@ -17414,9 +17619,9 @@ BEGIN
                ,num_maximum_flowtimeday := num_maximum_flowtimeday
             );
             
-         ELSIF str_search_type = 'UTOLD'
+         ELSIF str_search_type = 'UTNMD'
          THEN
-            int_counter := cipsrv_nhdplus_m.nav_ut_old(
+            int_counter := cipsrv_nhdplus_m.nav_ut_no_minordiv(
                 obj_start_flowline      := obj_start_flowline
                ,num_maximum_distancekm  := num_maximum_distancekm
                ,num_maximum_flowtimeday := num_maximum_flowtimeday
@@ -19471,6 +19676,7 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.randomcatchment(
     IN  p_region                VARCHAR DEFAULT NULL
    ,IN  p_include_extended      BOOLEAN DEFAULT FALSE
    ,IN  p_return_geometry       BOOLEAN DEFAULT FALSE
+   ,IN  p_known_nhdplusid       BIGINT  DEFAULT NULL
    ,OUT out_nhdplusid           BIGINT
    ,OUT out_areasqkm            NUMERIC
    ,OUT out_catchmentstatecodes VARCHAR[]
@@ -19488,6 +19694,7 @@ DECLARE
    str_statecode        VARCHAR;
    boo_include_extended BOOLEAN := p_include_extended;
    boo_return_geometry  BOOLEAN := p_return_geometry;
+   str_sql              VARCHAR;
    
 BEGIN
 
@@ -19520,25 +19727,24 @@ BEGIN
    LOOP
       IF p_region IN ('CONUS','5070')
       THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
+         str_sql := FORMAT('
             SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_5070 aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         boo_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
+             a.nhdplusid
+            ,a.catchmentstatecodes[1]
+            FROM (
+               SELECT
+                aa.nhdplusid
+               ,aa.catchmentstatecodes
+               ,aa.isocean
+               FROM
+               cipsrv_nhdplus_m.catchment_5070 aa
+               TABLESAMPLE SYSTEM(%L)
+            ) a
+            WHERE            
+            %L OR NOT a.isocean
+            ORDER BY RANDOM()
+            LIMIT 1
+         ',num_big_samp,boo_include_extended);
                
       ELSIF p_region IN ('ALASKA','AK','3338')
       THEN     
@@ -19549,137 +19755,157 @@ BEGIN
             
          END IF;
          
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
+         str_sql := FORMAT('
             SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isalaskan
-            FROM
-            cipsrv_nhdplus_m.catchment_3338 aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         boo_include_extended OR NOT a.isalaskan
-         ORDER BY RANDOM()
-         LIMIT 1;
+             a.nhdplusid
+            ,a.catchmentstatecodes[1]
+            FROM (
+               SELECT
+                aa.nhdplusid
+               ,aa.catchmentstatecodes
+               ,aa.isalaskan
+               FROM
+               cipsrv_nhdplus_m.catchment_3338 aa
+               TABLESAMPLE SYSTEM(%L)
+            ) a
+            WHERE 
+            %L OR NOT a.isalaskan
+            ORDER BY RANDOM()
+            LIMIT 1
+         ',num_big_samp,boo_include_extended);
                
       ELSIF p_region IN ('HAWAII','HI','26904')
       THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
+         str_sql := FORMAT('
             SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_26904 aa
-            TABLESAMPLE SYSTEM(0.1)
-         ) a
-         WHERE 
-         boo_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
+             a.nhdplusid
+            ,a.catchmentstatecodes[1]
+            FROM (
+               SELECT
+                aa.nhdplusid
+               ,aa.catchmentstatecodes
+               ,aa.isocean
+               FROM
+               cipsrv_nhdplus_m.catchment_26904 aa
+               TABLESAMPLE SYSTEM(0.1)
+            ) a
+            WHERE 
+            %L OR NOT a.isocean
+            ORDER BY RANDOM()
+            LIMIT 1
+         ',boo_include_extended);
          
       ELSIF p_region IN ('PRVI','32161')
       THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
+         str_sql := FORMAT('
             SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_32161 aa
-            TABLESAMPLE SYSTEM(0.1)
-         ) a
-         WHERE 
-         boo_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
+             a.nhdplusid
+            ,a.catchmentstatecodes[1]
+            FROM (
+               SELECT
+                aa.nhdplusid
+               ,aa.catchmentstatecodes
+               ,aa.isocean
+               FROM
+               cipsrv_nhdplus_m.catchment_32161 aa
+               TABLESAMPLE SYSTEM(0.1)
+            ) a
+            WHERE 
+            %L OR NOT a.isocean
+            ORDER BY RANDOM()
+            LIMIT 1
+         ',boo_include_extended);
          
       ELSIF p_region IN ('GUAMMAR','GUMP','32655')
-      THEN         
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
+      THEN
+         str_sql := FORMAT('
             SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_32655 aa
-            TABLESAMPLE SYSTEM(1)
-         ) a
-         WHERE 
-         boo_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
+             a.nhdplusid
+            ,a.catchmentstatecodes[1]
+            FROM (
+               SELECT
+                aa.nhdplusid
+               ,aa.catchmentstatecodes
+               ,aa.isocean
+               FROM
+               cipsrv_nhdplus_m.catchment_32655 aa
+               TABLESAMPLE SYSTEM(1)
+            ) a
+            WHERE 
+            %L OR NOT a.isocean
+            ORDER BY RANDOM()
+            LIMIT 1
+         ',boo_include_extended);
          
       ELSIF p_region IN ('AMSAMOA','AS','32702')
       THEN
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecodes[1]
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
+         str_sql := FORMAT('
             SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecodes
-            ,aa.isocean
-            FROM
-            cipsrv_nhdplus_m.catchment_32702 aa
-            TABLESAMPLE SYSTEM(1)
-         ) a
-         WHERE 
-         boo_include_extended OR NOT a.isocean
-         ORDER BY RANDOM()
-         LIMIT 1;
+             a.nhdplusid
+            ,a.catchmentstatecodes[1]
+            FROM (
+               SELECT
+                aa.nhdplusid
+               ,aa.catchmentstatecodes
+               ,aa.isocean
+               FROM
+               cipsrv_nhdplus_m.catchment_32702 aa
+               TABLESAMPLE SYSTEM(1)
+            ) a
+            WHERE 
+            %L OR NOT a.isocean
+            ORDER BY RANDOM()
+            LIMIT 1
+         ',boo_include_extended);
          
       ELSE
-         SELECT
-          a.nhdplusid
-         ,a.catchmentstatecode
-         INTO
-          out_nhdplusid
-         ,str_statecode
-         FROM (
-            SELECT
-             aa.nhdplusid
-            ,aa.catchmentstatecode
-            ,aa.isocean
-            ,aa.isalaskan
-            FROM
-            cipsrv_epageofab_m.catchment_fabric aa
-            TABLESAMPLE SYSTEM(num_big_samp)
-         ) a
-         WHERE 
-         boo_include_extended OR (a.isocean = 'N' AND a.isalaskan = 'N')
-         ORDER BY RANDOM()
-         LIMIT 1;
+         IF p_known_nhdplusid IS NOT NULL
+         THEN
+            str_sql := FORMAT('
+               SELECT
+                a.nhdplusid
+               ,a.catchmentstatecode
+               FROM (
+                  SELECT
+                   aa.nhdplusid
+                  ,aa.catchmentstatecode
+                  FROM
+                  cipsrv_epageofab_m.catchment_fabric aa
+                  WHERE
+                  aa.nhdplusid = %L
+               ) a
+               LIMIT 1
+            ',p_known_nhdplusid);
+         
+         ELSE
+            str_sql := FORMAT('
+               SELECT
+                a.nhdplusid
+               ,a.catchmentstatecode
+               FROM (
+                  SELECT
+                   aa.nhdplusid
+                  ,aa.catchmentstatecode
+                  ,aa.isocean
+                  ,aa.isalaskan
+                  FROM
+                  cipsrv_epageofab_m.catchment_fabric aa
+                  TABLESAMPLE SYSTEM(%L)
+               ) a
+               WHERE 
+               %L OR (a.isocean = ''N'' AND a.isalaskan = ''N'')
+               ORDER BY RANDOM()
+               LIMIT 1
+            ',num_big_samp,boo_include_extended);
+            
+         END IF;
       
       END IF;
+      
+      EXECUTE str_sql
+      INTO
+       out_nhdplusid
+      ,str_statecode;
       
       IF out_nhdplusid IS NOT NULL
       THEN
@@ -19697,7 +19923,14 @@ BEGIN
       IF int_sanity > 25
       THEN
          out_return_code := -9;
-         out_status_message := 'Unable to sample ' || p_region || ' via ' || num_big_samp::VARCHAR;
+         IF p_known_nhdplusid IS NOT NULL
+         THEN
+            out_status_message := 'nhdplusid ' || p_known_nhdplusid::VARCHAR || ' not found';
+         ELSE         
+            out_status_message := 'Unable to sample ' || COALESCE(p_region,'') || ' via ' || num_big_samp::VARCHAR;
+         
+         END IF;
+         
          RETURN;
          
       END IF;
@@ -19819,17 +20052,22 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.randomcatchment(
-    VARCHAR
-   ,BOOLEAN
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.randomcatchment(
-    VARCHAR
-   ,BOOLEAN
-   ,BOOLEAN
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.randomcatchment';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
 --******************************--
 ----- functions/randomnav.sql 
@@ -21536,20 +21774,19 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.top_of_flow(
-    BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,BOOLEAN
-   ,GEOMETRY
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.top_of_flow(
-    BIGINT
-   ,VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,BOOLEAN
-   ,GEOMETRY
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.top_of_flow';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;

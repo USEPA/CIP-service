@@ -87,6 +87,7 @@
             ,"functions/nav_ut_minordiv.sql"
             ,"functions/nav_ut_search.sql"
             ,"functions/nav_ut.sql"
+            ,"functions/nav_ut_no_minordiv.sql"
             ,"functions/navigate.sql"
             ,"functions/point_at_measure.sql"
             ,"functions/pointindexing.sql"
