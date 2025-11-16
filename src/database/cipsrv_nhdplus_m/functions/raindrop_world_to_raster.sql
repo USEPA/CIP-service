@@ -101,7 +101,7 @@ BEGIN
       ,out_offset_x
       ,out_offset_y
       FROM
-      cipsrv_nhdplusgrid_h.fdr_5070_rdt a
+      cipsrv_nhdplusgrid_m.fdr_5070_rdt a
       WHERE 
       ST_Intersects(a.rast,sdo_input);
       
@@ -124,7 +124,7 @@ BEGIN
       ,out_offset_x
       ,out_offset_y
       FROM
-      cipsrv_nhdplusgrid_h.fdr_3338_rdt a
+      cipsrv_nhdplusgrid_m.fdr_3338_rdt a
       WHERE 
       ST_Intersects(a.rast,sdo_input);
       
@@ -147,7 +147,7 @@ BEGIN
       ,out_offset_x
       ,out_offset_y
       FROM
-      cipsrv_nhdplusgrid_h.fdr_26904_rdt a
+      cipsrv_nhdplusgrid_m.fdr_26904_rdt a
       WHERE 
       ST_Intersects(a.rast,sdo_input);
       
@@ -170,7 +170,7 @@ BEGIN
       ,out_offset_x
       ,out_offset_y 
       FROM
-      cipsrv_nhdplusgrid_h.fdr_32161_rdt a
+      cipsrv_nhdplusgrid_m.fdr_32161_rdt a
       WHERE 
       ST_Intersects(a.rast,sdo_input);
       
@@ -193,7 +193,7 @@ BEGIN
       ,out_offset_x
       ,out_offset_y 
       FROM
-      cipsrv_nhdplusgrid_h.fdr_32655_rdt a
+      cipsrv_nhdplusgrid_m.fdr_32655_rdt a
       WHERE 
       ST_Intersects(a.rast,sdo_input);
       
@@ -216,7 +216,7 @@ BEGIN
       ,out_offset_x
       ,out_offset_y
       FROM
-      cipsrv_nhdplusgrid_h.fdr_32702_rdt a
+      cipsrv_nhdplusgrid_m.fdr_32702_rdt a
       WHERE 
       ST_Intersects(a.rast,sdo_input);
       

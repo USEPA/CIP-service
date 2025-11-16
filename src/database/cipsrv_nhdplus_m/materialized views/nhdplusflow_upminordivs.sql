@@ -65,5 +65,5 @@ ON cipsrv_nhdplus_m.nhdplusflow_upminordivs(nodenumber);
 
 ANALYZE cipsrv_nhdplus_m.nhdplusflow_upminordivs;
 
---VACUUM FREEZE ANALYZE cipsrv_nhdplus_h.nhdplusflow_upminordivs;
+--VACUUM FREEZE ANALYZE cipsrv_nhdplus_m.nhdplusflow_upminordivs;
 
