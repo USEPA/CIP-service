@@ -95,7 +95,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,32161) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,32161)
+      ,p_known_region  := '32161'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE

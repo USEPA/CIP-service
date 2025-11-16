@@ -850,7 +850,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,3338) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,3338)
+      ,p_known_region  := '3338'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE
@@ -1084,7 +1088,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,5070) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,5070)
+      ,p_known_region  := '5070'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE
@@ -1318,7 +1326,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,26904) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,26904)
+      ,p_known_region  := '26904'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE
@@ -1543,7 +1555,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,32161) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,32161)
+      ,p_known_region  := '32161'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE
@@ -1768,7 +1784,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,32655) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,32655)
+      ,p_known_region  := '32655'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE
@@ -1993,7 +2013,11 @@ FROM (
    ,CASE WHEN aa.isalaskan   = 'Y' THEN TRUE ELSE FALSE END AS isalaskan
    ,aa.h3hexagonaddr
    ,aa.areasqkm
-   ,ST_Transform(aa.shape,32702) AS shape
+   ,cipsrv_nhdplus_m.snap_to_common_grid(
+       p_geometry      := ST_Transform(aa.shape,32702)
+      ,p_known_region  := '32702'
+      ,p_grid_size     := 0.001
+    ) AS shape
    ,ARRAY[aa.catchmentstatecode]::VARCHAR[] AS catchmentstatecodes
    ,aa.vpuid
    ,CASE
