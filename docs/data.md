@@ -13,7 +13,7 @@ EPA provides medium and high resolution NHDPlus data as PostgreSQL dump files fo
 
 * [OGC Geopackage](https://dmap-data-commons-ow.s3.amazonaws.com/data/epageofab_m_v21/epageofab_m_v21.gpkg.zip) (4 GB)
 * [Esri File Geodatabase](https://dmap-data-commons-ow.s3.amazonaws.com/data/epageofab_m_v21/epageofab_m_v21.gdb.zip) (2 GB)
-* [PostgreSQL dump](https://dmap-data-commons-ow.s3.amazonaws.com/data/cipsrv/cipsrv_epageofab_m_v21_1.dmp) (5 GB)
+* [PostgreSQL dump](https://dmap-data-commons-ow.s3.amazonaws.com/data/cipsrv/cipsrv_epageofab_m_v21_2.dmp) (5 GB)
 
 ### High Resoution NHDPlus Beta
 
@@ -26,4 +26,4 @@ EPA provides medium and high resolution NHDPlus data as PostgreSQL dump files fo
 
 * [OGC Geopackage](https://dmap-data-commons-ow.s3.amazonaws.com/data/epageofab_h_beta_hr1/epageofab_h_beta_hr1.gpkg.zip) (49 GB)
 * [Esri File Geodatabase](https://dmap-data-commons-ow.s3.amazonaws.com/data/epageofab_h_beta_hr1/epageofab_h_beta_hr1.gdb.zip) (14 GB)
-* [PostgreSQL dump](https://dmap-data-commons-ow.s3.amazonaws.com/data/cipsrv/cipsrv_epageofab_h_beta_hr1_1.dmp) (55 GB)
+* [PostgreSQL dump](https://dmap-data-commons-ow.s3.amazonaws.com/data/cipsrv/cipsrv_epageofab_h_beta_hr1_2.dmp) (55 GB)
