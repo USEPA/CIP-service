@@ -728,7 +728,7 @@ components:
           oneOf:
           - type: string
           - type: 'null'
-        start_cat_joinkey:
+        start_cip_joinkey:
           oneOf:
           - type: string
           - type: 'null'
@@ -736,13 +736,9 @@ components:
           oneOf:
           - type: string
           - type: 'null'
-        start_search_precision:
+        start_push_rad_for_permid:
           oneOf:
-          - type: string
-          - type: 'null'
-        start_search_logic:
-          oneOf:
-          - type: string
+          - type: boolean
           - type: 'null'
         stop_nhdplusid:
           oneOf:
@@ -798,7 +794,7 @@ components:
           oneOf:
           - type: string
           - type: 'null'
-        stop_cat_joinkey:
+        stop_cip_joinkey:
           oneOf:
           - type: string
           - type: 'null'
@@ -806,13 +802,9 @@ components:
           oneOf:
           - type: string
           - type: 'null'
-        stop_search_precision:
+        stop_push_rad_for_permid:
           oneOf:
-          - type: string
-          - type: 'null'
-        stop_search_logic:
-          oneOf:
-          - type: string
+          - type: boolean
           - type: 'null'
         max_distancekm:
           oneOf:
@@ -826,6 +818,14 @@ components:
           type: array
           items:
             type: string
+        search_precision:
+          oneOf:
+          - type: string
+          - type: 'null'
+        return_flowlines:
+          oneOf:
+          - type: boolean
+          - type: 'null'
         return_flowline_details:
           oneOf:
           - $ref: '#/components/schemas/return_flowline_details'
@@ -871,6 +871,12 @@ components:
       properties:
         flowlines:
           $ref: '#/components/schemas/geojson_featurecollection'
+        flowline_count:
+          description: Total flowlines navigated by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
         catchments:
           $ref: '#/components/schemas/geojson_featurecollection'
         linked_data_sfid_found:
@@ -931,6 +937,18 @@ components:
                     type: string
                   nearest_rad_network_flowtimeday:
                     type: number
+        catchment_count:
+          description: Total catchments returned by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
+        linked_data_sfid_count:
+          description: Total sfids discovered by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
         linked_data_cip_found:
           type: object
           properties:
@@ -976,6 +994,12 @@ components:
                     type: number
                   network_flowtimeday:
                     type: number
+        linked_data_cip_count:
+          description: Total CIP indexed catchments discovered by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
         linked_data_huc12_found:
           type: object
           properties:
@@ -1014,18 +1038,36 @@ components:
                     type: number
                   network_flowtimeday:
                     type: number
+        linked_data_huc12_count:
+          description: Total CIP indexed xwalk HUC12s discovered by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
         linked_data_source_points:
           $ref: '#/components/schemas/geojson_feature'
         linked_data_source_lines:
           $ref: '#/components/schemas/geojson_feature'
         linked_data_source_areas:
           $ref: '#/components/schemas/geojson_feature'
+        linked_data_source_count:
+          description: Total source events discovered by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
         linked_data_reached_points:
           $ref: '#/components/schemas/geojson_feature'
         linked_data_reached_lines:
           $ref: '#/components/schemas/geojson_feature'
         linked_data_reached_areas:
           $ref: '#/components/schemas/geojson_feature'
+        linked_data_reached_count:
+          description: Total reach indexed events discovered by the search.
+          type: integer
+          format: int32
+          examples:
+          - 0
         linked_data_attributes:
           type: object
           properties:
@@ -1036,8 +1078,18 @@ components:
               items:
                 oneOf:
                 - $ref: '#/components/schemas/linked_data_wqp'
-        result_link_path:
-          $ref: '#/components/schemas/geojson_feature'
+        start_nhdplusid:
+          $ref: '#/components/schemas/nhdplusid'
+        start_measure:
+          $ref: '#/components/schemas/measure'
+        start_linked_data_program:
+          $ref: '#/components/schemas/linked_data_program'
+        stop_nhdplusid:
+          $ref: '#/components/schemas/nhdplusid'
+        stop_measure:
+          $ref: '#/components/schemas/measure'
+        stop_linked_data_program:
+          $ref: '#/components/schemas/linked_data_program'
         return_code:
           $ref: '#/components/schemas/return_code'
         status_message:
@@ -1617,6 +1669,8 @@ components:
       type: number
       examples:
       - 45.23
+    linked_data_program:
+      type: string
     max_distancekm:
       description: Maximum distance traversed in kilometers for selecting features.
       type: number
