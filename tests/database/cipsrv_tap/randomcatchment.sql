@@ -358,5 +358,50 @@ BEGIN
       ,0
       ,'test 26.1 - return_code'
    );
+   
+   ----------------------------------------------------------------------------
+   -- MR Extended
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_m.randomcatchment(
+       p_region           := NULL
+      ,p_include_extended := FALSE
+	   ,p_return_geometry  := TRUE
+      ,p_known_nhdplusid  := 6689021
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 27.1 - return_code'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,6689021::BIGINT
+      ,'test 27.2 - out_nhdplusid'
+   );
+   
+   ----------------------------------------------------------------------------
+   -- HR Extended
+   ----------------------------------------------------------------------------
+   rec := cipsrv_nhdplus_h.randomcatchment(
+       p_region           := NULL
+      ,p_include_extended := FALSE
+	   ,p_return_geometry  := TRUE
+      ,p_known_nhdplusid  := 65000200023666
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 28.1 - return_code'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_nhdplusid
+      ,65000200023666::BIGINT
+      ,'test 28.2 - out_nhdplusid'
+   );
+   
 
 END;$$;

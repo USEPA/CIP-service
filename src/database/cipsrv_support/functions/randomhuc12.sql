@@ -24,7 +24,7 @@ CREATE OR REPLACE FUNCTION cipsrv_support.randomhuc12(
 STABLE
 AS $BODY$ 
 DECLARE
-   int_count       INTEGER;
+   int_count          INTEGER;
    
 BEGIN
 
@@ -34,11 +34,18 @@ BEGIN
    --------------------------------------------------------------------------
    out_return_code := 0;
    
+   out_source_dataset := p_source_dataset;
+   IF out_source_dataset IS NULL
+   THEN
+      out_source_dataset := 'NP21';
+     
+   END IF;
+   
    --------------------------------------------------------------------------
    -- Step 20
    -- Select a random huc12
    --------------------------------------------------------------------------
-   IF p_source_dataset = 'NP21'
+   IF out_source_dataset = 'NP21'
    THEN
       IF p_known_huc12 IS NOT NULL
       THEN
@@ -58,6 +65,8 @@ BEGIN
          cipsrv_wbd.wbd_hu12_np21 a
          WHERE
          a.huc12 = p_known_huc12;
+         
+         out_huc12 := p_known_huc12;
       
       ELSIF p_region IN ('CONUS','5070')
       THEN
@@ -322,7 +331,7 @@ BEGIN
       
       END IF;
    
-   ELSIF p_source_dataset = 'NPHR'
+   ELSIF out_source_dataset = 'NPHR'
    THEN
       IF p_known_huc12 IS NOT NULL
       THEN
@@ -342,6 +351,8 @@ BEGIN
          cipsrv_wbd.wbd_hu12_nphr a
          WHERE
          a.huc12 = p_known_huc12;
+         
+         out_huc12 := p_known_huc12;
       
       ELSIF p_region IN ('CONUS','5070')
       THEN
@@ -606,7 +617,7 @@ BEGIN
          
       END IF;
       
-   ELSIF p_source_dataset = 'F3'
+   ELSIF out_source_dataset = 'F3'
    THEN
       IF p_known_huc12 IS NOT NULL
       THEN
@@ -626,6 +637,8 @@ BEGIN
          cipsrv_wbd.wbd_hu12_f3 a
          WHERE
          a.huc12 = p_known_huc12;
+         
+         out_huc12 := p_known_huc12;
       
       ELSIF p_region IN ('CONUS','5070')
       THEN
@@ -892,7 +905,7 @@ BEGIN
       
    ELSE
       out_return_code := -9;
-      out_status_message := 'No existing WBD HUC12 datasource ' || p_source_dataset || ' found.';
+      out_status_message := 'No existing WBD HUC12 datasource ' || out_source_dataset || ' found.';
       RETURN;
       
    END IF;
@@ -901,7 +914,7 @@ BEGIN
    -- Step 30
    --
    --------------------------------------------------------------------------
-   out_source_dataset := p_source_dataset;
+   out_source_dataset := out_source_dataset;
 
 END;
 $BODY$
