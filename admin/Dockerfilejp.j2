@@ -111,15 +111,17 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
       wget                                                    \
       openpyxl
       
+RUN pip3 install --use-deprecated=legacy-resolver             \
+      awscli                                                  \
+      boto3
+      
 RUN pip3 install                                              \
       ipython[all]                                            \
       jupyter                                                 \
       jupyter_server                                          \
       fiona                                                   \
       asyncpg                                                 \
-      awscli                                                  \
       folium                                                  \
-      boto3                                                   \
       geocoder                                                \
       geopandas                                               \
       geopy                                                   \
