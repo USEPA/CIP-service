@@ -50,13 +50,16 @@ BEGIN
       
    END IF;
    
-   IF str_direction IN ('UT','UM')
+   IF str_direction IN ('U','UT','UM','UTNMD')
    THEN
       str_direction := 'U';
       
-   ELSIF str_direction IN ('DD','DM','PP','PPALL')
+   ELSIF str_direction IN ('D','DD','DM','PP','PPALL')
    THEN
       str_direction := 'D';
+      
+   ELSE
+      RAISE EXCEPTION 'err %',str_direction;
       
    END IF;
    

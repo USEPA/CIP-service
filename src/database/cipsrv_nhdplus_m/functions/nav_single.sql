@@ -49,7 +49,7 @@ BEGIN
       
    ELSIF num_maximum_distancekm < obj_start_flowline.out_lengthkm
    THEN
-      IF str_search_type IN ('UM','UT')
+      IF str_search_type IN ('UM','UT','UTNMD')
       THEN
          num_init_fmeasure := obj_start_flowline.out_measure;
          num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_distancekm / obj_start_flowline.lengthkm_ratio,5);
@@ -65,7 +65,7 @@ BEGIN
 
    ELSIF num_maximum_flowtimeday < obj_start_flowline.out_flowtimeday
    THEN
-      IF str_search_type IN ('UM','UT')
+      IF str_search_type IN ('UM','UT','UTNMD')
       THEN
          num_init_fmeasure := obj_start_flowline.out_measure;
          num_init_tmeasure := obj_start_flowline.out_measure + ROUND(num_maximum_flowtimeday / obj_start_flowline.flowtimeday_ratio,5);

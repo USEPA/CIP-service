@@ -21,6 +21,7 @@ DECLARE
    str_region          VARCHAR;
    str_source_dataset  VARCHAR;
    boo_return_geometry BOOLEAN;
+   str_known_huc12     VARCHAR;
    
 BEGIN
    
@@ -57,6 +58,14 @@ BEGIN
       
    END IF;
    
+   IF JSONB_PATH_EXISTS(json_input,'$.known_huc12')
+   AND json_input->>'known_huc12' IS NOT NULL
+   AND json_input->>'known_huc12' != ''
+   THEN
+      str_known_huc12 := json_input->>'known_huc12';
+      
+   END IF;
+   
    ----------------------------------------------------------------------------
    -- Step 20
    -- Get the results
@@ -65,6 +74,7 @@ BEGIN
        p_region          := str_region
       ,p_source_dataset  := str_source_dataset
       ,p_return_geometry := boo_return_geometry
+      ,p_known_huc12     := str_known_huc12
    );
    
    ----------------------------------------------------------------------------

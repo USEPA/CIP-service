@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en" >
+   <head>
+      <meta charset="UTF-8">
+      <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
+      <title>CIP Service Flow Accumulation</title>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css' />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
+      <style>
+         #busy {
+           position: absolute;
+           top: 15%;
+           left: 820px;
+           z-index: 100;
+         }
+      </style>
+      <script src="./config.js" onerror="return null;"></script>
+   </head>
+   <body>
+      <div id="busy">
+         <svg width="57" height="57" viewBox="0 0 57 57" xmlns="http://www.w3.org/2000/svg" stroke="#000">
+            <g fill="none" fill-rule="evenodd">
+               <g transform="translate(1 1)" stroke-width="2">
+                  <circle cx="5" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;5;50;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" values="5;27;49;5" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="27" cy="5" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" from="5" to="5" values="5;50;50;5" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" begin="0s" dur="2.2s" from="27" to="27" values="27;49;5;27" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="49" cy="50" r="5">
+                     <animate attributeName="cy" begin="0s" dur="2.2s" values="50;50;5;50" calcMode="linear" repeatCount="indefinite" />
+                     <animate attributeName="cx" from="49" to="49" begin="0s" dur="2.2s" values="49;5;27;49" calcMode="linear" repeatCount="indefinite" />
+                  </circle>
+               </g>
+            </g>
+         </svg>
+      </div>
+      <div id="container" style="width: 1400px;">
+         <div id="map" class="map" style="height: 700px; width: 800px; float: left;"></div>
+         <div id="righty" style="width: 600px; float: left;">
+            <div id="top" style="text-align: center;">
+               <h2>&nbsp;</h2>
+               <h2 style="margin-top:0px; margin-bottom: 3px;">CIP Service Flow Accumulation Test Harness</h2>
+               <span style="font-family: Arial; font-size: 11px;">Add a reasonably sized polygon to the map or enter GeoJSON text:</span>
+               <br />
+               <input id="p_area_of_interest" name="p_area_of_interest" type="text" class="textbox" style="width: 400px;" onchange="updategeo(this.value);" />
+
+               <br />
+               <span style="font-family: Arial; font-size: 12px;">NHDPlus Version:&nbsp;</span>
+               <select name="p_nhdplus_version" id="p_nhdplus_version" style="font-family: Arial; font-size: 11px; width:170px" onChange="change_resolution();">
+                  <option value="nhdplus_m">Medium Resolution</option>
+                  <option value="nhdplus_h" SELECTED>High Resolution</option>
+               </select>
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">PNG Weight:</span>
+               <input name="p_default_weight" type="text" class="text" id="p_default_weight" style="display:inline; width:25px" value="1" />
+               <span style="font-family: Arial; font-size: 11px;">&nbsp;&nbsp;&nbsp; Image Format:</span>
+               <select name="p_image_format" id="p_image_format" style="width:60px">
+                  <option value="PNG" SELECTED>png</option>
+                  <option value="GTIFF">gtiff</option>
+               </select>
+               <br />
+               <br />
+               <input type="button" onclick="run_service();" value="Start Search" id="dz_run_service" />&nbsp;&nbsp;
+               <input type="button" onclick="dz_reset();" value="Clear" name="dz_reset" id="dz_reset" />&nbsp;&nbsp;
+               <input type="button" onclick="dz_download();" value="Download" name="dz_download" id="dz_download" />
+               <br />
+               <br />
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">Catchment:</span>&nbsp;
+               <input name="p_catchment_nhdplusid" type="text" class="text" id="p_catchment_nhdplusid" style="display:inline; width:125px" value="" />&nbsp;
+               <input type="button" onclick="fetch_catchment();" value="Fetch" id="dz_fetch_catchment" />
+               <input type="button" onclick="rando_catchment();" value="Random" id="dz_rando_catchment" />
+               <br />
+               <br />
+               <span style="font-family: Arial; font-size: 11px;">HUC12 (F3):</span>&nbsp;
+               <input name="p_huc12_f3" type="text" class="text" id="p_huc12_f3" style="display:inline; width:125px" value="" />&nbsp;
+               <input type="button" onclick="fetch_huc12();" value="Fetch" id="dz_fetch_huc12" />
+               <input type="button" onclick="rando_huc12();" value="Random" id="dz_rando_huc12" />
+               <br/>
+               <br/>
+               <input type="button" value="Link" name="dz_link" id="dz_link" />
+               <input name="dz_link_text" type="text" class="text" id="dz_link_text" style="display:inline; width:350px" value="" />
+
+            </div>
+         </div>
+         <div id="output" style="width: 1200px; text-align: center; font-family: Arial; font-size: 15px;"></div>
+         
+      </div>
+
+      <script src='https://unpkg.com/leaflet@1.9.3/dist/leaflet.js'></script>
+      <script src='https://unpkg.com/esri-leaflet@3.0.14/dist/esri-leaflet.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script src="https://unpkg.com/georaster"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.2/chroma.min.js"></script>
+      <script src="https://unpkg.com/georaster-layer-for-leaflet"></script>
+      <script src="https://unpkg.com/geoblaze"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.min.js"></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/4.0.0/Control.FullScreen.js'></script>
+      <script src="./common.js" onerror="return null;"></script>
+      
+      <script>
+   const queryString = window.location.search;
+   const urlParams = new URLSearchParams(queryString);
+   let   lat  = urlParams.get('lat');
+   let   lng  = urlParams.get('lng');
+   let   zoom = urlParams.get('zoom');
+   let   rez  = urlParams.get('resolution');
+   let   dwt  = urlParams.get('default_weight');
+   let   ift  = urlParams.get('image_format');
+   let   kct  = urlParams.get('catchment_nhdplusid');
+   let   khu  = urlParams.get('huc12_f3');
+   
+   if (lat === " " || lat == null) {
+      lat = 46.874626;
+   }
+   
+   if (lng === " " || lng == null) {
+      lng = -96.782341;
+   }
+
+   if (zoom === " " || zoom == null) {
+      zoom = 12;
+   }
+   
+   if (rez === " " || rez == null) {
+      rez = "nhdplus_h";
+   } else {
+      const z = rez.toUpperCase();
+      if (z == "HR" || z == "H" || z == "NHDPLUS_H") {
+         rez = "nhdplus_h";
+      } else if (z == "MR" || z == "M" || z == "NHDPLUS_M") {
+         rez = "nhdplus_m";
+      } else {
+         rez = "nhdplus_h";
+      }
+   
+   }
+   document.getElementById("p_nhdplus_version").value = rez;
+   
+   if (kct === " " || kct == null) {
+      kct = "";
+   }
+   document.getElementById("p_catchment_nhdplusid").value = kct;
+   
+   if (khu === " " || khu == null) {
+      khu = "";
+   }
+   document.getElementById("p_huc12_f3").value = khu;
+   
+   ////////////////////////////////////////////////////////////////////////////
+   const linkButton = document.getElementById('dz_link');
+   linkButton.addEventListener('click', () => {
+     let p = new URLSearchParams();
+     let c = map.getCenter();
+     p.append('lat',c.lat);
+     p.append('lng',c.lng);
+     p.append('zoom',map.getZoom()); 
+     
+     p.append('resolution',get_select_values(document.getElementById("p_nhdplus_version")));
+     
+     const imgfm = get_select_values(document.getElementById("p_image_format"));
+     p.append('image_format',imgfm);
+     
+     const defw = document.getElementById("p_default_weight").value;
+     if (defw != null && defw !== "") {
+        p.append('default_weight',defw);
+     }
+     
+     const kct = document.getElementById("p_catchment_nhdplusid").value;
+     if (kct != null && kct !== "") {
+        p.append('catchment_nhdplusid',kct);
+     }
+     
+     const khu = document.getElementById("p_huc12_f3").value;
+     if (khu != null && khu !== "") {
+        p.append('huc12_f3',khu);
+     }
+     
+     let linktext = window.location.origin + window.location.pathname + '?' + p.toString();
+     //console.log(linktext);
+     document.getElementById("dz_link_text").value = linktext;
+     
+   });
+   
+   var pngrast      = null;
+   var raster_srid  = null;
+   var image_format = null;
+   var bin_image    = null;
+   
+   proj4.defs([
+       [
+           'EPSG:4326'
+          ,'+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'
+       ]
+      ,[
+           'EPSG:4269'
+          ,'+title=NAD83 (long/lat) +proj=longlat +a=6378137.0 +b=6356752.31414036 +ellps=GRS80 +datum=NAD83 +units=degrees'
+       ]
+      ,[
+           'EPSG:3338'
+          ,'+proj=aea +lat_0=50 +lon_0=-154 +lat_1=55 +lat_2=65 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:5070'
+          ,'+proj=aea +lat_0=23 +lon_0=-96 +lat_1=29.5 +lat_2=45.5 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:26904'
+          ,'+proj=utm +zone=4 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:32161'
+          ,'+proj=lcc +lat_0=17.8333333333333 +lon_0=-66.4333333333333 +lat_1=18.4333333333333 +lat_2=18.0333333333333 +x_0=200000 +y_0=200000 +ellps=GRS80 +nadgrids=us_noaa_pvhpgn.tif +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:32655'
+          ,'+proj=utm +zone=55 +datum=WGS84 +units=m +no_defs +type=crs'
+       ]
+      ,[
+           'EPSG:32702'
+          ,'+proj=utm +zone=2 +south +datum=WGS84 +units=m +no_defs +type=crs'
+       ]
+   ]);
+
+   document.getElementById("dz_run_service").disabled = true;
+   document.getElementById("dz_download").disabled = true;
+
+   document.getElementById("busy").style.visibility = "hidden";
+
+   var map = L.map("map").setView([lat,lng],zoom);
+   mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+   basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; " + mapLink,
+      maxZoom: 18
+   });
+   basemap.addTo(map);
+   
+   var fsControl = L.control.fullscreen();
+	map.addControl(fsControl);
+
+   var drawnItems = new L.FeatureGroup().addTo(map);
+   var drawControl = new L.Control.Draw({
+      draw: {
+          polygon: {
+              shapeOptions: {
+                 fill: true
+                ,fillColor: "#03f"
+                ,fillOpacity: 0.0
+              }
+          }
+         ,polyline: false
+         ,rectangle: false
+         ,circle: false
+         ,marker: false
+         ,circlemarker: false
+      },
+      edit: {
+          featureGroup: drawnItems
+         ,edit: false
+         ,remove: true
+      }
+   });
+   
+   map.addControl(drawControl);
+   
+   drawnItems.on('click',function(evt) {
+      if (raster_srid == null || pngrast == null || image_format == 'PNG' ) {
+         return;
+      } 
+      var latlng = map.mouseEventToLatLng(evt.originalEvent);
+      var point = proj4(proj4('EPSG:4326'),proj4('EPSG:' + raster_srid),[latlng.lng,latlng.lat]);
+      var pixel_val = geoblaze.identify(pngrast.georasters[0],point);
+      if (pixel_val[0] !== null ) {
+         alert(pixel_val[0]);
+      }
+   });
+
+   map.on(L.Draw.Event.CREATED, function (e) {
+      var type = e.layerType;
+      var layer = e.layer;
+
+      drawnItems.clearLayers();
+
+      geojsonval = e.layer.toGeoJSON().geometry;
+
+      if (type === "polygon") {
+         document.getElementById("p_area_of_interest").value = JSON.stringify(geojsonval);
+      }
+
+      drawnItems.addLayer(layer);
+      document.getElementById("dz_run_service").disabled = false;
+   });
+
+   map.on(L.Draw.Event.DELETED, function (e) {
+      document.getElementById("p_area_of_interest").value = "";
+      document.getElementById("dz_run_service").disabled = true;
+   });
+   
+   var max_accumulation_pt = L.geoJson(null,{
+      onEachFeature: function (f,l) {
+         l.bindPopup('<b>Max Accumulation</b><br/><pre>' + JSON.stringify(f.properties,null,' ').replace(/[\{\}"]/g,'') + '</pre>');
+      }
+   }).addTo(map);
+         
+   var flowlines = new L.GeoJSON(null, {
+      onEachFeature: onEachFeature_flowlines
+   }).addTo(map);
+         
+   var layer_items = {
+       "Max Point": max_accumulation_pt
+   }; 
+   
+   init_layer_items();
+   L.control.layers(null, layer_items).addTo(map);
+
+   function run_service() {
+      dz_clear();
+      busy_on();
+
+      const image_format    = document.getElementById("p_image_format");
+      const nhdplus_version = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          area_of_interest: JSON.parse(document.getElementById("p_area_of_interest").value)
+         ,default_weight  : document.getElementById("p_default_weight").value
+         ,image_format    : image_format.options[image_format.selectedIndex].value
+         ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,output_srid     : 3857
+      };
+
+      httpPost(
+         build_api() + "flow_accumulation",
+         data,
+         srvresponse
+      );
+   }
+
+   function srvresponse(error, response) {
+      busy_off();
+      if (error) {
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+      
+      var srv_rez = response;
+
+      if (
+         srv_rez == null ||
+         srv_rez.flow_accumulation == null ||
+         srv_rez.return_code != 0
+      ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+      }
+      
+      img_bounds = L.latLngBounds(
+          L.latLng(srv_rez.image_bbox[1],srv_rez.image_bbox[0])
+         ,L.latLng(srv_rez.image_bbox[3],srv_rez.image_bbox[2])
+      )
+      
+      if (response.max_accumulation_pt !== null && response.max_accumulation_pt.type !== null) {
+         max_accumulation_pt.addData(response.max_accumulation_pt);
+      }
+      
+      raster_srid = response.raster_srid.toString();
+      
+      if ( response.image_format == 'image/png' ) {
+         image_format = 'PNG';
+      } else {
+         image_format = 'GTIFF';
+      }
+      bin_image = 'data:' + response.image_format + ';base64,' + srv_rez.flow_accumulation;
+      
+      if ( image_format == 'PNG' ) {
+         pngrast = L.imageOverlay(
+             bin_image
+            ,img_bounds
+         );
+         pngrast.addTo(map);
+         
+      } else {
+         fetch(bin_image)
+         .then(response => response.arrayBuffer())
+         .then(arrayBuffer => {
+            parseGeoraster(arrayBuffer).then(georaster => {
+               //console.log("georaster:", georaster);
+               const min = georaster.mins[0];
+               const max = georaster.maxs[0];
+               const range = georaster.ranges[0];
+
+               var scale = chroma.scale('OrRd').domain([min,max]).classes([0,33,65,100]);
+               
+               pngrast = new GeoRasterLayer({
+                   georaster: georaster
+                  ,opacity: 0.7
+                  ,pixelValuesToColorFn: function(pixelValues) {
+                     var pixelValue = pixelValues[0];
+                     
+                     if ( pixelValue === -1 ) {
+                        return null;
+                     } 
+                     var color = scale(pixelValue).hex();
+                     return color;
+                   }
+                  ,resolution: 64
+               });
+               //console.log(pngrast);
+               pngrast.addTo(map);
+
+            });
+         });
+      }
+      
+      map.fitBounds(
+          img_bounds
+         ,{
+            maxZoom: 15
+          }
+      );
+      document.getElementById("dz_download").disabled = false;
+      
+   }
+   
+   function dz_reset() {
+      document.getElementById("output").innerHTML = "";
+      max_accumulation_pt.clearLayers();
+      blank_geo();
+      blank_raster();
+      busy_off();
+      document.getElementById("dz_run_service").disabled = true;
+      document.getElementById("dz_download").disabled = true;
+   }
+
+   //Function to clear map on new request or Clear button
+   function dz_clear() {
+      document.getElementById("output").innerHTML = "";
+      blank_raster();
+      busy_off();
+   }
+   
+   function blank_raster() {
+      max_accumulation_pt.clearLayers();
+      
+      if ( pngrast == null ) {
+         raster_srid = null;
+      } else {
+         map.removeLayer(pngrast);
+         pngrast      = null;
+         raster_srid  = null;
+         image_format = null;
+      }
+   }
+
+   //Function to turn on the dorky animation
+   function busy_on() {
+      document.getElementById("busy").style.visibility = "visible";
+      document.body.style.cursor = "wait";
+      document.getElementById("dz_run_service").disabled = true;
+   }
+
+   //Function to turn off the dorky animation
+   function busy_off() {
+      document.getElementById("busy").style.visibility = "hidden";
+      document.body.style.cursor = "auto";
+      document.getElementById("dz_run_service").disabled = false;
+   }
+   
+   function blank_geo() {
+      drawnItems.clearLayers();
+      document.getElementById("p_area_of_interest").value = "";
+      document.getElementById("p_catchment_nhdplusid").value = "";
+      document.getElementById("p_huc12_f3").value = "";
+   }
+   
+   function blank_nhdplusids() {
+      return;
+   }
+   
+   function updatepoly(txtval) {
+      drawnItems.clearLayers();
+
+      if (txtval == null || txtval == undefined || txtval == "") {
+         document.getElementById("dz_run_service").disabled = true;
+         drawnItems.clearLayers();
+         max_accumulation_pt.clearLayers();
+         
+      } else {
+         var layer;
+
+         layer = L.geoJSON({
+             type: "Feature"
+            ,geometry: JSON.parse(txtval)
+         });
+         drawnItems.addLayer(layer);
+         
+         document.getElementById("dz_run_service").disabled = false;
+         layer.bindPopup(txtval);
+         map.fitBounds(drawnItems.getBounds(), {
+            maxZoom: 15
+         });
+      }
+   }
+  
+   function updategeo(txtval) {
+      drawnItems.clearLayers();
+
+      if (txtval == null || txtval == undefined || txtval == "") {
+         document.getElementById("dz_run_service").disabled = true;
+         drawnItems.clearLayers();
+         
+      } else {
+         var layer;
+
+         layer = L.geoJSON({
+             type: "Feature"
+            ,geometry: JSON.parse(txtval)
+         },{
+             style: {
+                fillColor: "#ff7800"
+               ,color: "#007800"
+               ,opacity: 1
+               ,fillOpacity: 0
+             }
+         });
+         drawnItems.addLayer(layer);
+         
+         document.getElementById("dz_run_service").disabled = false;
+         layer.bindPopup(txtval);
+         map.fitBounds(drawnItems.getBounds(), {
+            maxZoom: 15
+         });
+      }
+   }
+ 
+   function dz_download() {
+      const downloadLink = document.createElement('a');
+      document.body.appendChild(downloadLink);
+      var fileName;
+      
+      if ( image_format == 'PNG' ) {
+         fileName = 'image.png';
+      } else {
+         fileName = 'image.tiff';
+      }         
+
+      downloadLink.href = bin_image;
+      downloadLink.target = '_self';
+      downloadLink.download = fileName;
+      downloadLink.click(); 
+   }
+   
+   function fetch_catchment() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_huc12_f3").value = "";
+
+      const catchment_nhdplusid  = document.getElementById("p_catchment_nhdplusid");
+      const nhdplus_version      = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          known_nhdplusid    : catchment_nhdplusid.value
+         ,nhdplus_version    : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomcatchment",
+         data,
+         randomcatchmentresponse
+      );
+   
+   }
+   
+   function rando_catchment() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_huc12_f3").value = "";
+
+      const catchment_nhdplusid  = document.getElementById("p_catchment_nhdplusid");
+      const nhdplus_version      = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          known_nhdplusid    : null
+         ,nhdplus_version    : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomcatchment",
+         data,
+         randomcatchmentresponse
+      );
+   
+   }
+   
+   function randomcatchmentresponse(error, response) {
+      
+      if (error) {
+         busy_off();
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+      
+      var srv_rez = response;
+
+      if ( srv_rez.return_code != 0 ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+      }
+      
+      document.getElementById("p_catchment_nhdplusid").value = srv_rez.catchment.properties.nhdplusid.toString();
+      document.getElementById("p_area_of_interest").value    = JSON.stringify(srv_rez.catchment.geometry);
+      
+      drawnItems.clearLayers();
+         
+      var layer = L.geoJSON({
+          type: "Feature"
+         ,geometry: srv_rez.catchment.geometry
+      },{
+          style: {
+             fillColor: "#ff7800"
+            ,color: "#007800"
+            ,opacity: 1
+            ,fillOpacity: 0
+          }
+      });
+      drawnItems.addLayer(layer);
+      
+      const image_format    = document.getElementById("p_image_format");
+      const nhdplus_version = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          area_of_interest: JSON.parse(document.getElementById("p_area_of_interest").value)
+         ,default_weight  : document.getElementById("p_default_weight").value
+         ,image_format    : image_format.options[image_format.selectedIndex].value
+         ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,output_srid     : 3857
+      };
+
+      httpPost(
+         build_api() + "flow_accumulation",
+         data,
+         srvresponse
+      );
+   
+   }
+   
+   function fetch_huc12() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_catchment_nhdplusid").value = "";
+
+      const huc12_f3  = document.getElementById("p_huc12_f3");
+
+      var data = {
+          known_huc12        : huc12_f3.value
+         ,source_dataset     : 'F3'
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomhuc12",
+         data,
+         randomhuc12response
+      );
+   
+   }
+   
+   function rando_huc12() {
+      dz_clear();
+      busy_on();
+      document.getElementById("p_catchment_nhdplusid").value = "";
+
+      const huc12_f3  = document.getElementById("p_huc12_f3");
+
+      var data = {
+          known_huc12        : null
+         ,source_dataset     : 'F3'
+         ,return_geometry    : true
+      };
+
+      httpPost(
+         build_api() + "randomhuc12",
+         data,
+         randomhuc12response
+      );
+   
+   }
+   
+   function randomhuc12response(error, response) {
+      
+      if (error) {
+         busy_off();
+         document.getElementById("output").innerHTML = "<P>" + error + "</P>";
+         return false;
+      }
+      
+      var srv_rez = response;
+
+      if ( srv_rez.return_code != 0 ) {
+         if (srv_rez.return_code !== null) {
+            document.getElementById("output").innerHTML =
+              "<P>" + srv_rez.status_message + "</P>";
+         } else {
+            document.getElementById("output").innerHTML = "<P>No results found.</P>";
+         }
+
+      }
+      
+      document.getElementById("p_huc12_f3").value         = srv_rez.huc12.properties.huc12;
+      document.getElementById("p_area_of_interest").value = JSON.stringify(srv_rez.huc12.geometry);
+      
+      drawnItems.clearLayers();
+         
+      var layer = L.geoJSON({
+          type: "Feature"
+         ,geometry: srv_rez.huc12.geometry
+      },{
+          style: {
+             fillColor: "#ff7800"
+            ,color: "#007800"
+            ,opacity: 1
+            ,fillOpacity: 0
+          }
+      });
+      drawnItems.addLayer(layer);
+      
+      const image_format    = document.getElementById("p_image_format");
+      const nhdplus_version = document.getElementById("p_nhdplus_version");
+
+      var data = {
+          area_of_interest: JSON.parse(document.getElementById("p_area_of_interest").value)
+         ,default_weight  : document.getElementById("p_default_weight").value
+         ,image_format    : image_format.options[image_format.selectedIndex].value
+         ,nhdplus_version : nhdplus_version.options[nhdplus_version.selectedIndex].value
+         ,output_srid     : 3857
+      };
+
+      httpPost(
+         build_api() + "flow_accumulation",
+         data,
+         srvresponse
+      );
+   
+   }
+   
+      </script>
+   </body>
+</html>

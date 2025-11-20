@@ -183,7 +183,7 @@ BEGIN
       ,'test 4.1 - return_code'
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
@@ -228,7 +228,7 @@ BEGIN
       ,'test 5.1 - return_code'
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
@@ -273,11 +273,56 @@ BEGIN
       ,'test 6.1 - return_code'
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
       ,'test 6.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 65000200047343;
+   num_start_measure   := 25.41957;
+   num_max_distancekm  := 55;
+   
+   rec := cipsrv_nhdplus_h.delineate(
+       p_search_type                 := 'UTNMD'
+      ,p_start_nhdplusid             := int_start_nhdplusid
+      ,p_start_permanent_identifier  := NULL
+      ,p_start_reachcode             := NULL
+      ,p_start_hydroseq              := NULL
+      ,p_start_measure               := num_start_measure
+      ,p_stop_nhdplusid              := NULL
+      ,p_stop_permanent_identifier   := NULL
+      ,p_stop_reachcode              := NULL
+      ,p_stop_hydroseq               := NULL
+      ,p_stop_measure                := NULL
+      ,p_max_distancekm              := num_max_distancekm
+      ,p_max_flowtimeday             := NULL
+      ,p_aggregation_engine          := 'NONE'
+      ,p_split_initial_catchment     := FALSE
+      ,p_fill_basin_holes            := FALSE
+      ,p_force_no_cache              := FALSE
+      ,p_return_delineation_geometry := TRUE
+      ,p_return_flowlines            := TRUE
+      ,p_return_flowline_details     := TRUE
+      ,p_return_flowline_geometry    := TRUE
+      ,p_known_region                := NULL
+   );
+   
+   RETURN NEXT tap.diag('HR UTNMD NONE ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 7.1 - return_code'
+   );
+
+   int_tmp := 188;
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,int_tmp
+      ,'test 7.2 flowline count ' || rec.out_flowline_count || ' = ' || int_tmp
    );
 
 END;$$;

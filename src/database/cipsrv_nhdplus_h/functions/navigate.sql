@@ -72,6 +72,10 @@ BEGIN
    THEN
       str_search_type := 'UT';
    
+   ELSIF str_search_type IN ('UTNMD','UPSTREAM WITH TRIBUTARIES NO MINOR DIVS')
+   THEN
+      str_search_type := 'UTNMD';
+   
    ELSIF str_search_type IN ('UM','UPSTREAM MAIN PATH ONLY')
    THEN
       str_search_type := 'UM';
@@ -356,9 +360,9 @@ BEGIN
                ,num_maximum_flowtimeday := num_maximum_flowtimeday
             );
             
-         ELSIF str_search_type = 'UTOLD'
+         ELSIF str_search_type = 'UTNMD'
          THEN
-            int_counter := cipsrv_nhdplus_h.nav_ut_old(
+            int_counter := cipsrv_nhdplus_h.nav_ut_no_minordiv(
                 obj_start_flowline      := obj_start_flowline
                ,num_maximum_distancekm  := num_maximum_distancekm
                ,num_maximum_flowtimeday := num_maximum_flowtimeday

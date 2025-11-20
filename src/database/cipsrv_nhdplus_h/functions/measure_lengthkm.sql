@@ -48,14 +48,14 @@ BEGIN
    -- Step 30
    -- Project as needed
    ----------------------------------------------------------------------------
-   sdo_geometry := ST_Transform(
+   sdo_geometry := public.ST_TRANSFORM(
        p_geometry
       ,int_srid
    );
    
-   IF ST_GeometryType(sdo_geometry) = 'ST_GeometryCollection'
+   IF public.ST_GEOMETRYTYPE(sdo_geometry) = 'ST_GeometryCollection'
    THEN
-      sdo_geometry := ST_CollectionExtract(sdo_geometry,2);
+      sdo_geometry := public.ST_COLLECTIONEXTRACT(sdo_geometry,2);
       
    END IF;
    
@@ -63,16 +63,16 @@ BEGIN
    -- Step 40
    -- Return results in km
    ----------------------------------------------------------------------------
-   IF sdo_geometry IS NULL OR ST_IsEmpty(sdo_geometry)
+   IF sdo_geometry IS NULL OR ST_ISEMPTY(sdo_geometry)
    THEN
       RETURN 0;
       
-   ELSIF ST_GeometryType(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
+   ELSIF public.ST_GEOMETRYTYPE(sdo_geometry) IN ('ST_LineString','ST_MultiLineString')
    THEN
-      RETURN ROUND(ST_Length(sdo_geometry)::NUMERIC * 0.001,8);
+      RETURN ROUND(public.ST_LENGTH(sdo_geometry)::NUMERIC * 0.001,8);
       
    ELSE
-      RAISE EXCEPTION 'measure lengthkm requires linear geometry - %',ST_GeometryType(sdo_geometry);
+      RAISE EXCEPTION 'measure lengthkm requires linear geometry - %',public.ST_GEOMETRYTYPE(sdo_geometry);
       
    END IF;
    
@@ -80,13 +80,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_h.measure_lengthkm(
-    GEOMETRY
-   ,VARCHAR
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_h.measure_lengthkm(
-    GEOMETRY
-   ,VARCHAR
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_h.measure_lengthkm';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 

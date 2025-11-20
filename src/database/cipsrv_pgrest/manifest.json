@@ -30,6 +30,7 @@
             ,"functions/healthcheck.sql"
             ,"functions/navigate.sql"
             ,"functions/pointindexing.sql"
+            ,"functions/flow_accumulation.sql"
             ,"functions/upstreamdownstream.sql"
             ,"functions/randomcatchment.sql"
             ,"functions/randomhuc12.sql"

@@ -63,7 +63,7 @@ BEGIN
    THEN
       num_trim_meas := num_trim / num_ratio;
    
-      IF p_search_type IN ('UT','UM')
+      IF p_search_type IN ('UT','UM','UTNMD')
       THEN
          num_tmeasure := ROUND(p_tmeasure - num_trim_meas,5);
       
@@ -104,27 +104,19 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON FUNCTION cipsrv_nhdplus_m.nav_trim_temp(
-    VARCHAR
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-   ,NUMERIC
-) TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_nhdplus_m.nav_trim_temp';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER FUNCTION %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON FUNCTION %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;

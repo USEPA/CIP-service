@@ -49,6 +49,7 @@
             ,"functions/is_lrs.sql"
             ,"functions/json2geometry.sql"
             ,"functions/json2numeric.sql"
+            ,"functions/json2integer.sql"
             ,"functions/json2bigint.sql"
             ,"functions/json2date.sql"
             ,"functions/json2strary.sql"

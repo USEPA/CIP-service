@@ -1,0 +1,40 @@
+<featureType>
+  <id>FeatureTypeInfoImpl--4a49e71b:1948943599e:-5c58</id>
+  <name>owld_wqp_cip_h</name>
+  <nativeName>owld_wqp_cip_h</nativeName>
+  <namespace>
+    <id>NamespaceInfoImpl-42032311:192d83c2670:-7ff6</id>
+  </namespace>
+  <title>owld_wqp_cip_h</title>
+  <keywords>
+    <string>features</string>
+    <string>owld_wqp_cip_h</string>
+  </keywords>
+  <srs>EPSG:4269</srs>
+  <latLonBoundingBox>
+    <minx>-47.74</minx>
+    <maxx>167.65</maxx>
+    <miny>14.92</miny>
+    <maxy>86.46</maxy>
+    <crs>EPSG:4326</crs>
+  </latLonBoundingBox>
+  <projectionPolicy>FORCE_DECLARED</projectionPolicy>
+  <enabled>true</enabled>
+  <metadata>
+    <entry key="cachingEnabled">false</entry>
+  </metadata>
+  <store class="dataStore">
+    <id>DataStoreInfoImpl-42032311:192d83c2670:-7ff5</id>
+  </store>
+  <serviceConfiguration>false</serviceConfiguration>
+  <simpleConversionEnabled>false</simpleConversionEnabled>
+  <internationalTitle/>
+  <internationalAbstract/>
+  <maxFeatures>0</maxFeatures>
+  <numDecimals>0</numDecimals>
+  <padWithZeros>false</padWithZeros>
+  <forcedDecimal>false</forcedDecimal>
+  <overridingServiceSRS>false</overridingServiceSRS>
+  <skipNumberMatched>false</skipNumberMatched>
+  <circularArcPresent>false</circularArcPresent>
+</featureType>

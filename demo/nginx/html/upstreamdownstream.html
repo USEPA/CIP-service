@@ -4,8 +4,9 @@
       <meta charset="UTF-8">
       <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=">
       <title>CIP Service Upstream/Downstream</title>
-      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>
-      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css'>
+      <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' />
+      <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css' />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@latest/Control.FullScreen.css" />
       <style>
          #busy {
            position: absolute;
@@ -257,6 +258,8 @@
       <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
       <script src='https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js'></script>
       <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js'></script>
+      <script src='https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/4.0.0/Control.FullScreen.js'></script>
+      <script src="./common.js" onerror="return null;"></script>
       <script>
    document.getElementById("dz_run_service").disabled = true;
    document.getElementById("busy").style.visibility = "hidden";
@@ -271,6 +274,9 @@
       maxZoom: 18
    });
    basemap.addTo(map);
+   
+   var fsControl = L.control.fullscreen();
+	map.addControl(fsControl);
    
    L.TileLayer.BetterWMS = L.TileLayer.WMS.extend({
   
@@ -823,80 +829,6 @@
       
       }
       
-   }
-   
-   function httpGet(url,callback) {
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open("GET",url,true);
-      xmlHttp.setRequestHeader('Content-Type','application/json');
-      xmlHttp.responseType = 'json';
-      xmlHttp.onreadystatechange = function() {
-         if(xmlHttp.readyState === 4) {
-            if(xmlHttp.status === 200) {
-               response = xmlHttp.response;
-               callback(null,response);
-            } else {
-               callback(xmlHttp.statusText,null);
-            }
-         }
-      };
-      xmlHttp.send(null);
-   }
-   
-   function httpPost(url,data,callback) {
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open("POST",url,true);
-      xmlHttp.setRequestHeader('Content-Type','application/json');
-      xmlHttp.responseType = 'json';
-      xmlHttp.onreadystatechange = function() {
-         if(xmlHttp.readyState === 4) {
-            if(xmlHttp.status === 200) {
-               response = xmlHttp.response;
-               callback(null,response);
-            } else {
-               callback(xmlHttp.statusText,null);
-            }
-         }
-      };
-      xmlHttp.send(JSON.stringify(data));
-   }
-
-   function get_select_values(select){
-      var result = null;
-      
-      if ( select == null ) {
-         return result;
-      }
-      
-      if ( select.options == null ) {
-         return result;
-      }
-      
-      if ( select.selectedIndex == null ) {
-         return result;
-      }
-      
-      return select.options[select.selectedIndex].value;
-   
-   }
-   
-   function get_mselect_values(select){
-      var result = [];
-      var options = select && select.options;
-      var opt;
-      
-      if ( options == null ) {
-         return result;
-      }
-
-      for (var i=0, iLen=options.length; i<iLen; i++) {
-         opt = options[i];
-
-         if (opt.selected) {
-            result.push(opt.value || opt.text);
-         }
-      }
-      return result;
    }
    
    function populate_owld(error,response) {
@@ -2006,12 +1938,6 @@
       document.getElementById("pPoint2").value = "";
    }
    
-   function change_resolution() {
-      blank_nhdplusids();
-      reset_nhdplus_flowlines();
-      reset_linked_data();
-   }
-   
    function reset_nhdplus_flowlines() {
       var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
       
@@ -2060,29 +1986,6 @@
          
       }
       
-   }
-   
-   function change_resolution() {
-      var resolution = get_select_values(document.getElementById("pNHDPlusVersion"));
-      blank_nhdplusids();
-
-      if (lyr_nhdplus_m_flowlines !== null && resolution == "nhdplus_m" ) {
-         if (map.hasLayer(lyr_nhdplus_h_flowlines) ) {
-            map.removeLayer(lyr_nhdplus_h_flowlines);
-         }
-         if (! map.hasLayer(lyr_nhdplus_m_flowlines) ) {
-            map.addLayer(lyr_nhdplus_m_flowlines);
-         }
-
-      } else if (lyr_nhdplus_h_flowlines !== null && resolution == "nhdplus_h" ) {
-         if (map.hasLayer(lyr_nhdplus_m_flowlines) ) {
-            map.removeLayer(lyr_nhdplus_m_flowlines);
-         }
-         if (! map.hasLayer(lyr_nhdplus_h_flowlines) ) {
-            map.addLayer(lyr_nhdplus_h_flowlines);
-         }
-
-      }
    }
     
    function blank_nhdplusids() {
@@ -2264,20 +2167,6 @@
          document.getElementById("p_search_max").disabled = false;
       }
    }
-
-   ////////////////////////////////////////////////////////////////////////////
-   function get_url_parameter(param_key) {
-      var page_url = window.location.search.substring(1);
-      
-      var url_variables = page_url.split('&');
-      for (var i = 0; i < url_variables.length; i++) {
-         var parameter_name = url_variables[i].split('=');
-         if (parameter_name[0] == param_key) {
-            return parameter_name[1];
-         }
-      }
-      return null;
-   }
    
    ////////////////////////////////////////////////////////////////////////////
    function updatept(geojson) {
@@ -2367,64 +2256,6 @@
       
       return cnthtml + '</TD></TR></TABLE>';
    
-   }
-   
-   ////////////////////////////////////////////////////////////////////////////
-   function build_api() {
-      
-      if (
-         typeof postgrest_host === "undefined" ||
-         postgrest_host === null ||
-         postgrest_host == "NONE"
-      ) {
-         zpostgrest_host = get_url_parameter("postgrest_host");
-      } else {
-         zpostgrest_host = postgrest_host;
-      }
-
-      if (
-         typeof postgrest_port === "undefined" ||
-         postgrest_port === null ||
-         postgrest_port == "NONE"
-      ) {
-         zpostgrest_port = get_url_parameter("postgrest_port");
-      } else {
-         zpostgrest_port = postgrest_port;
-      }
-
-      if (
-         typeof postgrest_pref === "undefined" ||
-         postgrest_pref === null ||
-         postgrest_pref == "NONE"
-      ) {
-         zpostgrest_pref = get_url_parameter("postgrest_pref");
-      } else {
-         zpostgrest_pref = postgrest_pref;
-      }
-      
-      if (zpostgrest_pref === null ) {
-         zpostgrest_pref = "";
-      } else {
-         zpostgrest_pref = zpostgrest_pref + "/";
-      }
-
-      if (zpostgrest_host === null) {
-         console.log("no PostgREST API server location defined.");
-         return;
-      }
-
-      var http = "http";
-      if (zpostgrest_port == "443") {
-         http = "https";
-      }
-      
-      return http +
-         "://" +
-         zpostgrest_host +
-         ":" +
-         zpostgrest_port + "/" + 
-         zpostgrest_pref + "rpc/";
-         
    }
           
       </script>
