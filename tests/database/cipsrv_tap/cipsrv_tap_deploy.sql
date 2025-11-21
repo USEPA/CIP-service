@@ -5754,6 +5754,95 @@ BEGIN
 
 END;$$;
 --******************************--
+----- nav_utnmd.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.nav_utnmd()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec                 RECORD;
+   int_start_nhdplusid BIGINT;
+   num_start_measure   NUMERIC;
+   num_max_distancekm  NUMERIC;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 17219402;
+   num_start_measure   := 12.85557;
+   num_max_distancekm  := 15;
+   
+   rec := cipsrv_nhdplus_m.navigate(
+       p_search_type                := 'UTNMD'
+      ,p_start_nhdplusid            := int_start_nhdplusid
+      ,p_start_permanent_identifier := NULL
+      ,p_start_reachcode            := NULL
+      ,p_start_hydroseq             := NULL
+      ,p_start_measure              := num_start_measure
+      ,p_stop_nhdplusid             := NULL
+      ,p_stop_permanent_identifier  := NULL
+      ,p_stop_reachcode             := NULL
+      ,p_stop_hydroseq              := NULL
+      ,p_stop_measure               := NULL
+      ,p_max_distancekm             := num_max_distancekm
+      ,p_max_flowtimeday            := NULL
+      ,p_return_flowline_details    := TRUE
+      ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('MR UTNMD ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
+   );
+
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,6::INT
+      ,'test 1.2 - flowline count ' || rec.out_flowline_count::VARCHAR
+   );
+   
+   ----------------------------------------------------------------------------
+   int_start_nhdplusid := 23000300000332;
+   num_start_measure   := 69.59222;
+   num_max_distancekm  := 15;
+   
+   rec := cipsrv_nhdplus_h.navigate(
+       p_search_type                := 'UTNMD'
+      ,p_start_nhdplusid            := int_start_nhdplusid
+      ,p_start_permanent_identifier := NULL
+      ,p_start_reachcode            := NULL
+      ,p_start_hydroseq             := NULL
+      ,p_start_measure              := num_start_measure
+      ,p_stop_nhdplusid             := NULL
+      ,p_stop_permanent_identifier  := NULL
+      ,p_stop_reachcode             := NULL
+      ,p_stop_hydroseq              := NULL
+      ,p_stop_measure               := NULL
+      ,p_max_distancekm             := num_max_distancekm
+      ,p_max_flowtimeday            := NULL
+      ,p_return_flowline_details    := TRUE
+      ,p_return_flowline_geometry   := TRUE
+   );
+   
+   RETURN NEXT tap.diag('HR UTNMD ' || ARRAY_TO_STRING(ARRAY[int_start_nhdplusid,num_start_measure,num_max_distancekm],','));
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 2.1 - return_code'
+   );
+
+   RETURN NEXT tap.is(
+       rec.out_flowline_count::INT
+      ,11::INT
+      ,'test 2.2 - flowline count ' || rec.out_flowline_count::VARCHAR
+   );
+
+END;$$;
+--******************************--
 ----- delineate_1.sql 
 
 CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_1()
@@ -6679,6 +6768,61 @@ BEGIN
        rec.out_catchment_count::INT
       ,63::INT
       ,'test 1.3 catchment count ' || rec.out_catchment_count || ' = 63 '
+   );
+   
+END;$$;
+--******************************--
+----- fdr_flowaccumulation.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.fdr_flowaccumulation()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec                 RECORD;
+   sdo_input_geom      GEOMETRY;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   sdo_input_geom      := ST_GeomFromGeoJSON('{"type":"Polygon","coordinates":[[[-113.431091,33.440466],[-113.441906,33.44505],[-113.437786,33.431441],[-113.443794,33.38831],[-113.436928,33.379136],[-113.427658,33.38487],[-113.424911,33.437458],[-113.431091,33.440466]]]}');
+   
+   rec := cipsrv_nhdplus_m.fdr_flowaccumulation(
+       p_area_of_interest      := sdo_input_geom
+   );
+   
+   RETURN NEXT tap.diag('MR flow accumulation ');
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 1.1 - return_code'
+   );
+
+   RETURN NEXT tap.is(
+       rec.out_max_accumulation
+      ,8321
+      ,'test 1.1 - max accumulation'
+   );
+   
+   ----------------------------------------------------------------------------
+   sdo_input_geom      := ST_GeomFromGeoJSON('{"type":"Polygon","coordinates":[[[-113.431091,33.440466],[-113.441906,33.44505],[-113.437786,33.431441],[-113.443794,33.38831],[-113.436928,33.379136],[-113.427658,33.38487],[-113.424911,33.437458],[-113.431091,33.440466]]]}');
+   
+   rec := cipsrv_nhdplus_h.fdr_flowaccumulation(
+       p_area_of_interest      := sdo_input_geom
+   );
+   
+   RETURN NEXT tap.diag('HR flow accumulation ');
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code::INT
+      ,0::INT
+      ,'test 3.1 - return_code'
+   );
+
+   RETURN NEXT tap.is(
+       rec.out_max_accumulation
+      ,73517
+      ,'test 3.1 - max accumulation'
    );
    
 END;$$;
@@ -7769,5 +7913,106 @@ BEGIN
       ,0
       ,'test 12.1 - return_code'
    );
+
+END;$$;
+--******************************--
+----- randomhuc12.sql 
+
+CREATE OR REPLACE FUNCTION cipsrv_tap.randomhuc12()
+RETURNS SETOF TEXT 
+LANGUAGE plpgsql
+AS $$DECLARE
+   rec           RECORD;
+   int_tmp       BIGINT;
+   
+BEGIN
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_support.randomhuc12(
+       p_region          := NULL
+      ,p_source_dataset  := NULL
+      ,p_return_geometry := FALSE
+      ,p_known_huc12     := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 1.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_support.randomhuc12(
+       p_region          := NULL
+      ,p_source_dataset  := 'NP21'
+      ,p_return_geometry := TRUE
+      ,p_known_huc12     := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 2.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_support.randomhuc12(
+       p_region          := NULL
+      ,p_source_dataset  := 'NPHR'
+      ,p_return_geometry := TRUE
+      ,p_known_huc12     := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 3.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_support.randomhuc12(
+       p_region          := NULL
+      ,p_source_dataset  := 'F3'
+      ,p_return_geometry := TRUE
+      ,p_known_huc12     := NULL
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 4.1 - return_code'
+   );
+   
+   ----------------------------------------------------------------------------
+   ----------------------------------------------------------------------------
+   rec := cipsrv_support.randomhuc12(
+       p_region          := NULL
+      ,p_source_dataset  := 'F3'
+      ,p_return_geometry := TRUE
+      ,p_known_huc12     := '111401050705'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_return_code
+      ,0
+      ,'test 5.1 - return_code'
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_huc12
+      ,'111401050705'
+      ,'test 5.2 - huc12 ' || rec.out_huc12
+   );
+   
+   RETURN NEXT tap.is(
+       rec.out_huc12_name
+      ,'Lower Frazier Creek'
+      ,'test 5.3 - huc12 ' || rec.out_huc12_name
+   );
+   
 
 END;$$;
