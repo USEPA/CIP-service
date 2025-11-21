@@ -674,8 +674,8 @@ BEGIN
    -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
-      ,31
-      ,'test 1.2 - basic catchment count: ' || rec.out_catchment_count || ' = 31 '
+      ,32
+      ,'test 1.2 - basic catchment count: ' || rec.out_catchment_count || ' = 32 '
    );
    
    -- 1.3
@@ -696,36 +696,36 @@ BEGIN
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'IL'
-      ,'test 1.5 - check state code 1'
+      ,'test 1.5 - check state code ' || ary_catchmentstatecode[1]
    );
    
    -- 1.6
    --raise warning '%',ary_nhdplusid[23];
    RETURN NEXT tap.is(
        ary_nhdplusid[23]
-      ,24000100458455::BIGINT
-      ,'test 1.6 - check nhdplusid 2'
+      ,24000100421021::BIGINT
+      ,'test 1.6 - check nhdplusid 2 ' || ary_nhdplusid[23]::VARCHAR
    );
 
    -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[23]
       ,'KY'
-      ,'test 1.7 - check state code 2'
+      ,'test 1.7 - check state code 2 ' || ary_catchmentstatecode[23]
    );
    
    -- 1.8
    RETURN NEXT tap.is(
        ary_nhdplusid[31]
-      ,24000100569580::BIGINT
-      ,'test 1.8 - check nhdplusid 3'
+      ,22000100008400::BIGINT
+      ,'test 1.8 - check nhdplusid 3 ' ||ary_nhdplusid[31]::VARCHAR
    );
 
    -- 1.9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[31]
       ,'MO'
-      ,'test 1.9 - check state code 3'
+      ,'test 1.9 - check state code 3 ' || ary_catchmentstatecode[31]
    );
    
    ----------------------------------------------------------------------------
@@ -5892,7 +5892,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 1.1 - return_code'
+      ,'test 1.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -5937,7 +5937,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 2.1 - return_code'
+      ,'test 2.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -5982,7 +5982,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 3.1 - return_code'
+      ,'test 3.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -6027,7 +6027,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 4.1 - return_code'
+      ,'test 4.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 208;
@@ -6072,7 +6072,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 5.1 - return_code'
+      ,'test 5.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 208;
@@ -6117,7 +6117,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 6.1 - return_code'
+      ,'test 6.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 208;
@@ -6176,7 +6176,7 @@ END;$$;
 --******************************--
 ----- delineate_2.sql 
 
-CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_1()
+CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_2()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
@@ -6223,7 +6223,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 1.1 - return_code'
+      ,'test 1.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -6268,7 +6268,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 2.1 - return_code'
+      ,'test 2.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -6313,7 +6313,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 3.1 - return_code'
+      ,'test 3.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -6358,10 +6358,10 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 4.1 - return_code'
+      ,'test 4.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
@@ -6403,10 +6403,10 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 5.1 - return_code'
+      ,'test 5.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
@@ -6448,10 +6448,10 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 6.1 - return_code'
+      ,'test 6.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp

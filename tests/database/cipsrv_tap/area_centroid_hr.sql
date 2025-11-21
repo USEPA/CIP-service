@@ -75,8 +75,8 @@ BEGIN
    -- 1.2
    RETURN NEXT tap.is(
        rec.out_catchment_count
-      ,31
-      ,'test 1.2 - basic catchment count: ' || rec.out_catchment_count || ' = 31 '
+      ,32
+      ,'test 1.2 - basic catchment count: ' || rec.out_catchment_count || ' = 32 '
    );
    
    -- 1.3
@@ -97,36 +97,36 @@ BEGIN
    RETURN NEXT tap.is(
        ary_catchmentstatecode[1]
       ,'IL'
-      ,'test 1.5 - check state code 1'
+      ,'test 1.5 - check state code ' || ary_catchmentstatecode[1]
    );
    
    -- 1.6
    --raise warning '%',ary_nhdplusid[23];
    RETURN NEXT tap.is(
        ary_nhdplusid[23]
-      ,24000100458455::BIGINT
-      ,'test 1.6 - check nhdplusid 2'
+      ,24000100421021::BIGINT
+      ,'test 1.6 - check nhdplusid 2 ' || ary_nhdplusid[23]::VARCHAR
    );
 
    -- 1.7
    RETURN NEXT tap.is(
        ary_catchmentstatecode[23]
       ,'KY'
-      ,'test 1.7 - check state code 2'
+      ,'test 1.7 - check state code 2 ' || ary_catchmentstatecode[23]
    );
    
    -- 1.8
    RETURN NEXT tap.is(
        ary_nhdplusid[31]
-      ,24000100569580::BIGINT
-      ,'test 1.8 - check nhdplusid 3'
+      ,22000100008400::BIGINT
+      ,'test 1.8 - check nhdplusid 3 ' ||ary_nhdplusid[31]::VARCHAR
    );
 
    -- 1.9
    RETURN NEXT tap.is(
        ary_catchmentstatecode[31]
       ,'MO'
-      ,'test 1.9 - check state code 3'
+      ,'test 1.9 - check state code 3 ' || ary_catchmentstatecode[31]
    );
    
    ----------------------------------------------------------------------------

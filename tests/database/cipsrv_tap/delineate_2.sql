@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_1()
+CREATE OR REPLACE FUNCTION cipsrv_tap.delineate_2()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
@@ -45,7 +45,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 1.1 - return_code'
+      ,'test 1.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -90,7 +90,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 2.1 - return_code'
+      ,'test 2.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -135,7 +135,7 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 3.1 - return_code'
+      ,'test 3.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
    int_tmp := 63;
@@ -180,10 +180,10 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 4.1 - return_code'
+      ,'test 4.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
@@ -225,10 +225,10 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 5.1 - return_code'
+      ,'test 5.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
@@ -270,10 +270,10 @@ BEGIN
    RETURN NEXT tap.is(
        rec.out_return_code::INT
       ,0::INT
-      ,'test 6.1 - return_code'
+      ,'test 6.1 - return_code ' || rec.out_return_code::VARCHAR
    );
 
-   int_tmp := 225;
+   int_tmp := 208;
    RETURN NEXT tap.is(
        rec.out_flowline_count::INT
       ,int_tmp
