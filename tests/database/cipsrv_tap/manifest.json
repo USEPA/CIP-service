@@ -42,6 +42,7 @@
             ,"nav_dd_350.sql"
             ,"nav_pp_short.sql"
             ,"nav_ppall_short.sql"
+            ,"nav_utnmd.sql"
             
             ,"delineate_1.sql"
             ,"delineate_2.sql"
@@ -50,10 +51,13 @@
             
             ,"updn_1.sql"
             
+            ,"fdr_flowaccumulation.sql"
+            
             ,"randomnav.sql"
             ,"randompoint.sql"
             ,"randomcatchment.sql"
             ,"randomppnav.sql"
+            ,"randomhuc12.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
