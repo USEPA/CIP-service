@@ -7,6 +7,7 @@
 4. [Downstream Mainline](#downstream-mainline)
 5. [Point to Point](#point-to-point)
 6. [Point to Point All Between](#point-to-point-all-between)
+7. [Upstream with Tributaries No Minor Divergences](#upstream-with-tributaries-no-minor-divergences)
 
 ### Upstream with Tributaries
 
@@ -31,3 +32,7 @@
 ### Point to Point All Between
 
 ![ppall](ppall_navigation.png)
+
+### Upstream with Tributaries No Minor Divergences
+
+![utnmd](utnmd_navigation.png)
