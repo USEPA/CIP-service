@@ -1,4 +1,4 @@
-# Flow Accumuulation with Pour Point Capability
+# Flow Accumulation with Pour Point Capability
 
 NHDPlus is created through a combination of the National Hydrography Dataset, the Watershed Boundary Dataset and National Elevation datasets.  A core product is the national flow direction grid from which various further datasets are created. CIP-service provides this raster coverage as an [optional dataset](../admin/jupyter/notebooks/setup/pg_restore_cipsrv_nhdplusgrid_h.ipynb).
 
