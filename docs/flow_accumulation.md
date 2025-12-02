@@ -12,10 +12,9 @@ Flow accumulation as a process occurs within the [fdr_flowaccumulation](../src/d
 2. Standard georeferenced GeoTiff
 
 The former file type is meant to be an easy way to eyeball results.  For example running flow accumulation against a known HUC12 **should** return results with a single pourpoint.
-![flow accumulation1](flow_accumulation1.png).
-
+![flow accumulation1](flow_accumulation1.png)
 By contrast, the GeoTiff option is less pictureque in a web browser
-![flow accumulation2](flow_accumulation2.png).
-But GeoTiffs can be simply plugged into any GIS system for further analysis.
+![flow accumulation2](flow_accumulation2.png)
+but GeoTiffs can be straightforwardly downloaded and plugged into any GIS system for further geospatial analysis.
 
-The controls provided with the wrapper are simplistic by design, meant to quickly expose flow accumulation logic for review.  Alterations to the service wrapper are welcome.
+The current controls provided with the wrapper are simplistic by design, meant to quickly expose flow accumulation logic for review.  Alterations to the service wrapper are [welcome](../CONTRIBUTING.md).
