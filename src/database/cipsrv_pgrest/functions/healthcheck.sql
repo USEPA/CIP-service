@@ -10,14 +10,14 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck()
-RETURNS JSONB
+RETURNS JSON
 IMMUTABLE
 AS
 $BODY$ 
 DECLARE
 BEGIN
    
-   RETURN JSONB_BUILD_OBJECT(
+   RETURN JSON_BUILD_OBJECT(
        'status', 'ok'
    );
       

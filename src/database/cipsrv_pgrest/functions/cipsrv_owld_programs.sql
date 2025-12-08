@@ -10,13 +10,13 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_owld_programs()
-RETURNS JSONB
+RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
 DECLARE
-   json_program  JSONB;
-   json_array    JSONB;
+   json_program  JSON;
+   json_array    JSON;
    rec           RECORD;
    
 BEGIN
@@ -44,7 +44,7 @@ BEGIN
          
          IF json_array IS NULL
          THEN
-            json_array := JSONB_BUILD_ARRAY(
+            json_array := JSON_BUILD_ARRAY(
                json_program
             );
             
@@ -63,7 +63,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF json_array IS NULL
    THEN
-      json_array := '[]'::JSONB;
+      json_array := '[]'::JSON;
       
    END IF;
    

@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.upstreamdownstream(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
@@ -87,18 +87,18 @@ DECLARE
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    
-   json_flowlines                    JSONB;
-   json_catchments                   JSONB;
-   json_linked_data_sfid_found       JSONB;
-   json_linked_data_cip_found        JSONB;
-   json_linked_data_huc12_found      JSONB;
-   json_linked_data_source_points    JSONB;
-   json_linked_data_source_lines     JSONB;
-   json_linked_data_source_areas     JSONB;
-   json_linked_data_reached_points   JSONB;
-   json_linked_data_reached_lines    JSONB;
-   json_linked_data_reached_areas    JSONB;
-   json_linked_data_attributes       JSONB;
+   json_flowlines                    JSON;
+   json_catchments                   JSON;
+   json_linked_data_sfid_found       JSON;
+   json_linked_data_cip_found        JSON;
+   json_linked_data_huc12_found      JSON;
+   json_linked_data_source_points    JSON;
+   json_linked_data_source_lines     JSON;
+   json_linked_data_source_areas     JSON;
+   json_linked_data_reached_points   JSON;
+   json_linked_data_reached_lines    JSON;
+   json_linked_data_reached_areas    JSON;
+   json_linked_data_attributes       JSON;
    str_known_region                  VARCHAR;
    int_count                         INTEGER;
    
@@ -117,7 +117,7 @@ BEGIN
       str_nhdplus_version := json_input->>'nhdplus_version';
 
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'flowlines'                   , NULL
          ,'flowline_count'              , NULL
          ,'catchments'                  , NULL
@@ -674,7 +674,7 @@ BEGIN
    
    IF int_return_code != 0
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'flowlines'                   , NULL
          ,'flowline_count'              , NULL
          ,'catchments'                  , NULL
@@ -715,16 +715,16 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'navigated_flowline_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -751,7 +751,13 @@ BEGIN
                /* +++++++++ */
                ,a.navtermination_flag
                ,a.nav_order
-               ,CASE WHEN boo_return_flowline_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
+               ,CASE 
+                WHEN boo_return_flowline_geometry 
+                THEN 
+                  public.ST_TRANSFORM(a.shape,4326)
+                ELSE 
+                  NULL::public.GEOMETRY 
+                END AS geom
                FROM
                tmp_navigation_results a
             ) t
@@ -759,7 +765,7 @@ BEGIN
       );
             
       IF json_flowlines IS NULL
-      OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+      OR JSON_ARRAY_LENGTH(json_flowlines) = 0
       THEN
          json_flowlines := NULL;
          
@@ -784,23 +790,23 @@ BEGIN
    THEN
       json_catchments := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'navigated_catchment_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
                 a.nhdplusid
                ,a.sourcefc
                ,a.areasqkm
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_catchments a
             ) t
@@ -808,7 +814,7 @@ BEGIN
       );
             
       IF json_catchments IS NULL
-      OR JSONB_ARRAY_LENGTH(json_catchments) = 0
+      OR JSON_ARRAY_LENGTH(json_catchments) = 0
       THEN
          json_catchments := NULL;
          
@@ -833,7 +839,7 @@ BEGIN
    THEN
       json_linked_data_sfid_found := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             a.* ORDER BY a.eventtype,a.nearest_cip_network_distancekm,a.nearest_rad_network_distancekm
          )
          FROM (
@@ -867,7 +873,7 @@ BEGIN
       );
             
       IF json_linked_data_sfid_found IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_sfid_found) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_sfid_found) = 0
       THEN
          json_linked_data_sfid_found := NULL;
          
@@ -886,7 +892,7 @@ BEGIN
    THEN
       json_linked_data_cip_found := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             a.* ORDER BY a.network_distancekm,a.network_flowtimeday
          )
          FROM (
@@ -925,7 +931,7 @@ BEGIN
       );
             
       IF json_linked_data_cip_found IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_cip_found) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_cip_found) = 0
       THEN
          json_linked_data_cip_found := NULL;
          
@@ -946,7 +952,7 @@ BEGIN
    THEN
       json_linked_data_huc12_found := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             a.* ORDER BY a.eventtype,a.source_joinkey,a.permid_joinkey,a.xwalk_huc12
          )
          FROM (
@@ -972,7 +978,7 @@ BEGIN
       );
             
       IF json_linked_data_huc12_found IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_huc12_found) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_huc12_found) = 0
       THEN
          json_linked_data_huc12_found := NULL;
          
@@ -992,16 +998,16 @@ BEGIN
    THEN
       json_linked_data_source_points := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_source_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -1016,7 +1022,7 @@ BEGIN
                ,a.start_date
                ,a.end_date
                ,a.featuredetailurl
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_src_points a
             ) t
@@ -1024,7 +1030,7 @@ BEGIN
       );
             
       IF json_linked_data_source_points IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_source_points) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_source_points) = 0
       THEN
          json_linked_data_source_points := NULL;
          
@@ -1050,16 +1056,16 @@ BEGIN
    THEN
       json_linked_data_source_lines := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_source_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -1075,7 +1081,7 @@ BEGIN
                ,a.end_date
                ,a.featuredetailurl
                ,a.lengthkm
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_src_lines a
             ) t
@@ -1083,7 +1089,7 @@ BEGIN
       );
             
       IF json_linked_data_source_lines IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_source_lines) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_source_lines) = 0
       THEN
          json_linked_data_source_lines := NULL;
          
@@ -1109,16 +1115,16 @@ BEGIN
    THEN
       json_linked_data_source_areas := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_source_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -1134,7 +1140,7 @@ BEGIN
                ,a.end_date
                ,a.featuredetailurl
                ,a.areasqkm
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_src_areas a
             ) t
@@ -1142,7 +1148,7 @@ BEGIN
       );
             
       IF json_linked_data_source_areas IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_source_areas) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_source_areas) = 0
       THEN
          json_linked_data_source_areas := NULL;
          
@@ -1168,16 +1174,16 @@ BEGIN
    THEN
       json_linked_data_reached_points := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'network_distancekm'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_reached_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -1207,7 +1213,7 @@ BEGIN
                ,a.isnavigable
                ,a.network_distancekm
                ,a.network_flowtimeday
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_rad_points a
             ) t
@@ -1215,7 +1221,7 @@ BEGIN
       );
 
       IF json_linked_data_reached_points IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_reached_points) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_reached_points) = 0
       THEN
          json_linked_data_reached_points := NULL;
          
@@ -1241,12 +1247,12 @@ BEGIN
    THEN
       json_linked_data_attributes := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'source_joinkey'
          ) AS my_feats
          FROM (
             SELECT
-            TO_JSONB(aa) -'attributes' || aa.attributes AS my_json
+            TO_JSON(aa) -'attributes' || aa.attributes AS my_json
             FROM (
                SELECT
                 aaa.eventtype
@@ -1267,7 +1273,7 @@ BEGIN
       );
             
       IF json_linked_data_attributes IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_attributes) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_attributes) = 0
       THEN
          json_linked_data_attributes := NULL;
          
@@ -1282,7 +1288,7 @@ BEGIN
    -- Step 130
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
+   RETURN JSON_BUILD_OBJECT(
        'flowlines'                   , json_flowlines
       ,'flowline_count'              , int_flowline_count
       ,'catchments'                  , json_catchments

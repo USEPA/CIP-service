@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomppnav(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -83,23 +83,23 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
-       'navpoint1'      ,JSONB_BUILD_OBJECT(
-          'type'      ,'Feature'
-         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape1,4326))::JSONB
-         ,'properties',JSONB_BUILD_OBJECT(
-             'nhdplusid' ,rec.out_nhdplusid1
-            ,'reachcode' ,rec.out_reachcode1
-            ,'measure'   ,rec.out_measure1
+   RETURN JSON_BUILD_OBJECT(
+       'navpoint1'   ,JSON_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape1,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
+             'nhdplusid'   ,rec.out_nhdplusid1
+            ,'reachcode'   ,rec.out_reachcode1
+            ,'measure'     ,rec.out_measure1
           )
        )
-      ,'navpoint2'      ,JSONB_BUILD_OBJECT(
-          'type'      ,'Feature'
-         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape2,4326))::JSONB
-         ,'properties',JSONB_BUILD_OBJECT(
-             'nhdplusid' ,rec.out_nhdplusid2
-            ,'reachcode' ,rec.out_reachcode2
-            ,'measure'   ,rec.out_measure2
+      ,'navpoint2'   ,JSON_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape2,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
+             'nhdplusid'   ,rec.out_nhdplusid2
+            ,'reachcode'   ,rec.out_reachcode2
+            ,'measure'     ,rec.out_measure2
           )
        )
       ,'nhdplus_version',str_nhdplus_version

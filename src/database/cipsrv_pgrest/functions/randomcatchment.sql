@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomcatchment(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -108,18 +108,18 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'catchment'          ,JSONB_BUILD_OBJECT(
+       'catchment'   ,JSON_BUILD_OBJECT(
           'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-         ,'properties'  ,JSONB_BUILD_OBJECT(
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
              'nhdplusid'          ,rec.out_nhdplusid
             ,'areasqkm'           ,rec.out_areasqkm
             ,'catchmentstatecodes',rec.out_catchmentstatecodes
           )
        )
-      ,'centroid'           ,JSONB_BUILD_OBJECT(
+      ,'centroid'    ,JSON_BUILD_OBJECT(
           'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_centroid,4326))::JSONB
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_centroid,4326))::JSON
        )
       ,'nhdplus_version'    ,str_nhdplus_version
       ,'return_code'        ,rec.out_return_code

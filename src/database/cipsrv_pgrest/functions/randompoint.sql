@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randompoint(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -84,9 +84,9 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'point'              ,JSONB_BUILD_OBJECT(
-          'type'      ,'Feature'
-         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
+       'point'        ,JSON_BUILD_OBJECT(
+          'type'         ,'Feature'
+         ,'geometry'     ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
        )
       ,'nhdplus_version'    ,str_nhdplus_version
       ,'return_code'        ,rec.out_return_code

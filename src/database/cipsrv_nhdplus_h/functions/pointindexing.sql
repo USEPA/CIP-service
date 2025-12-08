@@ -10,7 +10,7 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.pointindexing(
-    IN  p_point                        GEOMETRY
+    IN  p_point                        public.GEOMETRY
    ,IN  p_indexing_engine              VARCHAR
    ,IN  p_fcode_allow                  INTEGER[]
    ,IN  p_fcode_deny                   INTEGER[]
@@ -29,10 +29,13 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.pointindexing(
    ,IN  p_known_catchment_nhdplusid    BIGINT   DEFAULT NULL
    ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
    ,OUT out_path_distance_km           NUMERIC
-   ,OUT out_end_point                  GEOMETRY
-   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_end_point                  public.GEOMETRY
+   ,OUT out_indexing_line              public.GEOMETRY
    ,OUT out_region                     VARCHAR
    ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_reachcode                  VARCHAR
+   ,OUT out_hydroseq                   BIGINT
+   ,OUT out_snap_measure               NUMERIC
    ,OUT out_return_code                INTEGER
    ,OUT out_status_message             VARCHAR
 )

@@ -10,7 +10,7 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.distance_index(
-    IN  p_point                        GEOMETRY
+    IN  p_point                        public.GEOMETRY
    ,IN  p_fcode_allow                  INTEGER[]
    ,IN  p_fcode_deny                   INTEGER[]
    ,IN  p_distance_max_distkm          NUMERIC
@@ -20,10 +20,13 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_h.distance_index(
    ,IN  p_known_region                 VARCHAR
    ,OUT out_flowlines                  cipsrv_nhdplus_h.snapflowline[]
    ,OUT out_path_distance_km           NUMERIC
-   ,OUT out_end_point                  GEOMETRY
-   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_end_point                  public.GEOMETRY
+   ,OUT out_indexing_line              public.GEOMETRY
    ,OUT out_region                     VARCHAR
    ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_reachcode                  VARCHAR
+   ,OUT out_hydroseq                   BIGINT
+   ,OUT out_snap_measure               NUMERIC
    ,OUT out_return_code                INTEGER
    ,OUT out_status_message             VARCHAR
 )
@@ -37,8 +40,8 @@ DECLARE
    boo_limit_navigable     BOOLEAN  := p_limit_navigable;
    boo_return_link_path    BOOLEAN  := p_return_link_path;
    int_raster_srid         INTEGER;
-   sdo_input               GEOMETRY;
-   sdo_temp                GEOMETRY;
+   sdo_input               public.GEOMETRY;
+   sdo_temp                public.GEOMETRY;
    rec_flowline            RECORD;
    rec_candidate           cipsrv_nhdplus_h.snapflowline;
    int_counter             INTEGER;
@@ -46,6 +49,8 @@ DECLARE
    boo_check_fcode_allow   BOOLEAN := FALSE;
    boo_check_fcode_deny    BOOLEAN := FALSE;
    int_limit               INTEGER := 16;
+   str_sql                 VARCHAR;
+   str_region_table        VARCHAR;
    
 BEGIN
 
@@ -55,8 +60,8 @@ BEGIN
    --------------------------------------------------------------------------
    out_return_code := 0;
    
-   IF p_point IS NULL OR ST_IsEmpty(p_point) 
-   OR ST_GeometryType(p_point) <> 'ST_Point'
+   IF p_point IS NULL OR public.ST_ISEMPTY(p_point) 
+   OR public.ST_GEOMETRYTYPE(p_point) <> 'ST_Point'
    THEN
       out_return_code    := -99;
       out_status_message := 'Input must be point geometry.';
@@ -126,12 +131,12 @@ BEGIN
    -- Step 30
    -- Project input point if required
    --------------------------------------------------------------------------
-   IF ST_SRID(p_point) = int_raster_srid
+   IF public.ST_SRID(p_point) = int_raster_srid
    THEN
       sdo_input := p_point;
       
    ELSE
-      sdo_input := ST_Transform(p_point,int_raster_srid);
+      sdo_input := public.ST_TRANSFORM(p_point,int_raster_srid);
       
    END IF;
 
@@ -141,524 +146,137 @@ BEGIN
    -------------------------------------------------------------------------
    IF int_raster_srid = 5070
    THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.totma
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,NULL
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.totma
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,NULL
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_h.nhdflowline_5070 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
+      str_region_table := 'cipsrv_nhdplus_h.nhdflowline_5070';
       
    ELSIF int_raster_srid = 3338
    THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.totma
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,NULL
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.totma
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,NULL
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_h.nhdflowline_3338 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
+      str_region_table := 'cipsrv_nhdplus_h.nhdflowline_3338';
    
    ELSIF int_raster_srid = 26904
    THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.totma
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,NULL
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.totma
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,NULL
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_h.nhdflowline_26904 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
+      str_region_table := 'cipsrv_nhdplus_h.nhdflowline_26904';
       
    ELSIF int_raster_srid = 32161
    THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.totma
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,NULL
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.totma
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,NULL
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_h.nhdflowline_32161 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
-      
-   ELSIF int_raster_srid = 32655
-   THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.totma
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,NULL
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.totma
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,NULL
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_h.nhdflowline_32655 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
+      str_region_table := 'cipsrv_nhdplus_h.nhdflowline_32161';
       
    ELSIF int_raster_srid = 32702
    THEN
-      OPEN curs_candidates FOR
-      SELECT 
-       a.permanent_identifier
-      ,a.fdate
-      ,a.resolution
-      ,a.gnis_id
-      ,a.gnis_name
-      ,a.lengthkm
-      ,a.totma
-      ,a.reachcode
-      ,a.flowdir
-      ,a.wbarea_permanent_identifier
-      ,a.ftype
-      ,a.fcode
-      ,a.mainpath
-      ,a.innetwork
-      ,a.visibilityfilter
-      ,a.nhdplusid
-      ,a.vpuid
-      ,NULL
-      ,a.fmeasure
-      ,a.tmeasure
-      ,a.hydroseq
-      ,a.shape
-      ,a.snap_distancekm
-      FROM (
-         SELECT 
-          aa.permanent_identifier
-         ,aa.fdate
-         ,aa.resolution
-         ,aa.gnis_id
-         ,aa.gnis_name
-         ,aa.lengthkm
-         ,aa.totma
-         ,aa.reachcode
-         ,aa.flowdir
-         ,aa.wbarea_permanent_identifier
-         ,aa.ftype
-         ,aa.fcode
-         ,aa.mainpath
-         ,aa.innetwork
-         ,aa.visibilityfilter
-         ,aa.nhdplusid
-         ,aa.vpuid
-         ,NULL
-         ,aa.fmeasure
-         ,aa.tmeasure
-         ,aa.hydroseq
-         ,aa.shape
-         ,ST_Distance(
-              ST_Transform(aa.shape,4326)::GEOGRAPHY
-             ,ST_Transform(sdo_input,4326)::GEOGRAPHY
-          ) / 1000 AS snap_distancekm
-         FROM
-         cipsrv_nhdplus_h.nhdflowline_32702 aa
-         WHERE
-         (  boo_check_fcode_allow IS FALSE
-            OR
-            aa.fcode = ANY(p_fcode_allow)
-         )
-         AND
-         (  boo_check_fcode_deny IS FALSE
-            OR
-            aa.fcode != ALL(p_fcode_deny)
-         )
-         AND
-         (  p_limit_innetwork IS FALSE
-            OR
-            aa.hasvaa
-         )
-         AND
-         (  p_limit_navigable IS FALSE
-            OR
-            aa.isnavigable
-         )
-         ORDER BY 
-         aa.shape <-> sdo_input 
-         LIMIT int_limit
-      ) a
-      WHERE
-      a.snap_distancekm <= num_distance_max_distkm
-      ORDER BY 
-      a.snap_distancekm ASC;
+      str_region_table := 'cipsrv_nhdplus_h.nhdflowline_32702';
       
    ELSE
       RAISE EXCEPTION 'err';
    
    END IF;
+   
+   str_sql := '
+      SELECT 
+       a.permanent_identifier
+      ,a.fdate
+      ,a.resolution
+      ,a.gnis_id
+      ,a.gnis_name
+      ,a.lengthkm
+      ,a.totma
+      ,a.reachcode
+      ,a.flowdir
+      ,a.wbarea_permanent_identifier
+      ,a.ftype
+      ,a.fcode
+      ,a.mainpath
+      ,a.innetwork
+      ,a.visibilityfilter
+      ,a.nhdplusid
+      ,a.vpuid
+      ,NULL
+      ,a.fmeasure
+      ,a.tmeasure
+      ,a.hydroseq
+      ,a.shape
+      ,a.snap_distancekm
+      FROM (
+         SELECT 
+          aa.permanent_identifier
+         ,aa.fdate
+         ,aa.resolution
+         ,aa.gnis_id
+         ,aa.gnis_name
+         ,aa.lengthkm
+         ,aa.totma
+         ,aa.reachcode
+         ,aa.flowdir
+         ,aa.wbarea_permanent_identifier
+         ,aa.ftype
+         ,aa.fcode
+         ,aa.mainpath
+         ,aa.innetwork
+         ,aa.visibilityfilter
+         ,aa.nhdplusid
+         ,aa.vpuid
+         ,NULL
+         ,aa.fmeasure
+         ,aa.tmeasure
+         ,aa.hydroseq
+         ,aa.shape
+         ,public.ST_DISTANCE(
+              public.ST_TRANSFORM(aa.shape,4326)::public.GEOGRAPHY
+             ,public.ST_TRANSFORM($1,4326)::public.GEOGRAPHY
+          ) / 1000 AS snap_distancekm
+         FROM
+         ' || str_region_table || ' aa
+         WHERE
+         1=1 
+      ';
+         
+      IF boo_check_fcode_allow
+      THEN
+         str_sql := str_sql || 'AND aa.fcode = ANY($3) ';
+      
+      ELSE
+         str_sql := str_sql || 'AND (1=1 OR $3 IS NULL) ';
+      
+      END IF;
+      
+      IF boo_check_fcode_deny
+      THEN
+         str_sql := str_sql || 'AND aa.fcode != ALL($4) ';
+         
+      ELSE
+         str_sql := str_sql || 'AND (1=1 OR $4 IS NULL) ';
+      
+      END IF;
+      
+      IF p_limit_innetwork
+      THEN
+         str_sql := str_sql || 'AND aa.innetwork ';
+         
+      END IF;
+      
+      IF p_limit_navigable
+      THEN
+         str_sql := str_sql || 'AND a.isnavigable ';
+         
+      END IF;
+         
+      str_sql := str_sql || '
+         ORDER BY 
+         aa.shape <-> $2 
+         LIMIT $5
+      ) a
+      WHERE
+      a.snap_distancekm <= $6
+      ORDER BY 
+      a.snap_distancekm ASC
+   ';
+   
+   OPEN curs_candidates FOR EXECUTE str_sql
+   USING
+    sdo_input
+   ,sdo_input
+   ,p_fcode_allow
+   ,p_fcode_deny
+   ,int_limit
+   ,num_distance_max_distkm;
 
    -------------------------------------------------------------------------
    -- Step 50
@@ -689,16 +307,16 @@ BEGIN
       rec_candidate.fmeasure                    := rec_flowline.fmeasure;
       rec_candidate.tmeasure                    := rec_flowline.tmeasure;
       rec_candidate.hydroseq                    := rec_flowline.hydroseq;
-      rec_candidate.shape                       := ST_Transform(rec_flowline.shape,4269);
+      rec_candidate.shape                       := public.ST_TRANSFORM(rec_flowline.shape,4269);
       
-      rec_candidate.snap_measure := ROUND(ST_InterpolatePoint(
+      rec_candidate.snap_measure := ROUND(public.ST_INTERPOLATEPOINT(
           rec_flowline.shape
          ,sdo_input
       )::NUMERIC,5);
       
       rec_candidate.snap_distancekm             := rec_flowline.snap_distancekm;
       
-      sdo_temp := ST_GeometryN(ST_LocateAlong(
+      sdo_temp := public.ST_GEOMETRYN(public.ST_LOCATEALONG(
           rec_flowline.shape
          ,rec_candidate.snap_measure
       ),1);
@@ -707,14 +325,14 @@ BEGIN
       IF sdo_temp IS NULL
       OR ST_IsEmpty(sdo_temp)
       THEN
-         sdo_temp := ST_GeometryN(ST_LocateAlong(
-             ST_GeomFromEWKT(ST_AsEWKT(rec_flowline.shape))
+         sdo_temp := public.ST_GEOMETRYN(public.ST_LOCATEALONG(
+             public.ST_GEOMFROMEWKT(public.ST_ASEWKT(rec_flowline.shape))
             ,rec_candidate.snap_measure
          ),1);
          
       END IF;
  
-      rec_candidate.snap_point := ST_Transform(ST_Force2D(
+      rec_candidate.snap_point := public.ST_TRANSFORM(public.ST_FORCE2D(
          sdo_temp
       ),4269);
 
@@ -741,7 +359,7 @@ BEGIN
    --------------------------------------------------------------------------
    IF int_counter = 1
    OR out_flowlines IS NULL
-   OR array_length(out_flowlines,1) = 0
+   OR ARRAY_LENGTH(out_flowlines,1) = 0
    THEN
       out_return_code    := -1;
       out_status_message := 'No results found';
@@ -756,12 +374,15 @@ BEGIN
    out_path_distance_km := out_flowlines[1].snap_distancekm;
    out_end_point        := out_flowlines[1].snap_point;
    out_nhdplusid        := out_flowlines[1].nhdplusid;
+   out_reachcode        := out_flowlines[1].reachcode;
+   out_hydroseq         := out_flowlines[1].hydroseq;
+   out_snap_measure     := out_flowlines[1].snap_measure;
    
    IF p_return_link_path
    AND out_path_distance_km > 0.00005
    THEN
-      out_indexing_line := ST_MakeLine(
-          ST_Transform(sdo_input,4269)
+      out_indexing_line := public.ST_MAKELINE(
+          public.ST_TRANSFORM(sdo_input,4269)
          ,out_end_point
       );
   

@@ -10,13 +10,13 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_domains()
-RETURNS JSONB
+RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
 DECLARE
-   json_states JSONB;
-   json_tribes JSONB;
+   json_states JSON;
+   json_tribes JSON;
    
 BEGIN
    
@@ -30,7 +30,7 @@ BEGIN
    -- Collect the state domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.* ORDER BY a.stusps)
+   JSON_AGG(a.* ORDER BY a.stusps)
    INTO json_states
    FROM (
       SELECT
@@ -46,7 +46,7 @@ BEGIN
    -- Collect the tribes domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.* ORDER BY a.aiannhns_stem)
+   JSON_AGG(a.* ORDER BY a.aiannhns_stem)
    INTO json_tribes
    FROM (
       SELECT
@@ -62,7 +62,7 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
+   RETURN JSON_BUILD_OBJECT(
        'states', json_states
       ,'tribes', json_tribes
    );
