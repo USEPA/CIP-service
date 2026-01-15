@@ -51,6 +51,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/cipsrv_domains'
+  /rpc/cipsrv_registry:
+    get:
+      tags:
+      - 'CIP Indexing Services'
+      summary: CIP-service Registry Summary of Resources
+      description: CIP-service Registry showing components and relative vintage of datasets.
+      operationId: cipsrv_registry
+      responses:
+        '200':
+          description: summary of resources
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/cipsrv_registry'
   /rpc/navigate:
     post:
       tags:
@@ -613,6 +627,7 @@ components:
       type: object
       properties:
         delineated_area:
+          obj_type: delineated_area_properties
           $ref: '#/components/schemas/geojson_featurecollection'
         aggregation_used:
           description: aggregation logic used in delineation action.
@@ -1339,10 +1354,10 @@ components:
     cipsrv_domains:
       type: object
       properties:
-         states:
-           $ref: '#/components/schemas/cipsrv_domains_states'
-         tribes:
-           $ref: '#/components/schemas/cipsrv_domains_tribes'
+        states:
+          $ref: '#/components/schemas/cipsrv_domains_states'
+        tribes:
+          $ref: '#/components/schemas/cipsrv_domains_tribes'
     cipsrv_domains_states:
       type: array
       items:
@@ -1350,12 +1365,12 @@ components:
     cipsrv_domains_state:
       type: object
       properties:
-         geoid:
-           type: string
-         stusps:
-           type: string
-         name:
-           type: string
+        geoid:
+          type: string
+        stusps:
+          type: string
+        name:
+          type: string
     cipsrv_domains_tribes:
       type: array
       items:
@@ -1363,14 +1378,44 @@ components:
     cipsrv_domains_tribe:
       type: object
       properties:
-         aiannhns_stem:
-           type: string
-         aiannhns_namelsad:
-           type: string
-         has_reservation_lands:
-           type: boolean
-         has_trust_lands:
-           type: boolean
+        aiannhns_stem:
+          type: string
+        aiannhns_namelsad:
+          type: string
+        has_reservation_lands:
+          type: boolean
+        has_trust_lands:
+          type: boolean
+    cipsrv_registry:
+      type: object
+      properties:
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/cipsrv_registry_components'
+        version:
+          type: string
+        installation_date:
+          type: string
+          format: date
+        notes:
+          type: string
+    cipsrv_registry_components:
+      type: object
+      properties:
+        component:
+          type: string
+        component_type:
+          type: string
+        component_vintage:
+          type: string
+        installation_date:
+          type: string
+          format: date
+        installer_username:
+          type: string
+        notes:
+          type: string
     ordinate:
       type: number
       title: GeoJSON Ordinate
@@ -1687,6 +1732,7 @@ components:
         - DD = downstream with divergences navigation
         - PP = point-to-point mainstem navigation
         - PPALL = point-to-point mainstem navigation with all streams between
+        - UTNMD = upstream with tributaries no minor divergences navigation
       type: string
       enum:
       - UM
