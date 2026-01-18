@@ -254,7 +254,7 @@ BEGIN
       
       IF p_limit_navigable
       THEN
-         str_sql := str_sql || 'AND a.isnavigable ';
+         str_sql := str_sql || 'AND aa.isnavigable ';
          
       END IF;
          
@@ -332,7 +332,7 @@ BEGIN
          
       END IF;
  
-      rec_candidate.snap_point := public.ST_TRANSFORM(ST_Force2D(
+      rec_candidate.snap_point := public.ST_TRANSFORM(public.ST_Force2D(
          sdo_temp
       ),4269);
 

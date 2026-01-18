@@ -254,7 +254,7 @@ BEGIN
       
       IF p_limit_navigable
       THEN
-         str_sql := str_sql || 'AND a.isnavigable ';
+         str_sql := str_sql || 'AND aa.isnavigable ';
          
       END IF;
          
@@ -323,7 +323,7 @@ BEGIN
       
       -- This is some weird numeric nuttiness which is corrected by reifying as text 
       IF sdo_temp IS NULL
-      OR ST_IsEmpty(sdo_temp)
+      OR public.ST_IsEmpty(sdo_temp)
       THEN
          sdo_temp := public.ST_GEOMETRYN(public.ST_LOCATEALONG(
              public.ST_GEOMFROMEWKT(public.ST_ASEWKT(rec_flowline.shape))
