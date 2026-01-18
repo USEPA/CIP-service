@@ -13,13 +13,13 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_domains()
-RETURNS JSONB
+RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
 DECLARE
-   json_states JSONB;
-   json_tribes JSONB;
+   json_states JSON;
+   json_tribes JSON;
    
 BEGIN
    
@@ -33,7 +33,7 @@ BEGIN
    -- Collect the state domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.* ORDER BY a.stusps)
+   JSON_AGG(a.* ORDER BY a.stusps)
    INTO json_states
    FROM (
       SELECT
@@ -49,7 +49,7 @@ BEGIN
    -- Collect the tribes domain values
    ----------------------------------------------------------------------------
    SELECT 
-   JSONB_AGG(a.* ORDER BY a.aiannhns_stem)
+   JSON_AGG(a.* ORDER BY a.aiannhns_stem)
    INTO json_tribes
    FROM (
       SELECT
@@ -65,7 +65,7 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
+   RETURN JSON_BUILD_OBJECT(
        'states', json_states
       ,'tribes', json_tribes
    );
@@ -787,7 +787,7 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_registry()
-RETURNS JSONB
+RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
@@ -905,13 +905,13 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.cipsrv_owld_programs()
-RETURNS JSONB
+RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
 DECLARE
-   json_program  JSONB;
-   json_array    JSONB;
+   json_program  JSON;
+   json_array    JSON;
    rec           RECORD;
    
 BEGIN
@@ -939,7 +939,7 @@ BEGIN
          
          IF json_array IS NULL
          THEN
-            json_array := JSONB_BUILD_ARRAY(
+            json_array := JSON_BUILD_ARRAY(
                json_program
             );
             
@@ -958,7 +958,7 @@ BEGIN
    ----------------------------------------------------------------------------
    IF json_array IS NULL
    THEN
-      json_array := '[]'::JSONB;
+      json_array := '[]'::JSON;
       
    END IF;
    
@@ -1555,14 +1555,14 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.healthcheck()
-RETURNS JSONB
+RETURNS JSON
 IMMUTABLE
 AS
 $BODY$ 
 DECLARE
 BEGIN
    
-   RETURN JSONB_BUILD_OBJECT(
+   RETURN JSON_BUILD_OBJECT(
        'status', 'ok'
    );
       
@@ -1979,7 +1979,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.pointindexing(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
@@ -2020,7 +2020,7 @@ BEGIN
       sdo_point := cipsrv_engine.json2geometry(json_input->'point');
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -10
          ,'status_message', 'input point is required.'
       );
@@ -2029,14 +2029,14 @@ BEGIN
    
    IF sdo_point IS NULL
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -10
          ,'status_message', 'valid input point is required.'
       );
    
    ELSIF ST_GeometryType(sdo_point) != 'ST_Point'
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -20
          ,'status_message', 'geometry must be single point.'
       );
@@ -2204,7 +2204,7 @@ BEGIN
       str_nhdplus_version := json_input->>'nhdplus_version';
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code', -10
          ,'status_message', 'nhdplus_version required.'
       );
@@ -2241,26 +2241,33 @@ BEGIN
       
       IF int_return_code != 0
       THEN
-         RETURN JSONB_BUILD_OBJECT(
+         RETURN JSON_BUILD_OBJECT(
              'return_code',    int_return_code
             ,'status_message', str_status_message
          );
       
       END IF;
       
-      RETURN JSONB_BUILD_OBJECT(
-          'flowlines'           ,cipsrv_nhdplus_m.snapflowlines2geojson(rec1.out_flowlines)
+      RETURN JSON_BUILD_OBJECT(
+          'flowlines'           ,cipsrv_nhdplus_m.snapflowlines2geojson(rec1.out_flowlines)::JSON
          ,'path_distance_km'    ,rec1.out_path_distance_km
-         ,'end_point'           ,JSONB_BUILD_OBJECT(
+         ,'end_point'           ,JSON_BUILD_OBJECT(
              'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_end_point,4326))::JSONB
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_end_point,4326))::JSON
+            ,'properties'          ,JSON_BUILD_OBJECT(
+                'nhdplusid'           ,rec1.out_nhdplusid
+               ,'measure'             ,rec1.out_snap_measure
+             )
           )
-         ,'indexing_line'       ,JSONB_BUILD_OBJECT(
+         ,'indexing_line'       ,JSON_BUILD_OBJECT(
              'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_indexing_line,4326))::JSONB
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_indexing_line,4326))::JSON
           )
          ,'region'              ,rec1.out_region
          ,'nhdplusid'           ,rec1.out_nhdplusid
+         ,'reachcode'           ,rec1.out_reachcode
+         ,'hydroseq'            ,rec1.out_hydroseq
+         ,'snap_measure'        ,rec1.out_snap_measure
          ,'return_code'         ,int_return_code
          ,'status_message'      ,str_status_message
       );
@@ -2291,32 +2298,39 @@ BEGIN
       
       IF int_return_code != 0
       THEN
-         RETURN JSONB_BUILD_OBJECT(
+         RETURN JSON_BUILD_OBJECT(
              'return_code',    int_return_code
             ,'status_message', str_status_message
          );
       
       END IF;
       
-      RETURN JSONB_BUILD_OBJECT(
-          'flowlines'           ,cipsrv_nhdplus_h.snapflowlines2geojson(rec2.out_flowlines)
+      RETURN JSON_BUILD_OBJECT(
+          'flowlines'           ,cipsrv_nhdplus_h.snapflowlines2geojson(rec2.out_flowlines)::JSON
          ,'path_distance_km'    ,rec2.out_path_distance_km
-         ,'end_point'           ,JSONB_BUILD_OBJECT(
-             'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_end_point,4326))::JSONB
+         ,'end_point'           ,JSON_BUILD_OBJECT(
+             'type'                ,'Feature'
+            ,'geometry'            ,ST_AsGeoJSON(ST_Transform(rec2.out_end_point,4326))::JSON
+            ,'properties'          ,JSON_BUILD_OBJECT(
+                'nhdplusid'           ,rec2.out_nhdplusid
+               ,'measure'             ,rec2.out_snap_measure
+             )
           )
-         ,'indexing_line'       ,JSONB_BUILD_OBJECT(
+         ,'indexing_line'       ,JSON_BUILD_OBJECT(
              'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_indexing_line,4326))::JSONB
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_indexing_line,4326))::JSON
           )
          ,'region'              ,rec2.out_region
          ,'nhdplusid'           ,rec2.out_nhdplusid
+         ,'reachcode'           ,rec2.out_reachcode
+         ,'hydroseq'            ,rec2.out_hydroseq
+         ,'snap_measure'        ,rec2.out_snap_measure
          ,'return_code'         ,int_return_code
          ,'status_message'      ,str_status_message
       );
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code', -10
          ,'status_message', 'invalid nhdplus_version.'
       );
@@ -2367,24 +2381,24 @@ $BODY$
 DECLARE
    rec                               RECORD;
    json_input                        JSONB := $1;
-   sdo_area_of_interest              GEOMETRY;
+   sdo_area_of_interest              public.GEOMETRY;
    int_default_weight                INTEGER := 1;
    str_known_region                  VARCHAR;
    str_nhdplus_version               VARCHAR;
-   rst_temp                          RASTER;
-   rst_temp2                         RASTER;
-   rst_flow_accumulation             RASTER;
+   rst_temp                          public.RASTER;
+   rst_temp2                         public.RASTER;
+   rst_flow_accumulation             public.RASTER;
    base64_raster                     TEXT;
    int_raster_srid                   INTEGER;
    int_max_accumulation              INTEGER;
    int_max_accumulation_x            INTEGER;
    int_max_accumulation_y            INTEGER;
-   sdo_max_accumulation_pt           GEOMETRY;
+   sdo_max_accumulation_pt           public.GEOMETRY;
    str_image_format                  VARCHAR;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    str_image_mimetype                VARCHAR;
-   sdo_raster_bounding_box           GEOMETRY;
+   sdo_raster_bounding_box           public.GEOMETRY;
    ary_raster_bounding_box           NUMERIC[];
    int_output_srid                   INTEGER;
    
@@ -2403,7 +2417,7 @@ BEGIN
       sdo_area_of_interest := cipsrv_engine.json2geometry(json_input->'area_of_interest');
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -10
          ,'status_message', 'area_of_interest is required.'
       );
@@ -2436,7 +2450,7 @@ BEGIN
       str_nhdplus_version := json_input->>'nhdplus_version';
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code', -10
          ,'status_message', 'nhdplus_version required.'
       );
@@ -2672,7 +2686,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.upstreamdownstream(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
@@ -2748,18 +2762,18 @@ DECLARE
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    
-   json_flowlines                    JSONB;
-   json_catchments                   JSONB;
-   json_linked_data_sfid_found       JSONB;
-   json_linked_data_cip_found        JSONB;
-   json_linked_data_huc12_found      JSONB;
-   json_linked_data_source_points    JSONB;
-   json_linked_data_source_lines     JSONB;
-   json_linked_data_source_areas     JSONB;
-   json_linked_data_reached_points   JSONB;
-   json_linked_data_reached_lines    JSONB;
-   json_linked_data_reached_areas    JSONB;
-   json_linked_data_attributes       JSONB;
+   json_flowlines                    JSON;
+   json_catchments                   JSON;
+   json_linked_data_sfid_found       JSON;
+   json_linked_data_cip_found        JSON;
+   json_linked_data_huc12_found      JSON;
+   json_linked_data_source_points    JSON;
+   json_linked_data_source_lines     JSON;
+   json_linked_data_source_areas     JSON;
+   json_linked_data_reached_points   JSON;
+   json_linked_data_reached_lines    JSON;
+   json_linked_data_reached_areas    JSON;
+   json_linked_data_attributes       JSON;
    str_known_region                  VARCHAR;
    int_count                         INTEGER;
    
@@ -2778,7 +2792,7 @@ BEGIN
       str_nhdplus_version := json_input->>'nhdplus_version';
 
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'flowlines'                   , NULL
          ,'flowline_count'              , NULL
          ,'catchments'                  , NULL
@@ -3335,7 +3349,7 @@ BEGIN
    
    IF int_return_code != 0
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'flowlines'                   , NULL
          ,'flowline_count'              , NULL
          ,'catchments'                  , NULL
@@ -3376,16 +3390,16 @@ BEGIN
    THEN
       json_flowlines := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'nav_order',j.my_json->'properties'->'network_distancekm'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'navigated_flowline_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -3412,7 +3426,13 @@ BEGIN
                /* +++++++++ */
                ,a.navtermination_flag
                ,a.nav_order
-               ,CASE WHEN boo_return_flowline_geometry THEN ST_Transform(a.shape,4326) ELSE NULL::GEOMETRY END AS geom
+               ,CASE 
+                WHEN boo_return_flowline_geometry 
+                THEN 
+                  public.ST_TRANSFORM(a.shape,4326)
+                ELSE 
+                  NULL::public.GEOMETRY 
+                END AS geom
                FROM
                tmp_navigation_results a
             ) t
@@ -3420,7 +3440,7 @@ BEGIN
       );
             
       IF json_flowlines IS NULL
-      OR JSONB_ARRAY_LENGTH(json_flowlines) = 0
+      OR JSON_ARRAY_LENGTH(json_flowlines) = 0
       THEN
          json_flowlines := NULL;
          
@@ -3445,23 +3465,23 @@ BEGIN
    THEN
       json_catchments := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'navigated_catchment_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
                 a.nhdplusid
                ,a.sourcefc
                ,a.areasqkm
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_catchments a
             ) t
@@ -3469,7 +3489,7 @@ BEGIN
       );
             
       IF json_catchments IS NULL
-      OR JSONB_ARRAY_LENGTH(json_catchments) = 0
+      OR JSON_ARRAY_LENGTH(json_catchments) = 0
       THEN
          json_catchments := NULL;
          
@@ -3494,7 +3514,7 @@ BEGIN
    THEN
       json_linked_data_sfid_found := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             a.* ORDER BY a.eventtype,a.nearest_cip_network_distancekm,a.nearest_rad_network_distancekm
          )
          FROM (
@@ -3528,7 +3548,7 @@ BEGIN
       );
             
       IF json_linked_data_sfid_found IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_sfid_found) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_sfid_found) = 0
       THEN
          json_linked_data_sfid_found := NULL;
          
@@ -3547,7 +3567,7 @@ BEGIN
    THEN
       json_linked_data_cip_found := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             a.* ORDER BY a.network_distancekm,a.network_flowtimeday
          )
          FROM (
@@ -3586,7 +3606,7 @@ BEGIN
       );
             
       IF json_linked_data_cip_found IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_cip_found) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_cip_found) = 0
       THEN
          json_linked_data_cip_found := NULL;
          
@@ -3607,7 +3627,7 @@ BEGIN
    THEN
       json_linked_data_huc12_found := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             a.* ORDER BY a.eventtype,a.source_joinkey,a.permid_joinkey,a.xwalk_huc12
          )
          FROM (
@@ -3633,7 +3653,7 @@ BEGIN
       );
             
       IF json_linked_data_huc12_found IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_huc12_found) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_huc12_found) = 0
       THEN
          json_linked_data_huc12_found := NULL;
          
@@ -3653,16 +3673,16 @@ BEGIN
    THEN
       json_linked_data_source_points := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_source_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -3677,7 +3697,7 @@ BEGIN
                ,a.start_date
                ,a.end_date
                ,a.featuredetailurl
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_src_points a
             ) t
@@ -3685,7 +3705,7 @@ BEGIN
       );
             
       IF json_linked_data_source_points IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_source_points) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_source_points) = 0
       THEN
          json_linked_data_source_points := NULL;
          
@@ -3711,16 +3731,16 @@ BEGIN
    THEN
       json_linked_data_source_lines := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_source_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -3736,7 +3756,7 @@ BEGIN
                ,a.end_date
                ,a.featuredetailurl
                ,a.lengthkm
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_src_lines a
             ) t
@@ -3744,7 +3764,7 @@ BEGIN
       );
             
       IF json_linked_data_source_lines IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_source_lines) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_source_lines) = 0
       THEN
          json_linked_data_source_lines := NULL;
          
@@ -3770,16 +3790,16 @@ BEGIN
    THEN
       json_linked_data_source_areas := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'orderingkey'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_source_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -3795,7 +3815,7 @@ BEGIN
                ,a.end_date
                ,a.featuredetailurl
                ,a.areasqkm
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_src_areas a
             ) t
@@ -3803,7 +3823,7 @@ BEGIN
       );
             
       IF json_linked_data_source_areas IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_source_areas) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_source_areas) = 0
       THEN
          json_linked_data_source_areas := NULL;
          
@@ -3829,16 +3849,16 @@ BEGIN
    THEN
       json_linked_data_reached_points := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'network_distancekm'
          ) AS my_feats
          FROM (
             SELECT 
-            JSONB_BUILD_OBJECT(
+            JSON_BUILD_OBJECT(
                 'type',       'Feature'
                ,'obj_type',   'linked_reached_point_properties'
-               ,'geometry',   ST_AsGeoJSON(t.geom)::JSONB
-               ,'properties', TO_JSONB(t.*) - 'geom'
+               ,'geometry',   public.ST_ASGEOJSON(t.geom)::JSON
+               ,'properties', TO_JSON(t.*) - 'geom'
             ) AS my_json
             FROM (
                SELECT
@@ -3868,7 +3888,7 @@ BEGIN
                ,a.isnavigable
                ,a.network_distancekm
                ,a.network_flowtimeday
-               ,ST_Transform(a.shape,4326) AS geom
+               ,public.ST_TRANSFORM(a.shape,4326) AS geom
                FROM
                tmp_rad_points a
             ) t
@@ -3876,7 +3896,7 @@ BEGIN
       );
 
       IF json_linked_data_reached_points IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_reached_points) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_reached_points) = 0
       THEN
          json_linked_data_reached_points := NULL;
          
@@ -3902,12 +3922,12 @@ BEGIN
    THEN
       json_linked_data_attributes := (
          SELECT 
-         JSONB_AGG(
+         JSON_AGG(
             j.my_json ORDER BY j.my_json->'properties'->'eventtype',j.my_json->'properties'->'source_joinkey'
          ) AS my_feats
          FROM (
             SELECT
-            TO_JSONB(aa) -'attributes' || aa.attributes AS my_json
+            TO_JSON(aa) -'attributes' || aa.attributes AS my_json
             FROM (
                SELECT
                 aaa.eventtype
@@ -3928,7 +3948,7 @@ BEGIN
       );
             
       IF json_linked_data_attributes IS NULL
-      OR JSONB_ARRAY_LENGTH(json_linked_data_attributes) = 0
+      OR JSON_ARRAY_LENGTH(json_linked_data_attributes) = 0
       THEN
          json_linked_data_attributes := NULL;
          
@@ -3943,7 +3963,7 @@ BEGIN
    -- Step 130
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
+   RETURN JSON_BUILD_OBJECT(
        'flowlines'                   , json_flowlines
       ,'flowline_count'              , int_flowline_count
       ,'catchments'                  , json_catchments
@@ -4002,7 +4022,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomcatchment(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -4099,18 +4119,18 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'catchment'          ,JSONB_BUILD_OBJECT(
+       'catchment'   ,JSON_BUILD_OBJECT(
           'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-         ,'properties'  ,JSONB_BUILD_OBJECT(
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
              'nhdplusid'          ,rec.out_nhdplusid
             ,'areasqkm'           ,rec.out_areasqkm
             ,'catchmentstatecodes',rec.out_catchmentstatecodes
           )
        )
-      ,'centroid'           ,JSONB_BUILD_OBJECT(
+      ,'centroid'    ,JSON_BUILD_OBJECT(
           'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_centroid,4326))::JSONB
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_centroid,4326))::JSON
        )
       ,'nhdplus_version'    ,str_nhdplus_version
       ,'return_code'        ,rec.out_return_code
@@ -4147,7 +4167,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomhuc12(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -4218,12 +4238,12 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'huc12'          ,JSONB_BUILD_OBJECT(
+       'huc12'       ,JSON_BUILD_OBJECT(
           'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-         ,'properties'  ,JSONB_BUILD_OBJECT(
-             'huc12'        ,rec.out_huc12
-            ,'huc12_name'   ,rec.out_huc12_name
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
+             'huc12'       ,rec.out_huc12
+            ,'huc12_name'  ,rec.out_huc12_name
           )
        )
       ,'source_dataset' ,rec.out_source_dataset
@@ -4261,7 +4281,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomnav(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -4333,14 +4353,14 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
-       'navpoint'       ,JSONB_BUILD_OBJECT(
-          'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-         ,'properties'  ,JSONB_BUILD_OBJECT(
-             'nhdplusid'      ,rec.out_nhdplusid
-            ,'reachcode'      ,rec.out_reachcode
-            ,'measure'        ,rec.out_measure
+   RETURN JSON_BUILD_OBJECT(
+       'navpoint'     ,JSON_BUILD_OBJECT(
+          'type'         ,'Feature'
+         ,'geometry'     ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
+         ,'properties'   ,JSON_BUILD_OBJECT(
+             'nhdplusid'    ,rec.out_nhdplusid
+            ,'reachcode'    ,rec.out_reachcode
+            ,'measure'      ,rec.out_measure
           )
        )
       ,'nhdplus_version',str_nhdplus_version
@@ -4378,7 +4398,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randompoint(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -4451,9 +4471,9 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'point'              ,JSONB_BUILD_OBJECT(
-          'type'      ,'Feature'
-         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
+       'point'        ,JSON_BUILD_OBJECT(
+          'type'         ,'Feature'
+         ,'geometry'     ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
        )
       ,'nhdplus_version'    ,str_nhdplus_version
       ,'return_code'        ,rec.out_return_code
@@ -4490,7 +4510,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomppnav(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -4562,23 +4582,23 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
-       'navpoint1'      ,JSONB_BUILD_OBJECT(
-          'type'      ,'Feature'
-         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape1,4326))::JSONB
-         ,'properties',JSONB_BUILD_OBJECT(
-             'nhdplusid' ,rec.out_nhdplusid1
-            ,'reachcode' ,rec.out_reachcode1
-            ,'measure'   ,rec.out_measure1
+   RETURN JSON_BUILD_OBJECT(
+       'navpoint1'   ,JSON_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape1,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
+             'nhdplusid'   ,rec.out_nhdplusid1
+            ,'reachcode'   ,rec.out_reachcode1
+            ,'measure'     ,rec.out_measure1
           )
        )
-      ,'navpoint2'      ,JSONB_BUILD_OBJECT(
-          'type'      ,'Feature'
-         ,'geometry'  ,ST_AsGeoJSON(ST_Transform(rec.out_shape2,4326))::JSONB
-         ,'properties',JSONB_BUILD_OBJECT(
-             'nhdplusid' ,rec.out_nhdplusid2
-            ,'reachcode' ,rec.out_reachcode2
-            ,'measure'   ,rec.out_measure2
+      ,'navpoint2'   ,JSON_BUILD_OBJECT(
+          'type'        ,'Feature'
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape2,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
+             'nhdplusid'   ,rec.out_nhdplusid2
+            ,'reachcode'   ,rec.out_reachcode2
+            ,'measure'     ,rec.out_measure2
           )
        )
       ,'nhdplus_version',str_nhdplus_version

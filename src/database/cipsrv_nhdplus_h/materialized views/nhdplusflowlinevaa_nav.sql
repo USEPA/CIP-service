@@ -392,7 +392,7 @@ SELECT
    ,40000600000495  -- Verde River 22365
    ,40000700001137  -- San Francisco River 15379
    ,40000800001710  -- Little Colorado River 67238
-   ,40000800002035  -- Zuñi River 13070
+   ,40000800002035  -- Zuni River 13070
    ,40000800002095  -- Puerco River 12755
    ,41000100000336  -- Dirty Devil River 15045
    ,41000100026157  -- Green River 252327
