@@ -5778,7 +5778,7 @@ BEGIN
       
       IF p_limit_innetwork
       THEN
-         str_sql := str_sql || 'AND aa.innetwork ';
+         str_sql := str_sql || 'AND aa.hasvaa ';
          
       END IF;
       
