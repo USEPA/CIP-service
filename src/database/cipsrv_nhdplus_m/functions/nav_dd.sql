@@ -29,6 +29,7 @@ BEGIN
    -- Step 10
    -- Run DM first to establish mainline
    ----------------------------------------------------------------------------
+   --RAISE WARNING '10 %',CLOCK_TIMESTAMP();
    WITH RECURSIVE dm(
        nhdplusid
       ,hydroseq
@@ -154,11 +155,13 @@ BEGIN
    dm a; 
    
    GET DIAGNOSTICS int_count = ROW_COUNT;
+   ANALYZE tmp_navigation_working30;
    
    ----------------------------------------------------------------------------
    -- Step 20
    -- Tag the nav termination flags
    ----------------------------------------------------------------------------
+   --RAISE WARNING '20 % %',CLOCK_TIMESTAMP(),int_count;
    WITH cte AS ( 
       SELECT
        a.hydroseq
@@ -199,6 +202,7 @@ BEGIN
    -- Step 30
    -- Extract the divergences off the mainline
    ----------------------------------------------------------------------------
+   --RAISE WARNING '30 % %',CLOCK_TIMESTAMP(),int_count;
    LOOP
       FOR rec IN 
          SELECT 
@@ -366,6 +370,7 @@ BEGIN
    -- Step 40
    -- Remove extraneous records
    ----------------------------------------------------------------------------
+   --RAISE WARNING '40 %',CLOCK_TIMESTAMP();
    DELETE FROM tmp_navigation_working30 a
    WHERE
    NOT a.selected;
@@ -374,6 +379,7 @@ BEGIN
    -- Step 50
    -- Tag the downstream nav termination flags
    ----------------------------------------------------------------------------
+   --RAISE WARNING '50 %',CLOCK_TIMESTAMP();
    FOR rec IN
       SELECT
        a.hydroseq
@@ -412,9 +418,10 @@ BEGIN
    END LOOP;
    
    ----------------------------------------------------------------------------
-   -- Step 50
+   -- Step 60
    -- Return total count of results
    ----------------------------------------------------------------------------
+   --RAISE WARNING '60 %',CLOCK_TIMESTAMP();
    RETURN int_count;
 
 END;
