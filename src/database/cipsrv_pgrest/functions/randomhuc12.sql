@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomhuc12(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -82,12 +82,12 @@ BEGIN
    -- Return what we got
    ----------------------------------------------------------------------------
    RETURN JSON_BUILD_OBJECT(
-       'huc12'          ,JSONB_BUILD_OBJECT(
+       'huc12'       ,JSON_BUILD_OBJECT(
           'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-         ,'properties'  ,JSONB_BUILD_OBJECT(
-             'huc12'        ,rec.out_huc12
-            ,'huc12_name'   ,rec.out_huc12_name
+         ,'geometry'    ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
+         ,'properties'  ,JSON_BUILD_OBJECT(
+             'huc12'       ,rec.out_huc12
+            ,'huc12_name'  ,rec.out_huc12_name
           )
        )
       ,'source_dataset' ,rec.out_source_dataset

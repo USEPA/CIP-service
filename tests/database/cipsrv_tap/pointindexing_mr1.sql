@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION cipsrv_tap.pointindexing_1()
+CREATE OR REPLACE FUNCTION cipsrv_tap.pointindexing_mr1()
 RETURNS SETOF TEXT 
 LANGUAGE plpgsql
 AS $$DECLARE
@@ -6,10 +6,11 @@ AS $$DECLARE
    int_tmp       BIGINT;
    
 BEGIN
+   /* SELECT * FROM runtests('cipsrv_tap'::name,'pointindexing_mr1'::name); */
    
    ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_m.pointindexing(
-       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+       p_point                        := public.ST_SETSRID(public.ST_POINT(-96.735677779,38.699056373),4326)
       ,p_indexing_engine              := 'DISTANCE'
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
@@ -43,7 +44,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_m.pointindexing(
-       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+       p_point                        := public.ST_SETSRID(public.ST_POINT(-96.735677779,38.699056373),4326)
       ,p_indexing_engine              := 'CATCONSTRAINED'
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
@@ -77,7 +78,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_m.pointindexing(
-       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+       p_point                        := public.ST_SETSRID(public.ST_POINT(-96.735677779,38.699056373),4326)
       ,p_indexing_engine              := 'RAINDROP'
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
@@ -111,7 +112,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.pointindexing(
-       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+       p_point                        := public.ST_SETSRID(public.ST_POINT(-96.735677779,38.699056373),4326)
       ,p_indexing_engine              := 'DISTANCE'
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
@@ -145,7 +146,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.pointindexing(
-       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+       p_point                        := public.ST_SETSRID(public.ST_POINT(-96.735677779,38.699056373),4326)
       ,p_indexing_engine              := 'CATCONSTRAINED'
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL
@@ -179,7 +180,7 @@ BEGIN
    
    ----------------------------------------------------------------------------
    rec := cipsrv_nhdplus_h.pointindexing(
-       p_point                        := ST_SETSRID(ST_POINT(-96.735677779,38.699056373),4326)
+       p_point                        := public.ST_SETSRID(public.ST_POINT(-96.735677779,38.699056373),4326)
       ,p_indexing_engine              := 'RAINDROP'
       ,p_fcode_allow                  := NULL
       ,p_fcode_deny                   := NULL

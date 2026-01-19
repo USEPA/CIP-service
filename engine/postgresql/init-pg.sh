@@ -1,10 +1,10 @@
 #/bin/sh
 
-echo "altering postgresql.conf"
+echo "altering postgresql.conf for postgresql ${PG_VERSION}"
 envsubst < /home/postgres/alter_pg.sed > /home/postgres/alter_pg2.sed
-sed -i -f /home/postgres/alter_pg2.sed /var/lib/postgresql/data/postgresql.conf
+sed -i -f /home/postgres/alter_pg2.sed ${PGDATA}/postgresql.conf
 echo "altering pg_hba.conf"
-echo "host    all    all    0.0.0.0/0    md5" >> /var/lib/postgresql/data/pg_hba.conf
+echo "host    all    all    0.0.0.0/0    md5" >> ${PGDATA}/pg_hba.conf
 
 echo "creating users"
 envsubst < /home/postgres/user_creation.sql | psql 

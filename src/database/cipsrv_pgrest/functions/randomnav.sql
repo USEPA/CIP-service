@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.randomnav(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$
@@ -83,14 +83,14 @@ BEGIN
    -- Step 30
    -- Return what we got
    ----------------------------------------------------------------------------
-   RETURN JSONB_BUILD_OBJECT(
-       'navpoint'       ,JSONB_BUILD_OBJECT(
-          'type'        ,'Feature'
-         ,'geometry'    ,ST_AsGeoJSON(ST_Transform(rec.out_shape,4326))::JSONB
-         ,'properties'  ,JSONB_BUILD_OBJECT(
-             'nhdplusid'      ,rec.out_nhdplusid
-            ,'reachcode'      ,rec.out_reachcode
-            ,'measure'        ,rec.out_measure
+   RETURN JSON_BUILD_OBJECT(
+       'navpoint'     ,JSON_BUILD_OBJECT(
+          'type'         ,'Feature'
+         ,'geometry'     ,public.ST_ASGEOJSON(public.ST_TRANSFORM(rec.out_shape,4326))::JSON
+         ,'properties'   ,JSON_BUILD_OBJECT(
+             'nhdplusid'    ,rec.out_nhdplusid
+            ,'reachcode'    ,rec.out_reachcode
+            ,'measure'      ,rec.out_measure
           )
        )
       ,'nhdplus_version',str_nhdplus_version

@@ -1,4 +1,4 @@
-FROM postgis/postgis:17-3.5
+FROM postgis/postgis:18-3.6
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -14,10 +14,10 @@ RUN apt-get update                                       &&\
        parallel                                            \
        unzip                                               \
        vim                                                 \
-       postgresql-17-h3*                                   \
-       postgresql-17-plprofiler*                           \
-       postgresql-17-pgtap*                                \
-       postgresql-17-pgrouting*                          &&\
+       postgresql-18-h3*                                   \
+       postgresql-18-plprofiler*                           \
+       postgresql-18-pgtap*                                \
+       postgresql-18-pgrouting*                          &&\
     rm -rf /var/lib/apt/lists/*
 
 COPY ./postgresql/init-pg.sh        /docker-entrypoint-initdb.d/init.sh

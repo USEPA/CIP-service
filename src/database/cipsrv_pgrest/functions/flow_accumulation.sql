@@ -18,24 +18,24 @@ $BODY$
 DECLARE
    rec                               RECORD;
    json_input                        JSONB := $1;
-   sdo_area_of_interest              GEOMETRY;
+   sdo_area_of_interest              public.GEOMETRY;
    int_default_weight                INTEGER := 1;
    str_known_region                  VARCHAR;
    str_nhdplus_version               VARCHAR;
-   rst_temp                          RASTER;
-   rst_temp2                         RASTER;
-   rst_flow_accumulation             RASTER;
+   rst_temp                          public.RASTER;
+   rst_temp2                         public.RASTER;
+   rst_flow_accumulation             public.RASTER;
    base64_raster                     TEXT;
    int_raster_srid                   INTEGER;
    int_max_accumulation              INTEGER;
    int_max_accumulation_x            INTEGER;
    int_max_accumulation_y            INTEGER;
-   sdo_max_accumulation_pt           GEOMETRY;
+   sdo_max_accumulation_pt           public.GEOMETRY;
    str_image_format                  VARCHAR;
    int_return_code                   INTEGER;
    str_status_message                VARCHAR;
    str_image_mimetype                VARCHAR;
-   sdo_raster_bounding_box           GEOMETRY;
+   sdo_raster_bounding_box           public.GEOMETRY;
    ary_raster_bounding_box           NUMERIC[];
    int_output_srid                   INTEGER;
    
@@ -54,7 +54,7 @@ BEGIN
       sdo_area_of_interest := cipsrv_engine.json2geometry(json_input->'area_of_interest');
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -10
          ,'status_message', 'area_of_interest is required.'
       );
@@ -87,7 +87,7 @@ BEGIN
       str_nhdplus_version := json_input->>'nhdplus_version';
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code', -10
          ,'status_message', 'nhdplus_version required.'
       );

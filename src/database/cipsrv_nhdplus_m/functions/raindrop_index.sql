@@ -10,7 +10,7 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_index(
-    IN  p_point                        GEOMETRY
+    IN  p_point                        public.GEOMETRY
    ,IN  p_fcode_allow                  INTEGER[]
    ,IN  p_fcode_deny                   INTEGER[]
    ,IN  p_raindrop_snap_max_distkm     NUMERIC
@@ -21,10 +21,13 @@ CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.raindrop_index(
    ,IN  p_known_region                 VARCHAR
    ,OUT out_flowlines                  cipsrv_nhdplus_m.snapflowline[]
    ,OUT out_path_distance_km           NUMERIC
-   ,OUT out_end_point                  GEOMETRY
-   ,OUT out_indexing_line              GEOMETRY
+   ,OUT out_end_point                  public.GEOMETRY
+   ,OUT out_indexing_line              public.GEOMETRY
    ,OUT out_region                     VARCHAR
    ,OUT out_nhdplusid                  BIGINT
+   ,OUT out_reachcode                  VARCHAR
+   ,OUT out_hydroseq                   BIGINT
+   ,OUT out_snap_measure               NUMERIC
    ,OUT out_return_code                INTEGER
    ,OUT out_status_message             VARCHAR
 )
@@ -41,13 +44,13 @@ DECLARE
    num_cell_diagonal            NUMERIC;
    int_raster_srid              INTEGER;
    rec_flowline                 RECORD;
-   sdo_temporary                GEOMETRY;
-   l_point                      GEOMETRY;
+   sdo_temporary                public.GEOMETRY;
+   l_point                      public.GEOMETRY;
    l_nearest_flowline_dist_km   NUMERIC := 0;
    l_traveled_distance_km       NUMERIC := 0;
    l_distance_tmp_km            NUMERIC := 0;
    l_permanent_identifier       BIGINT;
-   l_raster                     RASTER;
+   l_raster                     public.RASTER;
    l_raster_rid                 INTEGER;
    l_columnX                    INTEGER;
    l_rowY                       INTEGER;
@@ -56,8 +59,8 @@ DECLARE
    l_current_direction          INTEGER := -1;
    l_last_direction             INTEGER := -2;
    l_before_last_direction      INTEGER := -3;
-   l_last_point                 GEOMETRY;
-   l_temp_point                 GEOMETRY;
+   l_last_point                 public.GEOMETRY;
+   l_temp_point                 public.GEOMETRY;
    obj_flowline                 cipsrv_nhdplus_m.snapflowline;
    
 BEGIN
@@ -68,8 +71,8 @@ BEGIN
    --------------------------------------------------------------------------
    out_return_code := 0;
    
-   IF p_point IS NULL OR ST_IsEmpty(p_point) 
-   OR ST_GeometryType(p_point) <> 'ST_Point'
+   IF p_point IS NULL OR public.ST_ISEMPTY(p_point) 
+   OR public.ST_GEOMETRYTYPE(p_point) <> 'ST_Point'
    THEN
       out_return_code    := -99;
       out_status_message := 'Input must be point geometry.';
@@ -107,7 +110,7 @@ BEGIN
    -- Bail if rasters are not installed
    --------------------------------------------------------------------------
    IF NOT cipsrv_engine.table_exists(
-       p_schema_name := 'cipsrv_nhdplusgrid_h'
+       p_schema_name := 'cipsrv_nhdplusgrid_m'
       ,p_table_name  := 'fdr_5070_rdt'
    )
    THEN
@@ -141,12 +144,12 @@ BEGIN
    -- Step 40
    -- Project input point if required
    --------------------------------------------------------------------------
-   IF ST_SRID(p_point) = int_raster_srid
+   IF public.ST_SRID(p_point) = int_raster_srid
    THEN
       l_point := p_point;
       
    ELSE
-      l_point := ST_Transform(p_point,int_raster_srid);
+      l_point := public.ST_TRANSFORM(p_point,int_raster_srid);
       
    END IF;
    
@@ -187,6 +190,9 @@ BEGIN
       out_end_point        := rec.out_end_point;
       out_indexing_line    := rec.out_indexing_line;
       out_nhdplusid        := rec.out_flowlines[1].nhdplusid;
+      out_reachcode        := rec.out_flowlines[1].reachcode;
+      out_hydroseq         := rec.out_flowlines[1].hydroseq;
+      out_snap_measure     := rec.out_flowlines[1].snap_measure;
       out_return_code      := rec.out_return_code;
       out_status_message   := rec.out_status_message;
       RETURN;
@@ -228,13 +234,13 @@ BEGIN
       ,p_offset_y  := l_offsetY
    );
    
-   out_indexing_line := ST_MakeLine(
+   out_indexing_line := public.ST_MAKELINE(
        geom1  := out_indexing_line
       ,geom2  := l_point
    );
    
    -- Be certain the grid srid is meter based!
-   out_path_distance_km := ST_Distance(
+   out_path_distance_km := public.ST_DISTANCE(
        sdo_temporary
       ,l_point
    ) / 1000;
@@ -266,7 +272,7 @@ BEGIN
          
          IF out_indexing_line IS NOT NULL
          THEN
-            out_indexing_line := ST_Transform(out_indexing_line,4269);
+            out_indexing_line := public.ST_TRANSFORM(out_indexing_line,4269);
          
          END IF;
                
@@ -310,7 +316,7 @@ BEGIN
             
             IF out_indexing_line IS NOT NULL
             THEN
-               out_indexing_line := ST_Transform(out_indexing_line,4269);
+               out_indexing_line := public.ST_TRANSFORM(out_indexing_line,4269);
             
             END IF;
                
@@ -367,7 +373,7 @@ BEGIN
             
             IF out_indexing_line IS NOT NULL
             THEN
-               out_indexing_line  := ST_Transform(out_indexing_line,4269);
+               out_indexing_line  := public.ST_TRANSFORM(out_indexing_line,4269);
             
             END IF;
                
@@ -388,8 +394,8 @@ BEGIN
          --^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
          IF l_columnX <  l_offsetX
          OR l_rowY    <  l_offsetY
-         OR l_columnX >= l_offsetX + ST_Width(l_raster)
-         OR l_rowY    >= l_offsetY + ST_Height(l_raster)
+         OR l_columnX >= l_offsetX + public.ST_WIDTH(l_raster)
+         OR l_rowY    >= l_offsetY + public.ST_HEIGHT(l_raster)
          THEN
             rec := cipsrv_nhdplus_m.raindrop_coord_to_raster(
                 p_column_x := l_columnX
@@ -404,7 +410,7 @@ BEGIN
                
                IF out_indexing_line IS NOT NULL
                THEN
-                  out_indexing_line  := ST_Transform(out_indexing_line,4269);
+                  out_indexing_line  := public.ST_TRANSFORM(out_indexing_line,4269);
                
                END IF;
                
@@ -437,15 +443,15 @@ BEGIN
             THEN
                IF l_last_direction = l_before_last_direction
                THEN
-                  out_indexing_line := ST_MakeLine(
+                  out_indexing_line := public.ST_MAKELINE(
                       geom1  := out_indexing_line
                      ,geom2  := l_last_point
                   );
-                  --RAISE WARNING '%', ST_AsText(ST_Transform(out_indexing_line,4269));
+                  --RAISE WARNING '%', public.ST_ASTEXT(public.ST_TRANSFORM(out_indexing_line,4269));
                   
                END IF;
                
-               out_indexing_line := ST_MakeLine(
+               out_indexing_line := public.ST_MAKELINE(
                    geom1  := out_indexing_line
                   ,geom2  := l_point
                );
@@ -521,11 +527,11 @@ BEGIN
    --------------------------------------------------------------------------
    IF boo_return_link_path
    THEN
-      out_indexing_line := ST_MakeLine(
+      out_indexing_line := public.ST_MAKELINE(
           geom1  := out_indexing_line
          ,geom2  := l_point
       );
-      --RAISE WARNING '%', ST_AsText(ST_Transform(out_indexing_line,4269));
+      --RAISE WARNING '%', public.ST_ASTEXT(public.ST_TRANSFORM(out_indexing_line,4269));
       
    END IF;
    
@@ -544,22 +550,25 @@ BEGIN
    -- Clean up the output products
    --------------------------------------------------------------------------
    out_end_point        := rec.out_end_point;
-   sdo_temporary        := ST_Transform(out_end_point,int_raster_srid);
+   sdo_temporary        := public.ST_TRANSFORM(out_end_point,int_raster_srid);
    out_path_distance_km := out_path_distance_km + ST_Distance(
        l_point
       ,sdo_temporary
    ) / 1000;
    out_nhdplusid        := out_flowlines[1].nhdplusid;
+   out_reachcode        := out_flowlines[1].reachcode;
+   out_hydroseq         := out_flowlines[1].hydroseq;
+   out_snap_measure     := out_flowlines[1].snap_measure;
    
    IF boo_return_link_path
    AND out_path_distance_km > 0.00005
    THEN
-      out_indexing_line := ST_MakeLine(
+      out_indexing_line := public.ST_MAKELINE(
           geom1  := out_indexing_line
          ,geom2  := sdo_temporary
       );
       
-      out_indexing_line := ST_Transform(out_indexing_line,4269);
+      out_indexing_line := public.ST_TRANSFORM(out_indexing_line,4269);
 
    ELSE
       out_indexing_line := NULL;

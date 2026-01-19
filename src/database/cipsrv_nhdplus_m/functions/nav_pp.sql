@@ -24,6 +24,7 @@ BEGIN
    -- Step 10
    -- Create tmp_network_working30 temp table
    ----------------------------------------------------------------------------
+   --RAISE WARNING '10 %',CLOCK_TIMESTAMP();
    IF cipsrv_engine.temp_table_exists('tmp_network_working30')
    THEN
       TRUNCATE TABLE tmp_network_working30;
@@ -65,6 +66,7 @@ BEGIN
    -- Step 20
    -- Run downstream mainline as most probable solution
    ----------------------------------------------------------------------------
+   --RAISE WARNING '20 %',CLOCK_TIMESTAMP();
    WITH RECURSIVE dm(
        nhdplusid
       ,hydroseq
@@ -179,6 +181,7 @@ BEGIN
    -- Step 30
    -- If found then dump into working30 and exit
    ----------------------------------------------------------------------------
+   --RAISE WARNING '30 % %',CLOCK_TIMESTAMP(),int_count;
    IF int_count > 0
    THEN   
       INSERT INTO tmp_navigation_working30(
@@ -524,6 +527,7 @@ BEGIN
    -- Step 50
    -- Tag the downstream nav termination flags
    ----------------------------------------------------------------------------
+   --RAISE WARNING '50 %',CLOCK_TIMESTAMP();
    WITH cte AS ( 
       SELECT
        a.hydroseq
@@ -575,14 +579,20 @@ BEGIN
    
    ----------------------------------------------------------------------------
    -- Step 60
-   -- Return total count of results
+   -- Gather total count of results
    ----------------------------------------------------------------------------
+   --RAISE WARNING '60 %',CLOCK_TIMESTAMP();
    SELECT 
    COUNT(*) 
    INTO int_count 
    FROM 
    tmp_navigation_working30 a;
    
+   ----------------------------------------------------------------------------
+   -- Step 70
+   -- Return total count of results
+   ----------------------------------------------------------------------------
+   --RAISE WARNING '70 %',CLOCK_TIMESTAMP();
    RETURN int_count;
 
 END;

@@ -11,7 +11,7 @@ END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_pgrest.pointindexing(
    JSONB
-) RETURNS JSONB
+) RETURNS JSON
 VOLATILE
 AS
 $BODY$ 
@@ -52,7 +52,7 @@ BEGIN
       sdo_point := cipsrv_engine.json2geometry(json_input->'point');
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -10
          ,'status_message', 'input point is required.'
       );
@@ -61,14 +61,14 @@ BEGIN
    
    IF sdo_point IS NULL
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -10
          ,'status_message', 'valid input point is required.'
       );
    
    ELSIF ST_GeometryType(sdo_point) != 'ST_Point'
    THEN
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code',    -20
          ,'status_message', 'geometry must be single point.'
       );
@@ -236,7 +236,7 @@ BEGIN
       str_nhdplus_version := json_input->>'nhdplus_version';
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code', -10
          ,'status_message', 'nhdplus_version required.'
       );
@@ -273,26 +273,33 @@ BEGIN
       
       IF int_return_code != 0
       THEN
-         RETURN JSONB_BUILD_OBJECT(
+         RETURN JSON_BUILD_OBJECT(
              'return_code',    int_return_code
             ,'status_message', str_status_message
          );
       
       END IF;
       
-      RETURN JSONB_BUILD_OBJECT(
-          'flowlines'           ,cipsrv_nhdplus_m.snapflowlines2geojson(rec1.out_flowlines)
+      RETURN JSON_BUILD_OBJECT(
+          'flowlines'           ,cipsrv_nhdplus_m.snapflowlines2geojson(rec1.out_flowlines)::JSON
          ,'path_distance_km'    ,rec1.out_path_distance_km
-         ,'end_point'           ,JSONB_BUILD_OBJECT(
+         ,'end_point'           ,JSON_BUILD_OBJECT(
              'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_end_point,4326))::JSONB
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_end_point,4326))::JSON
+            ,'properties'          ,JSON_BUILD_OBJECT(
+                'nhdplusid'           ,rec1.out_nhdplusid
+               ,'measure'             ,rec1.out_snap_measure
+             )
           )
-         ,'indexing_line'       ,JSONB_BUILD_OBJECT(
+         ,'indexing_line'       ,JSON_BUILD_OBJECT(
              'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_indexing_line,4326))::JSONB
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec1.out_indexing_line,4326))::JSON
           )
          ,'region'              ,rec1.out_region
          ,'nhdplusid'           ,rec1.out_nhdplusid
+         ,'reachcode'           ,rec1.out_reachcode
+         ,'hydroseq'            ,rec1.out_hydroseq
+         ,'snap_measure'        ,rec1.out_snap_measure
          ,'return_code'         ,int_return_code
          ,'status_message'      ,str_status_message
       );
@@ -323,32 +330,39 @@ BEGIN
       
       IF int_return_code != 0
       THEN
-         RETURN JSONB_BUILD_OBJECT(
+         RETURN JSON_BUILD_OBJECT(
              'return_code',    int_return_code
             ,'status_message', str_status_message
          );
       
       END IF;
       
-      RETURN JSONB_BUILD_OBJECT(
-          'flowlines'           ,cipsrv_nhdplus_h.snapflowlines2geojson(rec2.out_flowlines)
+      RETURN JSON_BUILD_OBJECT(
+          'flowlines'           ,cipsrv_nhdplus_h.snapflowlines2geojson(rec2.out_flowlines)::JSON
          ,'path_distance_km'    ,rec2.out_path_distance_km
-         ,'end_point'           ,JSONB_BUILD_OBJECT(
-             'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_end_point,4326))::JSONB
+         ,'end_point'           ,JSON_BUILD_OBJECT(
+             'type'                ,'Feature'
+            ,'geometry'            ,ST_AsGeoJSON(ST_Transform(rec2.out_end_point,4326))::JSON
+            ,'properties'          ,JSON_BUILD_OBJECT(
+                'nhdplusid'           ,rec2.out_nhdplusid
+               ,'measure'             ,rec2.out_snap_measure
+             )
           )
-         ,'indexing_line'       ,JSONB_BUILD_OBJECT(
+         ,'indexing_line'       ,JSON_BUILD_OBJECT(
              'type'    ,'Feature'
-            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_indexing_line,4326))::JSONB
+            ,'geometry',ST_AsGeoJSON(ST_Transform(rec2.out_indexing_line,4326))::JSON
           )
          ,'region'              ,rec2.out_region
          ,'nhdplusid'           ,rec2.out_nhdplusid
+         ,'reachcode'           ,rec2.out_reachcode
+         ,'hydroseq'            ,rec2.out_hydroseq
+         ,'snap_measure'        ,rec2.out_snap_measure
          ,'return_code'         ,int_return_code
          ,'status_message'      ,str_status_message
       );
       
    ELSE
-      RETURN JSONB_BUILD_OBJECT(
+      RETURN JSON_BUILD_OBJECT(
           'return_code', -10
          ,'status_message', 'invalid nhdplus_version.'
       );

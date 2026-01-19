@@ -22,10 +22,15 @@ parser.add_argument("--mrgf_dumpfile_copyin"    ,required=False,default=None);
 parser.add_argument("--hrgf_dumpfile"           ,required=False,default=None);
 parser.add_argument("--hrgf_dumpfile_copyin"    ,required=False,default=None);
 
-parser.add_argument("--mr2_dumpfile"            ,required=False,default=None);
-parser.add_argument("--mr2_dumpfile_copyin"     ,required=False,default=None);
-parser.add_argument("--hr2_dumpfile"            ,required=False,default=None);
-parser.add_argument("--hr2_dumpfile_copyin"     ,required=False,default=None);
+parser.add_argument("--mrb_dumpfile"            ,required=False,default=None);
+parser.add_argument("--mrb_dumpfile_copyin"     ,required=False,default=None);
+parser.add_argument("--hrb_dumpfile"            ,required=False,default=None);
+parser.add_argument("--hrb_dumpfile_copyin"     ,required=False,default=None);
+
+parser.add_argument("--mrc_dumpfile"            ,required=False,default=None);
+parser.add_argument("--mrc_dumpfile_copyin"     ,required=False,default=None);
+parser.add_argument("--hrc_dumpfile"            ,required=False,default=None);
+parser.add_argument("--hrc_dumpfile_copyin"     ,required=False,default=None);
 
 parser.add_argument("--mrgrid_dumpfile"         ,required=False,default=None);
 parser.add_argument("--mrgrid_dumpfile_copyin"  ,required=False,default=None);
@@ -79,10 +84,15 @@ def main(
    ,hrgf_dumpfile
    ,hrgf_dumpfile_copyin
    
-   ,mr2_dumpfile
-   ,mr2_dumpfile_copyin
-   ,hr2_dumpfile
-   ,hr2_dumpfile_copyin
+   ,mrb_dumpfile
+   ,mrb_dumpfile_copyin
+   ,hrb_dumpfile
+   ,hrb_dumpfile_copyin
+   
+   ,mrc_dumpfile
+   ,mrc_dumpfile_copyin
+   ,hrc_dumpfile
+   ,hrc_dumpfile_copyin
    
    ,mrgrid_dumpfile
    ,mrgrid_dumpfile_copyin
@@ -265,13 +275,21 @@ def main(
       if not os.path.exists(hrgf_dumpfile_copyin):
          raise Exception("hrgf_dumpfile_copyin not found - " + str(hrgf_dumpfile_copyin));
    
-   if mr2_dumpfile_copyin is not None:
-      if not os.path.exists(mr2_dumpfile_copyin):
-         raise Exception("mr2_dumpfile_copyin not found - " + str(mr2_dumpfile_copyin));
+   if mrb_dumpfile_copyin is not None:
+      if not os.path.exists(mrb_dumpfile_copyin):
+         raise Exception("mrb_dumpfile_copyin not found - " + str(mrb_dumpfile_copyin));
    
-   if hr2_dumpfile_copyin is not None:
-      if not os.path.exists(hr2_dumpfile_copyin):
-         raise Exception("hr2_dumpfile_copyin not found - " + str(hr2_dumpfile_copyin));
+   if hrb_dumpfile_copyin is not None:
+      if not os.path.exists(hrb_dumpfile_copyin):
+         raise Exception("hrb_dumpfile_copyin not found - " + str(hrb_dumpfile_copyin));
+   
+   if mrc_dumpfile_copyin is not None:
+      if not os.path.exists(mrc_dumpfile_copyin):
+         raise Exception("mrc_dumpfile_copyin not found - " + str(mrc_dumpfile_copyin));
+   
+   if hrc_dumpfile_copyin is not None:
+      if not os.path.exists(hrc_dumpfile_copyin):
+         raise Exception("hrc_dumpfile_copyin not found - " + str(hrc_dumpfile_copyin));
    
    if mrgrid_dumpfile_copyin is not None:
       if not os.path.exists(mrgrid_dumpfile_copyin):
@@ -689,10 +707,18 @@ def main(
    if recipe in ['EXTENDED']:
       # NHDPlus MR 2
       cipld(
-          ipnyb                = 'cipsrv_nhdplus2_m'
-         ,dumpfile             = mr2_dumpfile
-         ,dumpfile_copyin      = mr2_dumpfile_copyin
-         ,dumpfile_parm        = '--mr2_dumpfile'
+          ipnyb                = 'cipsrv_nhdplus_mb'
+         ,dumpfile             = mrb_dumpfile
+         ,dumpfile_copyin      = mrb_dumpfile_copyin
+         ,dumpfile_parm        = '--mrb_dumpfile'
+         ,override_username    = override_username
+      );
+      
+      cipld(
+          ipnyb                = 'cipsrv_nhdplus_mc'
+         ,dumpfile             = mrc_dumpfile
+         ,dumpfile_copyin      = mrc_dumpfile_copyin
+         ,dumpfile_parm        = '--mrc_dumpfile'
          ,override_username    = override_username
       );
            
@@ -700,10 +726,18 @@ def main(
    if recipe in ['EXTENDED']:
       # NHDPlus HR 2
       cipld(
-          ipnyb                = 'cipsrv_nhdplus2_h'
-         ,dumpfile             = hr2_dumpfile
-         ,dumpfile_copyin      = hr2_dumpfile_copyin
-         ,dumpfile_parm        = '--hr2_dumpfile'
+          ipnyb                = 'cipsrv_nhdplus_hb'
+         ,dumpfile             = hrb_dumpfile
+         ,dumpfile_copyin      = hrb_dumpfile_copyin
+         ,dumpfile_parm        = '--hrb_dumpfile'
+         ,override_username    = override_username
+      );
+      
+      cipld(
+          ipnyb                = 'cipsrv_nhdplus_hc'
+         ,dumpfile             = hrc_dumpfile
+         ,dumpfile_copyin      = hrc_dumpfile_copyin
+         ,dumpfile_parm        = '--hrc_dumpfile'
          ,override_username    = override_username
       );
    
@@ -855,10 +889,15 @@ if __name__ == '__main__':
       ,hrgf_dumpfile            = args.hrgf_dumpfile
       ,hrgf_dumpfile_copyin     = args.hrgf_dumpfile_copyin
       
-      ,mr2_dumpfile             = args.mr2_dumpfile
-      ,mr2_dumpfile_copyin      = args.mr2_dumpfile_copyin
-      ,hr2_dumpfile             = args.hr2_dumpfile
-      ,hr2_dumpfile_copyin      = args.hr2_dumpfile_copyin
+      ,mrb_dumpfile             = args.mrb_dumpfile
+      ,mrb_dumpfile_copyin      = args.mrb_dumpfile_copyin
+      ,hrb_dumpfile             = args.hrb_dumpfile
+      ,hrb_dumpfile_copyin      = args.hrb_dumpfile_copyin
+      
+      ,mrc_dumpfile             = args.mrc_dumpfile
+      ,mrc_dumpfile_copyin      = args.mrc_dumpfile_copyin
+      ,hrc_dumpfile             = args.hrc_dumpfile
+      ,hrc_dumpfile_copyin      = args.hrc_dumpfile_copyin
       
       ,mrgrid_dumpfile          = args.mrgrid_dumpfile
       ,mrgrid_dumpfile_copyin   = args.mrgrid_dumpfile_copyin
