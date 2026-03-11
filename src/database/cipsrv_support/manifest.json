@@ -29,7 +29,6 @@
             ,"functions/clip_by_state.sql"
             ,"functions/clip_by_tribe.sql"
             ,"functions/geometry_clip.sql"
-            ,"functions/randomhuc12.sql"
           ]
          ,"separator": "--******************************--\n----- %%FILENAME%% \n\n"
          ,"configurations": [
