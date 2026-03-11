@@ -1,9 +1,9 @@
-DROP MATERIALIZED VIEW IF EXISTS cipsrv_epageofab_h.catchment_fabric_5070_3 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipdev_epageofab_h.catchment_fabric_5070_3 CASCADE;
 
-DROP SEQUENCE IF EXISTS cipsrv_epageofab_h.catchment_fabric_5070_3_seq;
-CREATE SEQUENCE cipsrv_epageofab_h.catchment_fabric_5070_3_seq START WITH 1;
+DROP SEQUENCE IF EXISTS cipdev_epageofab_h.catchment_fabric_5070_3_seq;
+CREATE SEQUENCE cipdev_epageofab_h.catchment_fabric_5070_3_seq START WITH 1;
 
-CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_5070_3(
+CREATE MATERIALIZED VIEW cipdev_epageofab_h.catchment_fabric_5070_3(
     objectid
    ,catchmentstatecode
    ,nhdplusid
@@ -28,7 +28,7 @@ CREATE MATERIALIZED VIEW cipsrv_epageofab_h.catchment_fabric_5070_3(
 )
 AS
 SELECT
- NEXTVAL('cipsrv_epageofab_h.catchment_fabric_5070_3_seq')::INTEGER AS objectid
+ NEXTVAL('cipdev_epageofab_h.catchment_fabric_5070_3_seq')::INTEGER AS objectid
 ,a.catchmentstatecode
 ,a.nhdplusid
 ,a.istribal
@@ -70,7 +70,7 @@ FROM (
    ,aa.sourcedataset
    ,ST_COLLECTIONEXTRACT(
        ST_INTERSECTION(
-           cipsrv_nhdplus_h.snap_to_common_grid(
+           cipdev_nhdplus_h.snap_to_common_grid(
               p_geometry      := bb.shape
              ,p_known_region  := '5070'
              ,p_grid_size     := 0.001
@@ -80,7 +80,7 @@ FROM (
       ,3
     ) AS shape
    FROM
-   cipsrv_epageofab_h.catchment_fabric_5070_2 aa
+   cipdev_epageofab_h.catchment_fabric_5070_2 aa
    INNER JOIN LATERAL (
       SELECT
        bbb.stusps
@@ -95,28 +95,28 @@ WHERE
     a.shape IS NOT NULL
 AND NOT ST_ISEMPTY(a.shape);
 
-ALTER TABLE cipsrv_epageofab_h.catchment_fabric_5070_3 OWNER TO cipsrv;
-GRANT SELECT ON cipsrv_epageofab_h.catchment_fabric_5070_3 TO public;
+ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3 OWNER TO cipdev;
+GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3 TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_5070_3_pk
-ON cipsrv_epageofab_h.catchment_fabric_5070_3(catchmentstatecode,nhdplusid);
+ON cipdev_epageofab_h.catchment_fabric_5070_3(catchmentstatecode,nhdplusid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_5070_3_u01
-ON cipsrv_epageofab_h.catchment_fabric_5070_3(objectid);
+ON cipdev_epageofab_h.catchment_fabric_5070_3(objectid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_5070_3_u02
-ON cipsrv_epageofab_h.catchment_fabric_5070_3(globalid);
+ON cipdev_epageofab_h.catchment_fabric_5070_3(globalid);
 
 CREATE INDEX IF NOT EXISTS catchment_fabric_5070_3_01i
-ON cipsrv_epageofab_h.catchment_fabric_5070_3(catchmentstatecode);
+ON cipdev_epageofab_h.catchment_fabric_5070_3(catchmentstatecode);
 
 CREATE INDEX IF NOT EXISTS catchment_fabric_5070_3_02i
-ON cipsrv_epageofab_h.catchment_fabric_5070_3(nhdplusid);
+ON cipdev_epageofab_h.catchment_fabric_5070_3(nhdplusid);
 
 CREATE INDEX IF NOT EXISTS catchment_fabric_5070_3_spx
-ON cipsrv_epageofab_h.catchment_fabric_5070_3 USING gist(shape);
+ON cipdev_epageofab_h.catchment_fabric_5070_3 USING gist(shape);
 
-ANALYZE cipsrv_epageofab_h.catchment_fabric_5070_3;
+ANALYZE cipdev_epageofab_h.catchment_fabric_5070_3;
 
---VACUUM FREEZE ANALYZE cipsrv_epageofab_h.catchment_fabric_5070_3;
+--VACUUM FREEZE ANALYZE cipdev_epageofab_h.catchment_fabric_5070_3;
 

@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cipsrv_support.tiger_fedstatewaters_32161_mv CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipdev_support.tiger_fedstatewaters_32161_mv CASCADE;
 
-CREATE MATERIALIZED VIEW cipsrv_support.tiger_fedstatewaters_32161_mv(
+CREATE MATERIALIZED VIEW cipdev_support.tiger_fedstatewaters_32161_mv(
     objectid
    ,statens
    ,geoid
@@ -25,7 +25,7 @@ SELECT
 ,a.intptlat
 ,a.intptlon
 ,'{' || uuid_generate_v1() || '}' AS globalid
-,cipsrv_nhdplus_h.snap_to_common_grid(
+,cipdev_nhdplus_h.snap_to_common_grid(
     p_geometry      := ST_TRANSFORM(a.shape,32161)
    ,p_known_region  := '32161'
    ,p_grid_size     := 0.001
@@ -35,19 +35,19 @@ cipsrv_support.tiger_fedstatewaters a
 WHERE
 a.stusps IN ('PR','VI');
 
-ALTER TABLE cipsrv_support.tiger_fedstatewaters_32161_mv OWNER TO cipsrv;
-GRANT SELECT ON cipsrv_support.tiger_fedstatewaters_32161_mv TO public;
+ALTER TABLE cipdev_support.tiger_fedstatewaters_32161_mv OWNER TO cipdev;
+GRANT SELECT ON cipdev_support.tiger_fedstatewaters_32161_mv TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS tiger_fedstatewaters_32161_mv_u01
-ON cipsrv_support.tiger_fedstatewaters_32161_mv(objectid);
+ON cipdev_support.tiger_fedstatewaters_32161_mv(objectid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS tiger_fedstatewaters_32161_mv_u02
-ON cipsrv_support.tiger_fedstatewaters_32161_mv(globalid);
+ON cipdev_support.tiger_fedstatewaters_32161_mv(globalid);
 
 CREATE INDEX IF NOT EXISTS tiger_fedstatewaters_32161_mv_spx
-ON cipsrv_support.tiger_fedstatewaters_32161_mv USING gist(shape);
+ON cipdev_support.tiger_fedstatewaters_32161_mv USING gist(shape);
 
-ANALYZE cipsrv_support.tiger_fedstatewaters_32161_mv;
+ANALYZE cipdev_support.tiger_fedstatewaters_32161_mv;
 
---VACUUM FREEZE ANALYZE cipsrv_support.tiger_fedstatewaters_32161_mv;
+--VACUUM FREEZE ANALYZE cipdev_support.tiger_fedstatewaters_32161_mv;
 

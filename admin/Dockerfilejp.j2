@@ -1,4 +1,4 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-full-3.12.1
+FROM ghcr.io/osgeo/gdal:ubuntu-full-3.12.2
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -41,7 +41,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg ma
 # Note the client here needs to stay ahead of the dumps
 RUN apt-get update                              &&\
     apt-get install -y --no-install-recommends    \
-       postgresql-client-17                     &&\
+       postgresql-client-18                     &&\
     apt-get clean                               &&\
     rm -rf /var/lib/apt/lists/*                 &&\
     rm -rf /var/cache/apt/*
@@ -69,6 +69,9 @@ RUN chmod 0400 /home/${NB_USER}/.ssh/id_rsa                 &&\
 
 RUN chown -R ${NB_USER}:users /home/${NB_USER}              &&\
     chown -R ${NB_USER}:users /opt/venv
+
+RUN curl -LO https://github.com/pgplex/pgschema/releases/download/v1.7.4/pgschema_1.7.4_amd64.deb &&\
+    dpkg -i pgschema_1.7.4_amd64.deb
 
 USER ${NB_USER}
 
