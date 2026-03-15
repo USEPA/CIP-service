@@ -49,7 +49,7 @@ cipdev_wbd.wbd_hu4_nphr c
 ON
 c.huc4 = a.huc4
 LEFT JOIN
-cipdev_wbd.wbd_names b
+cipsrv_wbd.wbd_namesb
 ON
 b.huc = a.huc4;
 

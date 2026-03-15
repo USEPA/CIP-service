@@ -157,7 +157,7 @@ FROM (
       LIMIT 1
    ) gg
    LEFT JOIN
-   cipdev_wbd.wbd_names nn
+   cipsrv_wbd.wbd_namesnn
    ON
    nn.huc = gg.huc4
 ) a;

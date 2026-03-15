@@ -61,7 +61,7 @@ FROM (
    ) aa
 ) a
 LEFT JOIN
-cipdev_wbd.wbd_names b
+cipsrv_wbd.wbd_namesb
 ON
 b.huc = a.huc2;
 
