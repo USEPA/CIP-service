@@ -43,7 +43,7 @@ FROM (
    ,aa.centermass_x
    ,aa.centermass_y
    ,aa.globalid
-   ,ST_TRANSFORM(aa.shape,4269) AS shape
+   ,public.ST_TRANSFORM(aa.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu6sp_f3_5070 aa
    UNION ALL
@@ -59,7 +59,7 @@ FROM (
    ,bb.centermass_x
    ,bb.centermass_y
    ,bb.globalid
-   ,ST_TRANSFORM(bb.shape,4269) AS shape
+   ,public.ST_TRANSFORM(bb.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu6sp_f3_3338 bb
    UNION ALL
@@ -75,7 +75,7 @@ FROM (
    ,cc.centermass_x
    ,cc.centermass_y
    ,cc.globalid
-   ,ST_TRANSFORM(cc.shape,4269) AS shape
+   ,public.ST_TRANSFORM(cc.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu6sp_f3_26904 cc
    UNION ALL
@@ -91,7 +91,7 @@ FROM (
    ,dd.centermass_x
    ,dd.centermass_y
    ,dd.globalid
-   ,ST_TRANSFORM(dd.shape,4269) AS shape
+   ,public.ST_TRANSFORM(dd.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu6sp_f3_32161 dd
    UNION ALL
@@ -107,7 +107,7 @@ FROM (
    ,ee.centermass_x
    ,ee.centermass_y
    ,ee.globalid
-   ,ST_TRANSFORM(ee.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ee.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu6sp_f3_32655 ee
    UNION ALL
@@ -123,7 +123,7 @@ FROM (
    ,ff.centermass_x
    ,ff.centermass_y
    ,ff.globalid
-   ,ST_TRANSFORM(ff.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ff.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu6sp_f3_32702 ff
    UNION ALL
@@ -131,8 +131,8 @@ FROM (
     nn.tnmid
    ,gg.metasourceid
    ,gg.loaddate
-   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001   ,4) AS areasqkm
-   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000247105,4) AS areaacres
+   ,ROUND(public.ST_AREA(public.ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001   ,4) AS areasqkm
+   ,ROUND(public.ST_AREA(public.ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000247105,4) AS areaacres
    ,nn.name
    ,gg.states
    ,gg.huc6
@@ -149,9 +149,9 @@ FROM (
       ,ggg.centermass_x
       ,ggg.centermass_y
       ,ggg.globalid
-      ,(SELECT ST_UNION(gggg.shape) FROM cipsrv_wbd.wbd_hu12_f3 gggg WHERE SUBSTR(gggg.huc12,1,6) = '220400') AS shape
+      ,(SELECT public.ST_UNION(gggg.shape) FROM cipdev_wbd.wbd_hu12_f3 gggg WHERE SUBSTR(gggg.huc12,1,6) = '220400') AS shape
       FROM
-      cipsrv_wbd.wbd_hu12sp_f3 ggg
+      cipdev_wbd.wbd_hu12sp_f3 ggg
       WHERE
       SUBSTR(ggg.huc12,1,6) = '220400'
       LIMIT 1

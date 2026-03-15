@@ -95,7 +95,7 @@ WHERE
     a.shape IS NOT NULL
 AND NOT ST_ISEMPTY(a.shape);
 
-ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3 OWNER TO cipdev;
+ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3 OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3 TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS catchment_fabric_5070_3_pk

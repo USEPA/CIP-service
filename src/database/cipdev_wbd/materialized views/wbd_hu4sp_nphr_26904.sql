@@ -33,11 +33,11 @@ SELECT
 FROM (
    SELECT
     aa.huc4
-   ,ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
+   ,public.ST_COLLECTIONEXTRACT(aa.shape,3) AS shape
    FROM (
       SELECT
-       SUBSTR(aaa.huc6,1,4)      AS huc4
-      ,ST_UNION(aaa.shape)       AS shape 
+       SUBSTR(aaa.huc6,1,4)       AS huc4
+      ,public.ST_UNION(aaa.shape) AS shape 
       FROM 
       cipdev_wbd.wbd_hu6sp_nphr_26904 aaa
       GROUP BY

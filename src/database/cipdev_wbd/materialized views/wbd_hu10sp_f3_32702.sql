@@ -37,12 +37,12 @@ SELECT
 FROM (
    SELECT
     aa.huc10
-   ,ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
+   ,public.ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
    FROM (
       SELECT
        SUBSTR(aaa.huc12,1,10)    AS huc10
-      ,ST_UNION(aaa.shape)       AS shape 
-      FROM cipsrv_wbd.wbd_hu12sp_f3_32702 aaa
+      ,public.ST_UNION(aaa.shape)       AS shape 
+      FROM cipdev_wbd.wbd_hu12sp_f3_32702 aaa
       GROUP BY
       SUBSTR(aaa.huc12,1,10)
    ) aa

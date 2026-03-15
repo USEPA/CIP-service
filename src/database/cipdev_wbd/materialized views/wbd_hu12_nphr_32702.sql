@@ -1,6 +1,6 @@
-DROP MATERIALIZED VIEW IF EXISTS cipsrv_wbd.wbd_hu12_nphr_32702 CASCADE;
+DROP MATERIALIZED VIEW IF EXISTS cipdev_wbd.wbd_hu12_nphr_32702 CASCADE;
 
-CREATE MATERIALIZED VIEW cipsrv_wbd.wbd_hu12_nphr_32702(
+CREATE MATERIALIZED VIEW cipdev_wbd.wbd_hu12_nphr_32702(
     objectid
    ,tnmid
    ,metasourceid
@@ -39,43 +39,43 @@ SELECT
 ,a.centermass_x
 ,a.centermass_y
 ,'{' || uuid_generate_v1() || '}' AS globalid
-,ST_TRANSFORM(a.shape,32702)      AS shape
+,public.ST_TRANSFORM(a.shape,32702)      AS shape
 FROM
-cipsrv_wbd.wbd_hu12_nphr a
+cipdev_wbd.wbd_hu12_nphr a
 WHERE
 SUBSTR(a.huc12,1,4) IN ('2203');
 
-ALTER TABLE cipsrv_wbd.wbd_hu12_nphr_32702 OWNER TO cipsrv;
-GRANT SELECT ON cipsrv_wbd.wbd_hu12_nphr_32702 TO public;
+ALTER TABLE cipdev_wbd.wbd_hu12_nphr_32702 OWNER TO cipsrv;
+GRANT SELECT ON cipdev_wbd.wbd_hu12_nphr_32702 TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_pk
-ON cipsrv_wbd.wbd_hu12_nphr_32702(huc12);
+ON cipdev_wbd.wbd_hu12_nphr_32702(huc12);
 
 CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_u01
-ON cipsrv_wbd.wbd_hu12_nphr_32702(objectid);
+ON cipdev_wbd.wbd_hu12_nphr_32702(objectid);
 
 CREATE UNIQUE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_u02
-ON cipsrv_wbd.wbd_hu12_nphr_32702(globalid);
+ON cipdev_wbd.wbd_hu12_nphr_32702(globalid);
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_f01
-ON cipsrv_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,2));
+ON cipdev_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,2));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_f02
-ON cipsrv_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,4));
+ON cipdev_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,4));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_f03
-ON cipsrv_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,6));
+ON cipdev_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,6));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_f04
-ON cipsrv_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,8));
+ON cipdev_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,8));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_f05
-ON cipsrv_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,10));
+ON cipdev_wbd.wbd_hu12_nphr_32702(SUBSTR(huc12,1,10));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_nphr_32702_spx
-ON cipsrv_wbd.wbd_hu12_nphr_32702 USING gist(shape);
+ON cipdev_wbd.wbd_hu12_nphr_32702 USING gist(shape);
 
-ANALYZE cipsrv_wbd.wbd_hu12_nphr_32702;
+ANALYZE cipdev_wbd.wbd_hu12_nphr_32702;
 
---VACUUM FREEZE ANALYZE cipsrv_wbd.wbd_hu12_nphr_32702;
+--VACUUM FREEZE ANALYZE cipdev_wbd.wbd_hu12_nphr_32702;
 

@@ -22,7 +22,7 @@ SELECT
 FROM
 cipsrv_support.tiger_fedstatewaters_3338 a;
 
-ALTER TABLE cipdev_support.tiger_fedstatewaters_us_3338 OWNER TO cipdev;
+ALTER TABLE cipdev_support.tiger_fedstatewaters_us_3338 OWNER TO cipsrv;
 GRANT SELECT ON cipdev_support.tiger_fedstatewaters_us_3338 TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS tiger_fedstatewaters_us_3338_u01

@@ -49,7 +49,7 @@ FROM (
    ,aa.centermass_x
    ,aa.centermass_y
    ,aa.globalid
-   ,ST_TRANSFORM(aa.shape,4269) AS shape
+   ,public.ST_TRANSFORM(aa.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu10_nphr_5070 aa
    UNION ALL
@@ -67,7 +67,7 @@ FROM (
    ,bb.centermass_x
    ,bb.centermass_y
    ,bb.globalid
-   ,ST_TRANSFORM(bb.shape,4269) AS shape
+   ,public.ST_TRANSFORM(bb.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu10_nphr_3338 bb
    UNION ALL
@@ -85,7 +85,7 @@ FROM (
    ,cc.centermass_x
    ,cc.centermass_y
    ,cc.globalid
-   ,ST_TRANSFORM(cc.shape,4269) AS shape
+   ,public.ST_TRANSFORM(cc.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu10_nphr_26904 cc
    UNION ALL
@@ -103,7 +103,7 @@ FROM (
    ,dd.centermass_x
    ,dd.centermass_y
    ,dd.globalid
-   ,ST_TRANSFORM(dd.shape,4269) AS shape
+   ,public.ST_TRANSFORM(dd.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu10_nphr_32161 dd
    UNION ALL
@@ -121,7 +121,7 @@ FROM (
    ,ee.centermass_x
    ,ee.centermass_y
    ,ee.globalid
-   ,ST_TRANSFORM(ee.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ee.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu10_nphr_32655 ee
    UNION ALL
@@ -139,7 +139,7 @@ FROM (
    ,ff.centermass_x
    ,ff.centermass_y
    ,ff.globalid
-   ,ST_TRANSFORM(ff.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ff.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu10_nphr_32702 ff
 ) a;

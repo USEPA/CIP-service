@@ -43,7 +43,7 @@ FROM (
    ,aa.centermass_x
    ,aa.centermass_y
    ,aa.globalid
-   ,ST_TRANSFORM(aa.shape,4269) AS shape
+   ,public.ST_TRANSFORM(aa.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu2_nphr_5070 aa
    UNION ALL
@@ -59,7 +59,7 @@ FROM (
    ,bb.centermass_x
    ,bb.centermass_y
    ,bb.globalid
-   ,ST_TRANSFORM(bb.shape,4269) AS shape
+   ,public.ST_TRANSFORM(bb.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu2_nphr_3338 bb
    UNION ALL
@@ -75,7 +75,7 @@ FROM (
    ,cc.centermass_x
    ,cc.centermass_y
    ,cc.globalid
-   ,ST_TRANSFORM(cc.shape,4269) AS shape
+   ,public.ST_TRANSFORM(cc.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu2_nphr_26904 cc
    UNION ALL
@@ -91,7 +91,7 @@ FROM (
    ,dd.centermass_x
    ,dd.centermass_y
    ,dd.globalid
-   ,ST_TRANSFORM(dd.shape,4269) AS shape
+   ,public.ST_TRANSFORM(dd.shape,4269) AS shape
    FROM 
    cipdev_wbd.wbd_hu2_nphr_32161 dd
    UNION ALL
@@ -99,8 +99,8 @@ FROM (
     nn.tnmid
    ,gg.metasourceid
    ,gg.loaddate
-   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001   ,4) AS areasqkm
-   ,ROUND(ST_AREA(ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000247105,4) AS areaacres
+   ,ROUND(public.ST_AREA(public.ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000001   ,4) AS areasqkm
+   ,ROUND(public.ST_AREA(public.ST_TRANSFORM(gg.shape,4326)::GEOGRAPHY)::NUMERIC * 0.000247105,4) AS areaacres
    ,nn.name
    ,gg.states
    ,gg.huc2
@@ -118,21 +118,21 @@ FROM (
       ,ggg.centermass_y
       ,'{' || uuid_generate_v1() || '}' AS globalid
       ,(SELECT 
-        ST_UNION(gggg.shape) 
+        public.ST_UNION(gggg.shape) 
         FROM (
            SELECT
-           ST_TRANSFORM(a2.shape,4269) AS shape
+           public.ST_TRANSFORM(a2.shape,4269) AS shape
            FROM
            cipdev_wbd.wbd_hu4_nphr_32655 a2
            UNION ALL
            SELECT
-           ST_TRANSFORM(a3.shape,4269) AS shape
+           public.ST_TRANSFORM(a3.shape,4269) AS shape
            FROM
            cipdev_wbd.wbd_hu4_nphr_32702 a3
         ) gggg
        ) AS shape
       FROM
-      cipsrv_wbd.wbd_hu12_nphr ggg
+      cipdev_wbd.wbd_hu12_nphr ggg
       WHERE
       SUBSTR(ggg.huc12,1,4) = '2204'
       LIMIT 1

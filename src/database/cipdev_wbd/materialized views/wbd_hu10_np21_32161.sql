@@ -30,23 +30,23 @@ SELECT
 ,a.huc10
 ,CAST(NULL AS VARCHAR(255))           AS hutype
 ,CAST(NULL AS VARCHAR(30))            AS humod
-,ROUND(ST_X(a.centermass)::NUMERIC,8) AS centermass_x
-,ROUND(ST_Y(a.centermass)::NUMERIC,8) AS centermass_y
+,ROUND(public.ST_X(a.centermass)::NUMERIC,8) AS centermass_x
+,ROUND(public.ST_Y(a.centermass)::NUMERIC,8) AS centermass_y
 ,'{' || uuid_generate_v1() || '}'     AS globalid
 ,a.shape
 FROM (
    SELECT
     aa.huc10
    ,ARRAY_REMOVE(aa.states_array,'XX')       AS states_array
-   ,ST_AREA(aa.shape) * 0.000001             AS areasqkm
-   ,ST_AREA(aa.shape) * 0.000247105          AS areaacres
-   ,ST_TRANSFORM(ST_CENTROID(aa.shape),4269) AS centermass
-   ,ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
+   ,public.ST_AREA(aa.shape) * 0.000001             AS areasqkm
+   ,public.ST_AREA(aa.shape) * 0.000247105          AS areaacres
+   ,public.ST_TRANSFORM(ST_CENTROID(aa.shape),4269) AS centermass
+   ,public.ST_COLLECTIONEXTRACT(aa.shape,3)         AS shape
    FROM (
       SELECT
        SUBSTR(aaa.huc12,1,10)    AS huc10
       ,ARRAY_AGG(DISTINCT u.val) AS states_array
-      ,ST_UNION(aaa.shape)       AS shape 
+      ,public.ST_UNION(aaa.shape)       AS shape 
       FROM (
          SELECT
           aaaa.huc12
@@ -56,7 +56,7 @@ FROM (
           ) AS states_array
          ,aaaa.shape
          FROM
-         cipsrv_wbd.wbd_hu12_np21_32161 aaaa
+         cipdev_wbd.wbd_hu12_np21_32161 aaaa
       ) aaa
       CROSS JOIN
 	   LATERAL UNNEST(aaa.states_array) AS u(val)

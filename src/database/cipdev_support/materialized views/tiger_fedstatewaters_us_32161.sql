@@ -35,7 +35,7 @@ cipsrv_support.tiger_fedstatewaters a
 WHERE
 a.stusps IN ('PR','VI');
 
-ALTER TABLE cipdev_support.tiger_fedstatewaters_32161_mv OWNER TO cipdev;
+ALTER TABLE cipdev_support.tiger_fedstatewaters_32161_mv OWNER TO cipsrv;
 GRANT SELECT ON cipdev_support.tiger_fedstatewaters_32161_mv TO public;
 
 CREATE UNIQUE INDEX IF NOT EXISTS tiger_fedstatewaters_32161_mv_u01
