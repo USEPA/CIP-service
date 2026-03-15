@@ -155,7 +155,7 @@ FROM (
       ,ggg.globalid
       ,ggg.shape
       FROM
-      cipdev_wbd.wbd_hu12sp_f3 ggg
+      cipsrv_wbd.wbd_hu12sp_f3 ggg
       LEFT JOIN
       cipdev_wbd.wbd_names bbb
       ON

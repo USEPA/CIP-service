@@ -41,7 +41,7 @@ SELECT
 ,'{' || uuid_generate_v1() || '}' AS globalid
 ,public.ST_TRANSFORM(a.shape,5070)       AS shape
 FROM
-cipdev_wbd.wbd_hu12_f3 a
+cipsrv_wbd.wbd_hu12_f3 a
 WHERE
 SUBSTR(a.huc12,1,2) NOT IN ('19','20','21','22');
 

@@ -41,7 +41,7 @@ SELECT
 ,'{' || uuid_generate_v1() || '}' AS globalid
 ,public.ST_TRANSFORM(a.shape,26904)      AS shape
 FROM
-cipdev_wbd.wbd_hu12_f3 a
+cipsrv_wbd.wbd_hu12_f3 a
 WHERE
 SUBSTR(a.huc12,1,2) IN ('20');
 
@@ -73,7 +73,7 @@ CREATE INDEX IF NOT EXISTS wbd_hu12_f3_26904_f05
 ON cipdev_wbd.wbd_hu12_f3_26904(SUBSTR(huc12,1,10));
 
 CREATE INDEX IF NOT EXISTS wbd_hu12_f3_26904_spx
-ON cipdev_wbd.wbd_hu12_f3 USING gist(shape);
+ON cipdev_wbd.wbd_hu12_f3_26904 USING gist(shape);
 
 ANALYZE cipdev_wbd.wbd_hu12_f3_26904;
 

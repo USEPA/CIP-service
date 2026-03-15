@@ -41,9 +41,9 @@ SELECT
 ,'{' || uuid_generate_v1() || '}' AS globalid
 ,public.ST_TRANSFORM(a.shape,32161)      AS shape
 FROM
-cipdev_wbd.wbd_hu12sp_f3 a
+cipsrv_wbd.wbd_hu12sp_f3 a
 JOIN
-cipdev_wbd.wbd_hu12_f3 b
+cipsrv_wbd.wbd_hu12_f3 b
 ON
 a.huc12 = b.huc12
 WHERE

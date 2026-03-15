@@ -149,9 +149,9 @@ FROM (
       ,ggg.centermass_x
       ,ggg.centermass_y
       ,ggg.globalid
-      ,(SELECT public.ST_UNION(gggg.shape) FROM cipdev_wbd.wbd_hu12_f3 gggg WHERE SUBSTR(gggg.huc12,1,4) = '2204') AS shape
+      ,(SELECT public.ST_UNION(gggg.shape) FROM cipsrv_wbd.wbd_hu12_f3 gggg WHERE SUBSTR(gggg.huc12,1,4) = '2204') AS shape
       FROM
-      cipdev_wbd.wbd_hu12_f3 ggg
+      cipsrv_wbd.wbd_hu12_f3 ggg
       WHERE
       SUBSTR(ggg.huc12,1,4) = '2204'
       LIMIT 1

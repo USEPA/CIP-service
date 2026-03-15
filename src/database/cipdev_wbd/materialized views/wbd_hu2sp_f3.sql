@@ -123,7 +123,7 @@ FROM (
            SELECT 
            a1.shape 
            FROM 
-           cipdev_wbd.wbd_hu12sp_f3 a1 
+           cipsrv_wbd.wbd_hu12sp_f3 a1 
            WHERE 
            SUBSTR(a1.huc12,1,4) = '2204'
            UNION ALL
@@ -139,7 +139,7 @@ FROM (
         ) gggg
        ) AS shape
       FROM
-      cipdev_wbd.wbd_hu12sp_f3 ggg
+      cipsrv_wbd.wbd_hu12sp_f3 ggg
       WHERE
       SUBSTR(ggg.huc12,1,4) = '2204'
       LIMIT 1
