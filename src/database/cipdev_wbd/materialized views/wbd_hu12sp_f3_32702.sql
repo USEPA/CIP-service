@@ -38,8 +38,8 @@ SELECT
 ,a.noncontributingareasqkm
 ,b.centermass_x
 ,b.centermass_y
-,'{' || uuid_generate_v1() || '}' AS globalid
-,public.ST_TRANSFORM(a.shape,32702)      AS shape
+,'{' || uuid_generate_v1() || '}'   AS globalid
+,public.ST_TRANSFORM(a.shape,32702) AS shape
 FROM
 cipsrv_wbd.wbd_hu12sp_f3 a
 JOIN

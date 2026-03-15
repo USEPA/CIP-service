@@ -38,10 +38,10 @@ SELECT
 ,a.noncontributingareasqkm
 ,a.centermass_x
 ,a.centermass_y
-,'{' || uuid_generate_v1() || '}' AS globalid
-,public.ST_TRANSFORM(a.shape,5070)       AS shape
+,'{' || uuid_generate_v1() || '}'  AS globalid
+,public.ST_TRANSFORM(a.shape,5070) AS shape
 FROM
-cipdev_wbd.wbd_hu12_np21 a
+cipsrv_wbd.wbd_hu12_np21 a
 WHERE
 SUBSTR(a.huc12,1,2) NOT IN ('19','20','21','22');
 
