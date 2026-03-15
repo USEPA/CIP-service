@@ -38,10 +38,10 @@ SELECT
 ,a.noncontributingareasqkm
 ,a.centermass_x
 ,a.centermass_y
-,'{' || uuid_generate_v1() || '}' AS globalid
-,public.ST_TRANSFORM(a.shape,32702)      AS shape
+,'{' || uuid_generate_v1() || '}'   AS globalid
+,public.ST_TRANSFORM(a.shape,32702) AS shape
 FROM
-cipdev_wbd.wbd_hu12_nphr a
+cipsrv_wbd.wbd_hu12_nphr a
 WHERE
 SUBSTR(a.huc12,1,4) IN ('2203');
 
