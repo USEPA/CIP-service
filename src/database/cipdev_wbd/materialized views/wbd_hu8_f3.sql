@@ -157,7 +157,7 @@ FROM (
       FROM
       cipsrv_wbd.wbd_hu12_f3 ggg
       LEFT JOIN
-      cipsrv_wbd.wbd_namesbbb
+      cipsrv_wbd.wbd_names bbb
       ON
       bbb.huc = SUBSTR(ggg.huc12,1,8)
       WHERE
