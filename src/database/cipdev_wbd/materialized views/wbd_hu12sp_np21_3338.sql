@@ -38,12 +38,12 @@ SELECT
 ,a.noncontributingareasqkm
 ,b.centermass_x
 ,b.centermass_y
-,'{' || uuid_generate_v1() || '}' AS globalid
-,public.ST_TRANSFORM(a.shape,3338)       AS shape
+,'{' || uuid_generate_v1() || '}'  AS globalid
+,public.ST_TRANSFORM(a.shape,3338) AS shape
 FROM
-cipdev_wbd.wbd_hu12sp_np21 a
+cipsrv_wbd.wbd_hu12sp_np21 a
 JOIN
-cipdev_wbd.wbd_hu12_np21 b
+cipsrv_wbd.wbd_hu12_np21 b
 ON
 a.huc12 = b.huc12
 WHERE
