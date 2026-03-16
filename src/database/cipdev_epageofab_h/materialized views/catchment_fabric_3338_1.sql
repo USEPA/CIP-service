@@ -90,9 +90,9 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,CAST('alaskacatchment' AS VARCHAR(32)) AS sourcedataset
-   ,ST_TRANSFORM(aa.shape,3338) AS shape
+   ,public.ST_TRANSFORM(aa.shape,3338) AS shape
    FROM   
-   cipdev_epageofab_h.alaskacatchment aa
+   cipsrv_epageofab_h.alaskacatchment aa
 ) a
 LEFT JOIN
 cipsrv_nhdplus_h.networknhdflowline b

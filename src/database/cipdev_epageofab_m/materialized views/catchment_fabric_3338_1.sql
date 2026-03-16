@@ -96,7 +96,7 @@ FROM (
       ,p_grid_size     := 0.001
     ) AS shape
    FROM   
-   cipdev_epageofab_m.alaskacatchment aa
+   cipsrv_epageofab_m.alaskacatchment aa
 ) a
 LEFT JOIN
 cipsrv_nhdplus_m.networknhdflowline b

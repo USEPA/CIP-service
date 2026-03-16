@@ -82,7 +82,7 @@ FROM (
    ,aa.vpuid
    ,aa.sourcedataset
    ,aa.globalid
-   ,ST_TRANSFORM(aa.shape,4269) AS shape
+   ,public.ST_TRANSFORM(aa.shape,4269) AS shape
    FROM
    /* cipdev_epageofab_h.catchment_fabric_5070_3 aa*/
    cipdev_epageofab_h.catchment_fabric_5070_3alt4 aa
@@ -108,7 +108,7 @@ FROM (
    ,bb.vpuid
    ,bb.sourcedataset
    ,bb.globalid
-   ,ST_TRANSFORM(bb.shape,4269) AS shape
+   ,public.ST_TRANSFORM(bb.shape,4269) AS shape
    FROM
    cipdev_epageofab_h.catchment_fabric_3338_3 bb
    UNION ALL
@@ -133,7 +133,7 @@ FROM (
    ,cc.vpuid
    ,cc.sourcedataset
    ,cc.globalid
-   ,ST_TRANSFORM(cc.shape,4269) AS shape
+   ,public.ST_TRANSFORM(cc.shape,4269) AS shape
    FROM
    cipdev_epageofab_h.catchment_fabric_26904_3 cc
    UNION ALL
@@ -158,7 +158,7 @@ FROM (
    ,dd.vpuid
    ,dd.sourcedataset
    ,dd.globalid
-   ,ST_TRANSFORM(dd.shape,4269) AS shape
+   ,public.ST_TRANSFORM(dd.shape,4269) AS shape
    FROM
    cipdev_epageofab_h.catchment_fabric_32161_3 dd
    UNION ALL
@@ -183,7 +183,7 @@ FROM (
    ,ee.vpuid
    ,ee.sourcedataset
    ,ee.globalid
-   ,ST_TRANSFORM(ee.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ee.shape,4269) AS shape
    FROM
    cipdev_epageofab_h.catchment_fabric_32655_3 ee
    UNION ALL
@@ -208,7 +208,7 @@ FROM (
    ,ff.vpuid
    ,ff.sourcedataset
    ,ff.globalid
-   ,ST_TRANSFORM(ff.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ff.shape,4269) AS shape
    FROM
    cipdev_epageofab_h.catchment_fabric_32702_3 ff
 ) a;

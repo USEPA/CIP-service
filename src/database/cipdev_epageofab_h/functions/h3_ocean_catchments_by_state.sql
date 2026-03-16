@@ -152,7 +152,7 @@ BEGIN
          SELECT
           aa.stusps
          ,aa.h3hexagonaddr::VARCHAR
-         ,ST_TRANSFORM(h3_cell_to_boundary_geometry(aa.h3hexagonaddr),$2) AS shape
+         ,public.ST_TRANSFORM(h3_cell_to_boundary_geometry(aa.h3hexagonaddr),$2) AS shape
          FROM (
             SELECT
              $3 AS stusps
@@ -207,7 +207,7 @@ BEGIN
            'UNION ALL
             SELECT
              bb.nhdplusid
-            ,ST_TRANSFORM(bb.shape,' || p_srid || ')
+            ,public.ST_TRANSFORM(bb.shape,' || p_srid || ')
             FROM
             cipdev_epageofab_h.grid0catchment bb';
             
@@ -251,7 +251,7 @@ BEGIN
          ,rec.stusps
          ,rec.h3hexagonaddr
          ,rec.areasqkm
-         ,ST_TRANSFORM(rec.shape,4269);
+         ,public.ST_TRANSFORM(rec.shape,4269);
          
          CONTINUE;
          
@@ -271,7 +271,7 @@ BEGIN
                ,rec.stusps
                ,rec.h3hexagonaddr
                ,num_areasqkm
-               ,ST_TRANSFORM(geom_diff,4269);
+               ,public.ST_TRANSFORM(geom_diff,4269);
                
                CONTINUE;
                

@@ -24,7 +24,7 @@ FROM (
     aa.xwalk_huc12
    ,'NPHR'                               AS xwalk_huc12_version
    ,public.ST_AREA(aa.shape)::NUMERIC / 1000000 AS areasqkm
-   ,ST_TRANSFORM(aa.shape,4269) AS shape
+   ,public.ST_TRANSFORM(aa.shape,4269) AS shape
    FROM (
       SELECT
        xxa.xwalk_huc12
@@ -48,7 +48,7 @@ FROM (
     bb.xwalk_huc12
    ,'NPHR'                               AS xwalk_huc12_version
    ,public.ST_AREA(bb.shape)::NUMERIC / 1000000 AS areasqkm
-   ,ST_TRANSFORM(bb.shape,4269) AS shape
+   ,public.ST_TRANSFORM(bb.shape,4269) AS shape
    FROM (
       SELECT
        xxb.xwalk_huc12
@@ -72,7 +72,7 @@ FROM (
     cc.xwalk_huc12
    ,'NPHR'                               AS xwalk_huc12_version
    ,public.ST_AREA(cc.shape)::NUMERIC / 1000000 AS areasqkm
-   ,ST_TRANSFORM(cc.shape,4269) AS shape
+   ,public.ST_TRANSFORM(cc.shape,4269) AS shape
    FROM (
       SELECT
        xxc.xwalk_huc12
@@ -96,7 +96,7 @@ FROM (
     dd.xwalk_huc12
    ,'NPHR'                               AS xwalk_huc12_version
    ,public.ST_AREA(dd.shape)::NUMERIC / 1000000 AS areasqkm
-   ,ST_TRANSFORM(dd.shape,4269) AS shape
+   ,public.ST_TRANSFORM(dd.shape,4269) AS shape
    FROM (
       SELECT
        xxd.xwalk_huc12
@@ -120,7 +120,7 @@ FROM (
     ee.xwalk_huc12
    ,'NPHR'                               AS xwalk_huc12_version
    ,public.ST_AREA(ee.shape)::NUMERIC / 1000000 AS areasqkm
-   ,ST_TRANSFORM(ee.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ee.shape,4269) AS shape
    FROM (
       SELECT
        xxe.xwalk_huc12
@@ -144,7 +144,7 @@ FROM (
     ff.xwalk_huc12
    ,'NPHR'                               AS xwalk_huc12_version
    ,public.ST_AREA(ff.shape)::NUMERIC / 1000000 AS areasqkm
-   ,ST_TRANSFORM(ff.shape,4269) AS shape
+   ,public.ST_TRANSFORM(ff.shape,4269) AS shape
    FROM (
       SELECT
        xxf.xwalk_huc12
