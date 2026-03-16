@@ -51,7 +51,7 @@ WITH
       SELECT
        aaa.nhdplusid
       ,public.ST_COLLECTIONEXTRACT(
-          ST_UNION(
+          public.ST_UNION(
              aaa.tribal_shape
           )
        ) AS tribal_shape
