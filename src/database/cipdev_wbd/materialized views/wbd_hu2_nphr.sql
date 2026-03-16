@@ -132,7 +132,7 @@ FROM (
         ) gggg
        ) AS shape
       FROM
-      cipdev_wbd.wbd_hu12_nphr ggg
+      cipsrv_wbd.wbd_hu12_nphr ggg
       WHERE
       SUBSTR(ggg.huc12,1,4) = '2204'
       LIMIT 1
