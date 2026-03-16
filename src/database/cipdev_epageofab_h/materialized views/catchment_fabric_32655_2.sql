@@ -32,7 +32,7 @@ WITH
    SELECT
     aa.nhdplusid
    ,CAST(NULL AS VARCHAR(1))                     AS istribal
-   ,ST_AREA(aa.tribal_shape)::NUMERIC / 1000000  AS istribal_areasqkm
+   ,public.ST_AREA(aa.tribal_shape)::NUMERIC / 1000000  AS istribal_areasqkm
    ,bb.sourcefc
    ,bb.gridcode
    ,bb.areasqkm
@@ -50,7 +50,7 @@ WITH
    FROM (
       SELECT
        aaa.nhdplusid
-      ,ST_COLLECTIONEXTRACT(
+      ,public.ST_COLLECTIONEXTRACT(
           ST_UNION(
              aaa.tribal_shape
           )
@@ -59,8 +59,8 @@ WITH
          SELECT
           aaaa.nhdplusid
          ,bbbb.geoid
-         ,ST_COLLECTIONEXTRACT(
-             ST_INTERSECTION(
+         ,public.ST_COLLECTIONEXTRACT(
+             public.ST_INTERSECTION(
                  cipsrv_nhdplus_h.snap_to_common_grid(
                    p_geometry      := bbbb.shape
                   ,p_known_region  := '32655'
@@ -83,7 +83,7 @@ WITH
             AND bbbbb.aiannhr = 'F'
          ) AS bbbb
          ON
-         ST_INTERSECTS(bbbb.shape,aaaa.shape)
+         public.ST_INTERSECTS(bbbb.shape,aaaa.shape)
       ) aaa
       GROUP BY 
       aaa.nhdplusid

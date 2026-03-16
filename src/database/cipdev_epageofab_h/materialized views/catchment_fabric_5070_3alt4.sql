@@ -53,7 +53,7 @@ SELECT
  THEN
    a.areasqkm
  ELSE
-   ST_AREA(a.shape)::NUMERIC / 1000000
+  public.ST_AREA(a.shape)::NUMERIC / 1000000
  END AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
@@ -118,8 +118,8 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,cc.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := (SELECT ee.shape FROM cipsrv_support.tiger_fedstatewaters_5070 ee WHERE ee.stusps = dd.catchmentstatecode)
              ,p_known_region  := '5070'
@@ -141,7 +141,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3alt4ad OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3alt4ad TO public;
@@ -190,7 +190,7 @@ SELECT
  THEN
    a.areasqkm
  ELSE
-   ST_AREA(a.shape)::NUMERIC / 1000000
+  public.ST_AREA(a.shape)::NUMERIC / 1000000
  END AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
@@ -255,8 +255,8 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,cc.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := (SELECT ee.shape FROM cipsrv_support.tiger_fedstatewaters_5070 ee WHERE ee.stusps = dd.catchmentstatecode)
              ,p_known_region  := '5070'
@@ -278,7 +278,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3alt4fi OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3alt4fi TO public;
@@ -327,7 +327,7 @@ SELECT
  THEN
    a.areasqkm
  ELSE
-   ST_AREA(a.shape)::NUMERIC / 1000000
+  public.ST_AREA(a.shape)::NUMERIC / 1000000
  END AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
@@ -392,8 +392,8 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,cc.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := (SELECT ee.shape FROM cipsrv_support.tiger_fedstatewaters_5070 ee WHERE ee.stusps = dd.catchmentstatecode)
              ,p_known_region  := '5070'
@@ -415,7 +415,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3alt4km OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3alt4km TO public;
@@ -464,7 +464,7 @@ SELECT
  THEN
    a.areasqkm
  ELSE
-   ST_AREA(a.shape)::NUMERIC / 1000000
+  public.ST_AREA(a.shape)::NUMERIC / 1000000
  END AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
@@ -529,8 +529,8 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,cc.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := (SELECT ee.shape FROM cipsrv_support.tiger_fedstatewaters_5070 ee WHERE ee.stusps = dd.catchmentstatecode)
              ,p_known_region  := '5070'
@@ -552,7 +552,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3alt4np OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3alt4np TO public;
@@ -601,7 +601,7 @@ SELECT
  THEN
    a.areasqkm
  ELSE
-   ST_AREA(a.shape)::NUMERIC / 1000000
+  public.ST_AREA(a.shape)::NUMERIC / 1000000
  END AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
@@ -666,8 +666,8 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,cc.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := (SELECT ee.shape FROM cipsrv_support.tiger_fedstatewaters_5070 ee WHERE ee.stusps = dd.catchmentstatecode)
              ,p_known_region  := '5070'
@@ -689,7 +689,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3alt4rw OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3alt4rw TO public;
@@ -738,7 +738,7 @@ SELECT
  THEN
    a.areasqkm
  ELSE
-   ST_AREA(a.shape)::NUMERIC / 1000000
+  public.ST_AREA(a.shape)::NUMERIC / 1000000
  END AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
@@ -803,8 +803,8 @@ FROM (
    ,cc.h3hexagonaddr
    ,cc.vpuid
    ,cc.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := (SELECT ee.shape FROM cipsrv_support.outerwaters_5070 ee WHERE ee.itemcode = dd.catchmentstatecode)
              ,p_known_region  := '5070'
@@ -826,7 +826,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_h.catchment_fabric_5070_3alt4ow OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_h.catchment_fabric_5070_3alt4ow TO public;

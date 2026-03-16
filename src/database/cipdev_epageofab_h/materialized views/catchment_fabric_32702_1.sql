@@ -117,7 +117,7 @@ FROM (
       ,p_grid_size     := 0.001
     ) AS shape
    FROM   
-   cipdev_epageofab_h.oceancatchment bb
+   cipsrv_epageofab_h.oceancatchment bb
    WHERE
        bb.shape && cipsrv_nhdplus_h.generic_common_mbr('32702')
    AND cipsrv_nhdplus_h.determine_grid_srid_f(bb.shape) = 32702

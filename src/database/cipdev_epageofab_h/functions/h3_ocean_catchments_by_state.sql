@@ -81,7 +81,7 @@ BEGIN
    INTO geom_state;
    
    IF geom_state IS NULL
-   OR ST_ISEMPTY(geom_state)
+   OR public.ST_ISEMPTY(geom_state)
    THEN
       RAISE EXCEPTION '% not found in %',p_stusps,str_src_state;
       
@@ -103,7 +103,7 @@ BEGIN
       END IF;
       
       geom_state := ST_COLLECTIONEXTRACT(
-          ST_INTERSECTION(
+          public.ST_INTERSECTION(
              geom_state
             ,geom_bbox
             ,0.001
@@ -112,7 +112,7 @@ BEGIN
       );
       
       IF geom_state IS NULL
-      OR ST_ISEMPTY(geom_state)
+      OR public.ST_ISEMPTY(geom_state)
       THEN
          RAISE EXCEPTION 'bbox not within %',p_stusps;
          
@@ -142,7 +142,7 @@ BEGIN
       SELECT
        a.stusps
       ,a.h3hexagonaddr
-      ,ST_AREA(a.shape)::NUMERIC / 1000000 AS areasqkm
+      ,public.ST_AREA(a.shape)::NUMERIC / 1000000 AS areasqkm
       ,cipsrv_nhdplus_h.snap_to_common_grid(
           a.shape
          ,$1
@@ -170,7 +170,7 @@ BEGIN
          boo_changed  := TRUE;
          
          geom_diff := ST_COLLECTIONEXTRACT(
-             ST_INTERSECTION(
+             public.ST_INTERSECTION(
                 geom_diff
                ,geom_state
              )
@@ -178,7 +178,7 @@ BEGIN
          );
          
          IF  geom_diff IS NULL
-         OR ST_ISEMPTY(geom_diff)
+         OR public.ST_ISEMPTY(geom_diff)
          THEN
             CONTINUE;
          
@@ -216,7 +216,7 @@ BEGIN
       str_sql := str_sql ||
         ') a
          WHERE
-         ST_INTERSECTS(a.shape,$2)
+         public.ST_INTERSECTS(a.shape,$2)
       ';
 
       FOR rec2 IN EXECUTE str_sql
@@ -233,7 +233,7 @@ BEGIN
          );
          
          IF  geom_diff IS NULL
-         OR ST_ISEMPTY(geom_diff)
+         OR public.ST_ISEMPTY(geom_diff)
          THEN
             CONTINUE;
          
@@ -257,9 +257,9 @@ BEGIN
          
       ELSE
          IF  geom_diff IS NOT NULL
-         AND NOT ST_ISEMPTY(geom_diff)
+         AND NOT public.ST_ISEMPTY(geom_diff)
          THEN
-            num_areasqkm := ST_AREA(ST_TRANSFORM(geom_diff,4326)::GEOGRAPHY)::NUMERIC / 1000000;
+            num_areasqkm :=public.ST_AREA(ST_TRANSFORM(geom_diff,4326)::GEOGRAPHY)::NUMERIC / 1000000;
             
             IF num_areasqkm > 0.00000005
             THEN

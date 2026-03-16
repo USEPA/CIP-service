@@ -23,7 +23,7 @@ FROM (
    SELECT
     aa.xwalk_huc12
    ,'F3'                                 AS xwalk_huc12_version
-   ,ST_AREA(aa.shape)::NUMERIC / 1000000 AS areasqkm
+   ,public.ST_AREA(aa.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(aa.shape,4269) AS shape
    FROM (
       SELECT
@@ -47,7 +47,7 @@ FROM (
    SELECT
     bb.xwalk_huc12
    ,'F3'                                 AS xwalk_huc12_version
-   ,ST_AREA(bb.shape)::NUMERIC / 1000000 AS areasqkm
+   ,public.ST_AREA(bb.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(bb.shape,4269) AS shape
    FROM (
       SELECT
@@ -71,7 +71,7 @@ FROM (
    SELECT
     cc.xwalk_huc12
    ,'F3'                                 AS xwalk_huc12_version
-   ,ST_AREA(cc.shape)::NUMERIC / 1000000 AS areasqkm
+   ,public.ST_AREA(cc.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(cc.shape,4269) AS shape
    FROM (
       SELECT
@@ -95,7 +95,7 @@ FROM (
    SELECT
     dd.xwalk_huc12
    ,'F3'                                 AS xwalk_huc12_version
-   ,ST_AREA(dd.shape)::NUMERIC / 1000000 AS areasqkm
+   ,public.ST_AREA(dd.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(dd.shape,4269) AS shape
    FROM (
       SELECT
@@ -119,7 +119,7 @@ FROM (
    SELECT
     ee.xwalk_huc12
    ,'F3'                                 AS xwalk_huc12_version
-   ,ST_AREA(ee.shape)::NUMERIC / 1000000 AS areasqkm
+   ,public.ST_AREA(ee.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(ee.shape,4269) AS shape
    FROM (
       SELECT
@@ -143,7 +143,7 @@ FROM (
    SELECT
     ff.xwalk_huc12
    ,'F3'                                 AS xwalk_huc12_version
-   ,ST_AREA(ff.shape)::NUMERIC / 1000000 AS areasqkm
+   ,public.ST_AREA(ff.shape)::NUMERIC / 1000000 AS areasqkm
    ,ST_TRANSFORM(ff.shape,4269) AS shape
    FROM (
       SELECT
@@ -166,7 +166,7 @@ FROM (
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape)
+AND NOT public.ST_ISEMPTY(a.shape)
 AND a.areasqkm > 0.00000005;
 
 ALTER TABLE cipdev_epageofab_m.catchment_fabric_huc12_f3_final OWNER TO cipsrv;

@@ -35,7 +35,7 @@ SELECT
 ,a.istribal_areasqkm
 ,a.sourcefc
 ,a.gridcode
-,ST_AREA(a.shape)::NUMERIC / 1000000  AS areasqkm
+,public.ST_AREA(a.shape)::NUMERIC / 1000000  AS areasqkm
 ,a.isnavigable
 ,a.hasvaa
 ,a.issink
@@ -68,8 +68,8 @@ FROM (
    ,aa.h3hexagonaddr
    ,aa.vpuid
    ,aa.sourcedataset
-   ,ST_COLLECTIONEXTRACT(
-       ST_INTERSECTION(
+   ,public.ST_COLLECTIONEXTRACT(
+       public.ST_INTERSECTION(
            cipsrv_nhdplus_m.snap_to_common_grid(
               p_geometry      := bb.shape
              ,p_known_region  := '26904'
@@ -100,11 +100,11 @@ FROM (
       ) bbb
    ) AS bb
    ON
-   ST_INTERSECTS(bb.shape,aa.shape)
+   public.ST_INTERSECTS(bb.shape,aa.shape)
 ) a
 WHERE
     a.shape IS NOT NULL
-AND NOT ST_ISEMPTY(a.shape);
+AND NOT public.ST_ISEMPTY(a.shape);
 
 ALTER TABLE cipdev_epageofab_m.catchment_fabric_26904_3 OWNER TO cipsrv;
 GRANT SELECT ON cipdev_epageofab_m.catchment_fabric_26904_3 TO public;

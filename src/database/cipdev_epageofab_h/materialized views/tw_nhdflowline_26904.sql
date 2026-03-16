@@ -56,7 +56,7 @@ FROM (
       ,aaa.ftype
       ,aaa.fcode
       ,aaa.vpuid
-      ,ST_COLLECTIONEXTRACT(ST_INTERSECTION(bbb.shape,aaa.shape,0.05),2) AS shape
+      ,public.ST_COLLECTIONEXTRACT(ST_INTERSECTION(bbb.shape,aaa.shape,0.05),2) AS shape
       FROM
       cipsrv_nhdplus_h.nhdflowline_26904 aaa
       INNER JOIN LATERAL (
@@ -67,11 +67,11 @@ FROM (
          cipsrv_support.tiger_fedstatewaters_26904 bbbb
       ) AS bbb
       ON
-      ST_INTERSECTS(bbb.shape,aaa.shape)
+      public.ST_INTERSECTS(bbb.shape,aaa.shape)
    ) aa
    WHERE
        aa.shape IS NOT NULL
-   AND NOT ST_ISEMPTY(aa.shape)
+   AND NOT public.ST_ISEMPTY(aa.shape)
 ) a
 WHERE
 a.lengthkm > 0.000001;

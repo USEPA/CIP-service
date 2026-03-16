@@ -52,7 +52,7 @@ FROM (
    ,aa.resolution
    ,aa.gnis_id
    ,aa.gnis_name
-   ,ST_AREA(ST_TRANSFORM(aa.shape,4326)::GEOGRAPHY)::NUMERIC / 1000000  AS areasqkm
+   ,public.ST_AREA(ST_TRANSFORM(aa.shape,4326)::GEOGRAPHY)::NUMERIC / 1000000  AS areasqkm
    ,aa.elevation
    ,aa.reachcode
    ,aa.ftype
@@ -82,8 +82,8 @@ FROM (
       ,aaa.onoffnet
       ,aaa.purpcode
       ,aaa.burn
-      ,ST_COLLECTIONEXTRACT(
-          ST_INTERSECTION(
+      ,public.ST_COLLECTIONEXTRACT(
+          public.ST_INTERSECTION(
              bbb.shape
             ,aaa.shape
             ,0.05
@@ -100,11 +100,11 @@ FROM (
          cipsrv_support.tiger_fedstatewaters_32702 bbbb
       ) AS bbb
       ON
-      ST_INTERSECTS(bbb.shape,aaa.shape)
+      public.ST_INTERSECTS(bbb.shape,aaa.shape)
    ) aa
    WHERE
        aa.shape IS NOT NULL
-   AND NOT ST_ISEMPTY(aa.shape)
+   AND NOT public.ST_ISEMPTY(aa.shape)
 ) a
 WHERE
 a.areasqkm > 0.00000005;
