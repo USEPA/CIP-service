@@ -70,7 +70,7 @@ FROM (
    ,aa.sourcedataset
    ,public.ST_COLLECTIONEXTRACT(
        public.ST_INTERSECTION(
-           cipsrv_nhdplus_m.snap_to_common_grid(
+           cipsrv_nhdplus_h.snap_to_common_grid(
               p_geometry      := bb.shape
              ,p_known_region  := '3338'
              ,p_grid_size     := 0.001

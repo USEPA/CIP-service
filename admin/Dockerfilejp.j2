@@ -82,6 +82,7 @@ RUN eval "$(ssh-agent -s)" && ssh-add /home/${NB_USER}/.ssh/id_rsa
 RUN mkdir -p /home/${NB_USER}/notebooks                     &&\
     mkdir -p /home/${NB_USER}/notebooks/sql                 &&\
     mkdir -p /home/${NB_USER}/notebooks/upload              &&\
+    mkdir -p /home/${NB_USER}/notebooks/download            &&\
     mkdir -p /home/${NB_USER}/loading_dock
 
 RUN python3 -m venv /opt/venv                               &&\

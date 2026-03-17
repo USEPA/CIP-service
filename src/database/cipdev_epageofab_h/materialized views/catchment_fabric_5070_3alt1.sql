@@ -7,7 +7,7 @@ CREATE MATERIALIZED VIEW cipdev_epageofab_h.catchment_fabric_5070_3alt1(
 AS
 SELECT
  a.catchmentstatecode
-,ST_Subdivide(a.shape,8000) AS shape
+,public.ST_Subdivide(a.shape,8000) AS shape
 FROM (
    SELECT
     bbb.stusps AS catchmentstatecode

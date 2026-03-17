@@ -26,9 +26,9 @@ CREATE INDEX IF NOT EXISTS catchment_3338_topo_i02
 ON cipsrv_nhdplustopo_h.catchment_3338_topo(nhdplusid);
 
 SELECT topology.CreateTopology(
-    toponame := 'cipsrv_nhdplustopo_h_catchment_fabric_3338'
-   ,srid     := 3338
-   ,prec     := 0.001
+    atopology := 'cipsrv_nhdplustopo_h_catchment_fabric_3338'
+   ,srid      := 3338
+   ,prec      := 0.001
 );
 
 SELECT topology.AddTopoGeometryColumn(
@@ -205,7 +205,7 @@ BEGIN
       SELECT
       DISTINCT a.objectid
       FROM
-      cipsrv_epageofab_h.catchment_fabric_3338_3 a
+      cipdev_epageofab_h.catchment_fabric_3338_3 a
       JOIN
       cipsrv_nhdplustopo_h_catchment_fabric_3338.edge_data b
       ON public.ST_INTERSECTS(a.shape,b.geom)
@@ -242,7 +242,7 @@ BEGIN
                ,0.001
              )
             FROM
-            cipsrv_epageofab_h.catchment_fabric_3338_3 aa
+            cipdev_epageofab_h.catchment_fabric_3338_3 aa
             WHERE 
             aa.objectid = rec.objectid;
             
@@ -274,7 +274,7 @@ BEGIN
                         ,0.001
                       )
                      FROM
-                     cipsrv_epageofab_h.catchment_fabric_3338_3 aa
+                     cipdev_epageofab_h.catchment_fabric_3338_3 aa
                      WHERE
                      aa.objectid = rec.objectid;
                      
@@ -353,7 +353,7 @@ BEGIN
             ,0.001
           )
          FROM
-         cipsrv_epageofab_h.catchment_fabric_3338_3 aa
+         cipdev_epageofab_h.catchment_fabric_3338_3 aa
          WHERE
              aa.catchmentstatecode = p_state
          AND NOT EXISTS (SELECT 1 FROM cipsrv_nhdplustopo_h.catchment_3338_topo cc WHERE cc.objectid = aa.objectid)
