@@ -12,6 +12,7 @@ CREATE OR REPLACE PROCEDURE cipsrv_engine.cipsrv_batch_index(
    ,OUT out_return_code                    INTEGER
    ,OUT out_status_message                 VARCHAR
    ,IN  p_override_default_nhdplus_version VARCHAR DEFAULT NULL
+   ,IN  p_wbd_version                      VARCHAR DEFAULT 'NP21'
    ,IN  p_debug                            BOOLEAN DEFAULT FALSE
 )
 AS $BODY$ 
@@ -30,6 +31,7 @@ DECLARE
    str_catchment_filter               VARCHAR;
    ary_catchment_filter               VARCHAR[];
    str_nhdplus_version                VARCHAR;
+   str_epageofab_schema               VARCHAR;
    str_default_nhdplus_version        VARCHAR;
    str_catchment_resolution           VARCHAR;
    str_xwalk_huc12_version            VARCHAR;
@@ -1471,10 +1473,12 @@ BEGIN
       IF str_nhdplus_version = 'nhdplus_m'
       THEN
          str_catchment_resolution := 'MR';
+         str_epageofab_schema := 'epageofab_m';
          
       ELSIF str_nhdplus_version = 'nhdplus_h'
       THEN
          str_catchment_resolution := 'HR';
+         str_epageofab_schema := 'epageofab_h';
          
       ELSE
          str_catchment_resolution := str_nhdplus_version;
@@ -1531,7 +1535,7 @@ BEGIN
               || ',a.istribal_areasqkm '
               || ',$9 '
               || ',a.areasqkm AS catchmentareasqkm '
-              || ',a.xwalk_huc12 '
+              || ',b.xwalk_huc12 '
               || ',NULL '
               || ',NULL '
               || ',a.isnavigable '
@@ -1550,12 +1554,17 @@ BEGIN
               || ',a.h3hexagonaddr '
               || ',''{'' || uuid_generate_v1() || ''}'' '
               || 'FROM '
-              || 'cipsrv_' || str_nhdplus_version || '.catchment_fabric a '
+              || 'cipsrv_' || str_epageofab_schema || '.catchment_fabric a '
+              || 'JOIN '
+              || 'cipsrv_' || str_epageofab_schema || '.catchment_fabric_xwalk b '
+              || 'ON '
+              || 'a.nhdplusid = b.nhdplusid '
               || 'WHERE '
               || 'EXISTS (SELECT 1 FROM tmp_cip b WHERE b.nhdplusid = a.nhdplusid) '
               || 'AND (NOT $10 OR a.catchmentstatecode = ANY($11) ) '
-              || 'AND (NOT $12 OR a.istribal IN (''F'',''P''))'
-              || 'AND (NOT $13 OR a.istribal = ''N'')';
+              || 'AND (NOT $12 OR a.istribal IN (''F'',''P'')) '
+              || 'AND (NOT $13 OR a.istribal = ''N'') '
+              || 'AND b.xwalk_huc12_version = $14 ';
               
       EXECUTE str_sql 
       USING 
@@ -1571,7 +1580,8 @@ BEGIN
       ,boo_filter_by_state
       ,ary_state_filters
       ,boo_filter_by_tribal
-      ,boo_filter_by_notribal;
+      ,boo_filter_by_notribal
+      ,p_wbd_version;
 
       GET DIAGNOSTICS int_count = ROW_COUNT;
 
@@ -1716,15 +1726,20 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER PROCEDURE cipsrv_engine.cipsrv_batch_index(
-    VARCHAR
-   ,VARCHAR
-   ,BOOLEAN
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON PROCEDURE cipsrv_engine.cipsrv_batch_index(
-    VARCHAR
-   ,VARCHAR
-   ,BOOLEAN
-) TO PUBLIC;
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.cipsrv_batch_index';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER PROCEDURE %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON PROCEDURE %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER PROCEDURE %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON PROCEDURE %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
 
