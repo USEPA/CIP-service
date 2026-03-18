@@ -10,6 +10,7 @@ CIP-service is a project of the [US Environmental Protection Agency](https://www
 * [National Hydrology Dataset Plus](https://www.epa.gov/waterdata/get-nhdplus-national-hydrography-dataset-plus-data)
 * Network Navigation
 * [Watershed Boundary Datasets](docs/wbd.md)
+* [Catchment Tribal Status](docs/tribal.md)
 * [Flow Accumulation with Pour Point Capability](docs/flow_accumulation.md)
 
 ### CIP-service Requirements
