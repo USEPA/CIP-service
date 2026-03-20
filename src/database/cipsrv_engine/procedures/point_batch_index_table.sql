@@ -316,31 +316,19 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-ALTER PROCEDURE cipsrv_engine.point_batch_index_table(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,INTEGER
-) OWNER TO cipsrv;
-
-GRANT EXECUTE ON PROCEDURE cipsrv_engine.point_batch_index_table(
-    VARCHAR
-   ,VARCHAR
-   ,VARCHAR
-   ,INTEGER[]
-   ,INTEGER[]
-   ,NUMERIC
-   ,BOOLEAN
-   ,BOOLEAN
-   ,BOOLEAN
-   ,VARCHAR
-   ,INTEGER
-) TO PUBLIC;
-
+DO $$DECLARE 
+   a VARCHAR;b VARCHAR;
+BEGIN
+   SELECT p.oid::regproc,pg_get_function_identity_arguments(p.oid)
+   INTO a,b FROM pg_catalog.pg_proc p LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+   WHERE p.oid::regproc::text = 'cipsrv_engine.point_batch_index_table';
+   IF b IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER PROCEDURE %s(%s) OWNER TO cipsrv',a,b);
+   EXECUTE FORMAT('GRANT EXECUTE ON PROCEDURE %s(%s) TO PUBLIC',a,b);
+   ELSE
+   IF a IS NOT NULL THEN 
+   EXECUTE FORMAT('ALTER PROCEDURE %s OWNER TO cipsrv',a);
+   EXECUTE FORMAT('GRANT EXECUTE ON PROCEDURE %s TO PUBLIC',a);
+   ELSE RAISE EXCEPTION 'prob'; 
+   END IF;END IF;
+END$$;
