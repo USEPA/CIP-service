@@ -10,6 +10,7 @@ CIP-service is a project of the [US Environmental Protection Agency](https://www
 * [National Hydrology Dataset Plus](https://www.epa.gov/waterdata/get-nhdplus-national-hydrography-dataset-plus-data)
 * Network Navigation
 * [Watershed Boundary Datasets](docs/wbd.md)
+* [Catchment Tribal Status](docs/tribal.md)
 * [Flow Accumulation with Pour Point Capability](docs/flow_accumulation.md)
 
 ### CIP-service Requirements
@@ -19,6 +20,8 @@ CIP-service is a project of the [US Environmental Protection Agency](https://www
 * Knowledge of containers, [Python coding](https://www.python.org/), GIS, PostgreSQL and the [PLpgSQL stored procedure language](https://www.postgresql.org/docs/current/plpgsql.html) is recommended.
 
 * Usage of the quickconfig.py setup utility requires Python 3 to be available on the host system.  Most flavors of Linux will provide Python by default.  Python can be added to Windows by hand, or you may already have it as part of ArcGIS Pro, QGIS or other software installations.  Using [Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/about) is also a convenient way to have Python at the ready.
+  
+* CIP-service utilizes container images from dockerhub, ghcr.io and osgeo.org.  These public repositories increasingly require authentication.  At the very least users will be required to execute ```docker login``` before installation to access container images.  Other dockerfile actions download opensource software from GitHub and postgresql.org.  At the moment such downloads are unrestricted - but that could change.  Please submit issue tickets for any authentication problems encountered.
 
 ### Install
 
