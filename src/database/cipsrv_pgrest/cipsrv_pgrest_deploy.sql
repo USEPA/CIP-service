@@ -4226,7 +4226,7 @@ BEGIN
    -- Step 20
    -- Get the results
    ----------------------------------------------------------------------------
-   rec := cipsrv_support.randomhuc12(
+   rec := cipsrv_wbd.randomhuc12(
        p_region          := str_region
       ,p_source_dataset  := str_source_dataset
       ,p_return_geometry := boo_return_geometry

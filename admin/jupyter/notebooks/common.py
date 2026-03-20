@@ -32,6 +32,28 @@ def ogr2ogr(cmdstring):
    p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
     
    return p.communicate();
+
+def pgschema(cmdstring,fileout,writeparm='w'):
+    
+   command = 'pgschema {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   with open(fileout,writeparm) as f:
+      p = Popen(command,shell=False,stdin=PIPE,stdout=f,stderr=PIPE);
+      p.wait();
+      
+   return p.communicate();
+
+def pgschema_noout(cmdstring):
+    
+   command = 'pgschema {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
    
 def load_sqlfile(conn,sqlfile,echo=False):
     

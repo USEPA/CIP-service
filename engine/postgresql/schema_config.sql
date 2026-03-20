@@ -20,6 +20,11 @@ CREATE SCHEMA cipsrv_pgrest        AUTHORIZATION cipsrv_pgrest;
 CREATE SCHEMA cipsrv_upload        AUTHORIZATION cipsrv_upload;
 CREATE SCHEMA cipsrv_gis           AUTHORIZATION cipsrv_gis;
 
+CREATE SCHEMA cipdev_support       AUTHORIZATION cipsrv;
+CREATE SCHEMA cipdev_wbd           AUTHORIZATION cipsrv;
+CREATE SCHEMA cipdev_epageofab_h   AUTHORIZATION cipsrv;
+CREATE SCHEMA cipdev_epageofab_m   AUTHORIZATION cipsrv;
+
 GRANT  USAGE ON SCHEMA cipsrv               TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_engine        TO cipsrv_pgrest;
 GRANT  USAGE ON SCHEMA cipsrv_nhdplus_m     TO cipsrv_pgrest;

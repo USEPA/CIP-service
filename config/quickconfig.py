@@ -805,14 +805,20 @@ def main(
    ###############################################################################
    # WBD
    ###############################################################################
-   if recipe in ['EXTENDED']:
-      cipld(
-          ipnyb                = 'cipsrv_wbd'
-         ,dumpfile             = wbd_dumpfile
-         ,dumpfile_copyin      = wbd_dumpfile_copyin
-         ,dumpfile_parm        = '--wbd_dumpfile'
-         ,override_username    = override_username
-      );
+   cipld(
+       ipnyb                = 'cipsrv_wbd'
+      ,dumpfile             = wbd_dumpfile
+      ,dumpfile_copyin      = wbd_dumpfile_copyin
+      ,dumpfile_parm        = '--wbd_dumpfile'
+      ,override_username    = override_username
+   );
+   
+   cipgt(
+       ipnyb                = 'cipsrv_wbd'
+      ,override_git_branch  = override_git_branch
+      ,force_nogit_uselocal = force_nogit_uselocal
+      ,override_username    = override_username
+   );
       
    ###############################################################################
    # OWLD
