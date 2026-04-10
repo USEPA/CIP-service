@@ -10,14 +10,10 @@ See the following links for more information on each component:
 
 * NHDPlus v2.1 Medium Resolution
 * NHDPlus HR Release 1/2 High Resolution
-* Watershed Boundary Dataset NP21
-* Watershed Boundary Dataset NPHR
-* Watershed Boundary Dataset F3
-* EPA Geofabric Medium Resolution
-* EPA Geofabric High Resolution
-* Alaska H3 Catchments
-* Ocean Catchments
+* [Watershed Boundary Dataset NP21/NPHR/F3](./wbd.md)
+* EPA Geofabric MR/HR
+* Alaska H3 Catchments and Ocean Catchments
 * Topologies
-* SEGS Tribal Information
-* OWLD Linked Program Data
+* [SEGS Tribal Information](./tribal.md)
+* [OWLD Linked Program Data](./owld.md)
   
