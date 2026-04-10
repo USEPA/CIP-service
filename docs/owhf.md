@@ -4,7 +4,7 @@ The [US Environmental Protection Agency](https://epa.gov) [Office of Water](http
 
 CIP-service allows users to mix and match datasets to meet custom requirements.  
 
-![dataset diagram](./docs/owhf.png)
+![dataset diagram](./owhf.png)
 
 See the following links for more information on each component:
 
