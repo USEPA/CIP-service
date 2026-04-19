@@ -10,17 +10,18 @@ BEGIN
 END$$;
 
 CREATE OR REPLACE FUNCTION cipsrv_nhdplus_m.fdr_flowaccumulation(
-    p_area_of_interest      IN  GEOMETRY
-   ,p_default_weight        IN  INTEGER DEFAULT 1
-   ,p_known_region          IN  VARCHAR DEFAULT NULL
-   ,out_flow_accumulation   OUT RASTER
-   ,out_max_accumulation    OUT INTEGER
-   ,out_max_accumulation_x  OUT INTEGER
-   ,out_max_accumulation_y  OUT INTEGER
-   ,out_max_accumulation_pt OUT GEOMETRY
-   ,out_raster_srid         OUT INTEGER
-   ,out_return_code         OUT INTEGER
-   ,out_status_message      OUT VARCHAR
+    p_area_of_interest        IN  GEOMETRY
+   ,p_default_weight          IN  INTEGER DEFAULT 1
+   ,p_known_region            IN  VARCHAR DEFAULT NULL
+   ,out_flow_accumulation     OUT RASTER
+   ,out_max_accumulation      OUT INTEGER
+   ,out_max_accumulation_x    OUT INTEGER
+   ,out_max_accumulation_y    OUT INTEGER
+   ,out_max_accumulation_pt   OUT GEOMETRY
+   ,out_raster_srid           OUT INTEGER
+   ,out_cell_size_m           OUT NUMERIC
+   ,out_return_code           OUT INTEGER
+   ,out_status_message        OUT VARCHAR
 )
 STABLE
 AS
@@ -28,6 +29,7 @@ $BODY$
 DECLARE
    rec                 RECORD;
    int_depth_charge    INTEGER := 100000;
+   int_cell_buffer     INTEGER := 5;
    int_default_weight  INTEGER := p_default_weight;
    int_columns         INTEGER;
    int_rows            INTEGER;
@@ -45,6 +47,7 @@ DECLARE
    mat_fdr             INTEGER[][];
    mat_nidp            INTEGER[][];
    mat_accum           INTEGER[][];
+   sdo_aoi             GEOMETRY;
 
 BEGIN
 
@@ -83,19 +86,29 @@ BEGIN
       ,p_known_region := p_known_region
    );
    out_raster_srid    := rec.out_srid;
-
+   out_cell_size_m    := rec.out_grid_size;
+   
    IF rec.out_return_code <> 0
    THEN
       RAISE EXCEPTION '%: %', rec.out_return_code,rec.out_status_message;
-
+      
    END IF;
 
    ----------------------------------------------------------------------------
    -- Step 30
    -- Pull the FDR grid for the provided AOI
    ----------------------------------------------------------------------------
+   IF public.ST_SRID(p_area_of_interest) = out_raster_srid
+   THEN
+      sdo_aoi := p_area_of_interest;
+      
+   ELSE
+      sdo_aoi := ST_Transform(p_area_of_interest,out_raster_srid);
+      
+   END IF;
+   
    rec := cipsrv_nhdplus_m.fetch_grids_by_geometry(
-       p_FDR_input       := p_area_of_interest
+       p_FDR_input       := sdo_aoi
       ,p_FAC_input       := NULL
       ,p_known_region    := out_raster_srid::VARCHAR
       ,p_FDR_nodata      := 255
@@ -103,6 +116,15 @@ BEGIN
       ,p_crop            := TRUE
    );
    rast_fdr := rec.out_FDR;
+   
+   IF rast_fdr IS NULL
+   THEN
+      RAISE WARNING 'area of interest does not intersect grid %',out_raster_srid;
+      out_return_code := -1;
+      out_status_message := 'area of interest does not intersect grid ' || out_raster_srid::VARCHAR;
+      RETURN;
+   
+   END IF;
 
    ----------------------------------------------------------------------------
    -- Step 40
@@ -311,9 +333,9 @@ BEGIN
                
                IF int_running_total > out_max_accumulation
                THEN
-                  out_max_accumulation   := int_running_total;
-                  out_max_accumulation_x := int_working_x;
-                  out_max_accumulation_y := int_working_y;
+                  out_max_accumulation     := int_running_total;
+                  out_max_accumulation_x   := int_working_x;
+                  out_max_accumulation_y   := int_working_y;
                   
                END IF;
 
@@ -388,7 +410,7 @@ BEGIN
                ELSIF int_working_x < 1 OR int_working_x > int_columns
                OR    int_working_y < 1 OR int_working_y > int_rows
                THEN
-                  RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
+                  --RAISE WARNING 'exiting grid at %, %',int_working_x,int_working_y;
                   boo_continue := FALSE;
                
                END IF;
