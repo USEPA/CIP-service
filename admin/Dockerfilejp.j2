@@ -1,4 +1,4 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-full-3.12.2
+FROM ghcr.io/osgeo/gdal:ubuntu-full-3.12.4
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -27,6 +27,7 @@ RUN apt-get update                                       &&\
        build-essential                                     \
        vim                                                 \
        epiphany                                            \
+       p7zip-full                                          \
        python3                                             \
        python3-pip                                         \
        python3-dev                                         \
@@ -39,11 +40,11 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg ma
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/postgresql.gpg
 
 # Note the client here needs to stay ahead of the dumps
-RUN apt-get update                              &&\
-    apt-get install -y --no-install-recommends    \
-       postgresql-client-18                     &&\
-    apt-get clean                               &&\
-    rm -rf /var/lib/apt/lists/*                 &&\
+RUN apt-get update                                       &&\
+    apt-get install -y --no-install-recommends             \
+       postgresql-client-18                              &&\
+    apt-get clean                                        &&\
+    rm -rf /var/lib/apt/lists/*                          &&\
     rm -rf /var/cache/apt/*
 
 RUN python3 -m venv /opt/venv
@@ -92,15 +93,17 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
       ipython[all]                                            \
       jupyter                                                 \
       jupyter_server                                          \
-      fiona                                                   \
       asyncpg                                                 \
+      fiona                                                   \
       folium                                                  \
+      GDAL==$(gdal-config --version)                          \
       geocoder                                                \
       geopandas                                               \
       geopy                                                   \
       h3                                                      \
       ipyleaflet                                              \
       ipywidgets                                              \
+      openpyxl                                                \
       panel                                                   \
       pglast                                                  \
       plprofiler-client                                       \
@@ -112,8 +115,7 @@ RUN pip3 wheel --wheel-dir /home/$NB_USER/wheels              \
       solara                                                  \
       tap.py                                                  \
       voila                                                   \
-      wget                                                    \
-      openpyxl
+      wget
       
 RUN pip3 install --use-deprecated=legacy-resolver             \
       awscli                                                  \
@@ -123,20 +125,25 @@ RUN pip3 install                                              \
       ipython[all]                                            \
       jupyter                                                 \
       jupyter_server                                          \
-      fiona                                                   \
       asyncpg                                                 \
+      duckdb                                                  \
+      fiona                                                   \
       folium                                                  \
+      GDAL==$(gdal-config --version)                          \
       geocoder                                                \
       geopandas                                               \
+      geoparquet-io                                           \
       geopy                                                   \
       gitpython                                               \
       h3                                                      \
       ipyleaflet                                              \
       ipywidgets                                              \
+      openpyxl                                                \
       panel                                                   \
       pglast                                                  \
       plprofiler-client                                       \
       psycopg2-binary                                         \
+      py7zr                                                   \
       pyproj                                                  \
       pysal                                                   \
       rtree                                                   \
@@ -144,8 +151,7 @@ RUN pip3 install                                              \
       solara                                                  \
       tap.py                                                  \
       voila                                                   \
-      wget                                                    \
-      openpyxl
+      wget
 
 RUN pip3 install jupyterlab
 

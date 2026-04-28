@@ -23,6 +23,86 @@ def pg_restore(host_name,host_port,database_name,user_name,database_password,dum
     
    return p.communicate(bytes('{}\n'.format(database_password),'utf-8'));
 
+def gdal_translate(cmdstring):
+    
+   command = 'gdal_translate {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdal_calc(cmdstring):
+    
+   command = 'gdal_calc {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdal_edit(cmdstring):
+    
+   command = 'gdal_edit {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdal_footprint(cmdstring):
+    
+   command = 'gdal_footprint {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdal_polygonize(cmdstring):
+    
+   command = 'gdal_polygonize {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdalbuildvrt(cmdstring):
+    
+   command = 'gdalbuildvrt {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdalinfo(cmdstring):
+    
+   command = 'gdalinfo {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def gdalwarp(cmdstring):
+    
+   command = 'gdalwarp {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
 def ogr2ogr(cmdstring):
     
    command = 'ogr2ogr {0}'.format(cmdstring);
@@ -33,21 +113,29 @@ def ogr2ogr(cmdstring):
     
    return p.communicate();
 
-def pgschema(cmdstring,fileout,writeparm='w'):
+def ogrinfo(cmdstring):
     
-   command = 'pgschema {0}'.format(cmdstring);
+   command = 'ogrinfo {0}'.format(cmdstring);
 
    command = shlex.split(command);
 
-   with open(fileout,writeparm) as f:
-      p = Popen(command,shell=False,stdin=PIPE,stdout=f,stderr=PIPE);
-      p.wait();
-      
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
    return p.communicate();
 
-def pgschema_noout(cmdstring):
+def p7zip(cmdstring):
     
-   command = 'pgschema {0}'.format(cmdstring);
+   command = '7z {0}'.format(cmdstring);
+
+   command = shlex.split(command);
+
+   p = Popen(command,shell=False,stdin=PIPE,stdout=PIPE,stderr=PIPE);
+    
+   return p.communicate();
+
+def raster2pgsql(cmdstring):
+    
+   command = 'raster2pgsql {0}'.format(cmdstring);
 
    command = shlex.split(command);
 
