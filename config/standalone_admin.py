@@ -95,7 +95,7 @@ def main(
    ###############################################################################
    print("Running compose up for standalone admin.");
    cmd = ["docker","compose","up","-d"];
-   #dzproc(cmd);
+   dzproc(cmd);
    
    ###############################################################################
    cmd = [
@@ -103,7 +103,7 @@ def main(
       ,"/home/jovyan/notebooks/common.py"
       ,"/tmp/common.py"
    ];
-   #dzproc(cmd);
+   dzproc(cmd);
 
    ###############################################################################
    print("Standalone admin loaded.");
