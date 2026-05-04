@@ -34,7 +34,7 @@
 # JUPYTER_TOKEN      : jupyter server token, a value of "easy" will forgo this
 #
 #
-name: cip-service-admin
+name: {{ compose_name }}
 services:
 {%- if 'cip_jp' in components and 'type' in components.cip_jp and components.cip_jp.type == "container" %}
    cip_jp:
@@ -105,6 +105,11 @@ services:
          - type: volume
            source: home-jovyan
            target: /home/jovyan
+{%-   if 'loading_dock_bind' in components.cip_jp and components.cip_jp.loading_dock_bind is not none %}
+         - type: bind
+           source: {{ components.cip_jp.loading_dock_bind }}
+           target: /home/jovyan/loading_dock  
+{%-   endif %}          
 {%- endif %}
 networks:
 {%- if join_existing_network == true %}

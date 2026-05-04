@@ -27,7 +27,7 @@
 # Aside from the configuration step all secrets must be provided via the usual .env file.
 # 
 #
-name: cip-service-gis
+name: {{ compose_name }}
 services:
 {%- if 'cip_gs' in components and 'type' in components.cip_gs and components.cip_gs.type == "container" %}
    cip_gs:
