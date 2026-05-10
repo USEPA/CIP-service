@@ -38,7 +38,7 @@
 # POSTGREST_PASS      : cipsrv_pgrest user password
 #
 #
-name: cip-service-engine
+name: {{ compose_name }}
 services:
 {%- if 'cip_pg' in components and 'type' in components.cip_pg and components.cip_pg.type == "container" %}
 {%-    set configval = components.cip_pg.config %}

@@ -1,2 +1,3 @@
 #
+compose_name: cip-service-demo
 default: nginx_demo

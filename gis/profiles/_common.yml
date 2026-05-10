@@ -1,2 +1,3 @@
 #
+compose_name: cip-service-gis
 default: geoserver_desktop

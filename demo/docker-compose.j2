@@ -27,7 +27,7 @@
 # Aside from the configuration step all secrets must be provided via the usual .env file.
 # 
 #
-name: cip-service-demo
+name: {{ compose_name }}
 services:
 {%- if 'cip_ng' in components and 'type' in components.cip_ng and components.cip_ng.type == "container" %}
    cip_ng:

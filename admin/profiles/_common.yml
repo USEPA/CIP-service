@@ -1,4 +1,5 @@
 #
+compose_name:  cip-service-admin
 default: admin_local
 #
 github_repo:

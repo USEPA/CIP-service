@@ -36,6 +36,11 @@ DECLARE
   
 BEGIN
 
+   out_FDR            := NULL;
+   out_FAC            := NULL;
+   out_return_code    := 0;
+   out_status_message := NULL;
+
    ----------------------------------------------------------------------------
    -- Step 10
    -- Check over incoming parameters
@@ -354,4 +359,3 @@ BEGIN
    ELSE RAISE EXCEPTION 'prob'; 
    END IF;END IF;
 END$$;
-

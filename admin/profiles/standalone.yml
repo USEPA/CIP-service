@@ -1,9 +1,10 @@
-profile_name: admin
+profile_name: standalone
 #
 # Example profile to create a jupyter notebook
 # server to administer a CIP engine in the same
 # docker network
 #
+compose_name:  cip-standalone-admin
 last updated: 20221212
 #
 cip_pg_host:     cip_pg
@@ -18,13 +19,16 @@ existing_network_name: cipsrv-net
 components:
 #  Maintenance Jupyter Notebook
    cip_jp:
-      type:             container
-      github_repo:      epa_https
-      dump_s3:          ows3
+      type:              container
+      image_name:        cip-service-admin-standalone
+      container_name:    cip-service-admin-standalone
+      github_repo:       epa_https
+      dump_s3:           ows3
 #     admin servers should never be exposed on the internet
 #     and should ideally be only accesible via local resources   
-      external_port:    8888
+      external_port:     8889 
 #     further lock down Jupyter with a security token
 #     use a value of "easy" to skip this security step      
-      jupyter_token:    env.JUPYTER_TOKEN      
+      jupyter_token:     env.JUPYTER_TOKEN
+      loading_dock_bind: /glacier      
 #
