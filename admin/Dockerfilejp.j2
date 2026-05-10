@@ -1,4 +1,4 @@
-FROM ghcr.io/osgeo/gdal:ubuntu-full-3.12.4
+FROM ghcr.io/osgeo/gdal:ubuntu-full-3.13.0
 
 LABEL maintainer="Paul Dziemiela <Paul.Dziemiela@erg.com>"
 
@@ -27,6 +27,8 @@ RUN apt-get update                                       &&\
        build-essential                                     \
        vim                                                 \
        epiphany                                            \
+       grass                                               \
+       grass-dev                                           \
        p7zip-full                                          \
        python3                                             \
        python3-pip                                         \

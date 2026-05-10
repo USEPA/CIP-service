@@ -66,12 +66,13 @@ def main(
          shutil.copyfile(
              os.path.join('../admin','env.example')
             ,os.path.join(outdir,'.env')
-         );  
-
-   shutil.copytree(
-       os.path.join('../admin','jupyter')
-      ,os.path.join(outdir,'jupyter')
-   );     
+         );
+   
+   if not os.path.exists(os.path.join(outdir,'jupyter')):
+      shutil.copytree(
+          os.path.join('../admin','jupyter')
+         ,os.path.join(outdir,'jupyter')
+      );     
    
    ###############################################################################
    print("Configuring compose for admin containers using standalone settings.");

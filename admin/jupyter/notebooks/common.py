@@ -1,5 +1,5 @@
 import os,sys,wget,re,getpass;
-import psycopg2,base64,shlex;
+import psycopg2,base64,shlex,requests;
 from subprocess import PIPE,Popen;
 from contextlib import closing;
 
@@ -11,6 +11,23 @@ def download(s3,src,ld,trg):
    wget.download(s3 + src,os.path.join(ld,trg));
     
    return True;
+
+def check_link(url):
+    try:
+        response = requests.head(url,allow_redirects=True,timeout=5);
+        if response.status_code != 200:
+            print(f"Failed: {url} returned status code {response.status_code}.");
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error: Could not connect to {url}. {e}");
+
+def download_link(url,target):
+    response = requests.get(url,stream=True);
+
+    with open(target,"wb") as f:
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk);
    
 def pg_restore(host_name,host_port,database_name,user_name,database_password,dumpfile,threads=1):
     
